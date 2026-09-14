@@ -1,5 +1,7 @@
 index.html
 site.css
+favicon.png
+favicon.svg
 .nojekyll
 coi-serviceworker.js
 saga.js

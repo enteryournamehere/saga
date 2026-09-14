@@ -4,8 +4,10 @@
 
 #include "decomp.h"
 #include "host/platform/graphics.hpp"
+#include "host/platform/wasm/graphics.hpp"
 #include "nu2api/nu3d/android/nutex_ios_ex.h"
 #include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/nucore.hpp"
 
@@ -134,6 +136,21 @@ void NuRenderDevice::SwapBuffers() {
             wasm_present_texture(g_earlyColorTexture, width, height);
         }
         emscripten_webgl_commit_frame();
+
+        // Resize between frames, after presenting the existing color buffer.
+        if (g_earlyColorTexture != 0 && width > 0 && height > 0 &&
+            (width != g_backingWidth || height != g_backingHeight)) {
+            NUVIEWPORT2 viewport;
+            NuVpGetCurrent2(&viewport);
+            HostResizeWasmFramebuffer(width, height);
+            this->width = this->backing_width = static_cast<u32>(width);
+            this->height = this->backing_height = static_cast<u32>(height);
+            g_backingWidth = nurndr_pixel_width = width;
+            g_backingHeight = nurndr_pixel_height = height;
+            this->nominal_aspect_ratio = DetermineNominalAspectRatio(this->width, this->height);
+            this->aspect_ratio = static_cast<f32>(width) / static_cast<f32>(height);
+            NuVpSetCurrent2(&viewport);
+        }
     }
 }
 
@@ -170,9 +187,8 @@ void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *) {
         i32 width = 0;
         i32 height = 0;
         emscripten_webgl_get_drawing_buffer_size(context, &width, &height);
-        this->width = static_cast<u32>(width);
-        this->height = static_cast<u32>(height);
-        DetermineBackBufferResolution(width, height);
+        this->width = this->backing_width = static_cast<u32>(width);
+        this->height = this->backing_height = static_cast<u32>(height);
         g_backingWidth = static_cast<i32>(this->backing_width);
         g_backingHeight = static_cast<i32>(this->backing_height);
         nurndr_pixel_width = width;

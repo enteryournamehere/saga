@@ -44,6 +44,10 @@ __attribute__((weak)) bool HostPlatformAudioOutputEnabled() {
     return true;
 }
 
+__attribute__((weak)) u64 HostPlatformWindowFlags() {
+    return 0;
+}
+
 __attribute__((weak)) ANativeWindow *HostPlatformNativeWindow(SDL_Window *) {
     return nullptr;
 }

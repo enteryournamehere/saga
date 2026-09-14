@@ -30,11 +30,11 @@ steps are skipped when the locally supplied `res/libTTapp.so` is absent. The
 hook writes and automatically stages `matching.json` and the marked matching
 table in `README.md`. Unsupported clang-tidy modes are omitted: macOS has no
 native mode, and Apple Silicon has no direct target mode.
-`.github/workflows/plot-pages.yaml` builds the release WASM target, runs
+`.github/workflows/pages.yaml` builds the WASM target, runs
 `//scripts:plot_binary_match_map` against that committed report, assembles the
-browser assets, and deploys the generated landing page and progress explorer as
-static files. The page only loads game data after an explicit user action and
-waits for a separate Play click before starting. The browser loads remote OBB
+browser assets, and deploys the homepage, progress explorer, and player as
+static files. The player loads game data after selecting an OBB or opening an
+OBB URL and starts when the data is ready. The browser loads remote OBB
 URLs directly, so those origins must permit cross-origin requests; there is no
 deployed proxy or API.
 
@@ -44,7 +44,7 @@ deployed proxy or API.
 |---|---|---|
 | `generate_bazel_objdiff_report.py` | `bazel run //scripts:generate_bazel_objdiff_report` | Generates the custom whole-binary matching data and README progress table. Calls Bazel and external `objdiff-cli`; writes `matching.json` and the marked section of `README.md`. |
 | `generate_objdiff_gui_config.py` | `bazel run //scripts:generate_objdiff_gui_config` | Generates the ignored root `objdiff.json` for the completely optional visual objdiff GUI, with one source/object unit per Bazel compile action. Builds the target and configures GUI rebuilds through Bazel; it is not part of reports, hooks, or CI. |
-| `plot_binary_match_map.py` | `bazel run //scripts:plot_binary_match_map` | Fills `plot_binary_match_map.html` with `matching.json` data to create the static play-and-progress Pages application. Standard library only. |
+| `plot_binary_match_map.py` | `bazel run //scripts:plot_binary_match_map` | Generates the homepage, progress explorer, and player from `matching.json` and the site templates. Standard library only. |
 | `objdiff-cli.py` | `bazel run //scripts:objdiff_cli -- SYMBOL` | Primary compact diff for one symbol. Calls external `objdiff-cli` and resolves the target-config library through Bazel. |
 | `wasm_server.py` | `bazel run --config=wasm //scripts:wasm_server` | Serves only the generated static landing page, WASM build, and optional web-root OBB with local isolation headers. Standard library only. |
 

@@ -11,16 +11,15 @@
 #include "globals.h"
 #include "gameframework/saveload.h"
 #include "host/harness/save.hpp"
+#include "host/harness/startup.hpp"
 #include "host/harness/window.hpp"
 #include "legoapi/world/area.h"
 #include "legoapi/characters/core/players.h"
 #include "gameapi/gui/apimenu.h"
 
 extern i32 LEVELCOUNT;
-extern i32 GAMEDEMO;
 extern i32 NewMode;
 extern i32 Paused;
-extern i32 LOADEROFF;
 extern char g_language[16];
 extern "C" void __real__Z7EndPermv();
 extern "C" void __real__Z8LoadPermv();
@@ -101,12 +100,7 @@ namespace {
 } // namespace
 
 extern "C" void __wrap__Z8LoadPermv() {
-    // Use the engine's synchronous permanent-data loader to skip the legal,
-    // language-selection and intro screens, without skipping asset setup.
-    const i32 previous = LOADEROFF;
-    LOADEROFF = 1;
-    __real__Z8LoadPermv();
-    LOADEROFF = previous;
+    HostLoadPermImmediately(__real__Z8LoadPermv);
 }
 
 extern "C" void __wrap__Z7EndPermv() {
@@ -146,12 +140,7 @@ extern "C" void __wrap__Z7EndPermv() {
     Game = fixture;
     BackupGame = fixture;
     memcard_autosaveenabled = 0;
-    GAMEDEMO = 0;
-    Level = destination->idx;
-    NewMode = 0;
-    PlayerProgress[0].active = 1;
-    PlayerProgress[1].active = 0;
-    MenuReset();
+    HostEnterLevel(*destination);
     fprintf(stderr, "smoke: loaded fixture; entering level=%s area=%d\n", destination->name, destination->area_index);
     heartbeat.store(SDL_GetTicks());
     game_thread.store(SDL_GetCurrentThreadID());

@@ -203,6 +203,9 @@ bazel build --config=wasm_release //src:saga_wasm
 
 The outputs are `bazel-bin/src/saga.html`, `saga.js`, and `saga.wasm`. Build
 this variant when changing browser support or portable host behavior.
+After loading the OBB, the browser build starts a new game in the cantina.
+Startup overrides live in `src/host/platform/wasm/startup.cpp` and use the
+same host helpers as the native smoke test.
 
 With the OBB under `res/`, build and serve the browser version with:
 
@@ -413,8 +416,20 @@ Render a local copy of the GitHub Pages site with:
 bazel run //scripts:plot_binary_match_map
 ```
 
-This command only reads `matching.json` and writes the ignored
-`doc/pages/index.html`; it does not build or compare either binary.
+This command only reads `matching.json` and writes the ignored site under
+`doc/pages/`; it does not build or compare either binary. The homepage is at
+`/`, the full progress explorer at `/progress/`, and the browser player at
+`/play/`.
+
+For a site preview without compiling the game:
+
+```sh
+python3 scripts/wasm_server.py --port 8000
+```
+
+Open `http://127.0.0.1:8000/`. Playing the game also requires a WASM build and
+the original assets. Homepage templates, Tailwind build instructions, and
+asset credits are in [`scripts/site/README.md`](scripts/site/README.md).
 
 ### Source conventions
 
@@ -459,7 +474,7 @@ to `main` may update the caches.
 
 ### Pages workflow
 
-`.github/workflows/plot-pages.yaml` renders the site from the committed
+`.github/workflows/pages.yaml` renders the site from the committed
 `matching.json`, uploads `doc/pages/`, and deploys it to GitHub Pages. It does
 not rebuild `target` or regenerate `matching.json`.
 

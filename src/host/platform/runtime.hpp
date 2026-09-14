@@ -10,6 +10,7 @@ struct SDL_Window;
 // platform directory may replace any of them with a strong definition.
 const char *HostPlatformVideoDriver();
 bool HostPlatformAudioOutputEnabled();
+u64 HostPlatformWindowFlags();
 ANativeWindow *HostPlatformNativeWindow(SDL_Window *window);
 #if defined(__linux__) && !defined(__EMSCRIPTEN__)
 void HostSetSDLGraphics(SDL_Window *window, void *context);

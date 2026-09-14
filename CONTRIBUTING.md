@@ -1,8 +1,7 @@
 # Contributing 🤝
 
-Use [README.md](README.md) for the shortest path from a new checkout to a
-complete build. This document explains the platform setup and development
-workflows in more detail.
+This guide covers platform setup, building and running the project, and
+development workflows.
 
 Run every command below from the repository root. A value such as
 `//src:saga_target` is a Bazel target label, not a filesystem path.
@@ -317,7 +316,7 @@ stopped. The hook then checks the staged diff for whitespace errors, runs the
 three fast Bazel tests, and runs each clang-tidy target supported by the host.
 If `res/libTTapp.so` is present, it also builds `target`, checks its symbols,
 regenerates the full matching report, and stages the generated `matching.json`
-and README progress table for the same commit.
+and README progress badge for the same commit.
 
 Without `res/libTTapp.so`, the binary-dependent steps are skipped. The hook
 does not generate `doc/pages/index.html`.
@@ -405,9 +404,9 @@ bazel run //scripts:generate_bazel_objdiff_report
 This compares the complete original and rebuilt libraries. It writes
 `matching.json`, recording each original function's address, size, match
 percentage, and Bazel source unit. It also stores the original symbol list used
-by CI and updates the matching badge and table in `README.md`.
+by CI and updates the match progress badge in `README.md`.
 
-Do not edit `matching.json` or the marked README section by hand. Commit both
+Do not edit `matching.json` or the README progress badge by hand. Commit both
 generated files with the target changes that produced them.
 
 Render a local copy of the GitHub Pages site with:

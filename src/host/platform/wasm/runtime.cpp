@@ -18,6 +18,10 @@ bool HostPlatformAudioOutputEnabled() {
     return true;
 }
 
+u64 HostPlatformWindowFlags() {
+    return SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_RESIZABLE;
+}
+
 ANativeWindow *HostPlatformNativeWindow(SDL_Window *) {
     return nullptr;
 }
@@ -45,6 +49,13 @@ void HostPlatformPrepareArguments(i32 *argc, char ***argv) {
 }
 
 void HostPlatformHandleInputEvent(const SDL_Event &event, i32 width, i32 height) {
+    if (event.type != SDL_EVENT_MOUSE_BUTTON_DOWN && event.type != SDL_EVENT_FINGER_DOWN) {
+        return;
+    }
+    SDL_Window *window = SDL_GetWindowFromEvent(&event);
+    if (window != nullptr) {
+        SDL_GetWindowSize(window, &width, &height);
+    }
     if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
         HostInputTouch(static_cast<i32>(event.button.x), static_cast<i32>(event.button.y), width, height);
     } else if (event.type == SDL_EVENT_FINGER_DOWN) {

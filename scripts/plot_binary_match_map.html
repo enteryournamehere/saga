@@ -1,175 +1,113 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="darkreader-lock">
     <meta name="description"
-        content="Explore live LEGO Star Wars: The Complete Saga decompilation progress.">
-    <meta name="theme-color" content="#111318">
+        content="Explore live LEGO&reg; Star Wars: The Complete Saga decompilation progress.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#161618" media="(prefers-color-scheme: dark)">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="saga | Decompilation progress">
-    <meta property="og:description" content="Explore live decompilation progress for LEGO Star Wars: The Complete Saga.">
+    <meta property="og:title" content="opensaga | Decompilation Progress">
+    <meta property="og:description" content="Explore live decompilation progress for LEGO&reg; Star Wars: The Complete Saga.">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="saga | Decompilation progress">
-    <meta name="twitter:description" content="Explore live decompilation progress for LEGO Star Wars: The Complete Saga.">
-    <title>saga | Decompilation progress</title>
+    <meta name="twitter:title" content="opensaga | Decompilation Progress">
+    <meta name="twitter:description" content="Explore live decompilation progress for LEGO&reg; Star Wars: The Complete Saga.">
+    <title>opensaga | Decompilation Progress</title>
     <script>
         if (new URLSearchParams(location.search).has("obb")) {
-            const player = new URL("./play/", location.href);
+            const player = new URL("../play/", location.href);
             player.search = location.search;
             player.hash = location.hash;
             location.replace(player);
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
-    <link rel="stylesheet" href="./site.css">
+    <!--__HEAD__-->
 </head>
 
-<body
-    class="min-h-screen text-[var(--text)] antialiased selection:bg-[var(--accent)] selection:text-[var(--accent-text)]">
+<body class="progress-page">
     <div id="site-shell">
-        <nav class="site-nav" aria-label="Main navigation">
-            <a class="site-brand" href="./">saga</a>
-            <div class="site-nav-links">
-                <a href="./" aria-current="page">Progress</a>
-                <a href="./play/">WASM player <span class="experimental-badge">Experimental</span></a>
-            </div>
-        </nav>
-        <main>
-            <section id="progress" class="px-3 py-14 sm:px-6 sm:py-20">
-                <div class="mx-auto max-w-[118rem]">
-                    <div class="mx-auto mb-9 max-w-6xl">
-                        <p class="mb-3 font-mono text-xs font-semibold uppercase tracking-[.18em] text-[var(--accent)]">
-                            Live project data</p>
-                        <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-                            <div>
-                                <h1 class="m-0 text-3xl font-bold tracking-[-.04em] sm:text-4xl">Reconstruction progress
-                                </h1>
-                                <p class="mb-0 mt-3 max-w-2xl text-base leading-7 text-[var(--muted)]">Explore the
-                                    original binary by address or compare function sizes. Hover for details, zoom into
-                                    the map, and filter by translation unit.</p>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                                <div class="panel min-w-28 px-3 py-2.5"><span id="fuzzy-stat"
-                                        class="block text-lg font-semibold tabular-nums">—</span><span
-                                        class="font-mono text-[10px] uppercase tracking-wide text-[var(--muted)]">Fuzzy
-                                        match</span></div>
-                                <div class="panel min-w-28 px-3 py-2.5"><span id="code-stat"
-                                        class="block text-lg font-semibold tabular-nums">—</span><span
-                                        class="font-mono text-[10px] uppercase tracking-wide text-[var(--muted)]">Exact
-                                        code</span></div>
-                                <div class="panel min-w-28 px-3 py-2.5"><span id="function-stat"
-                                        class="block text-lg font-semibold tabular-nums">—</span><span
-                                        class="font-mono text-[10px] uppercase tracking-wide text-[var(--muted)]">Functions</span>
-                                </div>
-                                <div class="panel min-w-28 px-3 py-2.5"><span id="unit-stat"
-                                        class="block text-lg font-semibold tabular-nums">—</span><span
-                                        class="font-mono text-[10px] uppercase tracking-wide text-[var(--muted)]">Build
-                                        units</span></div>
-                            </div>
+        <!--__HEADER__-->
+        <main id="progress" class="site-container site-content">
+            <section class="progress-overview" aria-labelledby="progress-title">
+                <h1 id="progress-title" class="site-title">Decompilation Progress</h1>
+                <dl class="progress-metrics">
+                    <div><dt>Overall progress</dt><dd id="fuzzy-stat">-</dd></div>
+                    <div><dt>Exact code</dt><dd id="code-stat">-</dd></div>
+                    <div><dt>Matched functions</dt><dd id="function-stat">-</dd></div>
+                    <div><dt>Build units</dt><dd id="unit-stat">-</dd></div>
+                </dl>
+                <progress id="overall-progress" class="site-progress" max="100" value="0"
+                    aria-label="Overall decompilation progress"></progress>
+            </section>
+
+            <div class="report-layout">
+                <section class="report-map" aria-label="Binary explorer">
+                    <div class="report-tabs" role="tablist" aria-label="Map views">
+                        <button id="address-tab" type="button" role="tab" aria-selected="true"
+                            aria-controls="address-panel">Address map</button>
+                        <button id="treemap-tab" type="button" role="tab" aria-selected="false"
+                            aria-controls="treemap-panel">Function sizes</button>
+                    </div>
+                    <div class="report-tools">
+                        <p id="report-hint">Scroll to zoom. Drag to pan.</p>
+                        <div id="map-controls" class="report-actions">
+                            <span id="zoom-status" aria-live="polite">1&times;</span>
+                            <button id="reset" class="report-control" type="button">Reset</button>
                         </div>
                     </div>
-
-                    <div
-                        class="report-layout flex h-[min(78vh,55rem)] min-h-[44rem] flex-col gap-3 xl:flex-row xl:gap-4">
-                        <section class="report-map flex min-w-0 flex-1 flex-col" aria-label="Binary address map">
-                            <div class="panel flex min-h-0 flex-1 flex-col overflow-hidden shadow-2xl shadow-black/15">
-                                <div class="flex h-9 shrink-0 items-end gap-1 border-b border-[var(--ui-border)] px-2"
-                                    role="tablist" aria-label="Map views">
-                                    <button id="address-tab"
-                                        class="h-9 border-b-2 border-transparent px-3 font-mono text-xs text-[var(--muted)] transition-colors hover:text-[var(--text)] aria-selected:border-[var(--accent)] aria-selected:text-[var(--text)]"
-                                        type="button" role="tab" aria-selected="true"
-                                        aria-controls="address-panel">Address map</button>
-                                    <button id="treemap-tab"
-                                        class="h-9 border-b-2 border-transparent px-3 font-mono text-xs text-[var(--muted)] transition-colors hover:text-[var(--text)] aria-selected:border-[var(--accent)] aria-selected:text-[var(--text)]"
-                                        type="button" role="tab" aria-selected="false"
-                                        aria-controls="treemap-panel">Function sizes</button>
-                                </div>
-                                <div id="address-panel" class="flex min-h-0 flex-1 flex-col" role="tabpanel"
-                                    aria-labelledby="address-tab">
-                                    <div id="map-stack" class="relative min-h-0 flex-1 overflow-hidden">
-                                        <svg id="map-base" class="map-layer" aria-hidden="true"></svg>
-                                        <canvas id="map-canvas" class="map-layer" aria-hidden="true"></canvas>
-                                        <svg id="binary-map" class="map-layer" role="img"
-                                            aria-labelledby="map-title map-desc">
-                                            <title id="map-title">Original binary matching by virtual address</title>
-                                            <desc id="map-desc">Allocated ELF sections and a folded text-section map
-                                                colored by function matching percentage, with unit outlines.</desc>
-                                        </svg>
-                                        <div id="map-controls"
-                                            class="pointer-events-auto absolute right-[1.5%] z-20 flex h-5 items-center gap-1.5 text-[11px]">
-                                            <span class="font-medium">Horizontally zoomable</span>
-                                            <span class="hidden text-[var(--muted)] min-[1500px]:inline">Wheel/pinch:
-                                                zoom · drag: pan · hover: details</span>
-                                            <button id="reset"
-                                                class="inline-flex h-5 items-center rounded border border-[var(--ui-border-strong)] px-1.5 text-[10px] font-medium transition-colors hover:bg-[var(--surface-alt)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--accent)]"
-                                                type="button">Reset</button>
-                                            <span id="zoom-status"
-                                                class="inline-flex h-5 items-center rounded border border-[var(--ui-border-strong)] px-1.5 text-[10px] tabular-nums"
-                                                aria-live="polite">Zoom 1×</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div id="treemap-panel" class="relative hidden min-h-0 flex-1 overflow-hidden"
-                                    role="tabpanel" aria-labelledby="treemap-tab">
-                                    <canvas id="function-treemap" class="absolute inset-0 h-full w-full" role="img"
-                                        aria-label="Treemap of all text-section functions, with rectangle area proportional to code size"></canvas>
-                                    <div id="treemap-hover"
-                                        class="pointer-events-none absolute hidden border-2 border-[var(--text)]"></div>
-                                </div>
-                                <div class="flex shrink-0 flex-wrap gap-x-3 gap-y-1 border-t border-[var(--ui-border)] px-3 py-2 text-xs text-[var(--muted)]"
-                                    aria-label="Map legend">
-                                    <span class="inline-flex items-center gap-1"><span
-                                            class="match-gradient inline-block h-2.5 w-20 shrink-0 rounded-sm"></span>0–100%
-                                        function match</span>
-                                    <span class="inline-flex items-center gap-1"><span
-                                            class="inline-block h-2.5 w-4 shrink-0 bg-[#7651a8]"></span>Ambiguous
-                                        duplicate</span>
-                                    <span class="inline-flex items-center gap-1"><span
-                                            class="inline-block h-2.5 w-4 shrink-0 bg-[var(--row)]"></span>No scored
-                                        function</span>
-                                    <span class="inline-flex items-center gap-1"><span
-                                            class="inline-block h-2.5 w-4 shrink-0 border border-[var(--text)]"></span>Unit
-                                        boundary</span>
-                                </div>
-                            </div>
-                        </section>
-                        <aside
-                            class="panel flex h-72 min-h-0 w-full shrink-0 flex-col overflow-hidden shadow-2xl shadow-black/15 xl:h-full xl:w-72"
-                            aria-labelledby="unit-sidebar-title">
-                            <div class="border-b border-[var(--ui-border)] p-3">
-                                <h2 id="unit-sidebar-title" class="mb-2 text-sm font-semibold">Translation units</h2>
-                                <div class="flex items-center gap-1.5">
-                                    <button id="show-all-units"
-                                        class="inline-flex h-7 items-center rounded border border-[var(--ui-border-strong)] px-2 text-xs font-medium transition-colors hover:bg-[var(--surface-alt)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--accent)]"
-                                        type="button">All</button>
-                                    <button id="hide-all-units"
-                                        class="inline-flex h-7 items-center rounded border border-[var(--ui-border-strong)] px-2 text-xs font-medium transition-colors hover:bg-[var(--surface-alt)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--accent)]"
-                                        type="button">None</button>
-                                    <span id="unit-summary"
-                                        class="ml-auto inline-flex h-5 items-center rounded bg-[var(--surface-alt)] px-1.5 text-[10px] tabular-nums"></span>
-                                </div>
-                            </div>
-                            <div id="unit-tree" class="min-h-0 flex-1 overflow-auto p-2 text-xs"></div>
-                        </aside>
+                    <div id="address-panel" class="report-viewport" role="tabpanel"
+                        aria-labelledby="address-tab">
+                        <div id="map-stack">
+                            <svg id="map-base" class="map-layer" aria-hidden="true"></svg>
+                            <canvas id="map-canvas" class="map-layer" aria-hidden="true"></canvas>
+                            <svg id="binary-map" class="map-layer" role="img" aria-labelledby="map-title map-desc">
+                                <title id="map-title">Original binary matching by virtual address</title>
+                                <desc id="map-desc">Allocated ELF sections and a folded text-section map
+                                    colored by function matching percentage, with unit outlines.</desc>
+                            </svg>
+                        </div>
                     </div>
+                    <div id="treemap-panel" class="report-viewport" role="tabpanel"
+                        aria-labelledby="treemap-tab" hidden>
+                        <canvas id="function-treemap" class="map-layer" role="img"
+                            aria-label="Treemap of all text-section functions, with rectangle area proportional to code size"></canvas>
+                        <div id="treemap-hover" class="pointer-events-none absolute hidden border-2 border-[var(--text)]"></div>
+                    </div>
+                </section>
+
+                <aside class="report-filters" aria-labelledby="unit-sidebar-title">
+                    <h2 id="unit-sidebar-title" class="report-filter-title">Source files</h2>
+                    <div class="report-tools">
+                        <span id="unit-summary" aria-label="Visible source files"></span>
+                        <div class="report-actions">
+                            <button id="show-all-units" class="report-control" type="button">All</button>
+                            <button id="hide-all-units" class="report-control" type="button">None</button>
+                        </div>
+                    </div>
+                    <div id="unit-tree"></div>
+                </aside>
+
+                <div class="report-legend" aria-label="Map legend">
+                    <span><i class="match-gradient" aria-hidden="true"></i>0&ndash;100% match</span>
+                    <span><i class="legend-ambiguous" aria-hidden="true"></i>Ambiguous</span>
+                    <span><i class="legend-unscored" aria-hidden="true"></i>Not scored</span>
+                    <span><i class="legend-boundary" aria-hidden="true"></i>File boundary</span>
                 </div>
-            </section>
+            </div>
         </main>
 
-        <footer class="border-t border-[var(--ui-border)] px-4 py-8 text-sm text-[var(--muted)] sm:px-6">
-            <div class="mx-auto max-w-6xl">
-                <p class="m-0">saga is an educational reconstruction project. Game assets are not included.</p>
-            </div>
-        </footer>
+        <!--__FOOTER__-->
     </div>
 
     <div id="tooltip" class="map-tooltip" role="tooltip"></div>
     <script>
         const data = /*__DATA__*/;
+        document.getElementById("overall-progress").value = data.metrics.fuzzyMatchPercent;
         document.getElementById("fuzzy-stat").textContent = `${data.metrics.fuzzyMatchPercent.toFixed(2)}%`;
         document.getElementById("code-stat").textContent = `${data.metrics.matchedCodePercent.toFixed(2)}%`;
         document.getElementById("function-stat").textContent = `${data.metrics.matchedFunctions.toLocaleString()} / ${data.metrics.totalFunctions.toLocaleString()}`;
@@ -236,13 +174,7 @@
             return changed;
         }
 
-        function positionMapControls() {
-            mapControls.style.top = `${(bitmapY - 29) * 100 / totalHeight}%`;
-            mapControls.style.transform = "translateY(-50%)";
-        }
-
         fitRowsToViewport();
-        positionMapControls();
         [base, svg].forEach(layer => layer.attr("viewBox", `0 0 ${width} ${totalHeight}`));
 
         const defs = svg.append("defs");
@@ -586,7 +518,7 @@
                 });
             });
             context.globalAlpha = 1;
-            context.strokeStyle = "#f2f2f2";
+            context.strokeStyle = resolveThemeColor("--outline");
             context.lineWidth = .8;
             context.stroke();
         }
@@ -875,8 +807,11 @@
             const showAddress = view === "address";
             addressTab.setAttribute("aria-selected", String(showAddress));
             treemapTab.setAttribute("aria-selected", String(!showAddress));
-            addressPanel.classList.toggle("hidden", !showAddress);
-            treemapPanel.classList.toggle("hidden", showAddress);
+            addressPanel.hidden = !showAddress;
+            treemapPanel.hidden = showAddress;
+            mapControls.hidden = !showAddress;
+            document.getElementById("report-hint").textContent = showAddress ?
+                "Scroll to zoom. Drag to pan." : "Hover over a function for details.";
             addressPanel.setAttribute("aria-hidden", String(!showAddress));
             treemapPanel.setAttribute("aria-hidden", String(showAddress));
             hoveredTreemapLeaf = null;
@@ -1060,48 +995,36 @@
 
         function createTreeRow(name, unitIds, directory, title) {
             const row = document.createElement("div");
-            row.className = "flex min-h-6 items-center whitespace-nowrap";
+            row.className = "tree-row";
             let toggle = null;
             if (directory) {
                 toggle = document.createElement("button");
                 toggle.type = "button";
-                toggle.className = "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-[var(--muted)] transition-colors hover:bg-[var(--surface-alt)] hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]";
-                toggle.textContent = "▸";
+                toggle.className = "tree-toggle";
                 toggle.setAttribute("aria-expanded", "false");
                 toggle.setAttribute("aria-label", `Expand ${name}`);
                 row.append(toggle);
             } else {
                 const spacer = document.createElement("span");
-                spacer.className = "inline-block h-5 w-5 shrink-0";
+                spacer.className = "tree-spacer";
                 row.append(spacer);
             }
 
             const label = document.createElement("label");
-            label.className = "flex min-w-0 cursor-pointer items-center gap-2";
-            const checkboxBox = document.createElement("span");
-            checkboxBox.className = "relative flex h-4 w-4 shrink-0 items-center justify-center";
+            label.className = "tree-label";
             const checkbox = document.createElement("input");
             checkbox.type = "checkbox";
-            checkbox.className = "peer h-4 w-4 cursor-pointer appearance-none rounded-[3px] border-2 border-[var(--text)] bg-transparent checked:border-[var(--accent)] checked:bg-[var(--accent)] indeterminate:border-[var(--accent)] indeterminate:bg-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
+            checkbox.className = "tree-checkbox";
             checkbox.checked = true;
             checkbox.addEventListener("change", () => {
                 unitIds.forEach(unitId => { unitVisibility[unitId] = checkbox.checked ? 1 : 0; });
                 unitVisibilityChanged();
             });
-            const checkmark = document.createElement("span");
-            checkmark.setAttribute("aria-hidden", "true");
-            checkmark.className = "pointer-events-none absolute hidden text-[11px] font-black leading-none text-[var(--accent-text)] peer-checked:block";
-            checkmark.textContent = "✓";
-            const mixedMark = document.createElement("span");
-            mixedMark.setAttribute("aria-hidden", "true");
-            mixedMark.className = "pointer-events-none absolute hidden text-[12px] font-black leading-none text-[var(--accent-text)] peer-indeterminate:block";
-            mixedMark.textContent = "−";
-            checkboxBox.append(checkbox, checkmark, mixedMark);
             const text = document.createElement("span");
-            text.className = `tree-name truncate font-mono${directory ? " font-medium" : ""}`;
+            text.className = "tree-name" + (directory ? " tree-directory" : "");
             text.textContent = name;
             text.title = title;
-            label.append(checkboxBox, text);
+            label.append(checkbox, text);
             row.append(label);
             treeCheckboxes.push({ checkbox, unitIds });
             return { row, toggle };
@@ -1115,11 +1038,10 @@
                     const { row, toggle } = createTreeRow(
                         child.name, child.unitIds, true, child.name);
                     const children = document.createElement("ul");
-                    children.className = "ml-3 list-none p-0";
+                    children.className = "tree-children";
                     children.hidden = true;
                     toggle.addEventListener("click", () => {
                         children.hidden = !children.hidden;
-                        toggle.textContent = children.hidden ? "▸" : "▾";
                         toggle.setAttribute("aria-expanded", String(!children.hidden));
                         toggle.setAttribute("aria-label",
                             `${children.hidden ? "Expand" : "Collapse"} ${child.name}`);
@@ -1143,7 +1065,7 @@
             let visibleCount = 0;
             unitVisibility.forEach(visible => { visibleCount += visible; });
             document.getElementById("unit-summary").textContent =
-                `${visibleCount}/${data.units.length}`;
+                `${visibleCount} / ${data.units.length}`;
             treeCheckboxes.forEach(({ checkbox, unitIds }) => {
                 let checkedCount = 0;
                 unitIds.forEach(unitId => { checkedCount += unitVisibility[unitId]; });
@@ -1162,8 +1084,7 @@
         }
 
         const unitTreeRoot = document.createElement("ul");
-        unitTreeRoot.className = "w-full list-none space-y-0.5 p-0";
-        unitTreeRoot.setAttribute("role", "tree");
+        unitTreeRoot.className = "unit-tree-root";
         document.getElementById("unit-tree").append(unitTreeRoot);
         renderUnitTree(buildUnitTree(), unitTreeRoot);
         updateUnitControls();
@@ -1202,8 +1123,8 @@
                 currentLocalX = currentTransform.x + left * (currentTransform.k - 1);
                 updateViewportIndicator(currentTransform, currentLocalX);
                 scheduleRenderedLabelPosition();
-                zoomStatus.textContent = `Zoom ${currentTransform.k < 10 ?
-                    currentTransform.k.toFixed(1) : Math.round(currentTransform.k)}×`;
+                zoomStatus.textContent = `${currentTransform.k < 10 ?
+                    currentTransform.k.toFixed(1) : Math.round(currentTransform.k)}\u00d7`;
             })
             .on("end", () => {
                 zooming = false;
@@ -1227,7 +1148,6 @@
                 }
                 [base, svg].forEach(layer =>
                     layer.attr("viewBox", `0 0 ${width} ${totalHeight}`));
-                positionMapControls();
                 bitmapClip.attr("height", bitmapHeight);
                 interaction.attr("height", bitmapHeight);
                 layoutLabel.text(
@@ -1242,6 +1162,11 @@
                 scheduleDraw();
             });
         }
+
+        matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+            scheduleDraw();
+            scheduleTreemapRender();
+        });
 
         new ResizeObserver(scheduleMapLayout).observe(mapStack.node());
         new ResizeObserver(scheduleTreemapRender).observe(treemapPanel);

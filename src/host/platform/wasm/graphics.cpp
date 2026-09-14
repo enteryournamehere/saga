@@ -1,4 +1,5 @@
 #include "host/platform/compressed_texture.hpp"
+#include "host/platform/wasm/graphics.hpp"
 
 #include <GLES2/gl2.h>
 
@@ -8,6 +9,23 @@
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nu3d/android/nutex_ios_ex.h"
 #include "nu2api/nuandroid/ios_graphics.h"
+
+namespace {
+    GLuint host_depth_buffer = 0;
+}
+
+void HostResizeWasmFramebuffer(i32 width, i32 height) {
+    GLint texture = 0;
+    GLint renderbuffer = 0;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &texture);
+    glGetIntegerv(GL_RENDERBUFFER_BINDING, &renderbuffer);
+    glBindTexture(GL_TEXTURE_2D, g_earlyColorTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glBindRenderbuffer(GL_RENDERBUFFER, host_depth_buffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
+}
 
 void NuIOS_AllocateSystemFramebuffers(void) {
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nuandroid/ios_graphics.cpp", 106);
@@ -20,18 +38,15 @@ void NuIOS_AllocateSystemFramebuffers(void) {
 
     glGenTextures(1, &g_earlyColorTexture);
     glBindTexture(GL_TEXTURE_2D, g_earlyColorTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, g_backingWidth, g_backingHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_earlyColorTexture, 0);
 
-    GLuint depth_buffer = 0;
-    glGenRenderbuffers(1, &depth_buffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, g_backingWidth, g_backingHeight);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
+    glGenRenderbuffers(1, &host_depth_buffer);
+    HostResizeWasmFramebuffer(g_backingWidth, g_backingHeight);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, host_depth_buffer);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);

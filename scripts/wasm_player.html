@@ -1,60 +1,67 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="darkreader-lock">
     <meta name="description" content="Experimental browser player for the saga WebAssembly build.">
-    <meta name="theme-color" content="#111318">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#161618" media="(prefers-color-scheme: dark)">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="saga | Experimental WASM player">
+    <meta property="og:title" content="opensaga | Web Build">
     <meta property="og:description" content="Experimental browser player for the saga WebAssembly build.">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="saga | Experimental WASM player">
+    <meta name="twitter:title" content="opensaga | Web Build">
     <meta name="twitter:description" content="Experimental browser player for the saga WebAssembly build.">
-    <title>saga | Experimental WASM player</title>
+    <title>opensaga | Web Build</title>
     <script>
         const initialObbUrl = new URLSearchParams(location.search).get("obb");
         if (initialObbUrl) document.documentElement.classList.add("loading-game");
     </script>
     <script src="./coi-serviceworker.js"></script>
-    <link rel="stylesheet" href="../site.css">
+    <!--__HEAD__-->
 </head>
 
 <body class="player-page">
     <main id="loading-screen" aria-labelledby="loading-title">
         <div class="loading-content">
-            <p class="loading-wordmark">saga</p>
-            <h1 id="loading-title">Loading game</h1>
+            <div class="loading-brand" role="img" aria-label="opensaga"><!--__LOGO__--></div>
+            <h1 id="loading-title" class="site-title">Loading game</h1>
             <p id="loading-status" role="status" aria-live="polite">Preparing your game...</p>
-            <progress id="loading-progress" max="1" aria-label="Game data download progress"></progress>
+            <progress id="loading-progress" class="site-progress" max="1" aria-label="Game data download progress"></progress>
             <a class="loading-back" href="?">Back to launcher</a>
         </div>
     </main>
     <div id="site-shell">
-        <nav class="site-nav" aria-label="Main navigation">
-            <a href="../">Progress</a>
-            <span class="experimental-badge">Experimental player</span>
-        </nav>
-        <main class="player-stage">
+        <!--__HEADER__-->
+        <main class="site-container site-content">
             <section id="launcher" aria-labelledby="launcher-title">
-                <h1 id="launcher-title" class="loading-wordmark">saga</h1>
-                <label class="file-picker">
-                    Select OBB file
+                <h1 id="launcher-title" class="site-title">Web Build</h1>
+                <p class="site-intro">Try the experimental web build with your own game assets.
+                    Some things may not work properly.</p>
+                <section class="player-assets" aria-labelledby="assets-title">
+                    <h2 id="assets-title" class="site-subtitle">Game Assets</h2>
+                    <p class="asset-help">Provide your own <code>main.1060.com.wb.lego.tcs.obb</code> from the Android release.
+                        We do not provide copyrighted game assets.</p>
+                <label class="file-picker primary-button">
+                    Choose OBB file
                     <input id="obb-file" type="file" accept=".obb,application/octet-stream"
                         aria-label="Select OBB file">
                 </label>
-                <div class="source-divider">or</div>
+                <label class="url-label" for="obb-url">Or load from a URL</label>
                 <form id="url-form" class="player-url-form">
                     <input id="obb-url" class="text-input" type="url" inputmode="url" autocomplete="url"
-                        placeholder="Paste an OBB URL (main.1060.com.wb.lego.tcs.obb)" aria-label="OBB URL" required>
+                        placeholder="https://example.com/game.obb" aria-label="OBB URL" required>
                     <button id="url-submit" class="primary-button" type="submit">Load</button>
                 </form>
                 <button id="local-obb-load" class="secondary-button" type="button" hidden>Load local OBB</button>
+                </section>
                 <p id="status" role="status" aria-live="polite"><span id="status-text">Preparing browser...</span></p>
             </section>
         </main>
+        <!--__FOOTER__-->
     </div>
 
     <div id="game" aria-label="Game viewport">

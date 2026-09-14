@@ -2,6 +2,19 @@ load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 
 _PYTHON_ENV = {"PYTHONDONTWRITEBYTECODE": "1"}
 
+filegroup(
+    name = "site_assets",
+    srcs = [
+        "plot_binary_match_map.html",
+        "wasm_player.html",
+        "site/footer.html",
+        "site/head.html",
+        "site/header.html",
+        "site/site.css",
+        "site/home.html",
+    ] + glob(["site/assets/*.svg", "site/assets/*.png"]),
+)
+
 py_test(
     name = "test_pages",
     size = "small",
@@ -24,11 +37,7 @@ py_binary(
 py_library(
     name = "plot_binary_match_map_lib",
     srcs = ["plot_binary_match_map.py"],
-    data = [
-        "plot_binary_match_map.html",
-        "site.css",
-        "wasm_player.html",
-    ],
+    data = [":site_assets"],
 )
 
 py_binary(
@@ -57,11 +66,7 @@ py_binary(
 py_binary(
     name = "plot_binary_match_map",
     srcs = ["plot_binary_match_map.py"],
-    data = [
-        "plot_binary_match_map.html",
-        "site.css",
-        "wasm_player.html",
-    ],
+    data = [":site_assets"],
     env = _PYTHON_ENV,
     main = "plot_binary_match_map.py",
 )

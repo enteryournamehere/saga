@@ -1,4 +1,4 @@
-# Matching report page
+# Generated website
 
 > Agent/reference document. Human matching and Pages workflows are in
 > [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
@@ -40,11 +40,21 @@ The report also stores the original binary's global, local, and weak text
 symbol names in `original_text_symbols`. CI uses that derived symbol surface to
 run `check_symbols` without requiring the copyrighted reference binary.
 
-The second script fills `scripts/plot_binary_match_map.html` with the compact
-report payload to produce the progress homepage, `index.html`. The generator
-also copies `scripts/wasm_player.html` to `play/index.html` and the shared
-`scripts/site.css` to `site.css`. The experimental player contains no matching
-report or D3 dependency; the progress page does not initialize the game.
+The second script generates three pages:
+
+- `index.html` from `scripts/site/home.html`: project summary, FAQ, and a
+  progress bar using `measures.fuzzy_match_percent`.
+- `progress/index.html` from `scripts/plot_binary_match_map.html`: the
+  interactive explorer with the compact report payload.
+- `play/index.html` from `scripts/wasm_player.html`: the experimental player.
+
+All three use `scripts/site/header.html` and `scripts/site/footer.html`. The
+generator copies the single compiled stylesheet, `scripts/site/site.css`, to
+`site.css` at the site root. The homepage
+contains neither the full report nor D3; only the player initializes the game
+and registers an isolation service worker. See
+[`scripts/site/README.md`](../../scripts/site/README.md) for template and CSS
+development instructions.
 
 The player accepts local files, a server OBB at the site root, or a remote
 URL. Opening `play/?obb=<encoded-url>` shows a dedicated loading splash and

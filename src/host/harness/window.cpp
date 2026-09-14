@@ -648,6 +648,7 @@ namespace {
 
         SDL_WindowFlags window_flags =
             offscreen ? static_cast<SDL_WindowFlags>(SDL_WINDOW_HIDDEN | SDL_WINDOW_NOT_FOCUSABLE) : 0;
+        window_flags |= HostPlatformWindowFlags();
 #if defined(__linux__) && !defined(__EMSCRIPTEN__)
         window_flags = static_cast<SDL_WindowFlags>(window_flags | SDL_WINDOW_OPENGL);
 #endif

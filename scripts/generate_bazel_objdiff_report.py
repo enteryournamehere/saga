@@ -29,10 +29,6 @@ SHT_NOBITS = 8
 SHT_SYMTAB = 2
 STT_FUNC = 2
 
-MATCHING_TABLE_START = "<!-- matching-table-start -->"
-MATCHING_TABLE_END = "<!-- matching-table-end -->"
-ROOT_LABEL = "(root)"
-
 
 def workspace_root() -> Path:
     """Return the source workspace both under `bazel run` and direct Python."""
@@ -210,84 +206,16 @@ def _badge_color(progress: float) -> str:
     return "red"
 
 
-def _matching_table(report: dict) -> list[str]:
-    """Aggregate assigned function scores by source directory."""
-    stats = defaultdict(
-        lambda: {
-            "code_size": 0,
-            "weighted_score": 0.0,
-            "functions": 0,
-            "matched_functions": 0,
-        }
-    )
-    for unit in report["units"]:
-        source_parts = Path(unit["source"]).parts
-        if not source_parts or source_parts[0] != "src" or len(source_parts) < 2:
-            continue
-        relative_parts = source_parts[1:]
-        top_level = relative_parts[0] if len(relative_parts) > 1 else ROOT_LABEL
-        if top_level == "host":
-            continue
-        keys = [top_level]
-        if top_level == "legoapi" and len(relative_parts) > 2:
-            keys.append(f"legoapi/{relative_parts[1]}")
-
-        for function in unit["functions"]:
-            size = int(function["size"])
-            score = float(function["match_percent"] or 0.0)
-            for key in keys:
-                row = stats[key]
-                row["code_size"] += size
-                row["weighted_score"] += score * size
-                row["functions"] += 1
-                if score == 100.0:
-                    row["matched_functions"] += 1
-
-    lines = [
-        "| Directory | Fuzzy % | Funcs % |",
-        "|---|---:|---:|",
-    ]
-    for key in sorted(stats):
-        row = stats[key]
-        fuzzy = row["weighted_score"] / row["code_size"] if row["code_size"] else 0.0
-        functions = (
-            100.0 * row["matched_functions"] / row["functions"]
-            if row["functions"]
-            else 0.0
-        )
-        lines.append(f"| `{key}` | {fuzzy:.1f}% | {functions:.1f}% |")
-    return lines
-
-
 def update_readme(path: Path, report: dict) -> None:
-    """Replace the marked matching table and overall progress badge."""
+    """Update the overall progress badge."""
     content = path.read_text(encoding="utf-8")
-    start = content.find(MATCHING_TABLE_START)
-    end = content.find(MATCHING_TABLE_END)
-    if start == -1 or end == -1 or end <= start:
-        raise ValueError(f"{path}: matching table markers are missing or invalid")
-
-    section = "\n".join(
-        [
-            MATCHING_TABLE_START,
-            "",
-            "## Matching progress 📊",
-            "",
-            "See https://ttdecomp.github.io/saga/",
-            "",
-            *_matching_table(report),
-            "",
-            MATCHING_TABLE_END,
-        ]
-    )
-    content = content[:start] + section + content[end + len(MATCHING_TABLE_END) :]
 
     progress = float(report.get("measures", {}).get("fuzzy_match_percent", 0.0))
     badge = (
-        f"https://img.shields.io/badge/matching-{progress:.2f}%25-"
+        f"https://img.shields.io/badge/match%20progress-{progress:.2f}%25-"
         f"{_badge_color(progress)}"
     )
-    content = re.sub(r"https://img\.shields\.io/badge/matching-[^)]*", badge, content)
+    content = re.sub(r"https://img\.shields\.io/badge/match%20progress-[^)]*", badge, content)
     path.write_text(content, encoding="utf-8")
 
 
@@ -432,7 +360,7 @@ def main() -> int:
     parser.add_argument(
         "--no-readme",
         action="store_true",
-        help="do not update the marked matching table in README.md",
+        help="do not update the progress badge in README.md",
     )
     parser.add_argument("--target", default="//src:saga_target")
     parser.add_argument("--bazel", default="bazel")

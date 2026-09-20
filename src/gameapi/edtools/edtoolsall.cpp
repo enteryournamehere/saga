@@ -21,11 +21,31 @@
 
 EdRegistry theRegistry;
 extern MemoryManager theMemoryManager;
-extern i32 EdType_NuVec;
-extern i32 EdType_VuVec;
-extern i32 EdType_NuMtx;
-extern i32 EdType_VuMtx;
-extern i32 EdType_Short;
+i32 EdType_Char;
+i32 EdType_Short;
+i32 EdType_Int;
+i32 EdType_Float;
+i32 EdType_VuVec;
+i32 EdType_VuMtx;
+i32 EdType_Enumeration;
+i32 EdType_String;
+i32 EdType_Colour3;
+i32 EdType_NuHSpecial;
+i32 EdType_NuVec;
+i32 EdType_NuMtx;
+
+void SerialiseChar(EdStream &, void *, i32);
+void SerialiseShort(EdStream &, void *, i32);
+void SerialiseInt(EdStream &, void *, i32);
+void SerialiseFloat(EdStream &, void *, i32);
+void SerialiseVuVec(EdStream &, void *, i32);
+void SerialiseVuMtx(EdStream &, void *, i32);
+void SerialiseString(EdStream &, void *, i32);
+void SerialiseColour3(EdStream &, void *, i32);
+void SerialiseNuHSpecial(EdStream &, void *, i32);
+void SerialiseNuVec(EdStream &, void *, i32);
+void SerialiseNuMtx(EdStream &, void *, i32);
+
 i32 pad_disabled;
 eduimenu_s *edLevelPinnedMenu;
 
@@ -964,36 +984,84 @@ void EdManScale::Render(ClassObjectList &) {
     STUBBED();
 }
 
-void EdRegistry::AddMapping(char *, char *) {
-    STUBBED();
+i32 EdRegistry::AddMapping(char *source, char *destination) {
+    NameMapping *mapping = &mappings[object_count++];
+    mapping->source = source;
+    mapping->destination = destination;
+    return 1;
 }
 
-void EdRegistry::AddObjectNotifier(EdObjectNotifier *) {
-    STUBBED();
+void EdRegistry::AddObjectNotifier(EdObjectNotifier *notifier) {
+    if (notifier_count < notifier_capacity) {
+        notifiers[notifier_count++] = notifier;
+    }
 }
 
-void EdRegistry::ClassIFaceProcess(EdClass *, void *, EdInputContext &) {
-    STUBBED();
+void EdRegistry::ClassIFaceProcess(EdClass *object_class, void *object, EdInputContext &context) {
+    if (object_class && object_class->interface) {
+        EdClassInterface *interface = object_class->interface;
+        interface->vtable->process(interface, object, context);
+    }
 }
 
-void EdRegistry::ClassIFaceProcess(i32, void *, EdInputContext &) {
-    STUBBED();
+void EdRegistry::ClassIFaceProcess(i32 class_id, void *object, EdInputContext &context) {
+    EdClass *object_class = GetClass(class_id);
+    if (object_class && object_class->interface) {
+        EdClassInterface *interface = object_class->interface;
+        interface->vtable->process(interface, object, context);
+    }
 }
 
-void EdRegistry::ClassIFaceRender(EdClass *, void *, i32) {
-    STUBBED();
+void EdRegistry::ClassIFaceRender(EdClass *object_class, void *object, i32 flags) {
+    if (object_class && object_class->interface) {
+        EdClassInterface *interface = object_class->interface;
+        interface->vtable->render(interface, object, flags);
+    }
 }
 
-void EdRegistry::ClassIFaceRender(i32, void *, i32) {
-    STUBBED();
+void EdRegistry::ClassIFaceRender(i32 class_id, void *object, i32 flags) {
+    EdClass *object_class = GetClass(class_id);
+    if (object_class && object_class->interface) {
+        EdClassInterface *interface = object_class->interface;
+        interface->vtable->render(interface, object, flags);
+    }
 }
 
-void EdRegistry::CreateObject(EdClassInterface *, void *, i32, i32, i32) {
-    STUBBED();
+void *EdRegistry::CreateObject(EdClassInterface *interface, void *source, i32 index,
+                                i32 guid, i32 flags) {
+    if (!guid && create_object_guid) {
+        guid = create_object_guid();
+    }
+    void *object = interface->vtable->create_object(interface, source, index, flags);
+    if (object) {
+        interface->vtable->set_object_guid(interface, object, guid);
+        if (!(flags & 2)) {
+            NotifyCreateObject(object, interface->object_class, source, index, guid, flags);
+        }
+    }
+    return object;
 }
 
-void EdRegistry::DefunctObject(EdClassInterface *, void *, i32, i32) {
-    STUBBED();
+void EdRegistry::DefunctObject(EdClassInterface *interface, void *object, i32, i32 flags) {
+    if (object) {
+        if (!(flags & 2)) {
+            NotifyDefunctObject(object, interface->object_class, flags);
+        }
+        interface->vtable->defunct_object(interface, object);
+        EdDefunctListEntry *entry = new EdDefunctListEntry;
+        entry->object_class = interface->object_class;
+        entry->object = object;
+        entry->next = nullptr;
+        entry->previous = defunct_objects.last;
+        if (defunct_objects.last) {
+            defunct_objects.last->next = entry;
+        }
+        defunct_objects.last = entry;
+        if (!defunct_objects.first) {
+            defunct_objects.first = entry;
+        }
+        ++defunct_objects.count;
+    }
 }
 
 void EdRegistry::DestroyObject(EdClassInterface *, void *, i32, i32) {
@@ -1006,8 +1074,13 @@ void EdRegistry::Flush() {
     object_count = 0;
 }
 
-void EdRegistry::GetClass(char *) {
-    STUBBED();
+EdClass *EdRegistry::GetClass(char *name) {
+    for (i32 index = 0; index < class_count; ++index) {
+        if (NuStrICmp(classes[index].name, name) == 0) {
+            return &classes[index];
+        }
+    }
+    return nullptr;
 }
 
 EdClass *EdRegistry::GetClass(i32 index) {
@@ -1017,20 +1090,54 @@ EdClass *EdRegistry::GetClass(i32 index) {
     return &classes[index];
 }
 
-void EdRegistry::GetClassId(char *) {
-    STUBBED();
+i32 EdRegistry::GetClassId(char *name) {
+    for (i32 index = 0; index < class_count; ++index) {
+        if (NuStrICmp(classes[index].name, name) == 0) {
+            return index;
+        }
+    }
+    return -1;
 }
 
 i32 EdRegistry::GetClassId(EdClass *object_class) {
     return object_class - classes;
 }
 
-void EdRegistry::GetStreamClassMapping(EdStream &, i32 *, i32 &, i32) {
-    STUBBED();
+void EdRegistry::GetStreamClassMapping(EdStream &stream, i32 *mapping, i32 &count, i32) {
+    i32 used_classes[64] = {};
+    for (i32 index = 0; index < class_count; ++index) {
+        EdClass *object_class = &classes[index];
+        if (stream.flags & 0x400000) {
+            if (object_class->flags & 0x400000) {
+                continue;
+            }
+        } else if (object_class->flags & 0x10000000) {
+            continue;
+        }
+        i32 stream_classes[64];
+        i32 stream_class_count = 0;
+        object_class->GetStreamClasses(stream, stream_classes, stream_class_count, 64);
+        for (i32 stream_class = 0; stream_class < stream_class_count; ++stream_class) {
+            used_classes[stream_classes[stream_class]] = 1;
+        }
+    }
+    count = 0;
+    for (i32 index = 0; index < class_count; ++index) {
+        if (used_classes[index]) {
+            mapping[index] = count++;
+        } else {
+            mapping[index] = -1;
+        }
+    }
 }
 
-void EdRegistry::GetType(char *) {
-    STUBBED();
+EdType *EdRegistry::GetType(char *name) {
+    for (i32 index = 0; index < type_count; ++index) {
+        if (NuStrICmp(types[index].name, name) == 0) {
+            return &types[index];
+        }
+    }
+    return nullptr;
 }
 
 EdType *EdRegistry::GetType(i32 index) {
@@ -1040,52 +1147,254 @@ EdType *EdRegistry::GetType(i32 index) {
     return &types[index];
 }
 
-void EdRegistry::GetTypeId(char *) {
-    STUBBED();
+i32 EdRegistry::GetTypeId(char *name) {
+    for (i32 index = 0; index < type_count; ++index) {
+        if (NuStrICmp(types[index].name, name) == 0) {
+            return index;
+        }
+    }
+    return -1;
 }
 
-void EdRegistry::Initialise(variptr_u &, variptr_u &, i32, i32, i32, i32) {
-    STUBBED();
+void EdRegistry::Initialise(variptr_u &buffer, variptr_u &, i32 max_classes,
+                            i32 max_types, i32 max_mappings, i32 max_notifiers) {
+    class_capacity = max_classes;
+    type_capacity = max_types;
+    mapping_capacity = max_mappings;
+    notifier_capacity = max_notifiers;
+    type_count = 0;
+    class_count = 0;
+    object_count = 0;
+    notifier_count = 0;
+    types = static_cast<EdType *>(BUFFER_ALLOC(&buffer, sizeof(EdType) * max_types, 16));
+    memset(types, 0, sizeof(EdType) * max_types);
+    classes = static_cast<EdClass *>(BUFFER_ALLOC(&buffer, sizeof(EdClass) * class_capacity, 16));
+    memset(classes, 0, sizeof(EdClass) * class_capacity);
+    mappings = static_cast<NameMapping *>(BUFFER_ALLOC(&buffer, sizeof(NameMapping) * mapping_capacity, 16));
+    memset(mappings, 0, sizeof(NameMapping) * mapping_capacity);
+    notifiers = static_cast<EdObjectNotifier **>(BUFFER_ALLOC(&buffer, sizeof(EdObjectNotifier *) * notifier_capacity, 16));
+    memset(notifiers, 0, sizeof(EdObjectNotifier *) * notifier_capacity);
+    initialised = 1;
 }
 
-void EdRegistry::MapName(char *) {
-    STUBBED();
+char *EdRegistry::MapName(char *name) {
+    for (i32 index = 0; index < object_count; ++index) {
+        if (NuStrICmp(mappings[index].source, name) == 0) {
+            name = mappings[index].destination;
+            break;
+        }
+    }
+    return name;
 }
 
-void EdRegistry::NotifyCreateObject(void *, EdClass *, void *, i32, i32, i32) {
-    STUBBED();
+void EdRegistry::NotifyCreateObject(void *object, EdClass *object_class, void *source,
+                                    i32 index, i32 context, i32 flags) {
+    for (i32 i = 0; i < notifier_count; ++i) {
+        EdObjectNotifier *notifier = notifiers[i];
+        notifier->vtable->create_object(notifier, object, object_class, source, index, context, flags);
+    }
 }
 
-void EdRegistry::NotifyDefunctObject(void *, EdClass *, i32) {
-    STUBBED();
+void EdRegistry::NotifyDefunctObject(void *object, EdClass *object_class, i32 flags) {
+    for (i32 i = 0; i < notifier_count; ++i) {
+        EdObjectNotifier *notifier = notifiers[i];
+        notifier->vtable->defunct_object(notifier, object, object_class, flags);
+    }
 }
 
-void EdRegistry::NotifyDestroyObject(void *, EdClass *, i32, i32) {
-    STUBBED();
+void EdRegistry::NotifyDestroyObject(void *object, EdClass *object_class, i32 index, i32 flags) {
+    for (i32 i = 0; i < notifier_count; ++i) {
+        EdObjectNotifier *notifier = notifiers[i];
+        notifier->vtable->destroy_object(notifier, object, object_class, index, flags);
+    }
 }
 
-void EdRegistry::NotifyReviveObject(void *, EdClass *, i32) {
-    STUBBED();
+void EdRegistry::NotifyReviveObject(void *object, EdClass *object_class, i32 flags) {
+    for (i32 i = 0; i < notifier_count; ++i) {
+        EdObjectNotifier *notifier = notifiers[i];
+        notifier->vtable->revive_object(notifier, object, object_class, flags);
+    }
 }
 
 void EdRegistry::RegisterBaseTypes() {
-    STUBBED();
+    EdType_Char = RegisterType("Char", 1, SerialiseChar);
+    EdType_Short = RegisterType("Short", 2, SerialiseShort);
+    EdType_Int = RegisterType("Int", 4, SerialiseInt);
+    EdType_Float = RegisterType("Float", 4, SerialiseFloat);
+    EdType_VuVec = RegisterType("VuVec", 16, SerialiseVuVec);
+    EdType_VuMtx = RegisterType("VuMtx", 64, SerialiseVuMtx);
+    EdType_Enumeration = RegisterType("Enum", 4, SerialiseInt);
+    EdType_String = RegisterType("String", -1, SerialiseString);
+    EdType_Colour3 = RegisterType("Colour3", 12, SerialiseColour3);
+    EdType_NuHSpecial = RegisterType("NuHSpecial", 12, SerialiseNuHSpecial);
+    EdType_NuVec = RegisterType("NuVec", 12, SerialiseNuVec);
+    EdType_NuMtx = RegisterType("NuMtx", 64, SerialiseNuMtx);
 }
 
-void EdRegistry::RegisterClass(char *, EdClassInterface *, i32) {
-    STUBBED();
+EdClass *EdRegistry::RegisterClass(char *name, EdClassInterface *interface, i32 flags) {
+    i32 index = class_count++;
+    EdClass *object_class = &classes[index];
+    object_class->name = name;
+    object_class->flags = flags;
+    object_class->interface = interface;
+    if (interface != nullptr) {
+        interface->object_class = object_class;
+    }
+    return object_class;
 }
 
-void EdRegistry::RegisterType(char *, i32, void (*)(EdStream &, void *, i32)) {
-    STUBBED();
+i32 EdRegistry::RegisterType(char *name, i32 size, void (*serialise)(EdStream &, void *, i32)) {
+    i32 index = type_count++;
+    EdType *type = &types[index];
+    type->name = name;
+    type->size = size;
+    type->serialise = serialise;
+    return index;
 }
 
-void EdRegistry::Serialise(EdStream &) {
-    STUBBED();
+void EdRegistry::Serialise(EdStream &stream) {
+    if (stream.BeginBlock("TypeList")) {
+        stream.SerialiseBuffer(&type_count, sizeof(type_count), 1);
+        for (i32 index = 0; index < type_count; ++index) {
+            types[index].Serialise(stream);
+        }
+        stream.EndBlock();
+    }
+    if (stream.BeginBlock("ClassList")) {
+        if (stream.mode == 2) {
+            i32 mapping[64];
+            i32 count = 0;
+            GetStreamClassMapping(stream, mapping, count, 64);
+            stream.SerialiseBuffer(&count, sizeof(count), 1);
+            for (i32 index = 0; index < class_count; ++index) {
+                if (mapping[index] != -1) {
+                    classes[index].Serialise(stream, mapping);
+                }
+            }
+        }
+        if (stream.mode == 1) {
+            stream.SerialiseBuffer(&class_count, sizeof(class_count), 1);
+            for (i32 index = 0; index < class_count; ++index) {
+                classes[index].Serialise(stream, nullptr);
+            }
+        }
+        stream.EndBlock();
+    }
 }
 
-void EdRegistry::SerialiseObjects(EdStream &, EdRegistry *) {
-    STUBBED();
+void EdRegistry::SerialiseObjects(EdStream &stream, EdRegistry *source_registry) {
+    char object_name[256];
+    auto get_attribute = [](EdClass *object_class, void *object, i32 attribute, i32 type,
+                            void *data, i32 size) {
+        EdMember member;
+        if (object_class->FindMember(&member, object, attribute, 1))
+            member.reference->GetAttributeData(member.object, attribute, type, data, size);
+    };
+    auto include_object = [&](EdClass *object_class, void *object) {
+        i32 object_flags = 0;
+        i16 group = 0;
+        get_attribute(object_class, object, 1, EdType_Int, &object_flags, 0);
+        get_attribute(object_class, object, 0x100, EdType_Short, &group, 0);
+        return !(object_flags & (stream.flags & 0x400000 ? 0x400000 : 0x10000000)) &&
+               group == stream.unknown_10;
+    };
+    auto read_objects = [&](EdClass *object_class, EdClass *source_class) {
+        i32 count;
+        stream.SerialiseBuffer(&count, sizeof(count), 1);
+        for (i32 index = 0; index < count; ++index) {
+            i32 object_flags;
+            stream.SerialiseBuffer(&object_flags, sizeof(object_flags), 1);
+            void *object;
+            if (object_flags & 0x02000000) {
+                stream.SerialiseString(object_name, sizeof(object_name));
+                object = object_class->FindObject(object_name);
+            } else {
+                void *original = NULL;
+                if (object_class->flags & 0x04000000) {
+                    stream.SerialiseString(object_name, sizeof(object_name));
+                    original = object_class->FindObject(object_name);
+                    if (original == NULL) {
+                        object_class->SerialiseObject(stream, NULL, source_class, source_registry);
+                        continue;
+                    }
+                }
+                object = theRegistry.CreateObject(object_class->interface, original, 4, 0, 2);
+            }
+            object_class->SerialiseObject(stream, object, source_class, source_registry);
+            if (object != NULL)
+                theRegistry.NotifyCreateObject(object, object_class, NULL, 0, 0, 0);
+        }
+    };
+
+    if (stream.mode == 2) {
+        i32 count = 0;
+        for (i32 index = 0; index < class_count; ++index) {
+            EdClass *object_class = &classes[index];
+            if (object_class->interface != NULL &&
+                !(object_class->flags & (stream.flags & 0x400000 ? 0x400000 : 0x10000000)))
+                ++count;
+        }
+        stream.SerialiseBuffer(&count, sizeof(count), 1);
+        for (i32 index = 0; index < class_count; ++index) {
+            EdClass *object_class = &classes[index];
+            if (object_class->interface == NULL ||
+                (object_class->flags & (stream.flags & 0x400000 ? 0x400000 : 0x10000000)))
+                continue;
+            stream.BeginBlock("ObjectList");
+            stream.SerialiseString(&object_class->name);
+            i32 object_count = 0;
+            for (void *object = object_class->interface->vtable->get_next_object(object_class->interface, NULL);
+                 object != NULL;
+                 object = object_class->interface->vtable->get_next_object(object_class->interface, object)) {
+                if (include_object(object_class, object))
+                    ++object_count;
+            }
+            stream.SerialiseBuffer(&object_count, sizeof(object_count), 1);
+            for (void *object = object_class->interface->vtable->get_next_object(object_class->interface, NULL);
+                 object != NULL;
+                 object = object_class->interface->vtable->get_next_object(object_class->interface, object)) {
+                if (!include_object(object_class, object))
+                    continue;
+                i32 object_flags = 0;
+                get_attribute(object_class, object, 1, EdType_Int, &object_flags, 0);
+                stream.SerialiseBuffer(&object_flags, sizeof(object_flags), 1);
+                if ((object_flags & 0x02000000) || (object_class->flags & 0x04000000)) {
+                    get_attribute(object_class, object, 4, EdType_String, object_name, sizeof(object_name));
+                    stream.SerialiseString(object_name, sizeof(object_name));
+                }
+                object_class->SerialiseObject(stream, object);
+            }
+            stream.EndBlock();
+        }
+    }
+
+    if (stream.mode == 1) {
+        if (stream.version <= 3) {
+            for (i32 index = 0; index < source_registry->class_count; ++index) {
+                EdClass *source_class = source_registry->GetClass(index);
+                EdClass *object_class = GetClass(MapName(source_class->name));
+                if (object_class != NULL && object_class->interface != NULL) {
+                    if (stream.BeginBlock("ObjectList") != NULL)
+                        read_objects(object_class, source_class);
+                    stream.EndBlock();
+                }
+            }
+        } else {
+            i32 count;
+            stream.SerialiseBuffer(&count, sizeof(count), 1);
+            for (i32 index = 0; index < count; ++index) {
+                if (stream.BeginBlock("ObjectList") != NULL) {
+                    char class_name[128];
+                    stream.SerialiseString(class_name, sizeof(class_name));
+                    EdClass *source_class = source_registry->GetClass(class_name);
+                    EdClass *object_class = GetClass(MapName(source_class->name));
+                    if (object_class != NULL && object_class->interface != NULL)
+                        read_objects(object_class, source_class);
+                }
+                stream.EndBlock();
+            }
+        }
+    }
 }
 
 EdManRotate::EdManRotate() {
@@ -1132,8 +1441,29 @@ void EdBitControl::cbSelectItem(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-void EdDefunctList::ReviveAll(i32) {
-    STUBBED();
+void EdDefunctList::ReviveAll(i32 flags) {
+    while (first) {
+        EdDefunctListEntry *entry = first;
+        EdClassInterface *interface = entry->object_class->interface;
+        interface->vtable->revive_object(interface, entry->object);
+        if (!(flags & 2)) {
+            theRegistry.NotifyReviveObject(entry->object, entry->object_class, flags);
+        }
+        if (entry->next) {
+            entry->next->previous = entry->previous;
+        } else {
+            last = entry->previous;
+        }
+        if (entry->previous) {
+            entry->previous->next = entry->next;
+        } else {
+            first = entry->next;
+        }
+        entry->next = nullptr;
+        entry->previous = nullptr;
+        --count;
+        delete entry;
+    }
 }
 
 void EdEnumControl::AddMenuItem(eduimenu_s *, EdRef *, void *) {
@@ -1797,8 +2127,12 @@ void EdRef::SetMemberData(void *object, i32 requested_type, void *data, i32 data
     }
 }
 
-void EdType::Serialise(EdStream &) {
-    STUBBED();
+void EdType::Serialise(EdStream &stream) {
+    if (stream.BeginBlock("Type")) {
+        stream.SerialiseString(&name);
+        stream.SerialiseBuffer(&size, sizeof(size), 1);
+        stream.EndBlock();
+    }
 }
 
 EdStream::EdStream() {

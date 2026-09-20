@@ -104,10 +104,28 @@ static edui_slider_s *grad_size_max_item;
 static eduiitem_s *grad_item;
 static eduiitem_s *grad_alpha_item;
 
-// Particle-list editor UI/menu callback stubs (static, internal linkage).
+extern "C" {
+    extern debkeydatatype_s *debkeydata;
+    extern i32 edpp_readout;
+    extern i32 edpp_showAllPlaced;
+    extern i32 edpp_snap_enabled;
+    extern eduimenu_s *ptlvaremitmenu;
+    extern eduimenu_s *ptlvarstartmenu;
+    extern eduimenu_s *ptlstartvelmenu;
+    void DebrisSetFacing(i32 handle, u8 enabled, i16 x_angle, i16 y_angle);
+}
 
-static void edptlcbApplyStarPoints(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+// Particle-list editor UI/menu callbacks.
+
+static void edptlcbApplyStarPoints(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    effect->radial_segments = static_cast<i32>(static_cast<edui_slider_s *>(item)->value);
 }
 
 static void edptlcbCancelGhostMenu(eduimenu_s *, eduimenu_s *) {
@@ -120,16 +138,23 @@ static void edptlcbCancelGroupMenu(eduimenu_s *, eduimenu_s *) {
     edptl_group_menu = NULL;
 }
 
-static void edptlcbChangeCSDisable(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edptlcbChangeCSDisable(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    effect->cutscene_only = item->highlighted;
 }
 
 static void edptlcbScaleEffectMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void edptlcbSetDebrisDetail(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edptlcbSetDebrisDetail(eduimenu_s *, eduiitem_s *item, u32) {
+    debris_detail_level = item->data;
 }
 
 static void edptlcbSetSoundControl(eduimenu_s *menu, eduiitem_s *item, u32) {
@@ -244,12 +269,28 @@ static void edptlcbSoundControlMenu(eduimenu_s *menu, eduiitem_s *item, u32) {
     }
 }
 
-static void edptlcbApplyBounceFactor(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edptlcbApplyBounceFactor(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    edpp_particle_s *particle = &edpp_ptls[edpp_nearest];
+    if (particle->instance_id == -1) {
+        return;
+    }
+    particle->reflection_bounce = static_cast<edui_slider_s *>(item)->value;
+    debkeydata[particle->instance_id].reflection_scale = particle->reflection_bounce;
 }
 
-static void edptlcbApplyBounceOffset(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edptlcbApplyBounceOffset(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    edpp_particle_s *particle = &edpp_ptls[edpp_nearest];
+    if (particle->instance_id == -1) {
+        return;
+    }
+    particle->reflection_offset = static_cast<edui_slider_s *>(item)->value;
+    debkeydata[particle->instance_id].collision_plane = particle->reflection_offset;
 }
 
 static void edptlcbCancelSoundIDMenu(eduimenu_s *, eduimenu_s *) {
@@ -257,8 +298,8 @@ static void edptlcbCancelSoundIDMenu(eduimenu_s *, eduimenu_s *) {
     edptl_soundid_menu = NULL;
 }
 
-static void edptlcbSetDebrisThinning(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edptlcbSetDebrisThinning(eduimenu_s *, eduiitem_s *item, u32) {
+    debris_thinning_level = static_cast<edui_slider_s *>(item)->value;
 }
 
 static void edptlcbCancelDpadModeMenu(eduimenu_s *, eduimenu_s *) {
@@ -315,16 +356,99 @@ static void cbChangeName(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void cbPtlChangeX(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlChangeX(eduimenu_s *menu, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1)
+        return;
+    i32 instance_id = edpp_ptls[edpp_nearest].instance_id;
+    if (instance_id == -1)
+        return;
+    debinftype *effect = debtab[debkeydata[instance_id].effect_index];
+    if (menu != NULL) {
+        if (menu == ptlvaremitmenu)
+            effect->field_04c = static_cast<edui_slider_s *>(item)->value;
+        else if (menu == ptlvarstartmenu)
+            effect->field_058 = static_cast<edui_slider_s *>(item)->value;
+        else if (menu == ptlstartvelmenu)
+            effect->emitter_velocity.x = static_cast<edui_slider_s *>(item)->value;
+    }
 }
 
-static void cbPtlChangeY(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlChangeY(eduimenu_s *menu, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1)
+        return;
+    i32 instance_id = edpp_ptls[edpp_nearest].instance_id;
+    if (instance_id == -1)
+        return;
+    debinftype *effect = debtab[debkeydata[instance_id].effect_index];
+    if (menu != NULL) {
+        if (menu == ptlvaremitmenu) {
+            if (effect->generator_type == 0 || effect->generator_type == 8 || effect->generator_type == 9 ||
+                effect->generator_type == 10)
+                effect->field_050 = static_cast<edui_slider_s *>(item)->value;
+            else if (effect->generator_type == 6 || effect->generator_type == 7 || effect->generator_type == 11 ||
+                     effect->generator_type == 12)
+                effect->field_050 = static_cast<i32>((65536.0f / 360.0f) * static_cast<edui_slider_s *>(item)->value);
+        } else if (menu == ptlvarstartmenu) {
+            if (effect->generator_type == 0 || effect->generator_type == 8 || effect->generator_type == 9 ||
+                effect->generator_type == 10)
+                effect->field_05c = static_cast<edui_slider_s *>(item)->value;
+            else if (effect->generator_type == 6 || effect->generator_type == 7 || effect->generator_type == 11 ||
+                     effect->generator_type == 12)
+                effect->field_05c = static_cast<i32>((65536.0f / 360.0f) * static_cast<edui_slider_s *>(item)->value);
+        } else if (menu == ptlstartvelmenu) {
+            if (effect->generator_type == 0 || effect->generator_type == 8 || effect->generator_type == 9 ||
+                effect->generator_type == 10)
+                effect->emitter_velocity.y = static_cast<edui_slider_s *>(item)->value;
+            else if (effect->generator_type == 6 || effect->generator_type == 7 || effect->generator_type == 11 ||
+                     effect->generator_type == 12)
+                effect->emitter_velocity.y =
+                    static_cast<i32>((65536.0f / 360.0f) * static_cast<edui_slider_s *>(item)->value);
+        }
+    }
 }
 
-static void cbPtlChangeZ(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlChangeZ(eduimenu_s *menu, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1)
+        return;
+    i32 instance_id = edpp_ptls[edpp_nearest].instance_id;
+    if (instance_id == -1)
+        return;
+    debinftype *effect = debtab[debkeydata[instance_id].effect_index];
+    if (menu != NULL) {
+        if (menu == ptlvaremitmenu) {
+            if (effect->generator_type == 0 || effect->generator_type == 8 || effect->generator_type == 9 ||
+                effect->generator_type == 10)
+                effect->field_054 = static_cast<edui_slider_s *>(item)->value;
+            else if (effect->generator_type == 6 || effect->generator_type == 7 || effect->generator_type == 12)
+                effect->field_054 = static_cast<i32>((65536.0f / 360.0f) * static_cast<edui_slider_s *>(item)->value);
+            else if (effect->generator_type == 11) {
+                effect->field_054 = static_cast<i32>((65536.0f / 360.0f) * static_cast<edui_slider_s *>(item)->value);
+                f32 limit = 16384.0f - effect->field_054;
+                effect->field_060 = MIN(effect->field_060, limit);
+                effect->field_060 = MAX(effect->field_060, -limit);
+            }
+        } else if (menu == ptlvarstartmenu) {
+            if (effect->generator_type == 0 || effect->generator_type == 8 || effect->generator_type == 9 ||
+                effect->generator_type == 10)
+                effect->field_060 = static_cast<edui_slider_s *>(item)->value;
+            else if (effect->generator_type == 6 || effect->generator_type == 7 || effect->generator_type == 12)
+                effect->field_060 = static_cast<i32>((65536.0f / 360.0f) * static_cast<edui_slider_s *>(item)->value);
+            else if (effect->generator_type == 11) {
+                effect->field_060 = static_cast<i32>((65536.0f / 360.0f) * static_cast<edui_slider_s *>(item)->value);
+                f32 limit = 16384.0f - effect->field_060;
+                effect->field_054 = MIN(effect->field_054, limit);
+                effect->field_054 = MAX(effect->field_054, -limit);
+            }
+        } else if (menu == ptlstartvelmenu) {
+            if (effect->generator_type == 0 || effect->generator_type == 8 || effect->generator_type == 9 ||
+                effect->generator_type == 10)
+                effect->emitter_velocity.z = static_cast<edui_slider_s *>(item)->value;
+            else if (effect->generator_type == 6 || effect->generator_type == 7 || effect->generator_type == 11 ||
+                     effect->generator_type == 12)
+                effect->emitter_velocity.z =
+                    static_cast<i32>((65536.0f / 360.0f) * static_cast<edui_slider_s *>(item)->value);
+        }
+    }
 }
 
 static void cbPtlColMenu(eduimenu_s *, eduiitem_s *, u32) {
@@ -344,7 +468,7 @@ static void cbPtlSelType(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 static void cbPtlShowAll(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    edpp_showAllPlaced = !edpp_showAllPlaced;
 }
 
 static void cbPtlApplyJib(eduimenu_s *, eduiitem_s *, u32) {
@@ -545,16 +669,34 @@ static void cbPtlGSortMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void cbPtlSetFacing(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlSetFacing(eduimenu_s *, eduiitem_s *item, u32) {
+    edpp_particle_s *particle = &edpp_ptls[edpp_nearest];
+    particle->facing_mode = item->highlighted;
+    if (item->highlighted) {
+        particle->facing_rotation_x = edpp_facrotx;
+        particle->facing_rotation_y = edpp_facroty;
+        DebrisSetFacing(particle->instance_id, 1, particle->facing_rotation_x, particle->facing_rotation_y);
+    } else {
+        particle->facing_rotation_x = 0;
+        particle->facing_rotation_y = 0;
+        DebrisSetFacing(particle->instance_id, 0, 0, 0);
+    }
 }
 
 static void cbPtlTorusMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void cbPtlChangeGrav(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlChangeGrav(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    effect->field_0a0 = static_cast<edui_slider_s *>(item)->value;
+    GenericDebinfoDmaTypeUpdate(effect);
 }
 
 static void cbPtlCopyEffect(eduimenu_s *, eduiitem_s *, u32) {
@@ -592,12 +734,12 @@ static void cbPtlSScaleMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     }
 }
 
-static void cbPtlSelReadout(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlSelReadout(eduimenu_s *, eduiitem_s *item, u32) {
+    edpp_readout = item->data;
 }
 
-static void cbPtlSnapToggle(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlSnapToggle(eduimenu_s *, eduiitem_s *item, u32) {
+    edpp_snap_enabled = item->highlighted;
 }
 
 static void cbSelEffectList(eduimenu_s *, eduiitem_s *, u32) {
@@ -612,8 +754,18 @@ static void cbEffectListMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void cbPtlChangeCutOn(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlChangeCutOn(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    effect->cut_on = static_cast<edui_slider_s *>(item)->value;
+    if (effect->cut_on > effect->clip_extent) {
+        effect->clip_extent = effect->cut_on;
+    }
 }
 
 static void cbPtlEmitVelMenu(eduimenu_s *menu, eduiitem_s *, u32) {
@@ -646,8 +798,8 @@ static void cbPtlReadoutMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     ptlreadoutmenu->y = menu->y + 40;
 }
 
-static void cbPtlSetXZFacing(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlSetXZFacing(eduimenu_s *, eduiitem_s *item, u32) {
+    debtab[edpp_ptls[edpp_nearest].effect_index]->camera_facing = item->highlighted;
 }
 
 static void cbPtlTextureMenu(eduimenu_s *, eduiitem_s *, u32) {
@@ -662,16 +814,37 @@ static void cbChangeETimeMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void cbChangeTorusLife(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbChangeTorusLife(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    effect->torus_lifetime = static_cast<edui_slider_s *>(item)->value;
 }
 
-static void cbChangeTorusRad1(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbChangeTorusRad1(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    effect->torus_radius1 = static_cast<edui_slider_s *>(item)->value;
 }
 
-static void cbChangeTorusRad2(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbChangeTorusRad2(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    effect->torus_radius2 = static_cast<edui_slider_s *>(item)->value;
 }
 
 static void cbFileLoadEffects(eduimenu_s *, eduiitem_s *, u32) {
@@ -697,12 +870,22 @@ static void cbPtlApplyCollEnv(eduimenu_s *, eduiitem_s *, u32) {
     }
 }
 
-static void cbPtlChangeCutOff(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlChangeCutOff(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    effect->clip_extent = static_cast<edui_slider_s *>(item)->value;
+    if (effect->clip_extent < effect->cut_on) {
+        effect->cut_on = effect->clip_extent;
+    }
 }
 
-static void cbPtlChangeSScale(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlChangeSScale(eduimenu_s *, eduiitem_s *item, u32) {
+    edptl_superscale = static_cast<i32>(static_cast<edui_slider_s *>(item)->value);
 }
 
 static void cbPtlDeleteEffect(eduimenu_s *, eduiitem_s *, u32) {
@@ -721,8 +904,15 @@ static void cbPtlVarStartMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void cbPtlChangeEmitVel(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlChangeEmitVel(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    effect->field_048 = static_cast<edui_slider_s *>(item)->value;
 }
 
 static void cbChangeGenRateMenu(eduimenu_s *, eduiitem_s *, u32) {
@@ -780,8 +970,11 @@ static void cbPtlApplyTorusEnv3(eduimenu_s *, eduiitem_s *, u32) {
     }
 }
 
-static void cbPtlChangePriority(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlChangePriority(eduimenu_s *, eduiitem_s *item, u32) {
+    i16 priority = static_cast<i32>(static_cast<edui_slider_s *>(item)->value);
+    edpp_particle_s *particle = &edpp_ptls[edpp_nearest];
+    particle->render_priority = priority;
+    debkeydata[particle->instance_id].render_priority = priority;
 }
 
 static void cbPtlDamageFlagMenu(eduimenu_s *menu, eduiitem_s *, u32) {
@@ -831,32 +1024,81 @@ static void cbPtlQuickDeleteType(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void cbPtlChangeDrawCutOff(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlChangeDrawCutOff(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    effect->sound_range = static_cast<edui_slider_s *>(item)->value;
 }
 
-static void cbPtlChangeRepeatFlag(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlChangeRepeatFlag(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    if (item->highlighted) {
+        debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index]->use_explicit_clip_box = 1;
+    } else {
+        debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index]->use_explicit_clip_box = 0;
+    }
 }
 
-static void cbChangeNumCollSpheres(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbChangeNumCollSpheres(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    effect->process_spheres = static_cast<i32>(static_cast<edui_slider_s *>(item)->value);
 }
 
-static void cbPtlChangeDamageFlags(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlChangeDamageFlags(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    if (item->highlighted) {
+        effect->field_2f2 |= item->data;
+    } else {
+        effect->field_2f2 &= ~item->data;
+    }
 }
 
-static void cbPtlChangeSoundCutOff(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlChangeSoundCutOff(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    effect->sound_range_override = static_cast<edui_slider_s *>(item)->value;
 }
 
 static void cbPtlTextureSelectMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void cbPtlChangeCameraCutOff(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlChangeCameraCutOff(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1) {
+        return;
+    }
+    if (edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    effect->field_044 = static_cast<edui_slider_s *>(item)->value;
 }
 
 static void cbPtlChangeTextureSelect(eduimenu_s *, eduiitem_s *, u32) {
@@ -867,8 +1109,10 @@ static void cbPtlInstanceSettingsMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void cbPtlToggleDynamicPriority(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlToggleDynamicPriority(eduimenu_s *, eduiitem_s *item, u32) {
+    edpp_particle_s *particle = &edpp_ptls[edpp_nearest];
+    particle->dynamic_priority = item->highlighted;
+    debkeydata[particle->instance_id].timed_flags = item->highlighted;
 }
 
 static void cbPtlCancel(eduimenu_s *, eduimenu_s *) {

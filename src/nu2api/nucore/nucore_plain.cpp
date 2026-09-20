@@ -81,7 +81,6 @@ extern "C" {
     i32 *AnimBuffEvalJoint = NULL;
     GLuint g_colorRenderbuffer;
     GLuint g_depthRenderbuffer;
-    extern i32 g_writingSaveCriticalSection;
 }
 
 static i32 clip_special_objects = 1;
@@ -1060,7 +1059,6 @@ extern "C" {
     // ---------------------------------------------------------------------------
 
     // Per-frame animation/pad update hooks (originals take the frame time).
-    void NuOcclusionManagerEndFrame(void);
     void NuPad_Interface_Render(void);
     void NuPadUpdatePads(void);
 
@@ -1113,16 +1111,6 @@ extern "C" {
     }
     void NuIOS_DeallocateSystemRenderbuffer(GLuint) {
         STUBBED();
-    }
-    void NuIOS_FreeMemoryForSuspend(void) {
-        const char *source_path = "i:/SagaTouch-Android_9176564/nu2api.saga/nuandroid/ios_graphics.cpp";
-        BeginCriticalSectionGL(source_path, 270);
-        NuIOS_DeallocateSystemFramebuffers();
-        glReleaseShaderCompiler();
-        glFinish();
-        EndCriticalSectionGL(source_path, 279);
-        NuThreadCriticalSectionBegin(g_performingBgProcWorkCritSec);
-        NuThreadCriticalSectionBegin(g_writingSaveCriticalSection);
     }
     // Locale string is owned by the Android/JNI TU; cache only its index here.
     i32 g_languageIndex = -1; // original .data @0x616b80
@@ -3424,46 +3412,19 @@ extern "C" {
     void NuHGobjFromVideoMem(NUHGOBJVIDEOMEMFN callback) {
         video_mem_to_hgobj = callback;
     }
-    nuhgobjpoi_s *NuHGobjGetPOI(nuhgobj_s *object, i32 index) {
-        const u8 mapped_index = static_cast<u8>(index);
-        if (mapped_index >= object->point_of_interest_count) {
-            return NULL;
-        }
-        const u8 point_index = object->point_of_interest_map[mapped_index];
-        if (point_index == 0xff) {
-            return NULL;
-        }
-        return &object->points_of_interest[point_index];
-    }
     void NuHGobjJointMtx(nuhgobj_s *object, u8 index, NUMTX *world_matrix, NUMTX *joint_matrices, NUMTX *result) {
         u8 joint_index = object->joint_override_map[index];
         NuMtxMulVU0(result, &joint_matrices[joint_index], world_matrix);
-    }
-    void NuHGobjPOILocalMtxFromIX(nuhgobj_s *object, u8 index, NUMTX *joint_matrices, NUMTX *result) {
-        nuhgobjpoi_s *point = &object->points_of_interest[index];
-        if (point->joint_index == 0xff) {
-            *result = point->local_matrix;
-        } else {
-            NuMtxMulVU0(result, &point->local_matrix, &joint_matrices[point->joint_index]);
-        }
     }
     void NuHGobjPOIMtx(nuhgobj_s *object, u8 index, NUMTX *world_matrix, NUMTX *joint_matrices, NUMTX *result) {
         nuhgobjpoi_s *point = &object->points_of_interest[object->point_of_interest_map[index]];
         NuMtxMulVU0(result, &point->local_matrix, &joint_matrices[point->joint_index]);
         NuMtxMulVU0(result, result, world_matrix);
     }
-    void NuHGobjPOIMtxFromIX(void) {
-        STUBBED();
-    }
     i32 NuHGobjReversibleCharacters(i32 enabled) {
         i32 previous = nuapi.reversible_characters;
         nuapi.reversible_characters = enabled;
         return previous;
-    }
-    i32 NuHGobjRndr(nuhgobj_s *object, NUMTX *world_matrix, i32 render_count, i16 *render_indices) {
-        NUMTX joint_matrices[256];
-        NuHGobjEval(object, 0, NULL, joint_matrices);
-        return NuHGobjRndrMtxDwa(object, world_matrix, render_count, render_indices, joint_matrices, NULL, 0);
     }
     // Original @0x2f56a0. Draw rigid hierarchy pieces at their evaluated joint
     // matrices, then build skin matrices for the smooth hierarchy pieces.

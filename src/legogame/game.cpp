@@ -11,6 +11,7 @@
 #include "legoapi/gizmo/object/gizmoblowups.h"
 #include "legoapi/gizmo/base/gizactions.h"
 #include "legoapi/actions/character/transform.h"
+#include "legoapi/actions/combat/fighting.h"
 #include "legoapi/props/objects/signal.h"
 
 #include <string.h>
@@ -22,7 +23,7 @@
 #include "legoapi/world/world.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world.h"
-#include "legoapi/gizmos/traps/attractos.h"
+#include "legoapi/gizmos/traps/attracto.h"
 #include "legoapi/gizmos/door/zipups.h"
 #include "legoapi/world/area.h"
 #include "legoapi/characters/core/character.h"
@@ -66,7 +67,6 @@ void BuyAllShopExtras();
 void ReCalculateCompletionPoints();
 extern i32 Lighting_HighlightFlash;
 extern i32 (*Lighting_BlueFlickerFn)(GameObject_s *);
-i32 ObjZappedBlue(GameObject_s *);
 
 f32 minikittime;
 extern f32 (*Hint_AlphaTargetFn)();
@@ -212,6 +212,10 @@ static i32 Slam_GetDebris_Game(GameObject_s *object, i32 effect) {
     if (object->id == id_GRIEVOUS)
         return (qrand() > 0x7fff) + 2;
     return effect == -1 ? 2 : effect;
+}
+
+static void GoThroughDoor_ExtraCode(WORLDINFO_s *, DOOR_s *) {
+    STUBBED();
 }
 
 static i32 FindSlamOrigin_UseCPos(GameObject_s *object) {
@@ -1160,7 +1164,7 @@ void InitGameAfterConfig(void) {
     //  GizSpinnerGDeb_Fail._2_2_ = 1;
     //  GizSpinnerGDeb_Fail._4_2_ = 0x58;
     GamePads_IgnoreInputFn = Game_IgnoreInput;
-    //  Door_GoThrough_ExtraCodeFn = GoThroughDoor_ExtraCode;
+    Door_GoThrough_ExtraCodeFn = GoThroughDoor_ExtraCode;
     GizmoBlowup_TransformDrawFn = GizmoBlowup_TransformDraw_Game;
     LEGOASCII_UP = ASCII_UP;
     //  LEGOASCII_DOWN = ASCII_DOWN;

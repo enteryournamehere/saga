@@ -52,10 +52,6 @@ i32 GetIntCurveVal(ani3_animheader_s *animation, f32 *values, i32 curve) {
 extern "C" void NuAnimBuffCreateScratch(nuanimbuff_s *buffer);
 extern "C" void NuAnimBuffDestroyScratch(nuanimbuff_s *buffer);
 
-void NuHGobjRead(variptr_u *, char *) {
-    STUBBED();
-}
-
 static void NuHtmlFlush(i32) {
     STUBBED();
 }
@@ -348,10 +344,6 @@ void NuGCutRigidCalcMtx(NUGCUTRIGID_s *rigid, float frame, numtx_s *mtx) {
 }
 
 // NuIOSDLMtlCallback is transcribed in android/nuiosdl_gl.cpp (original 0x29c480).
-
-void NuFadeSetFxCodeMtls(nugeom_s *, unsigned char *) {
-    STUBBED();
-}
 
 void NuGCutRigidCalcMtx_3(NUGCUTRIGID_s *rigid, float frame, numtx_s *mtx) {
     ani3_animheader_s *animation = reinterpret_cast<ani3_animheader_s *>(rigid->animation);

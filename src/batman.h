@@ -25,7 +25,7 @@
 #include "legoapi/world/world.h"
 #include "legogame/game.h"
 #include "legogame/startup.h"
-#include "legogame/target.h"
+#include "legoapi/misc/androidbatman.h"
 #include "MechInputTouch/MechInputTouch_types.h"
 #include "nu2api/nucore/bgproc.h"
 #include "nu2api/nucore/common.h"
@@ -78,7 +78,6 @@ extern "C" {
     void NuWaterSpeed(float);
     void NuWaterReset(void);
     void NuWindDraw(void);
-    void NuFadeObjDraw(void);
     void edGraEnableTerrainSwap(void);
     void edGraDisableTerrainSwap(void);
     void edgraStopPage(i8);
@@ -191,7 +190,6 @@ void GameAnimSys_Update(GAMEANIMSYS_s *);
 extern "C" {
 #endif
     void NuWindUpdateArray(NUVEC **);
-    void NuFadeObjUpdateArray(NUVEC **);
 #ifdef __cplusplus
 }
 #endif
@@ -335,7 +333,6 @@ extern "C" {
     extern OPTIONSSAVE *Game_OptionsSave;
     extern i32 (*GamePads_IgnoreInputFn)(void);
     extern i32 g_introState;
-    extern i32 gone_through_door_to_new_level;
     extern i32 Grass_Available;
     extern f32 g_val;
     extern i32 highallocaddr;

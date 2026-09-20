@@ -12,9 +12,12 @@
 #include "legoapi/gizmos/fx/gizmopickups.h"
 #include "legoapi/gizmos/transport/teleport.h"
 #include "legoapi/menus/core/panel.h"
+#include "legoapi/props/doors/door.h"
+#include "legoapi/world/levels/levels.h"
 #include "globals.h"
 #include "legoapi/render/fx.h"
 #include "nu2api/nusound/nusound_android.hpp"
+#include "nu2api/nu3d/android/nuobject_android.h"
 
 #include <string.h>
 

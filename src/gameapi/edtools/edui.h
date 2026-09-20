@@ -13,6 +13,7 @@ struct eduiiattr_s {
     u32 disabled;
 };
 struct nugraph_s;
+struct numtl_s;
 typedef void (*EdUiMenuCallback)(eduimenu_s *menu, eduimenu_s *parent);
 typedef void (*EdUiItemCallback)(eduimenu_s *menu, eduiitem_s *item, u32 value);
 
@@ -155,7 +156,7 @@ struct edui_colour_pick_s : eduiitem_s {
         struct {
             u8 dragging_colour : 1;
             u8 dragging_saturation : 1;
-            u8 accepted : 1;
+            u8 confirm : 1;
             u8 unknown_interaction_flags : 5;
         };
     };
@@ -168,7 +169,7 @@ struct edui_texture_pick_s : eduiitem_s {
     f32 uv_x[2];
     f32 uv_y[2];
     EdUiItemCallback changed;
-    i32 texture_id;
+    numtl_s *material;
     i32 selected_corner;
     f32 zoom;
 };
@@ -415,6 +416,7 @@ extern "C" {
     edui_gradient_node_s *eduiGradStageAdd(edui_gradient_pick_s *item, f32 time, f32 hue, f32 saturation, f32 value);
     edui_gradient_node_s *eduiGradStageAddRGB(edui_gradient_pick_s *item, f32 time, f32 red, f32 green, f32 blue);
     eduiitem_s *eduiItemGradPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text);
+    eduiitem_s *eduiItemTexturePickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text);
     eduiitem_s *eduiItemGreyGradPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text);
     eduiitem_s *eduiItemDataGradPickCreate(usize data, const void *colours, EdUiItemCallback callback,
                                          EdUiItemCallback press, EdUiItemCallback add, EdUiItemCallback remove,

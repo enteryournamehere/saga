@@ -10,7 +10,9 @@
 #include "legoapi/characters/core/players.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
 #include "legoapi/gizmo/base/GizForceObjectInterface.h"
+#include "legoapi/gizmo/object/gizmopickup.h"
 #include "legoapi/gizmos/object/newblowup.h"
+#include "legoapi/gizmos/object/gizobstacles.h"
 #include "legoapi/gizmos/traps/gizforce.h"
 #include "legoapi/ai/core/ai_sys_stubs.h"
 #include "legoapi/audio/sfx.h"
@@ -37,6 +39,7 @@
 #include "legoapi/world/world.h"
 #include "legogame/game.h"
 #include "nu2api/numath/nutrig.h"
+#include "nu2api/nucore/nugcutscene.h"
 #include "legoapi/gizmo/base/gizmo.h"
 #include "gameapi/edtools/edstubs.h"
 
@@ -44,6 +47,7 @@ struct instNUGCUTSCENE_s;
 extern "C" i32 instNuGCutSceneIsFinished(instNUGCUTSCENE_s *);
 GIZMO *GizmoFindByData(GIZMOSYS *, i32, void *);
 extern i32 addbolt_nosfx;
+extern f32 TimerScale, TimerAlpha;
 extern nuhspecial_s disco_on_spin[3], walllights_disco[2], walllights[2], striplights[2], discolights[2],
     discorm_wall_off, discorm_wall_on;
 extern GIZMO *disco_off_spina[3], *gizTurrets[2];
@@ -146,12 +150,13 @@ KAMINOC_PACKET_s *kaminoc_netpacket;
 nuhspecial_s disco_on_spin[3];
 GIZMO *disco_off_spina[3];
 
-static GIZAIMESSAGE_s *dooku_c; // _ZL7dooku_c
-struct dooku_state_s {
-    i32 hit_message;
+struct DOOKU_C_s {
+    GIZAIMESSAGE_s *total_message;
+    GIZAIMESSAGE_s *hit_message;
     nuhspecial_s node;
 };
-static dooku_state_s dooku_state;
+DECOMP_ASSERT(sizeof(DOOKU_C_s) == 20, "Dooku C state ABI");
+static DOOKU_C_s dooku_c;
 
 struct KAMINO_E_s {
     GIZAIMESSAGE_s *jango_fight;
@@ -1125,8 +1130,18 @@ void KaminoE_Draw(WORLDINFO_s *world) {
     NuSpecialSetVisibility(&kamino_e.slave1, 1);
 }
 
-void KaminoE_CheckPlatHit(BOLT_s *) {
-    STUBBED();
+i32 KaminoE_CheckPlatHit(BOLT_s *bolt) {
+    if (bolt->hit_platform != kamino_e.platform)
+        return 0;
+
+    for (i32 i = 0; i < 4; ++i) {
+        if (kamino_e.turrets[i] != NULL && kamino_e.panels[i] != NULL &&
+            (kamino_e.turrets[i]->flags & 0x32) == 2) {
+            if (kamino_e.active_turret == NULL)
+                kamino_e.active_turret = kamino_e.turrets[i];
+        }
+    }
+    return 1;
 }
 
 void KaminoF_Init(WORLDINFO_s *world) {
@@ -1171,17 +1186,27 @@ void NbKaminoA_Init(WORLDINFO_s *world) {
 // Geonosis — droid factory (Factory_B / Factory_G)
 // ===========================================================================
 
+static f32 FactoryBConveyorXSpeed;
+static f32 FactoryBConveyorZSpeed;
+f32 FactoryBConveyorStopFrame = 28.0f;
+
 void FactoryB_Init(WORLDINFO_s *world) {
     factoryb_netpacket = SetLevelHack(0x4);
     InitPaintPuzzle(world);
-    LevGizObst[0] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv1");
-    LevGizObst[1] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv2");
-    LevGizObst[2] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv3");
-    LevGizObst[3] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv4");
-    LevGizObst[4] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv5");
-    LevGizObst[5] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv6");
-    LevGizObst[6] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv7");
-    LevGizObst[7] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv8");
+    if (FactoryBConveyorXSpeed == 0.0f && FactoryBConveyorZSpeed == 0.0f) {
+        FactoryBConveyorXSpeed = world->current_level->conveyor_x_speed;
+        FactoryBConveyorZSpeed = world->current_level->conveyor_z_speed;
+    }
+    world->current_level->conveyor_x_speed = 0.0f;
+    world->current_level->conveyor_z_speed = 0.0f;
+    LevGizObst[0] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle49");
+    LevGizObst[1] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle50");
+    LevGizObst[2] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle48");
+    LevGizObst[3] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle52");
+    LevGizObst[4] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle47");
+    LevGizObst[5] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle46");
+    LevGizObst[6] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle45");
+    LevGizObst[7] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle51");
     for (i32 i = 0; i < 8; i++) {
         if (LevGizObst[i] != NULL) {
             LevGizObst[i]->mode = 3;
@@ -1192,19 +1217,57 @@ void FactoryB_Init(WORLDINFO_s *world) {
 
 void FactoryB_Reset(WORLDINFO_s *world) {
     ResetPaintPuzzle(world);
-    factoryb_cut = NewCutScene(NULL, world->cutscene_sys, "fb_cut", 0);
+    factoryb_cut = NewCutScene(NULL, world->cutscene_sys, "ep2_droidfactory_conveyor", 0);
     if (factoryb_cut != NULL) {
-        CUTSCENEDATA_s *scene = (CUTSCENEDATA_s *)factoryb_cut->scene;
-        if (scene != NULL) {
-            scene->field_0x88 |= 2;
-            scene->field_0x88 |= 8;
+        if (factoryb_cut->instance != NULL) {
+            static_cast<instNUGCUTSCENE_s *>(factoryb_cut->instance)->flags_88 |= 2;
+            static_cast<instNUGCUTSCENE_s *>(factoryb_cut->instance)->flags_88 |= 8;
         }
     }
-    factoryb_conveyor_stopped_msg = CheckGizAIMessage(gizaimessagesys, "conv_stopped", NULL);
+    factoryb_conveyor_stopped_msg = CheckGizAIMessage(gizaimessagesys, "conveyor_stop", NULL);
 }
 
-void FactoryB_Update(WORLDINFO_s *) {
-    STUBBED();
+void FactoryB_Update(WORLDINFO_s *world) {
+    UpdatePaintPuzzle(world);
+    GIZAIMESSAGE_s *message = static_cast<GIZAIMESSAGE_s *>(factoryb_conveyor_stopped_msg);
+    if (message != NULL && message->value != 0.0f && factoryb_cut->previous_frame > 50.0f &&
+        factoryb_cut->previous_frame < 54.0f) {
+        instNUGCUTSCENE_s *instance = static_cast<instNUGCUTSCENE_s *>(factoryb_cut->instance);
+        instance->current_frame = 0.0f;
+        instance->flags_88 &= ~2;
+        world->current_level->conveyor_x_speed = 0.0f;
+        world->current_level->conveyor_z_speed = 0.0f;
+    } else if (static_cast<instNUGCUTSCENE_s *>(factoryb_cut->instance)->current_frame > FactoryBConveyorStopFrame) {
+        world->current_level->conveyor_x_speed = FactoryBConveyorXSpeed;
+        world->current_level->conveyor_z_speed = FactoryBConveyorZSpeed;
+        PlaySfx("FacB_BeltLp", NULL);
+    } else {
+        world->current_level->conveyor_x_speed = 0.0f;
+        world->current_level->conveyor_z_speed = 0.0f;
+    }
+
+    f32 phase = NuFmod(GameTimer.time_elapsed, 25.0f) / 25.0f;
+    u16 mask;
+    if (phase < 0.25f)
+        mask = 0x70;
+    else if (phase < 0.5f)
+        mask = 0x15;
+    else if (phase < 0.75f)
+        mask = 0xa8;
+    else
+        mask = 0x0e;
+
+    for (i32 i = 0; i < 8; ++i) {
+        if (LevGizObst[i] != NULL) {
+            if (mask & (1 << i)) {
+                if (LevGizObst[i]->anim_set->state != GAMEANIMSET_STATE_AT_END)
+                    GizObstacle_PlayForwards(LevGizObst[i]);
+            } else {
+                if (LevGizObst[i]->anim_set->state != GAMEANIMSET_STATE_AT_START)
+                    GizObstacle_PlayBackwards(LevGizObst[i]);
+            }
+        }
+    }
 }
 
 void FactoryB_Draw(WORLDINFO_s *) {
@@ -2249,29 +2312,52 @@ void BonusGunshipB_Reset(WORLDINFO_s *) {
 }
 
 void BonusGunshipB_Update(WORLDINFO_s *world) {
-    if (netclient != 0) {
-        LevFlag.progress = bonusgunshipb_netpacket->state;
-        LevFlag.exit = bonusgunshipb_netpacket->sub;
-        MiscTime = bonusgunshipb_netpacket->time;
-    } else {
+    if (netclient == 0) {
         if (gunship_player_dead == 0 && ((Player[0] != NULL && Player[0]->apiobj.field_0x287 != 0) ||
                                          (Player[1] != NULL && Player[1]->apiobj.field_0x287 != 0))) {
             gunship_player_dead = 1;
-            ResetLevel(world, "bonus_gunship", 1);
+            ResetLevel(world, "ep2_bonus_gunshipcavalry_explode", 1);
+        }
+
+        if (LevFlag.progress == GUNSHIP_INACTIVE) {
+            f32 delay = 15.0f;
+            if (LevDeaths > 0)
+                delay = MIN(30.0f, LevDeaths * 3.0f + 15.0f);
+            if (GameTimer.time_elapsed >= delay) {
+                LevFlag.progress = GUNSHIP_ACTIVE;
+                if (LevGizObst[0] != NULL)
+                    LevGizObst[0]->runtime_flags |= GIZOBSTACLE_RUNTIME_FLAG_AI_ACTIVE;
+                MiscTime = 45.0f;
+                TimerScale = 1.0f;
+                TimerAlpha = 0.0f;
+            }
+        } else if (LevFlag.progress == GUNSHIP_ACTIVE) {
+            // The original calls NuFmod here and discards its return value.
+            NuFmod(MiscTime, 5.0f);
+            f32 previous_time = MiscTime;
+            MiscTime -= FRAMETIME;
+            if (MiscTime <= 0.0f) {
+                if (Player[0] != NULL && Player[0]->apiobj.player_controlled)
+                    LoseCoins(Player[0], 1);
+                if (Player[1] != NULL && Player[1]->apiobj.player_controlled)
+                    LoseCoins(Player[1], 1);
+                if (gunship_player_dead == 0) {
+                    gunship_player_dead = 1;
+                    ResetLevel(world, "ep2_bonus_gunshipcavalry_explode", 1);
+                }
+                LevFlag.progress = GUNSHIP_WON;
+            } else if (MiscTime > 0.0f && static_cast<i32>(MiscTime) != static_cast<i32>(previous_time)) {
+                TimerScale = 1.25f;
+                TickTockSfx();
+            }
         }
         bonusgunshipb_netpacket->state = LevFlag.progress;
         bonusgunshipb_netpacket->sub = LevFlag.exit;
         bonusgunshipb_netpacket->time = MiscTime;
-    }
-    if (LevFlag.progress == 0) {
-        if (LevDeaths > 0) {
-            float x = (float)LevDeaths * LevDeaths + 1.0f;
-            if (GameTimer.time_elapsed >= x)
-                LevFlag.progress = GUNSHIP_ACTIVE;
-        }
-    } else if (LevFlag.progress == GUNSHIP_ACTIVE) {
-        if (MiscTime > 5.0f)
-            MiscTime = 5.0f;
+    } else {
+        LevFlag.progress = bonusgunshipb_netpacket->state;
+        LevFlag.exit = bonusgunshipb_netpacket->sub;
+        MiscTime = bonusgunshipb_netpacket->time;
     }
 }
 
@@ -2307,13 +2393,12 @@ void DookuC_Init(WORLDINFO_s *world) {
 }
 
 void DookuC_Reset(WORLDINFO_s *world) {
-    dooku_c = 0;
-    dooku_state = {};
+    memset(&dooku_c, 0, sizeof(dooku_c));
     if (netclient == 0) {
-        dooku_c = SetGizAIMessage(gizaimessagesys, "dooku_total", 0.0f, NULL);
-        dooku_state.hit_message = (i32)(usize)CheckGizAIMessage(gizaimessagesys, "dooku_hits", NULL);
+        dooku_c.total_message = SetGizAIMessage(gizaimessagesys, "DookuFight", 0.0f, NULL);
+        dooku_c.hit_message = CheckGizAIMessage(gizaimessagesys, "ShowHearts", NULL);
     }
-    NuSpecialFind(world->current_gscn, &dooku_state.node, "dooku_node", 1);
+    NuSpecialFind(world->current_gscn, &dooku_c.node, "dooku_force", 1);
 }
 
 void DookuC_Update(WORLDINFO_s *world) {
@@ -2324,13 +2409,13 @@ void DookuC_Update(WORLDINFO_s *world) {
             KillBossNewLevel((i32)(i16)id_COUNTDOOKU, 0, 0.0f, DOOKUOUTRO_LDATA->idx);
         }
     }
-    DrawForceBackEffect(&dooku_state.node);
+    DrawForceBackEffect(&dooku_c.node);
 }
 
 void DookuC_DrawPanel(WORLDINFO_s *) {
     if (netclient != 0)
         return;
     GameObject_s *obj = (GameObject_s *)FindGameObject((i32)(i16)id_COUNTDOOKU, 1, 1, 1, 0);
-    if (obj != NULL && dooku_c != 0 && obj->apiobj.anim_packet.time_secondary == 1.0f)
+    if (obj != NULL && dooku_c.total_message != NULL && obj->apiobj.anim_packet.time_secondary == 1.0f)
         DrawBossHitPoints(obj);
 }

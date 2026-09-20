@@ -679,7 +679,7 @@ i32 Bolt_HitGameObject(BOLT_s *bolt, GameObject_s *object, NUVEC *points, NUVEC 
     return 1;
 }
 
-void KaminoE_CheckPlatHit(BOLT_s *);
+i32 KaminoE_CheckPlatHit(BOLT_s *);
 
 i32 Bolt_HitPlatFn_LSW(BOLT_s *bolt) {
     if (WORLD->current_level == KAMINOE_LDATA)

@@ -249,29 +249,31 @@ static void *CreatePodRaceMine(nuvec_s *pos) {
     return NULL;
 }
 
-void Mine_Kill(PART_s *part, i32 mode) {
-    STUBBED();
-    (void)part;
-    (void)mode;
+void Mine_Kill(PART_s *part, i32) {
+    if (minesys.mine_debris != -1)
+        AddGameDebris(WORLD->debris_sys, minesys.mine_debris, &part->position);
+    if (minesys.mine_part != -1)
+        AddFiniteShotPART(minesys.mine_part, &part->position, 1);
 }
 
-// Original: _ZL22PodSprint_InitAISplineP11WORLDINFO_sP20PODSPRINT_AISPLINE_sPc
-// (inlined into its callers there; kept as a helper here).
 static void PodSprint_InitAISpline(WORLDINFO_s *world, PODSPRINT_AISPLINE_s *ai, char *name) {
-    NUGSPLINE *spl = ai->spline;
-    i32 count = 0;
-    for (i32 esi = 0; esi < (i32)(i16)spl->length - 1; esi++) {
-        if (count > 5)
-            break;
-        NUVEC *pts = spl->pts;
-        NUVEC *pts2 = ((count & 1) ? podsprint.finish_line : podsprint.halfway)->pts;
-        if (XZLinesIntersect(&pts[esi], &pts[esi + 1], &pts2[0], &pts2[1], NULL, NULL)) {
-            ai->vals[count] = (u16)esi;
-            count++;
+    memset(ai, 0, sizeof(*ai));
+    ai->spline = NuSplineFind(world->current_gscn, name);
+    if (ai->spline != NULL && podsprint.finish_line != NULL && podsprint.halfway != NULL) {
+        i32 count = 0;
+        for (i32 i = 0; i < (i32)(i16)ai->spline->length - 1; i++) {
+            if (count > 5)
+                break;
+            NUVEC *pts = ai->spline->pts;
+            NUVEC *pts2 = ((count & 1) ? podsprint.finish_line : podsprint.halfway)->pts;
+            if (XZLinesIntersect(&pts[i], &pts[i + 1], &pts2[0], &pts2[1], NULL, NULL)) {
+                ai->vals[count] = (i16)i;
+                count++;
+            }
         }
+        if (ai->vals[5] == 0)
+            ai->vals[5] = ai->spline->length;
     }
-    if (ai->vals[5] == 0)
-        ai->vals[5] = spl->length;
 }
 
 // Original: _ZL22UpdatePacemakerDisplayP11WORLDINFO_s.isra.7.part.8 — callers
@@ -597,14 +599,13 @@ void ResetPodStuff() {
         fp = ((PODMODELDATA_s *)entry->model_data_b)->value;
     }
     if (fp != NULL && *fp > 0.0f) {
-        pod_animtime[0] = 1.0f;
-        pod_roll_target[0] = 0.0f;
-        pod_roll[0] = 0.0f;
-        pod_roll_target[1] = 0.0f;
-        pod_animtime[1] = 1.0f;
-        pod_roll[1] = 0.0f;
-        pod_animtime[0] = (float)qrand() * 1.5259021893143654e-05f * (*fp - 1.0f) + pod_animtime[0];
-        pod_animtime[1] = (float)qrand() * 1.5259021893143654e-05f * (*fp - 1.0f) + pod_animtime[1];
+        float duration = *fp;
+        for (i32 i = 0; i < 2; i++) {
+            pod_animtime[i] = 1.0f;
+            pod_roll_target[i] = 0.0f;
+            pod_roll[i] = 0.0f;
+            pod_animtime[i] += (float)qrand() * 1.5259021893143654e-05f * (duration - 1.0f);
+        }
     } else {
         pod_roll_target[0] = 0.0f;
         pod_roll_target[1] = 0.0f;
@@ -813,16 +814,32 @@ void Action_MushroomCollapse(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char 
     STUBBED();
 }
 
-void PodSeekMushCutSound() {
-    STUBBED();
+i32 PodSeekMushCutSound() {
+    if (WORLD->current_level == PODRACEB_LDATA && Lap == 2 &&
+        PodRace->mushroom_timer > 1.0f && mushroom_collapse != 0) {
+        float along = GameCam->sock_position.distance;
+        if (along > mushroom0_along - 15.0f && along <= mushroom0_along + 5.0f)
+            return 1;
+    }
+    return 0;
 }
 
-void PodSeekSubCutSound() {
-    STUBBED();
+i32 PodSeekSubCutSound() {
+    if (WORLD->current_level == PODRACEC_LDATA && Lap == 3) {
+        float along = GameCam->sock_position.distance;
+        if (along > 195.0f && PodRace->prev_lap_display - 2.8f + along - 195.0f > PodRace->mushroom_timer)
+            return 1;
+    }
+    return 0;
 }
 
-void PodSeekTuskanCutSound() {
-    STUBBED();
+i32 PodSeekTuskanCutSound() {
+    if (WORLD->current_level == PODRACEB_LDATA && Lap == 1) {
+        float along = GameCam->sock_position.distance;
+        if (along > 182.0f && PodRace->prev_lap_display - 2.8f + along - 182.0f > PodRace->mushroom_timer)
+            return 1;
+    }
+    return 0;
 }
 
 void PodRaceBUpdate(WORLDINFO_s *world) {
@@ -1184,13 +1201,8 @@ void PodSprintA_Init(WORLDINFO_s *world) {
     ps->min_speed_msg = CheckGizAIMessage(gizaimessagesys, "sebulba_min_speed", NULL);
     ps->speed_step_msg = CheckGizAIMessage(gizaimessagesys, "sebulba_speed_step", NULL);
 
-    ps->ai[0].spline = NuSplineFind(world->current_gscn, "ai_sebulba");
-    if (ps->ai[0].spline != NULL && ps->finish_line != NULL && ps->halfway != NULL)
-        PodSprint_InitAISpline(world, &ps->ai[0], "ai_sebulba");
-
-    ps->ai[1].spline = NuSplineFind(world->current_gscn, "ai_general");
-    if (ps->ai[1].spline != NULL && ps->finish_line != NULL && ps->halfway != NULL)
-        PodSprint_InitAISpline(world, &ps->ai[1], "ai_general");
+    PodSprint_InitAISpline(world, &ps->ai[0], "ai_sebulba");
+    PodSprint_InitAISpline(world, &ps->ai[1], "ai_general");
 
     nuhspecial_s *bigrocks = LevHSpecial;
     NuSpecialFind(world->current_gscn, &bigrocks[50], "bigrock_five", 1);

@@ -472,7 +472,21 @@ void Hub_Draw3D(WORLDINFO_s *world) {
 
 i32 Hub_InMenu() {
     const i32 menu = GetMenuID();
-    if (menu == 8 || menu == 12 || menu == 13 || menu == 14 || (menu >= 15 && menu <= 23)) {
+    if (menu == 20)
+        return 1;
+    if (menu == 13)
+        return 1;
+    if (menu == 21 || menu == 22)
+        return 1;
+    if (menu == 12)
+        return 1;
+    if (menu == 23)
+        return 1;
+    if (menu == 14)
+        return 1;
+    if (menu >= 15 && menu <= 19)
+        return 1;
+    if (menu == 8) {
         return 1;
     }
     return 0;
@@ -1380,29 +1394,11 @@ void Hub_DrawPanel(WORLDINFO_s *) {
 }
 
 i32 Hub_PanelBusy() {
-    if (hub_episode != -1) {
-        return 1;
-    }
-    if (hub_area != -1) {
-        return 1;
-    }
-    if (hub_minikitarea != -1) {
-        return 1;
-    }
-    if (hub_buildit != -1) {
+    if (hub_episode != -1 || hub_area != -1 || hub_minikitarea != -1 || hub_buildit != -1) {
         return 1;
     }
 
-    if (GetMenuID() == 20) {
-        return 1;
-    }
-    if (GetMenuID() == 21) {
-        return 1;
-    }
-    if (GetMenuID() == 22) {
-        return 1;
-    }
-    if (GetMenuID() == 23) {
+    if (GetMenuID() == 20 || GetMenuID() == 21 || GetMenuID() == 22 || GetMenuID() == 23) {
         return 1;
     }
     return 0;
@@ -1512,8 +1508,16 @@ i32 Hub_BonusBuildIt(GIZBUILDIT_s *buildit) {
     return 0;
 }
 
-void TurnEpisodeDoorLightsOn(i32) {
-    STUBBED();
+void TurnEpisodeDoorLightsOn(i32 episode) {
+    for (i32 i = 0; i < 9; ++i) {
+        if (HubEpisodeInfo[i].episode == episode) {
+            if (NuSpecialExistsFn(&HubEpisodeInfo[i].lock_on))
+                NuSpecialSetVisibility(&HubEpisodeInfo[i].lock_on, 1);
+            if (NuSpecialExistsFn(&HubEpisodeInfo[i].lock_off))
+                NuSpecialSetVisibility(&HubEpisodeInfo[i].lock_off, 0);
+            break;
+        }
+    }
 }
 
 #include "nu2api/nu3d/nurndr.h"
@@ -1729,7 +1733,7 @@ void Hub_DrawAreaStats(float, i32, i32) {
 }
 
 void Hub_DrawStarField() {
-    STUBBED();
+    GetMenuID();
 }
 
 void Hub_MakeModelList() {
@@ -2476,17 +2480,20 @@ static __used__ void Hub_UpdateSelectMode() {
     MenuSFX = GameAudio_GetSfxId(0x32);
 }
 
-static bool MenuAreaAllowsFreePlay(i32 area) {
-    return area >= 0 && area < AREACOUNT && (LOSTTEMPLE_ADATA == NULL || area != LOSTTEMPLE_ADATA->index) &&
-           FreePlayUnlocked() && (ADataList[area].flags & AREAFLAG_NO_FREEPLAY) == 0 && Game_AreaSave != NULL &&
-           Game_AreaSave[area].area_complete != 0;
-}
-
-void MenuInitSelectMode(MENU_s *menu) {
+void MenuInitSelectMode(MENU_s *) {
     const i32 area = LDataList[hub_new_level].area_index;
-    hub_selectmode = MenuAreaAllowsFreePlay(area) ? 1 : 0;
-    menu->selected_row = static_cast<i16>(hub_selectmode);
-    menu->selected_item = hub_selectmode;
+    if (LOSTTEMPLE_ADATA != NULL && LOSTTEMPLE_ADATA->index == area) {
+        hub_selectmode = 0;
+    } else {
+        bool unlocked = FreePlayUnlocked();
+        if (unlocked != 1 && area != -1)
+            unlocked = ADataList[area].episode_index == 0xff && (ADataList[area].flags & 0x4000) != 0;
+        if (unlocked && (ADataList[area].flags & AREAFLAG_NO_FREEPLAY) == 0 &&
+            Game.area_save[area].area_complete != 0)
+            hub_selectmode = 1;
+        else
+            hub_selectmode = 0;
+    }
     selectmodemode = 0;
 }
 
@@ -2494,20 +2501,48 @@ void MenuUpdateSelectMode(MENU_s *) {
     Hub_UpdateSelectMode();
 }
 
-void MenuDrawSelectMode(MENU_s *menu) {
-    const i32 area = LDataList[hub_new_level].area_index;
-    const bool free_play_available = MenuAreaAllowsFreePlay(area);
+extern f32 MainRenderTime;
+extern i16 tSELECT, tBACK, tSELECTING;
+static void Hub_DrawSelectModeMenu(i32 selected, f32 alpha);
 
-    if (area >= 0 && area < AREACOUNT && ADataList[area].name_id >= 0) {
-        NuStrCpy(MenuHeader, TTab[ADataList[area].name_id]);
+void MenuDrawSelectMode(MENU_s *) {
+    if (MenuStopDraw)
+        return;
+    if (selectmodemode >= 1 && selectmodemode <= 3) {
+        if (FadeSys.fade > 0.0f)
+            return;
+    } else if (selectmodemode == 4) {
+        if (pFadeInfo->fade > 0.0f)
+            return;
     }
+    f32 alpha = 1.0f;
+    if (selectmodemode >= 1 && selectmodemode <= 4) {
+        if (!(selectmodetime < 0.5f))
+            return;
+        alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((selectmodetime / selectmodeduration) * 16384.0f));
+        if (!(alpha > 0.0f))
+            return;
+    }
+    AREADATA *area = &ADataList[last_hub_area];
+    if (area->flags & 0x100)
+        Hub_DrawSuperBonusStats(area, alpha);
+    else if (area->flags & 4)
+        Hub_DrawBonusStats(alpha, -1, hub_bonusepisode, -1);
+    else
+        Hub_DrawAreaStats(alpha, last_hub_area, hub_selectmode);
 
-    GameDrawMenuEntry(menu, TTab[free_play_available ? tREPLAYSTORY : tSTORY]);
-    if (free_play_available) {
-        GameDrawMenuEntry(menu, TTab[tFREEPLAY]);
-    } else {
-        DrawMenuEntryEx(menu, TTab[tFREEPLAY], MenuA / 2);
+    const f32 icon_alpha = (MenuPacket.active_player[0] ? 1.0f : DROPINALPHA) * alpha;
+    DrawCharIcon(MenuPacket.player_model[0], -ICONX, STATSPOSY, 0.0f, ICONSIZE, 166, icon_alpha, icon_alpha, 1, NULL);
+    if (MainRenderTime <= 0.0f) {
+        Hub_DrawSelectModeMenu(1, alpha);
+    } else if (MainRenderTime < 1.0f) {
+        const f32 menu_alpha =
+            1.0f - NU_SIN_LUT(static_cast<i32>((1.0f - MainRenderTime) * 16384.0f + 16384.0f));
+        Hub_DrawSelectModeMenu(0, menu_alpha * alpha);
     }
+    if (MainRenderTime <= 0.0f && selectmodemode == 0 && alpha == 1.0f)
+        DrawPlayerIconPrompts(MenuPacket.active_player[0], tSELECT, 1.0f, -1, tBACK, -1, tSELECTING,
+                              MenuPacket.active_player[1], tSELECT, 1.0f, -1, tBACK, -1, tSELECTING);
 }
 
 extern AREADATA *E1CHARACTER_ADATA, *E2CHARACTER_ADATA, *E3CHARACTER_ADATA, *E4CHARACTER_ADATA, *E5CHARACTER_ADATA,
@@ -2711,7 +2746,7 @@ void Hint_SetHintFromId(i32, i32, i32);
 void Hint_Draw(i32);
 extern f32 text3d_width, text3d_height;
 extern i16 tCHALLENGE, tLOCKED;
-static __used__ void Hub_DrawSelectModeMenu(int selected, float alpha) {
+static void Hub_DrawSelectModeMenu(int selected, float alpha) {
     const i32 area = LDataList[hub_new_level].area_index;
     const i32 complete = Game.area_save[area].area_complete;
     const i32 lost_temple = LOSTTEMPLE_ADATA != NULL && area == LOSTTEMPLE_ADATA->index;
@@ -2793,8 +2828,25 @@ static __used__ void Hub_DrawSelectModeMenu(int selected, float alpha) {
     }
 }
 
-static __used__ void Hub_DrawSuperBonusStats(AREADATA_s *, float) {
-    STUBBED();
+extern i16 tBESTTIME;
+static void Hub_DrawSuperBonusStats(AREADATA_s *area, float alpha) {
+    const i32 opacity = static_cast<i32>(alpha * 128.0f);
+    char *title = "?";
+    if (area)
+        title = TTab[area->name_id];
+    SmartTextEx(title, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, HUB_EPISODESUBTITLESIZE,
+                HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE, 0, static_cast<u8>(HUB_EPISODER),
+                static_cast<u8>(HUB_EPISODEG), static_cast<u8>(HUB_EPISODEB), 1.7f, 1, NULL, 0, opacity);
+    if (area && Game.area_save[area->index].area_complete) {
+        char text[64];
+        SmartTextEx(TTab[tBESTTIME], 0.0f, HUB_EPISODETITLEY + 0.125f, 1.0f, HUB_EPISODETITLESIZE,
+                    HUB_EPISODETITLESIZE, HUB_EPISODETITLESIZE, 0, 191, 0, 127, 0.7f, 1, NULL, 0, opacity);
+        Text_MakeTime(Game.area_save[area->index].challenge_trial_time, 1, 1, 1, text);
+        Text3DEx(text, 0.0f, HUB_EPISODETITLEY, 1.0f, HUB_EPISODESUBTITLESIZE, HUB_EPISODESUBTITLESIZE,
+                 HUB_EPISODESUBTITLESIZE, 0, 255, 255, 255, static_cast<u8>(opacity));
+        if (GOLDBRICKFORSUPERBONUS)
+            Hub_DrawImportantBrick(211, 0.0f, HUB_EPISODETITLEY + 0.125f, alpha, -1, -1);
+    }
 }
 
 void WipeBackToHub() {

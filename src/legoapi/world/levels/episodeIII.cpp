@@ -15,9 +15,11 @@
 #include "legoapi/menus/core/panel.h"
 #include "legoapi/world/levels/levels.h"
 #include "legoapi/world/area.h"
+#include "legoapi/world/mission.h"
 #include "legoapi/world/world.h"
 #include "gameapi/ai/aisys/aisys.h"
 #include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nucore/nustring.h"
 
 extern i32 LevFlag[4];
 
@@ -27,27 +29,29 @@ extern "C" {
 #include "legoapi/render/core/render.h"
 #include "nu2api/nu3d/nutex.h"
 
+i32 Players_AveragePos(NUVEC *, SOCKPOSITION_s *);
+extern i16 id_PALPATINE;
+extern i16 id_WOOKIEE;
+
 static GIZAIMESSAGE_s *KashyyykA_msg_TotalWookies;
+static NUVEC TempleC_StreamStatusPos = {52.57f, 0.76f, -16.54f};
 static GIZAIMESSAGE_s *KashyyykA_msg_WookiesToRescue;
 static GameObject_s *Grievous_obj; // current Grievous boss object
-struct VADERAOBJECT_s {
-    u8 reserved_00[0x28];
-    i32 field_28;
-};
-
 struct VADERA_s {
     GIZAIMESSAGE_s *in_control_room_message;
     GIZAIMESSAGE_s *ceiling_collapse_message;
-    VADERAOBJECT_s *object;
+    GIZAIMESSAGE_s *timer_message;
     f32 timer;
     u16 count;
     i16 subtitle;
     GIZFORCE_s *forces[4];
-    u8 reserved_24[0x28 - 0x24];
+    AILOCATOR_s *big_jump_locator;
     i32 collapse_started;
     u8 reset_flag;
     u8 reserved_2d[0x03];
 };
+DECOMP_ASSERT(sizeof(VADERA_s) == 0x30, "VADERA_s size");
+DECOMP_ASSERT(offsetof(VADERA_s, big_jump_locator) == 0x24, "VADERA_s locator offset");
 
 static VADERA_s vader_a;
 static GIZAIMESSAGE_s *vader_b_complete_msg; // Vader B "complete" message handle
@@ -61,12 +65,13 @@ struct CRUISERCNETPACKET_s {
 };
 
 struct CRUISERC_s {
-    GameObject_s *count_dooku;
     GIZAIMESSAGE_s *dooku_fight;
+    GameObject_s *count_dooku;
     GIZAIMESSAGE_s *free_palpatine;
     GameObject_s *palpatine;
     AILOCATOR_s *palpatine_locator;
 };
+DECOMP_ASSERT(offsetof(CRUISERC_s, count_dooku) == 4, "CRUISERC_s Dooku offset");
 
 extern "C" {
     CRUISERCNETPACKET_s *crusiserc_netpacket = NULL;
@@ -151,11 +156,35 @@ void CruiserCReset(WORLDINFO_s *) {
 }
 
 void CruiserCUpdate(WORLDINFO_s *) {
-    STUBBED();
+    if (cruiser_c.free_palpatine == NULL)
+        cruiser_c.free_palpatine = CheckGizAIMessage(gizaimessagesys, "FreePalpatine", NULL);
+    if (cruiser_c.dooku_fight == NULL)
+        cruiser_c.dooku_fight = CheckGizAIMessage(gizaimessagesys, "DookuFight", NULL);
+    if (netclient != 0) {
+        cruiser_c.free_palpatine->value = crusiserc_netpacket->free_palpatine;
+        cruiser_c.dooku_fight->value = crusiserc_netpacket->dooku_fight;
+    }
+    if (cruiser_c.palpatine == NULL)
+        cruiser_c.palpatine = (GameObject_s *)FindGameObject((i32)(i16)id_PALPATINE, 0x400, 1, 1, 0);
+    if (cruiser_c.palpatine_locator == NULL)
+        cruiser_c.palpatine_locator = AIPathFindLocator(WORLD->ai_sys, "Palpatine");
+    if (cruiser_c.count_dooku == NULL)
+        cruiser_c.count_dooku = (GameObject_s *)FindGameObject((i32)(i16)id_COUNTDOOKU, 1, 1, 1, 0);
+    if (FreePlay == 0 && cruiser_c.palpatine != NULL && cruiser_c.palpatine_locator != NULL &&
+        cruiser_c.free_palpatine != NULL && cruiser_c.free_palpatine->value < 2.0f) {
+        cruiser_c.palpatine->apiobj.position = cruiser_c.palpatine_locator->position;
+        cruiser_c.palpatine->apiobj.field_0x276 = cruiser_c.palpatine_locator->direction;
+    }
 }
 
 void CruiserCPanel(WORLDINFO_s *) {
-    STUBBED();
+    if (netclient == 0) {
+        if (cruiser_c.count_dooku != NULL && cruiser_c.dooku_fight != NULL &&
+            cruiser_c.dooku_fight->value == 1.0f)
+            DrawBossHitPoints(cruiser_c.count_dooku);
+        else
+            DrawBossHitPoints(NULL);
+    }
 }
 
 void CruiserDInit(WORLDINFO_s *) {
@@ -257,7 +286,22 @@ void KashyyykD_Init(WORLDINFO_s *) {
 }
 
 void KashyyykA_Panel(WORLDINFO_s *) {
-    STUBBED();
+    if (Mission_Active(MissionSys) != NULL)
+        return;
+    i16 characters[3] = {id_WOOKIEE, id_WOOKIEE, id_WOOKIEE};
+    char rescued[3] = {1, 1, 1};
+    if (KashyyykA_msg_TotalWookies != NULL && KashyyykA_msg_TotalWookies->value > 0.0f &&
+        KashyyykA_msg_WookiesToRescue != NULL && KashyyykA_msg_WookiesToRescue->value > 0.0f) {
+        i32 remaining = (i32)KashyyykA_msg_WookiesToRescue->value;
+        if (remaining > 3)
+            remaining = 3;
+        for (i32 i = 0; i < remaining; ++i)
+            rescued[i] = 0;
+        i32 total = (i32)KashyyykA_msg_TotalWookies->value;
+        if (total > 3)
+            total = 3;
+        DrawMeleeTargets(characters, rescued, NULL, total);
+    }
 }
 
 void KashyyykA_Reset(WORLDINFO_s *) {
@@ -310,20 +354,52 @@ void TempleA_Init(WORLDINFO_s *world) {
         b->field_0xa0 |= 2;
 }
 
-void TempleC_Init(WORLDINFO_s *) {
-    STUBBED();
+void TempleC_Init(WORLDINFO_s *world) {
+    char *force_names[10] = {"force8", "force10", "force5", "force4", "force3",
+                             "force2", "force1", "force23", "force21", "force19"};
+    for (i32 i = 0; i < 10; ++i) {
+        GIZFORCE_s *force = GizForces_FindForce(world, force_names[i]);
+        if (force != NULL && (force->config_flags & 0x400) != 0) {
+            for (GAMEANIMOBJ_s *object = force->anim_set->objects; object != NULL; object = object->next) {
+                if ((object->flags & 1) == 0)
+                    object->current_frame = 0.5f;
+            }
+        }
+    }
+    GIZMOBLOWUP_s *blowup;
+    if ((blowup = GizmoBlowUp_FindByName(world, "thermo_box11")) != NULL)
+        blowup->field_0xa0 |= 2;
+    if ((blowup = GizmoBlowUp_FindByName(world, "thermo_box21")) != NULL)
+        blowup->field_0xa0 |= 2;
+    if ((blowup = GizmoBlowUp_FindByName(world, "thermo_box31")) != NULL)
+        blowup->field_0xa0 |= 2;
+    if ((blowup = GizmoBlowUp_FindByName(world, "Thermo1")) != NULL)
+        blowup->field_0xa0 |= 2;
 }
 
 void TempleC_AlwaysUpdate(WORLDINFO_s *) {
-    STUBBED();
+    NUVEC position;
+    if (TEMPLESTATUS_LDATA != NULL && Players_AveragePos(&position, NULL) &&
+        NuVecXZDistSqr(&position, &TempleC_StreamStatusPos, NULL) < 100.0f)
+        other_level_override = TEMPLESTATUS_LDATA->idx;
 }
 
 // ===========================================================================
 // Vader (Vader_A / Vader_B / Vader_C)
 // ===========================================================================
 
-void VaderA_Init(WORLDINFO_s *) {
-    STUBBED();
+void *vadera_netpacket;
+
+void VaderA_Init(WORLDINFO_s *world) {
+    memset(&vader_a, 0, sizeof(vader_a));
+    vadera_netpacket = SetLevelHack(8);
+    vader_a.big_jump_locator = AIPathFindLocator(world->ai_sys, "Bigjump_0");
+    vader_a.in_control_room_message = SetGizAIMessage(gizaimessagesys, "InControlRoom", 0.0f, NULL);
+    vader_a.ceiling_collapse_message = SetGizAIMessage(gizaimessagesys, "ceiling_collapse", 0.0f, NULL);
+    vader_a.timer_message = SetGizAIMessage(gizaimessagesys, "timer", 0.0f, NULL);
+    GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, "LozTheTosser1");
+    if (blowup != NULL)
+        blowup->field_0x124 = 1;
 }
 
 void VaderB_Init(WORLDINFO_s *) {
@@ -356,8 +432,8 @@ void VaderA_Reset(WORLDINFO_s *world) {
         VaderA_StartCollapseStage(world);
     }
 
-    if (vader_a.object != NULL) {
-        vader_a.object->field_28 = 0;
+    if (vader_a.timer_message != NULL) {
+        vader_a.timer_message->value = 0.0f;
     }
 
     vader_a.collapse_started = 1;
@@ -379,7 +455,17 @@ void VaderA_Update(WORLDINFO_s *) {
 }
 
 void VaderB_Update(WORLDINFO_s *) {
-    STUBBED();
+    if (netclient == 0 && vader_b_complete_msg != NULL && vader_b_complete_msg->value == 1.0f &&
+        VADERB_LDATA != NULL)
+        GoToNewLevel(VADERC_LDATA->idx);
+    if (vader_b_playersDead == 0 &&
+        ((Player[0] != NULL && Player[0]->apiobj.field_0x287 != 0 &&
+          (Player[0]->apiobj.field_0x1f4 & 0x40000) == 0) ||
+         (Player[1] != NULL && Player[1]->apiobj.field_0x287 != 0 &&
+          (Player[1]->apiobj.field_0x1f4 & 0x40000) == 0))) {
+        vader_b_playersDead = 1;
+        ResetLevel(NULL, NULL, 1);
+    }
 }
 
 void VaderC_Update(WORLDINFO_s *) {
@@ -400,11 +486,23 @@ void VaderB_DrawPanel(WORLDINFO_s *) {
 }
 
 void VaderC_DrawPanel(WORLDINFO_s *) {
-    STUBBED();
+    if (netclient == 0 && vader_c.final_fight_message != NULL && vader_c.final_fight_message->value == 1.0f) {
+        if (player2 != NULL) {
+            DrawBossHitPoints(NULL);
+        } else {
+            GameObject_s *opponent = Player[0];
+            if (opponent == player)
+                opponent = Player[1];
+            if (opponent != NULL)
+                DrawBossHitPoints(opponent);
+        }
+    }
 }
 
-void VaderA_GoneThroughDoor(WORLDINFO_s *, DOOR_s *door) {
-    if (netclient == 0 && door != NULL)
+void VaderA_GoneThroughDoor(WORLDINFO_s *world, DOOR_s *door) {
+    if (netclient == 0 && vader_a.count == 0)
+        VaderA_StartCollapseStage(world);
+    if (door != NULL && NuStrICmp(door->name, "door_control") == 0)
         door->active = 1;
 }
 

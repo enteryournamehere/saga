@@ -140,6 +140,7 @@ void Players_InitPositions(struct WORLDINFO_s *world);
 void PlayerItemTypes_Reset(struct WORLDINFO_s *world);
 
 void Players_Init(void);
+i32 Players_AveragePos(NUVEC *position, SOCKPOSITION_s *socket_position);
 i32 MakePlayerList(i32 count);
 
 // ---- Player/gameobject helpers (defined in players.cpp) ----

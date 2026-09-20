@@ -33,6 +33,7 @@
 #include "legoapi/characters/motion.h"
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/characters/motion.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/world/levels/levels.h"
 #include "nu2api/numath/numtx.h"
@@ -199,7 +200,15 @@ extern i16 temp_xrot;
 extern i16 temp_zrot;
 
 // Forward declarations for local (static) part/gizmo helper stubs.
-struct CUSTOMPIECEANIM;
+struct CUSTOMPIECEANIM {
+    f32 duration;
+    f32 elapsed;
+    f32 hold_time;
+    u16 start_angle;
+    u16 target_angle;
+    u16 current_angle;
+};
+DECOMP_ASSERT(offsetof(CUSTOMPIECEANIM, current_angle) == 0x10, "custom piece current angle offset");
 struct spacelevel_s;
 struct quickboltinfo;
 
@@ -745,12 +754,45 @@ static __used__ i32 PartKill_DrawCreature(PART_s *) {
     return false;
 }
 
-static __used__ void PartMove_VehicleHeart(PART_s *, f32) {
-    STUBBED();
+static __used__ void PartMove_VehicleHeart(PART_s *part, f32) {
+    GameObject_s *recipient = part->recipient;
+    f32 progress = 1.0f - part->field_100;
+    NUVEC start;
+    f32 height;
+    if (PODRACE_ADATA != NULL && WORLD->area == PODRACE_ADATA) {
+        NuVecAdd(&start, &recipient->apiobj.position, &part->initial_position);
+        height = 2.0f;
+    } else {
+        start = part->initial_position;
+        height = 3.0f;
+    }
+    part->position.x = start.x + (recipient->apiobj.position.x - start.x) * progress;
+    part->position.y = start.y + (recipient->apiobj.position.y - start.y) * progress +
+                       NU_SIN_LUT(static_cast<i32>(progress * 32768.0f)) * height;
+    part->position.z = start.z + (recipient->apiobj.position.z - start.z) * progress;
 }
 
-static __used__ void PartMove_VehiclePickup(PART_s *, f32) {
-    STUBBED();
+static __used__ void PartMove_VehiclePickup(PART_s *part, f32) {
+    f32 gain;
+    if (part->field_104 == 0.0f) {
+        gain = 0.0f;
+    } else if (part->scale_time != 0.0f) {
+        gain = 1.0f - part->scale_time / part->field_104;
+    } else {
+        gain = 1.0f;
+    }
+    if (gain <= 0.0f) {
+        part->active |= 2;
+        if (part->stop_callback != NULL)
+            part->stop_callback(part);
+        return;
+    }
+    GameObject_s *object = FindNearestGameObject(&part->position, NULL, 0, 0.0f, 0.0f, -1, -1, 99, NULL, 0, NULL, false);
+    if (object != NULL)
+        part->velocity.y = SeekValF(part->velocity.y, (object->apiobj.position.y - part->position.y) * 3.0f, 3.0f);
+    part->position.x += part->velocity.x * gain * FRAMETIME;
+    part->position.y += part->velocity.y * gain * FRAMETIME;
+    part->position.z += part->velocity.z * gain * FRAMETIME;
 }
 
 static __used__ void UpdateAnimTimer(CHARACTERMODEL_s *, ANIMPACKET_s *, i16, f32, f32, f32, i32, char *, i32, f32) {
@@ -760,8 +802,27 @@ static __used__ void PartKill_EjectedCreature(PART_s *, i32) {
     STUBBED();
 }
 
-static __used__ void UpdateCustomPieceAnim(CUSTOMPIECEANIM *, u16, u16) {
-    STUBBED();
+static __used__ void UpdateCustomPieceAnim(CUSTOMPIECEANIM *anim, u16 minimum, u16 maximum) {
+    if (anim->duration > anim->elapsed) {
+        anim->elapsed += FRAMETIME;
+        if (anim->elapsed >= anim->duration) {
+            anim->elapsed = anim->duration;
+            anim->hold_time = static_cast<f32>(qrand()) / 65536.0f * 0.5f + 0.5f;
+        }
+        i32 difference = RotDiff(anim->start_angle, anim->target_angle);
+        f32 blend = 1.0f - (NU_SIN_LUT(static_cast<i32>(anim->elapsed / anim->duration * 32768.0f + 16384.0f)) + 1.0f) * 0.5f;
+        anim->current_angle = static_cast<i32>(anim->start_angle + static_cast<f32>(difference) * blend);
+    } else {
+        anim->hold_time -= FRAMETIME;
+        if (anim->hold_time <= 0.0f) {
+            anim->start_angle = anim->current_angle;
+            i32 difference = RotDiff(minimum, maximum);
+            anim->target_angle = static_cast<i32>(minimum + static_cast<f32>(difference) *
+                                                 (static_cast<f32>(qrand()) / 65536.0f));
+            anim->elapsed = 0.0f;
+            anim->duration = static_cast<f32>(qrand()) / 65536.0f + 1.0f;
+        }
+    }
 }
 
 extern "C" {
@@ -2489,8 +2550,26 @@ void PartTimeSlip() {
     partglobaltime -= 800.0f;
 }
 
-extern "C" void HitParts(void) {
-    STUBBED();
+extern "C" PART_s *HitParts(GameObject_s *owner, NUVEC *positions, i32 count, f32 radius,
+                             NUVEC *minimum, NUVEC *maximum, u32 flags) {
+    PART_s *part = Part;
+    for (i32 i = 0; i < MAXPARTS; ++i, ++part) {
+        if ((part->active & 1) == 0 || part->owner == owner || (part->flags & flags) == 0)
+            continue;
+        if (part->bounds_min.x > maximum->x || minimum->x > part->bounds_max.x ||
+            part->bounds_min.z > maximum->z || minimum->z > part->bounds_max.z ||
+            part->bounds_min.y > maximum->y || minimum->y > part->bounds_max.y)
+            continue;
+        for (i32 j = count - 1; j >= 0; --j) {
+            NUVEC difference;
+            NuVecSub(&difference, &positions[j], &part->position);
+            f32 distance = difference.x * difference.x + difference.y * difference.y + difference.z * difference.z;
+            f32 combined_radius = radius + part->target_radius;
+            if (distance <= combined_radius * combined_radius)
+                return part;
+        }
+    }
+    return NULL;
 }
 
 static i32 PDEBCOUNT;
@@ -2972,8 +3051,11 @@ PART_s *FindIncomingPart(void *owner, NUVEC *position, f32 radius, u32 flags, f3
     return nearest;
 }
 
-void InstantKillParts(GameObject_s *, i32, float) {
-    STUBBED();
+void InstantKillParts(GameObject_s *object, i32 mode, float scale) {
+    i32 variant = -1;
+    if (object->id == id_BODYGUARD)
+        variant = object->current_hp <= 1 ? 4 : -1;
+    KillParts(object, -1, variant, mode, scale, 0, NULL);
 }
 
 void edpartDestroy(i32 index) {

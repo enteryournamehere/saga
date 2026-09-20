@@ -614,6 +614,8 @@ extern EdRegistry theRegistry;
 
 static_assert(sizeof(void *) != 4 || sizeof(EdClass) == 0x18, "EdClass 32-bit size");
 static_assert(sizeof(void *) != 4 || sizeof(EdType) == 0xc, "EdType 32-bit size");
+static_assert(sizeof(void *) != 4 || offsetof(EdType, serialise) == 0x8,
+              "EdType::serialise 32-bit offset");
 static_assert(sizeof(void *) != 4 || sizeof(EdMember) == 0x8, "EdMember 32-bit size");
 static_assert(sizeof(void *) != 4 || sizeof(EdRegistry) == 0x44, "EdRegistry 32-bit size");
 static_assert(sizeof(void *) != 4 || sizeof(EdObjectNotifier) == 4, "EdObjectNotifier 32-bit size");

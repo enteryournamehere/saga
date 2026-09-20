@@ -130,8 +130,8 @@ struct NetReplicator {
 
     NetReplicator(i32, float, float);
     virtual bool AllowPush(EdClass const *, void const *, ReplicatorData &, i32, i32) = 0;
-    virtual void SerialiseObject(EdStream &, NetPeer *, EdClass const *, void *, ReplicatorData &, i16 *);
-    virtual void DoPrediction(EdClass const *, void *, ReplicatorData &, i32);
+    virtual i32 SerialiseObject(EdStream &, NetPeer *, EdClass const *, void *, ReplicatorData &, i16 *);
+    virtual i32 DoPrediction(EdClass const *, void *, ReplicatorData &, i32);
 };
 struct NetChangedReplicator : NetReplicator {
     static i16 mTableInited;
@@ -299,10 +299,10 @@ struct NetPredictor : NetReplicator {
     bool AllowPush(EdClass const *, void const *, ReplicatorData &, i32, i32) override;
     void CheckPredictionError(EdClass const *, void *, float *, float *, i32);
     void DoPrediction(EdClass const *, void *, ReplicatorData &, NetPredictor::PredictorTime *, i32);
-    void DoPrediction(EdClass const *, void *, ReplicatorData &, i32) override;
+    i32 DoPrediction(EdClass const *, void *, ReplicatorData &, i32) override;
     void SerialiseObject(EdStream &, NetPeer *, EdClass const *, void *, ReplicatorData &,
                          NetPredictor::PredictorTime *, i16 *);
-    void SerialiseObject(EdStream &, NetPeer *, EdClass const *, void *, ReplicatorData &, i16 *) override;
+    i32 SerialiseObject(EdStream &, NetPeer *, EdClass const *, void *, ReplicatorData &, i16 *) override;
     void StoreSampleData(EdClass const *, void *, NetPredictor::PredictorTime *, NetPredictor::PredictorData **,
                          float *, i32);
 };

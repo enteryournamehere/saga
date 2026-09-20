@@ -178,7 +178,45 @@ struct EdClass {
     void SerialiseObject(EdStream &, void *, EdClass *, EdRegistry *);
     u8 SerialiseObjectHeader(EdStream &, void *);
 };
+struct EdClassInterfaceVTable {
+    void (*destroy)(EdClassInterface *);
+    void (*delete_object)(EdClassInterface *);
+    void (*clear_level)(EdClassInterface *, i32);
+    void (*flush)(EdClassInterface *);
+    i32 (*get_num_objects)(EdClassInterface *);
+    void *(*get_next_object)(EdClassInterface *, void *);
+    void *(*get_next_filtered_object)(EdClassInterface *, void *, i32 (*)(void *));
+    void *(*create_object)(EdClassInterface *, void *, i32, i32);
+    void (*destroy_object)(EdClassInterface *, void *, i32);
+    void (*defunct_object)(EdClassInterface *, void *);
+    void (*revive_object)(EdClassInterface *, void *);
+    void (*set_object_guid)(EdClassInterface *, void *, i32);
+    i32 (*get_object_guid)(EdClassInterface *, void *);
+    i32 (*get_constructor_data)(EdClassInterface *, void *, void *, i32);
+    void (*construct)(EdClassInterface *, void *, void *);
+    void (*process)(EdClassInterface *, void *, EdInputContext &);
+    void (*render)(EdClassInterface *, void *, i32);
+    void (*enter_editor)(EdClassInterface *);
+    void (*exit_editor)(EdClassInterface *);
+    void (*enter_level)(EdClassInterface *);
+    void (*exit_level)(EdClassInterface *);
+    void (*update_lists)(EdClassInterface *, MemoryBuffer *, MemoryBuffer *);
+    void (*pre_load_initialisation)(EdClassInterface *, MemoryBuffer *, MemoryBuffer *);
+    void (*post_load_initialisation)(EdClassInterface *, MemoryBuffer *, MemoryBuffer *);
+    void (*pre_save_initialisation)(EdClassInterface *);
+    void (*post_save_initialisation)(EdClassInterface *);
+    void (*serialise_object)(EdClassInterface *, EdStream &, void *);
+    f32 (*distance_to_ray)(EdClassInterface *, VuVec &, VuVec &, void *, EdRef **);
+    f32 (*distance_to_point)(EdClassInterface *, VuVec &, void *, EdRef **);
+    void (*add_menu_items)(EdClassInterface *, eduimenu_s *);
+    void (*import)(EdClassInterface *);
+};
+DECOMP_ASSERT(offsetof(EdClassInterfaceVTable, get_next_object) == 0x14, "EdClassInterface next-object slot");
+DECOMP_ASSERT(offsetof(EdClassInterfaceVTable, serialise_object) == 0x68, "EdClassInterface serialise slot");
 struct EdClassInterface {
+    EdClassInterfaceVTable *vtable;
+    EdClass *object_class;
+
     void DistanceToObject(VuVec &, VuVec &, void *, EdRef **);
     void DistanceToObject(VuVec &, void *, EdRef **);
     void GetNextObject(void *, i32 (*)(void *));

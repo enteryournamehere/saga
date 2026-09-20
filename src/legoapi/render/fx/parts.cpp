@@ -168,7 +168,7 @@ extern "C" {
     void DebrisOrientation(i32, i16, i16);
     void DebrisOrientationMtx(i32, NUMTX *);
     void DebrisReflectionOrientation(i32, i16, i16, f32, f32);
-    void DebrisSetTrigger(i32, i16, i16, i16);
+    void DebrisSetTrigger(i32, i32, i32, f32);
     void DebrisEmitterOrientationMtx(i32, NUMTX *);
     i32 CreateScaledEffect(i32, f32);
     i32 NuCameraClipTestExtentsAxisAligned(NUVEC *, NUVEC *, f32);
@@ -654,7 +654,7 @@ extern "C" {
         DebrisEmitterOrientation(key_index, 0, 0, 0);
         DebrisOrientation(key_index, 0, 0);
         DebrisReflectionOrientation(key_index, 0, 0, 0, 0.9f);
-        DebrisSetTrigger(key_index, 0, -1, 0);
+        DebrisSetTrigger(key_index, 0, -1, 0.0f);
         if (newly_allocated) {
             AddDebrisEffectToStack(debkeydata + key_index);
         }

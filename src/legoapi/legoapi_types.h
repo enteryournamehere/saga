@@ -3106,10 +3106,7 @@ struct debkeydatatype_s {
     f32 sphere_next_time;
     i32 trigger_first;
     i32 trigger_second;
-    union {
-        i32 trigger_third;
-        f32 switch_variable;
-    };
+    f32 switch_variable;
     i16 reflection_x;
     i16 reflection_y;
     f32 collision_plane;
@@ -3143,6 +3140,7 @@ struct debkeydatatype_s {
     void *user_data;
 };
 DECOMP_ASSERT(sizeof(debkeydatatype_s) == 0x330, "debkeydatatype_s size");
+DECOMP_ASSERT(offsetof(debkeydatatype_s, switch_variable) == 0x2d8, "debris trigger variable offset");
 DECOMP_ASSERT(offsetof(debkeydatatype_s, user_data) == 0x32c, "debris user data offset");
 DECOMP_ASSERT(offsetof(debkeydatatype_s, process_spheres) == 0x1e8, "debris sphere array offset");
 DECOMP_ASSERT(offsetof(debkeydatatype_s, sphere_skip_count) == 0x2ca, "debris sphere skip offset");

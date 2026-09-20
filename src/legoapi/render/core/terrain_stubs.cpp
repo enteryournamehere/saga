@@ -1103,10 +1103,10 @@ extern "C" {
         }
     }
 
-    void DebrisSetTrigger(i32 handle, i32 first, i32 second, i32 third) {
+    void DebrisSetTrigger(i32 handle, i32 first, i32 second, f32 third) {
         if (handle != -1) {
             debkeydatatype_s &key = debkeydata[handle];
-            key.trigger_third = third;
+            key.switch_variable = third;
             key.trigger_first = first;
             key.trigger_second = second;
         }

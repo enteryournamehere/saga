@@ -97,6 +97,9 @@ extern "C" {
     extern f32 qfnt_height_scale;
     extern f32 nuqfnt_space_width;
     extern u32 NuQFntMode;
+    extern u32 NuQFntModeStack[16];
+    extern i32 NuQFntModeStackIndex;
+    extern NUQFNT *system_qfont;
 
     void NuQFntInit(VARIPTR *buf, VARIPTR buf_end);
 
@@ -127,7 +130,7 @@ extern "C" {
     void NuQFntMove(NUQFNT *font, f32 x, f32 y, f32 z);
     void NuQFntPrintW(NUQFNT *font, u16 *text);
     void NuQFntPrintU(NUQFNT *font, char *text);
-    void NuQFntPrintEx(NUQFNT *font, i32 x, i32 y, i32 alignment, const char *format, ...);
+    void NuQFntPrintEx(NUQFNT *font, i32 x, i32 y, i32 flags, const char *format, ...);
     void NuQFntPushPrintMode(u32 mode);
     void NuQFntPopPrintMode(void);
     f32 NuQFntHeightScale(void);
@@ -137,8 +140,8 @@ extern "C" {
     u32 NuQFntGetPrintMode(void);
     void NuQFntEncodeUnicodeString(NUQFNT *font, u16 *text);
     f32 NuQFntPrintLenV(NUQFNT *font, const char *format, va_list arguments);
-    void NuQFntWrite(void);
-    void NuQFntWriteUniversalFont(void);
+    void NuQFntWrite(char *path, VUFNT *font);
+    void NuQFntWriteUniversalFont(char *path, VUFNT *font, char *texture_path);
     void NuQFntSet2d(NUQFNT *font);
     void NuQFntSetScale2d(NUQFNT *font, f32 x_scale, f32 y_scale);
     void NuQFntSetPointSize(NUQFNT *font, f32 width, f32 height);
@@ -152,20 +155,20 @@ extern "C" {
 
     void NuFntInit(void);
     void NuFntSetFixedWidthNumerals(void);
-    void NuFntToUpper(void);
-    void NuFntToLower(void);
+    i32 NuFntToUpper(void);
+    i32 NuFntToLower(void);
     void NuFntSetPen(void);
     void NuFntSet(void);
     void NuFntScale(void);
-    void NuFntGetScreenHeight(void);
+    i32 NuFntGetScreenHeight(void);
     void NuFntPointSize(void);
     void NuFntMoveAbs(void);
     void NuFntMoveRel(void);
     void NuFntPos(void);
-    void NuFntPrintLenV(void);
-    void NuFntPrintLen(void);
-    void NuFntPrintV(void);
-    void NuFntPrint(void);
+    i32 NuFntPrintLenV(void);
+    i32 NuFntPrintLen(void);
+    i32 NuFntPrintV(void);
+    i32 NuFntPrint(void);
     void NuFntClose(void);
     void NuFntPrintEx(void);
     void *NuFntCreate(void);

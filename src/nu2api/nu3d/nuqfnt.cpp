@@ -1,5 +1,6 @@
 #include "nu2api/nu3d/nuqfnt.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "decomp.h"
@@ -452,6 +453,14 @@ u32 NuQFntMode;
 
 static i32 g_buttonsFont;
 
+DECOMP_ASSERT(sizeof(VUFNT) == 0x4c, "VUFNT size");
+DECOMP_ASSERT(offsetof(VUFNT, glyphs) == 0x34, "VUFNT glyphs offset");
+DECOMP_ASSERT(offsetof(VUFNT, unicode_map) == 0x38, "VUFNT Unicode map offset");
+DECOMP_ASSERT(offsetof(VUFNT, platform_data) == 0x48, "VUFNT platform data offset");
+DECOMP_ASSERT(sizeof(VUFNT_ANDROID) == 0x58, "VUFNT_ANDROID size");
+DECOMP_ASSERT(offsetof(VUFNT_ANDROID, x_scale) == 0x50, "VUFNT_ANDROID x scale offset");
+DECOMP_ASSERT(offsetof(VUFNT_ANDROID, y_scale) == 0x54, "VUFNT_ANDROID y scale offset");
+
 extern "C" void RemapAddr(void *new_base, void *old_base, void **address);
 
 VUFNT *NuQFntDuplicate(VUFNT *font, i32 flags, i32 render_plane, VARIPTR *buf, VARIPTR *buf_end) {
@@ -543,8 +552,8 @@ NUQFNT *NuQFntReadBuffer(VARIPTR *font, VARIPTR *buf, VARIPTR buf_end) {
     VARIPTR target;
     i32 texture_size;
     i32 relocation_table_end;
-    i32 relocation_count;
-    i32 i;
+    u32 relocation_count;
+    u32 i;
     i32 width;
     i32 height;
     u32 gl_texture;
@@ -563,17 +572,19 @@ NUQFNT *NuQFntReadBuffer(VARIPTR *font, VARIPTR *buf, VARIPTR buf_end) {
         i32 pointer;
         i32 target;
     };
-    Relocation *relocations = (Relocation *)__builtin_alloca(relocation_count * sizeof(Relocation));
-
-    for (i = 0; i < relocation_count; i++, relocation_entry.addr += 4) {
-        pointer.addr = relocation_entry.addr + *(i32 *)relocation_entry.void_ptr;
-        relocations[i].pointer = pointer.addr - base.addr;
-        if (*(i32 *)pointer.void_ptr != 0) {
-            target.addr = pointer.addr + *(i32 *)pointer.void_ptr;
-            relocations[i].target = target.addr - base.addr;
-            *(usize *)pointer.void_ptr = target.addr;
-        } else {
-            relocations[i].target = 0;
+    Relocation *relocations = NULL;
+    if (relocation_count != 0) {
+        relocations = (Relocation *)__builtin_alloca(relocation_count * sizeof(Relocation));
+        for (i = 0; i < relocation_count; i++, relocation_entry.addr += 4) {
+            pointer.addr = relocation_entry.addr + *(i32 *)relocation_entry.void_ptr;
+            relocations[i].pointer = pointer.addr - font->addr;
+            if (*(i32 *)pointer.void_ptr != 0) {
+                target.addr = pointer.addr + *(i32 *)pointer.void_ptr;
+                relocations[i].target = target.addr - font->addr;
+                *(usize *)pointer.void_ptr = target.addr;
+            } else {
+                relocations[i].target = 0;
+            }
         }
     }
 
@@ -620,8 +631,53 @@ NUQFNT *NuQFntReadBuffer(VARIPTR *font, VARIPTR *buf, VARIPTR buf_end) {
     return result;
 }
 
-NUQFNT *NuQFntLoadPtr(char *path, char *, i32, i32, VARIPTR *buf, VARIPTR *buf_end) {
-    return NuQFntRead(path, buf, *buf_end);
+NUQFNT *NuQFntLoadPtr(char *path, char *texture_path, i32, i32, VARIPTR *buf, VARIPTR *buf_end) {
+    VUFNT *font = static_cast<VUFNT *>(NuQFntRead(path, buf, *buf_end));
+    if (font != NULL)
+        return font;
+
+    VARIPTR saved_buffer = *buf;
+    char filename[1024];
+    buf->addr = ALIGN(buf->addr, 16);
+    sprintf(filename, "%s.qfn", path);
+    i32 size = NuFileLoadBuffer(filename, buf->void_ptr, buf_end->addr - buf->addr);
+    if (size != 0) {
+        VUFNT *loaded_font = static_cast<VUFNT *>(buf->void_ptr);
+        RemapAddr(loaded_font, NULL, reinterpret_cast<void **>(&loaded_font->glyphs));
+        RemapAddr(loaded_font, NULL, reinterpret_cast<void **>(&loaded_font->unicode_map));
+        buf->addr = ALIGN(buf->addr + size, 16);
+        loaded_font->platform_data = static_cast<VUFNT_ANDROID *>(buf->void_ptr);
+        buf->addr += sizeof(VUFNT_ANDROID);
+        loaded_font->color_abgr = &loaded_font->platform_data->colour;
+        loaded_font->x_scale = &loaded_font->platform_data->x_scale;
+        loaded_font->y_scale = &loaded_font->platform_data->y_scale;
+
+        if (texture_path != NULL)
+            strcpy(filename, texture_path);
+        else
+            strcpy(filename, path);
+        i32 texture_id = NuTexRead(filename, buf, *buf_end);
+        if (texture_id != 0) {
+            NUMTL *material = NuMtlCreate(1);
+            loaded_font->mtl = material;
+            if (material != NULL) {
+                material->diffuse_color.r = 1.0f;
+                material->diffuse_color.g = 1.0f;
+                material->diffuse_color.b = 1.0f;
+                material->opacity = 1.0f;
+                material->attribs.cull_mode = 2;
+                material->attribs.z_mode = 3;
+                material->attribs.unknown_2_4 = 1;
+                material->attribs.alpha_mode = NUMTL_ALPHA_MODE_ALPHA;
+                material->tex_id = texture_id;
+                NuMtlUpdate(material);
+                return loaded_font;
+            }
+            NuTexDestroy(texture_id);
+        }
+    }
+    *buf = saved_buffer;
+    return font;
 }
 
 void NuQFntSetSpaceWidth(NUQFNT *, f32 width) {
@@ -665,8 +721,8 @@ void NuQFntPrintW(NUQFNT *font, u16 *text) {
         NuQFntPrintRSW(NULL, font, text, NuQFntMode);
 }
 
-static u32 NuQFntModeStack[16];
-static i32 NuQFntModeStackIndex;
+u32 NuQFntModeStack[16];
+i32 NuQFntModeStackIndex;
 
 void NuQFntPushPrintMode(u32 mode) {
     if (NuQFntModeStackIndex < 16)
@@ -810,10 +866,12 @@ void NuQFntSetColourRS(RNDRSTREAM *, NUQFNT *font, u32 colour) {
 
 void NuQFntSetScaleRS(RNDRSTREAM *, NUQFNT *font, f32 x_scale, f32 y_scale) {
     VUFNT *vufnt = static_cast<VUFNT *>(font);
-    *vufnt->x_scale = x_scale;
+    f32 *y_scale_ptr = vufnt->y_scale;
+    f32 *x_scale_ptr = vufnt->x_scale;
+    *x_scale_ptr = x_scale;
     if ((NuQFntMode & 4) == 0)
         y_scale *= 0.5f;
-    *vufnt->y_scale = y_scale;
+    *y_scale_ptr = y_scale;
 }
 
 void NuQFntMoveRS(RNDRSTREAM *, NUQFNT *font, f32 x, f32 y, f32 z) {
@@ -843,22 +901,40 @@ f32 NuQFntPrintLenW(NUQFNT *font, u16 *text) {
         return 0.0f;
 
     VUFNT *vufnt = static_cast<VUFNT *>(font);
+    f32 x_scale = *vufnt->x_scale;
     f32 length = 0.0f;
-    for (; *text != 0; text++) {
-        u16 character = *text;
+    u16 character;
+    while ((character = *text++) != 0) {
         f32 width;
-        if (character == 0xffff) {
-            width = 0.0f;
-        } else if (character == 0x20) {
-            width = nuqfnt_space_width == 0.0f ? vufnt->glyphs[0x20].width : nuqfnt_space_width;
-        } else if (character >= 0x30 && character < 0x3a && (NuQFntMode & 1) != 0) {
-            width = vufnt->glyphs[NuQFntEncodeUnicodeChar(font, 0x30)].width;
-        } else {
-            width = vufnt->glyphs[character].width;
+        switch (character) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                if ((NuQFntMode & 1) != 0) {
+                    u16 zero = NuQFntEncodeUnicodeChar(font, '0');
+                    width = vufnt->glyphs[zero].width;
+                    break;
+                }
+            default:
+                width = vufnt->glyphs[character].width;
+                break;
+            case 0xffff:
+                width = 0.0f;
+                break;
+            case ' ':
+                width = nuqfnt_space_width == 0.0f ? vufnt->glyphs[' '].width : nuqfnt_space_width;
+                break;
         }
         length += width + vufnt->ic_gap;
     }
-    return length * qfnt_len_scale * *vufnt->x_scale;
+    return length * qfnt_len_scale * x_scale;
 }
 
 void NuQFntUTF8toQCode(NUQFNT *font, char *text, u16 *encoded) {
@@ -871,10 +947,10 @@ void NuQFntUTF8toQCode(NUQFNT *font, char *text, u16 *encoded) {
     while (*cursor != '\0') {
         NUWCHAR16 character;
         cursor = NuUnicodeCharFromUTF8(&character, cursor);
-        u16 qcode = NuQFntEncodeUnicodeChar(font, character);
-        if (qcode == 0xffff)
-            qcode = NuQFntEncodeUnicodeChar(font, '?');
-        *encoded++ = qcode;
+        *encoded = NuQFntEncodeUnicodeChar(font, character);
+        if (*encoded == 0xffff)
+            *encoded = NuQFntEncodeUnicodeChar(font, '?');
+        encoded++;
     }
     *encoded = 0;
 }
@@ -969,6 +1045,7 @@ static inline void NuQFntAdd3DVertex(f32 x, f32 y, f32 z, u32 colour, f32 u, f32
     vertex->y = y;
     vertex->z = z;
     g_NuPrim_StreamBufferPtr->addr += sizeof(NuQFntVertex);
+    g_NuPrim_VertexCount++;
 }
 
 void NuQFntPrintCharW(NUQFNT *font, u16 *text, u32 flags) {
@@ -989,7 +1066,6 @@ void NuQFntPrintCharW(NUQFNT *font, u16 *text, u32 flags) {
 
     f32 height = vufnt->height * *vufnt->y_scale;
     f32 space_width = (nuqfnt_space_width == 0.0f ? vufnt->space_width : nuqfnt_space_width) * *vufnt->x_scale;
-    u32 colour = platform->colour;
     bool is_3d = (flags & 4) != 0;
 
     NuPrimCSPos++;
@@ -999,6 +1075,7 @@ void NuQFntPrintCharW(NUQFNT *font, u16 *text, u32 flags) {
     else
         NuPrim2DBegin(4, 7, vufnt->mtl);
 
+    u32 colour = platform->colour;
     for (; *text != 0; text++) {
         u16 character = *text;
         VUFNTCHAR *glyph = &vufnt->glyphs[character];
@@ -1025,7 +1102,6 @@ void NuQFntPrintCharW(NUQFNT *font, u16 *text, u32 flags) {
                 NuQFntAdd3DVertex(right, y, z, colour, u1, v0);
                 NuQFntAdd3DVertex(left, y, z, colour, u0, v0);
                 NuQFntAdd3DVertex(left, top, z, colour, u0, v1);
-                g_NuPrim_VertexCount += 6;
             } else {
                 NuQFntVertex *vertex = reinterpret_cast<NuQFntVertex *>(g_NuPrim_StreamBufferPtr->void_ptr);
                 NuQFntSetVertexAttributes(vertex, colour, u0, v0);
@@ -1144,15 +1220,73 @@ f32 NuQFntBaseline(NUQFNT *font) {
     return 0.0f;
 }
 
-// Placeholder subset from the contiguous generic quick-font/legacy-font run.
 extern "C" {
 
-    void NuQFntWrite(void) {
-        STUBBED();
+    void NuQFntWrite(char *path, VUFNT *font) {
+        char text[256];
+        i32 i;
+        sprintf(text, "%s.qfn", path);
+        NUFILE file = NuFileOpen(text, NUFILE_WRITE);
+        if (file != 0) {
+            RemapAddr(NULL, font, reinterpret_cast<void **>(&font->glyphs));
+            RemapAddr(NULL, font, reinterpret_cast<void **>(&font->unicode_map));
+            NuFileWrite(file, font, font->size);
+            RemapAddr(font, NULL, reinterpret_cast<void **>(&font->glyphs));
+            RemapAddr(font, NULL, reinterpret_cast<void **>(&font->unicode_map));
+            NuFileClose(file);
+        }
+
+        sprintf(text, "%s.htm", path);
+        file = NuFileOpen(text, NUFILE_WRITE);
+        if (file != 0) {
+            sprintf(text, "<HTML><BODY><font face = courier><H2>Font name: %s</H2>\n", path);
+            NuFileWrite(file, text, strlen(text));
+            sprintf(text, "<P>Internal char list: (%d entries)\n<P>\n", font->glyph_count);
+            NuFileWrite(file, text, strlen(text));
+            for (i = 0; i < font->glyph_count; i++) {
+                sprintf(text, "%.3d ('%c'): u=%.3d v=%.3d w=%.3d<BR>\n", i, i < 32 ? 1 : i & 255,
+                        static_cast<i32>(font->glyphs[i].x), static_cast<i32>(font->glyphs[i].y),
+                        static_cast<i32>(font->glyphs[i].width));
+                NuFileWrite(file, text, strlen(text));
+            }
+            sprintf(text, "<P>Lookup table:\n<P>\n");
+            NuFileWrite(file, text, strlen(text));
+            for (i = 0; i < font->unicode_count; i++) {
+                sprintf(text, "%.4d ('%c'): char=%.3d<BR>\n", font->unicode_map[i].unicode,
+                        font->unicode_map[i].unicode & 255, font->unicode_map[i].index);
+                NuFileWrite(file, text, strlen(text));
+            }
+            sprintf(text, "<P></BODY></HTML>");
+            NuFileWrite(file, text, strlen(text));
+            NuFileClose(file);
+        }
     }
 
-    void NuQFntWriteUniversalFont(void) {
-        STUBBED();
+    void NuQFntWriteUniversalFont(char *path, VUFNT *font, char *texture_path) {
+        char filename[256];
+        char buffer[1024];
+        NUFILE file;
+        NUFILE texture_file;
+        i32 remaining;
+        i32 size;
+        sprintf(filename, "%s.ufn", path);
+        file = NuFileOpen(filename, NUFILE_WRITE);
+        texture_file = NuFileOpen(texture_path, NUFILE_READ);
+        if (file != 0 && texture_file != 0) {
+            RemapAddr(NULL, font, reinterpret_cast<void **>(&font->glyphs));
+            RemapAddr(NULL, font, reinterpret_cast<void **>(&font->unicode_map));
+            NuFileWrite(file, font, font->size);
+            RemapAddr(font, NULL, reinterpret_cast<void **>(&font->glyphs));
+            RemapAddr(font, NULL, reinterpret_cast<void **>(&font->unicode_map));
+            remaining = NuFileOpenSize(texture_file);
+            while (remaining != 0) {
+                size = NuFileRead(texture_file, buffer, remaining > 1024 ? 1024 : remaining);
+                NuFileWrite(file, buffer, size);
+                remaining -= size;
+            }
+            NuFileClose(texture_file);
+            NuFileClose(file);
+        }
     }
 
 } // extern "C"
@@ -1171,12 +1305,12 @@ extern "C" {
         STUBBED();
     }
 
-    void NuFntToUpper(void) {
-        STUBBED();
+    i32 NuFntToUpper(void) {
+        return 0x20;
     }
 
-    void NuFntToLower(void) {
-        STUBBED();
+    i32 NuFntToLower(void) {
+        return 0x20;
     }
 
     void NuFntSetPen(void) {
@@ -1211,8 +1345,8 @@ extern "C" {
         STUBBED();
     }
 
-    void NuFntGetScreenHeight(void) {
-        STUBBED();
+    i32 NuFntGetScreenHeight(void) {
+        return 1;
     }
 
     void NuFntPointSize(void) {
@@ -1231,12 +1365,12 @@ extern "C" {
         STUBBED();
     }
 
-    void NuFntPrintLenV(void) {
-        STUBBED();
+    i32 NuFntPrintLenV(void) {
+        return 1;
     }
 
-    void NuFntPrintLen(void) {
-        STUBBED();
+    i32 NuFntPrintLen(void) {
+        return 1;
     }
 
 } // extern "C"
@@ -1247,12 +1381,12 @@ void NuFntPrintChar(char) {
 
 extern "C" {
 
-    void NuFntPrintV(void) {
-        STUBBED();
+    i32 NuFntPrintV(void) {
+        return 1;
     }
 
-    void NuFntPrint(void) {
-        STUBBED();
+    i32 NuFntPrint(void) {
+        return 1;
     }
 
     void NuFntClose(void) {

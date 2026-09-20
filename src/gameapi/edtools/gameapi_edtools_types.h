@@ -172,21 +172,24 @@ struct EdBitControl {
     void cbSelectItem(eduimenu_s *, eduiitem_s *, u32);
 };
 struct EdClass {
-    u8 reserved_00[8];
-    EdMember *members;
-    u8 reserved_0c[0xc];
+    char *name;
+    i32 flags;
+    EdRef *members;
+    EdRef *last_member;
+    i32 member_count;
+    EdClassInterface *interface;
 
     void AddType(EdRef *);
     void CopyObject(void *, void *);
-    void FindMember(EdMember *, void *, i32, i32);
-    void FindObject(char *);
-    void FindTypeRef(char *, i32);
-    void FindTypeRef(i32, i32);
+    i32 FindMember(EdMember *, void *, i32, i32);
+    void *FindObject(char *);
+    EdRef *FindTypeRef(char *, i32);
+    EdRef *FindTypeRef(i32, i32);
     void GetStreamClasses(EdStream &, i32 *, i32 &, i32);
     void Serialise(EdStream &, i32 *);
     void SerialiseObject(EdStream &, void *);
     void SerialiseObject(EdStream &, void *, EdClass *, EdRegistry *);
-    void SerialiseObjectHeader(EdStream &, void *);
+    u8 SerialiseObjectHeader(EdStream &, void *);
 };
 struct EdClassInterface {
     void DistanceToObject(VuVec &, VuVec &, void *, EdRef **);

@@ -94,6 +94,7 @@ static NUVEC edpart_entry_position;
 extern "C" {
     extern void *ed_fnt;
     extern u32 edblack[4];
+    extern u32 edgrey[4];
     extern eduimenu_s *edpart_sscale_menu;
     extern eduimenu_s *edpart_cutoff_menu;
     extern eduimenu_s *edpart_emittime_menu;
@@ -154,6 +155,23 @@ static void edpartSetSwitchId(eduimenu_s *, eduiitem_s *, u32);
 static void edpartCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
 static void edpartCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
 static void edpartCancelSoundControlMenu(eduimenu_s *, eduimenu_s *);
+static void edpartCancelDataMenu(eduimenu_s *, eduimenu_s *);
+static void edpartCancelEmitMenu(eduimenu_s *, eduimenu_s *);
+static void edpartCancelDebrisSettingsMenu(eduimenu_s *, eduimenu_s *);
+static void edpartChangeNameMenu(eduimenu_s *, eduiitem_s *, u32);
+static void edpartDeleteType(eduimenu_s *, eduiitem_s *, u32);
+static void edpartMoveList(eduimenu_s *, eduiitem_s *, u32);
+static void edpartFileSaveEffectsGeneral(eduimenu_s *, eduiitem_s *, u32);
+static void edpartFileSaveEffectsLevel(eduimenu_s *, eduiitem_s *, u32);
+static void edpartFileSaveEffects(eduimenu_s *, eduiitem_s *, u32);
+static void edpartFileLoadEffects(eduimenu_s *, eduiitem_s *, u32);
+static void edpartEmitVelMenu(eduimenu_s *, eduiitem_s *, u32);
+static void edpartGravMenu(eduimenu_s *, eduiitem_s *, u32);
+static void edpartVarStartMenu(eduimenu_s *, eduiitem_s *, u32);
+static void edpartVarEmitMenu(eduimenu_s *, eduiitem_s *, u32);
+static void edpartChangeGenRateMenu(eduimenu_s *, eduiitem_s *, u32);
+static void edpartEmitTimeMenu(eduimenu_s *, eduiitem_s *, u32);
+static void edpartCutOffMenu(eduimenu_s *, eduiitem_s *, u32);
 
 extern "C" {
     i32 edpart_which_scene = 1;
@@ -279,11 +297,68 @@ static void edpartCopyType(eduimenu_s *menu, eduiitem_s *, u32) {
     if (menu->callback)
         menu->callback(menu, parent);
 }
-static void edpartDataMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartDataMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    edpart_data_menu = eduiMenuCreate(70, 70, 250, 250, ed_fnt, edpartCancelDataMenu, "Data Menu");
+    if (edpart_data_menu != NULL) {
+        if (edpart_create_type != -1)
+            eduiMenuAddItem(edpart_data_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartChangeNameMenu, "Type Name..."));
+        else
+            eduiMenuAddItem(edpart_data_menu,
+                           eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Type Name..."));
+        if (edpart_create_type != -1) {
+            eduiMenuAddItem(edpart_data_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartCopyType, "Copy Type"));
+            eduiMenuAddItem(edpart_data_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartDeleteType, "Delete Type"));
+            char *move_name;
+            if (part_types[edpart_create_type].field_b3)
+                move_name = "Move Type to General List";
+            else
+                move_name = "Move Type to Level List";
+            eduiMenuAddItem(edpart_data_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartMoveList, move_name));
+        } else {
+            eduiMenuAddItem(edpart_data_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Copy Type"));
+            eduiMenuAddItem(edpart_data_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Delete Type"));
+            eduiMenuAddItem(edpart_data_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Move Type"));
+        }
+        eduiMenuAddItem(edpart_data_menu,
+                       eduiItemSelCreate(1, edblack, 0, 0, edpartFileSaveEffectsGeneral, "Save General List"));
+        eduiMenuAddItem(edpart_data_menu,
+                       eduiItemSelCreate(1, edblack, 0, 0, edpartFileSaveEffectsLevel, "Save Level List"));
+        eduiMenuAddItem(edpart_data_menu,
+                       eduiItemSelCreate(1, edblack, 0, 0, edpartFileSaveEffects, "Save All"));
+        eduiMenuAddItem(edpart_data_menu,
+                       eduiItemSelCreate(1, edblack, 0, 0, edpartFileLoadEffects, "Load All"));
+        eduiMenuAttach(menu, edpart_data_menu);
+        edpart_data_menu->x = menu->x + 10;
+        edpart_data_menu->y = menu->y + 40;
+    }
 }
-static void edpartEmitMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartEmitMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    if (edpart_nearest_type != NULL) {
+        edpart_emit_menu = eduiMenuCreate(70, 70, 250, 300, ed_fnt, edpartCancelEmitMenu, "Emitter Settings");
+        if (edpart_emit_menu != NULL) {
+            eduiMenuAddItem(edpart_emit_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartEmitVelMenu, "Emitter Vel..."));
+            eduiMenuAddItem(edpart_emit_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartGravMenu, "Gravity..."));
+            eduiMenuAddItem(edpart_emit_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartVarStartMenu, "Random Start..."));
+            eduiMenuAddItem(edpart_emit_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartVarEmitMenu, "Random Emit..."));
+            eduiMenuAddItem(edpart_emit_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartChangeGenRateMenu, "Emits per Sec..."));
+            eduiMenuAddItem(edpart_emit_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartEmitTimeMenu, "Emitter Timing..."));
+            eduiMenuAddItem(edpart_emit_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartCutOffMenu, "Radii..."));
+        }
+        eduiMenuAttach(menu, edpart_emit_menu);
+        edpart_emit_menu->x = menu->x + 10;
+        edpart_emit_menu->y = menu->y + 40;
+    }
 }
 static void edpartGravMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     if (edpart_nearest_type != NULL) {
@@ -1075,8 +1150,33 @@ static void edpartChangeInstanceFlag(eduimenu_s *, eduiitem_s *item, u32) {
     }
 }
 
-static void edpartDebrisSettingsMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartDebrisSettingsMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    if (edpart_nearest_type != NULL) {
+        edpart_debrissettings_menu =
+            eduiMenuCreate(70, 70, 300, 300, ed_fnt, edpartCancelDebrisSettingsMenu, "Debris Settings");
+        if (edpart_debrissettings_menu != NULL) {
+            eduiMenuAddItem(edpart_debrissettings_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartTrail1DebrisMenu, "Trail 1 Debris..."));
+            eduiMenuAddItem(edpart_debrissettings_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartTrail2DebrisMenu, "Trail 2 Debris..."));
+            eduiMenuAddItem(edpart_debrissettings_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartEmitterDebrisMenu, "Emitter Debris..."));
+            eduiMenuAddItem(edpart_debrissettings_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartImpactDebrisMenu, "Impact Debris..."));
+            eduiMenuAddItem(edpart_debrissettings_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartDieDebrisMenu, "Die Debris..."));
+            eduiMenuAddItem(edpart_debrissettings_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartImpactPartMenu, "Impact Part..."));
+            eduiMenuAddItem(edpart_debrissettings_menu,
+                           eduiItemToggleCreate(0x200000, edblack, (edpart_nearest_type->flags >> 21) & 1, 1,
+                                                edpartChangeInstanceFlag, "Debris stops when Part stops"));
+            eduiMenuAddItem(edpart_debrissettings_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartDebrisScaleMenu, "Debris Scale..."));
+        }
+        eduiMenuAttach(menu, edpart_debrissettings_menu);
+        edpart_debrissettings_menu->x = menu->x + 10;
+        edpart_debrissettings_menu->y = menu->y + 40;
+    }
 }
 
 static void edpartInstanceOrientMenu(eduimenu_s *, eduiitem_s *, u32) {

@@ -14,15 +14,15 @@ typedef struct SECURITYDOOR_s {
     i16 platform_id[2];
     u16 yaw;
     union {
-        u8 flags;
+        u16 flags;
         struct {
-            u8 active : 1;
-            u8 visible : 1;
-            u8 opened : 1;
-            u8 reserved_flags : 5;
+            u16 active : 1;
+            u16 visible : 1;
+            u16 opened : 1;
+            u16 reserved_flags : 5;
+            u16 state : 8;
         };
     };
-    u8 state;
     NUVEC player_position;
     u16 terrain_angle_z;
     u16 terrain_angle_x;
@@ -33,11 +33,12 @@ typedef struct SECURITYDOOR_s {
 DECOMP_ASSERT(sizeof(SECURITYDOOR) == 0xc0, "SECURITYDOOR size");
 DECOMP_ASSERT(offsetof(SECURITYDOOR, name) == 0x80, "SECURITYDOOR name");
 DECOMP_ASSERT(offsetof(SECURITYDOOR, position) == 0x90, "SECURITYDOOR position");
+DECOMP_ASSERT(offsetof(SECURITYDOOR, flags) == 0xa2, "SECURITYDOOR packed flags and state");
 DECOMP_ASSERT(offsetof(SECURITYDOOR, player_position) == 0xa4, "SECURITYDOOR player position");
 
 ADDGIZMOTYPE *SecurityDoors_RegisterGizmo(i32 type_id);
 void SecurityDoors_InitTerrain(WORLDINFO_s *);
-void SecurityDoor_FindNearest(WORLDINFO_s *, NUVEC *, GameObject_s *, f32 *);
+SECURITYDOOR *SecurityDoor_FindNearest(WORLDINFO_s *, NUVEC *, GameObject_s *, f32 *);
 void SecurityDoor_MoveCode(WORLDINFO_s *, GameObject_s *);
 
 extern "C" {

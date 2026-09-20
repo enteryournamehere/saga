@@ -3,6 +3,7 @@
 #include "decomp.h"
 #include "gameapi/edtools/edfile.h"
 #include "globals.h"
+#include "legoapi/core/input/qrand.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "legoapi/render/core/terrain.h"
@@ -11,6 +12,7 @@
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/numath/nuvec.h"
+#include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nutrig.h"
 
 #include <math.h>
@@ -41,6 +43,8 @@ i32 pushblock_gizmotype_id;
 
 extern "C" char *NuIToA(i32 value, char *buffer, i32 radix);
 void ResetPushProgress(WORLDINFO_s *world, void *progress);
+void ResetSinglePushBlock(WORLDINFO_s *world, pushblock_s *push_block, i32 index);
+void KnockPushBlock(pushblock_s *push_block, NUVEC *direction);
 i32 GizPushBlock_EndFrameCompleted(pushblock_s *push_block, i32 output_index);
 void GizObstacles_AddTrigger(NUVEC *position);
 void MoveBlocks(WORLDINFO_s *world, pushblock_s *push_block, i32 index, NUVEC *velocity);
@@ -382,8 +386,14 @@ static void *Push_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {
     return GizmoBufferAlloc(buffer, buffer_end, 0x24c);
 }
 
-static void Push_SetVisibility(GIZMO *gizmo, i32) {
-    UNIMPLEMENTED();
+static void Push_SetVisibility(GIZMO *gizmo, i32 visible) {
+    pushblock_s *push_block = static_cast<pushblock_s *>(gizmo->object);
+    push_block->flags_0ca = (push_block->flags_0ca & ~PUSHBLOCK_FLAG_VISIBLE) | ((visible != 0) << 2);
+    NuSpecialSetVisibility(&push_block->special, visible);
+    for (i32 index = 0; index < push_block->end_position_count; ++index) {
+        NuSpecialSetVisibility(&push_block->end_position_specials[index],
+                               (push_block->flags_0ca & PUSHBLOCK_FLAG_VISIBLE) >> 2);
+    }
 }
 
 static void Push_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *) {
@@ -537,13 +547,63 @@ static void Push_StoreProgress(void *world_ptr, void *, void *progress_ptr) {
     }
 }
 
-static i32 Pushblocks_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
-    UNIMPLEMENTED();
-    return {};
+static i32 Pushblocks_BoltHitPlat(void *world_ptr, void *push_blocks_ptr, BOLT *bolt, unsigned char *) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    pushblock_s *push_block = static_cast<pushblock_s *>(push_blocks_ptr);
+    if (push_block != NULL) {
+        for (i32 index = 0; index < world->push_block_count; ++index, ++push_block) {
+            if ((push_block->flags_0ca & PUSHBLOCK_FLAG_VISIBLE) == 0 || (push_block->flags_0cb & 1) == 0 ||
+                (push_block->flags_0cb & PUSHBLOCK_FLAG_STATE) != 0) {
+                continue;
+            }
+            const i32 platform = FindPlatInst(NuSpecialGetInstanceix(&push_block->special));
+            if (platform == -1 || platform != bolt->hit_platform) {
+                continue;
+            }
+            if (bolt->owner != NULL) {
+                NUVEC direction;
+                NuVecSub(&direction, &bolt->owner->apiobj.collision_position, push_block->position);
+                if (direction.x == direction.z) {
+                    if (direction.x < 0.0f) {
+                        direction.x = -QRAND_FLOAT();
+                        direction.z = -QRAND_FLOAT();
+                    } else {
+                        direction.x = QRAND_FLOAT();
+                        direction.z = QRAND_FLOAT();
+                    }
+                }
+                if (NuFabs(direction.x) > NuFabs(direction.z)) {
+                    direction.z = 0.0f;
+                } else {
+                    direction.x = 0.0f;
+                }
+                NuVecNorm(&direction, &direction);
+                KnockPushBlock(push_block, &direction);
+            }
+            return 1;
+        }
+    }
+    return 0;
 }
 
-static void Push_Activate(GIZMO *gizmo, i32) {
-    UNIMPLEMENTED();
+static void Push_Activate(GIZMO *gizmo, i32 active) {
+    if (gizmo != NULL) {
+        pushblock_s *push_block = static_cast<pushblock_s *>(gizmo->object);
+        if (active != 0) {
+            push_block->flags_0cb |= 1;
+            WORLDINFO *world = WORLD;
+            pushblock_s *candidate = world->push_blocks;
+            for (i32 index = 0; index < world->push_block_count; ++index, ++candidate) {
+                if (candidate == push_block) {
+                    ResetSinglePushBlock(world, push_block, index);
+                    break;
+                }
+            }
+            push_block->flags_0ca |= PUSHBLOCK_FLAG_VISIBLE;
+        } else {
+            push_block->flags_0cb &= ~1;
+        }
+    }
 }
 
 static void Push_Reset(void *world, void *, void *progress) {

@@ -571,8 +571,14 @@ static void HatMachine_Draw(void *world_ptr, void *, float) {
     ResetShadowMapRendering();
 }
 
-void HatMachines_InitTerrain(WORLDINFO_s *) {
-    STUBBED();
+void HatMachines_InitTerrain(WORLDINFO_s *world) {
+    if (world->hat_machine_sys != NULL) {
+        for (i32 index = 0; index < world->hat_machine_sys->count; ++index) {
+            HATMACHINE *machine = &world->hat_machine_sys->machines[index];
+            machine->platform_id = NewPlatPickupInst(&machine->matrix, HATMACHINE_PLATFORM_COLLISION);
+            PlatInstRotate(world->hat_machine_sys->machines[index].platform_id, 1);
+        }
+    }
 }
 
 MechObjectInterface *HATMACHINE_s::GetMechObjectInterface() {

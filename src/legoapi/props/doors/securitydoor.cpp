@@ -5,6 +5,11 @@
 #include "gameapi/edtools/edfile.h"
 #include "globals.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/characters/core/character.h"
+#include "legoapi/characters/motion.h"
+#include "legoapi/characters/motion/animlist.h"
+#include "legoapi/characters/motion/gameanim.h"
+#include "legoapi/core/input/gamepads.h"
 #include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
@@ -20,16 +25,97 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
-void SecurityDoor_MoveCode(WORLDINFO_s *, GameObject_s *) {
-    STUBBED();
+void SecurityDoor_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
+    if (object->character_context == 0x5c) {
+        f32 *playing = NULL;
+        if (object->apiobj.character_model->model_data_b[object->context_animation] != NULL) {
+            playing = AnimPlaying(&object->apiobj.anim_packet, object->context_animation, 1, 0);
+            if (playing == NULL) {
+                return;
+            }
+        }
+        object->context_animation_timer += FRAMETIME;
+        if (object->context_animation_timer >= object->airborne_action_duration) {
+            object->character_context = -1;
+            if ((object->context_flags & 0x40) != 0) {
+                return;
+            }
+        } else {
+            if (playing == NULL) {
+                return;
+            }
+            f32 frame = AnimListFrame(object->apiobj.character_model, object->context_animation, 0);
+            if (!(frame >= 1.0f && frame <= *playing)) {
+                return;
+            }
+        }
+        if ((object->context_flags & 0x20) != 0) {
+            object->context_flags |= 0x40;
+            static_cast<SECURITYDOOR *>(object->field_0x788)->state = 2;
+            NewRumble(object->pad_gamepad->pad, 0.6f, 0);
+        }
+        return;
+    }
+    if ((object->apiobj.character_data->game_character->flags_090 & 0x02000000) == 0 ||
+        static_cast<i8>(object->apiobj.flags_low) >= 0 || object->apiobj.field_0x27d == 0 ||
+        ObjLandReady(object) == 0) {
+        return;
+    }
+    f32 range = object->apiobj.field_0x1dc + 0.25f;
+    range *= range;
+    f32 distance;
+    SECURITYDOOR *door = SecurityDoor_FindNearest(world, &object->apiobj.lower_position, object, &distance);
+    if (door == NULL || !(range > distance) ||
+        (object->pad_gamepad->buttons_pressed & GAMEPAD_SPECIAL) == 0) {
+        return;
+    }
+    object->field_0x788 = door;
+    object->context_animation_timer = 0.0f;
+    object->character_context = 0x5c;
+    object->context_animation = 0xad;
+    object->context_flags &= ~0x40;
+    object->airborne_action_duration = AnimDuration(object->id, 0xad, 0.0f, 0.0f, 1);
+    if (object->airborne_action_duration <= 0.0f) {
+        object->airborne_action_duration = 1.0f;
+    }
+    object->context_flags |= 0x20;
+    object->apiobj.movement_facing_angle = static_cast<SECURITYDOOR *>(object->field_0x788)->yaw + 0x8000;
+    static_cast<SECURITYDOOR *>(object->field_0x788)->state = 1;
 }
 
-void SecurityDoor_FindNearest(WORLDINFO_s *, nuvec_s *, GameObject_s *, float *) {
-    STUBBED();
+SECURITYDOOR *SecurityDoor_FindNearest(WORLDINFO_s *world, nuvec_s *position, GameObject_s *object,
+                                     float *distance) {
+    SECURITYDOOR *nearest = NULL;
+    f32 nearest_distance = 1000000000.0f;
+    SECURITYDOOR *door = world->security_doors;
+    for (i32 index = 0; index < world->security_door_count; ++index, ++door) {
+        f32 door_distance;
+        if (object != NULL) {
+            if (!door->active || !door->visible || door->opened || door->state != 0 || door->opening != 0.0f) {
+                continue;
+            }
+            door_distance = NuVecDistSqr(position, &door->player_position, NULL);
+        } else {
+            door_distance = NuVecDistSqr(position, &door->position, NULL);
+        }
+        if (door_distance < nearest_distance) {
+            nearest_distance = door_distance;
+            nearest = door;
+        }
+    }
+    if (distance != NULL) {
+        *distance = nearest_distance;
+    }
+    return nearest;
 }
 
-void SecurityDoors_InitTerrain(WORLDINFO_s *) {
-    STUBBED();
+void SecurityDoors_InitTerrain(WORLDINFO_s *world) {
+    for (i32 index = 0; index < world->security_door_count; ++index) {
+        world->security_doors[index].platform_id[0] =
+            NewPlatPickupInst(&world->security_doors[index].leaf_matrix[0], 5);
+        world->security_doors[index].platform_id[1] =
+            NewPlatPickupInst(&world->security_doors[index].leaf_matrix[1], 6);
+    }
 }
 
 struct SECURITYDOORPROGRESS {

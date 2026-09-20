@@ -16,6 +16,8 @@
 #include "legoapi/misc/utilities.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nutrig.h"
@@ -25,6 +27,8 @@
 
 DECOMP_ASSERT(offsetof(WORLDINFO, tightropes) == 0x505c, "World tightrope array offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, tightrope_count) == 0x5060, "World tightrope count offset");
+
+extern NUMTL *SolidMtl3D;
 
 struct TIGHTROPEPROGRESS {
     i32 state[2];
@@ -72,9 +76,8 @@ static i32 TightRope_GetOutput(GIZMO *gizmo, i32, i32) {
     return rope->visible != 0 && rope->active != 0;
 }
 
-static char *TightRope_GetOutputName(GIZMO *gizmo, i32 output_index) {
-    UNIMPLEMENTED();
-    return {};
+static char *TightRope_GetOutputName(GIZMO *, i32) {
+    return "Active";
 }
 
 static i32 TightRope_GetNumOutputs(GIZMO *gizmo) {
@@ -182,8 +185,82 @@ static void *TightRopes_AllocateProgressData(VARIPTR *buffer, VARIPTR *end) {
     return GizmoBufferAlloc(buffer, end, sizeof(TIGHTROPEPROGRESS));
 }
 
-static void TightRopes_Draw(void *, void *, float) {
-    UNIMPLEMENTED();
+static void TightRopes_Draw(void *world_info, void *, float) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    TIGHTROPE *rope = world->tightropes;
+    if (rope == NULL) {
+        return;
+    }
+
+    NUMTX_ALIGNED16 matrix;
+    NUVEC *positions[64];
+    f32 distances[64];
+    NURND_VERTEX3D vertices[66];
+    for (i32 index = 0; index < 66; ++index) {
+        vertices[index].colour = 0xffffffff;
+    }
+
+    for (i32 index = 0; index < world->tightrope_count; ++index, ++rope) {
+        if (rope->visible != 0 || rope->field_0x32 != 0) {
+            i32 endpoint_model = rope->field_0x30 == 0 ? 63 : 64;
+            if (WORLD->lev_objs[endpoint_model].active != 0) {
+                NuMtxSetRotationX(&matrix, rope->field_0x28);
+                NuMtxRotateY(&matrix, rope->field_0x2c);
+                NuMtxTranslate(&matrix, &rope->start);
+                NuSpecialDrawAt(&WORLD->lev_objs[endpoint_model].special, &matrix);
+            }
+        }
+        if (rope->visible != 0) {
+            i32 endpoint_model = rope->field_0x31 == 0 ? 63 : 64;
+            if (WORLD->lev_objs[endpoint_model].active != 0) {
+                NuMtxSetRotationX(&matrix, rope->field_0x2a);
+                NuMtxRotateY(&matrix, rope->field_0x2e);
+                NuMtxTranslate(&matrix, &rope->end);
+                NuSpecialDrawAt(&WORLD->lev_objs[endpoint_model].special, &matrix);
+            }
+        }
+        if (rope->active == 0 || rope->visible == 0) {
+            continue;
+        }
+
+        i32 count = 0;
+        GameObject_s *object = Obj;
+        for (i32 object_index = 0; object_index < HIGHGAMEOBJECT; ++object_index, ++object) {
+            if ((object->apiobj.object_flags & 0x1001) != 0x1001 || object->character_context != 0x44 ||
+                static_cast<u16>(object->context_animation - 5) <= 1 || object->field_0x788 != rope) {
+                continue;
+            }
+            positions[count] = (object->apiobj.character_data->game_character->flags_090 & 0x80000) != 0
+                                   ? &object->apiobj.lower_position
+                                   : &object->apiobj.upper_position;
+            distances[count] = NuVecDist(positions[count], &rope->start, NULL);
+            ++count;
+            if (count == 64) {
+                break;
+            }
+        }
+        for (i32 pass = 0; pass < count - 1; ++pass) {
+            for (i32 point = 0; point < count - 1; ++point) {
+                if (distances[point] > distances[point + 1]) {
+                    NUVEC *position = positions[point];
+                    positions[point] = positions[point + 1];
+                    positions[point + 1] = position;
+                    f32 distance = distances[point];
+                    distances[point] = distances[point + 1];
+                    distances[point + 1] = distance;
+                }
+            }
+        }
+
+        vertices[0].position = rope->start;
+        for (i32 point = 0; point < count; ++point) {
+            vertices[point + 1].position = *positions[point];
+        }
+        vertices[count + 1].position = rope->end;
+        for (i32 point = 0; point <= count; ++point) {
+            NuRndrLine3d(&vertices[point], SolidMtl3D, NULL);
+        }
+    }
 }
 
 static void TightRopes_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_info, void *) {

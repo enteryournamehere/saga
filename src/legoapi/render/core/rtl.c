@@ -1374,72 +1374,121 @@ void edrtlPlaceBurnout(i32 index, nuvec_s *position) {
     edrtl_edit_burnset->burnouts[index].position = *position;
 }
 
-static void edrtlSetBurnoutStartAngle(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutStartAngle(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_04 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutMinIntensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutMinIntensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_08 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutEndAngle(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutEndAngle(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_0c = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutMaxIntensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutMaxIntensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_10 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutGlobalScale(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutGlobalScale(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_14 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutDispersion(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutDispersion(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_1c = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutFragmentGlowFactor(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutFragmentGlowFactor(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_20 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutThreshold(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutThreshold(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_24 = slider->value;
+    }
 }
 
 static void edrtlSetBurnoutSourceAvailable(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    if (edrtl_edit_burnset)
+        edrtl_edit_burnset->parameters.field_28 = !edrtl_edit_burnset->parameters.field_28;
 }
 
-static void edrtlSetBurnoutSourceDirectionX(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceDirectionX(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_2c = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutSourceDirectionY(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceDirectionY(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_30 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutSourceDirectionZ(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceDirectionZ(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_34 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutSourceInnerRadius(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceInnerRadius(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_38 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutSourceInnerIntensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceInnerIntensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_3c = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutSourceOuterRadius(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceOuterRadius(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_40 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutSourceOuterIntensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceOuterIntensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_44 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutSourceFallOffPower(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceFallOffPower(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_48 = slider->value;
+    }
 }
 
 static void edrtlCancelBurnDefaultsMenu(eduimenu_s *, eduimenu_s *) {
@@ -1450,28 +1499,46 @@ static void edrtlBurnDefaultsMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void edrtlSetBurnoutNormalRate(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutNormalRate(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_b8 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutOvershootRate(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutOvershootRate(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_bc = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutOvershootCutin(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutOvershootCutin(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_c0 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutOvershootAmount(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutOvershootAmount(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_c4 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutOverbrightCap(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutOverbrightCap(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_c8 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutOverdarkCap(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutOverdarkCap(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_cc = slider->value;
+    }
 }
 
 static void edrtlCancelBurnTransitionsMenu(eduimenu_s *, eduimenu_s *) {
@@ -1482,11 +1549,17 @@ static void edrtlBurnTransitionsMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void edrtlSetBurnRadius(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnRadius(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_558 = slider->value;
+    }
 }
-static void edrtlSetBurnFalloff(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnFalloff(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_55c = slider->value;
+    }
 }
 static void edrtlCancelBurnRadiusMenu(eduimenu_s *, eduimenu_s *) {
     STUBBED();
@@ -1494,20 +1567,35 @@ static void edrtlCancelBurnRadiusMenu(eduimenu_s *, eduimenu_s *) {
 static void edrtlBurnRadiusMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
-static void edrtlSetBurnsetThreshold(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnsetThreshold(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->burnouts[edrtl_edit_burnset->selected_index].field_10 = slider->value;
+    }
 }
-static void edrtlSetBurnsetIntensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnsetIntensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->burnouts[edrtl_edit_burnset->selected_index].field_14 = slider->value;
+    }
 }
-static void edrtlSetBurnsetFlare(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnsetFlare(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->burnouts[edrtl_edit_burnset->selected_index].field_18 = slider->value;
+    }
 }
-static void edrtlSetBurnsetRadius(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnsetRadius(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->burnouts[edrtl_edit_burnset->selected_index].field_1c = slider->value;
+    }
 }
-static void edrtlSetBurnsetFalloff(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnsetFalloff(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->burnouts[edrtl_edit_burnset->selected_index].field_20 = slider->value;
+    }
 }
 static void edrtlCancelBurnSetMenu(eduimenu_s *, eduimenu_s *) {
     STUBBED();

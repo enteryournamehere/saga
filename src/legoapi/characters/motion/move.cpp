@@ -1,4 +1,5 @@
 #include "decomp.h"
+#include <stdlib.h>
 #include "legoapi/actions/movement/jumping.h"
 #include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/items/collect/torpedo.h"
@@ -43,6 +44,7 @@ static f32 ForceBackRadius2 = 0.0f;
 #include "legoapi/menus/screens/shop.h"
 #include "legoapi/props/system/socksys.h"
 #include "legoapi/render/core/rtl.h"
+#include "legoapi/render/core/terrain.h"
 #include "legoapi/render/fx.h"
 #include "legoapi/render/fx/parts.h"
 #include "legoapi/render/fx/edsplines.h"
@@ -587,6 +589,12 @@ static void ForcePushed_MoveCode(GameObject_s *);
 static void DeactivatedCode(GameObject_s *);
 static void ZapCode(GameObject_s *, i32, i32);
 static void FireCode(GameObject_s *, i32, i32, f32, i32);
+static void AwkwardShapeCode(GameObject_s *, i32);
+f32 FindGunshipHoverHeight(GameObject_s *);
+void Move_VEHICLE(GameObject_s *);
+void CableCode(GameObject_s *, i32, f32);
+void KillParts(GameObject_s *, i32, i32, i32, f32, i32, u16 *);
+extern "C" i16 id_BASKETCANNON;
 void KeepWeaponIn(GameObject_s *);
 void BigJumpCode(GameObject_s *);
 void InstantKillParts(GameObject_s *, i32, f32);
@@ -923,12 +931,56 @@ void Move_BARMAN(GameObject_s *object) {
     ApplyGravity(object, NULL, 0.0f, 0.0f, NULL);
 }
 
-void Move_CANNON(GameObject_s *) {
-    STUBBED();
+void Move_CANNON(GameObject_s *object) {
+    KeepWeaponOut(object);
+    ApplyGravity(object, NULL,
+                 object->character_context == 0x17 ? 0.0f : object->apiobj.character_data->game_character->field_0x28,
+                 8.0f, NULL);
+    DeactivatedCode(object);
+    if ((object->field_0xef8 & 8) != 0) {
+        if (object->id == id_CATAPULT || object->id == id_BASKETCANNON)
+            ShootCode(object, (GAMEPAD_ACTION | GAMEPAD_SPECIAL) & object->pad_gamepad->buttons_pressed, 0, 0, 0, 0);
+        FireCode(object, GAMEPAD_ACTION & object->pad_gamepad->buttons_pressed, 0, 0.4f, 1);
+    }
+    AwkwardShapeCode(object, 0);
+    if (object->pad_gamepad->input_magnitude > 0.0f &&
+        abs(RotDiff(object->previous_movement_angle, object->apiobj.field_0x276)) > 910.0f * FRAMETIME) {
+        if (object->id == id_CATAPULT || object->id == id_BASKETCANNON)
+            PlaySfx("fly_paddle_rotate_lp", &object->apiobj.collision_position);
+        else
+            PlaySfx("R2Move", &object->apiobj.collision_position);
+    }
 }
 
-void Move_WALKER(GameObject_s *) {
-    STUBBED();
+void Move_WALKER(GameObject_s *object) {
+    GAMEPAD_s *pad = object->pad_gamepad;
+    KeepWeaponOut(object);
+    DropInOutCode(object);
+    if (object->torpedo != NULL)
+        object->torpedo->count = 0;
+    if ((object->field_0xe20 & 0x20) != 0)
+        return;
+    ApplyGravity(object, NULL, 0.0f, 0.0f, NULL);
+    HeadMovement(object);
+    if (object->character_context == 0x3d &&
+        object->context_animation_timer > object->airborne_action_duration + 0.5f) {
+        KillParts(object, -1, -1, 0, 0.0f, 0, NULL);
+        KillGameObject(object, 2, 0);
+    }
+    TakeHitCode(object);
+    SlideCode(object);
+    DeactivatedCode(object);
+    if (ShootCode(object, GAMEPAD_ACTION & pad->buttons_pressed, 0, 0, 0, 0))
+        object->bolt_fire_phase = !object->bolt_fire_phase;
+    if (object->character_context != 0x41 && object->character_context != 0x17)
+        GameAudio_PlaySfxById(object->apiobj.character_data->game_character->sfx_engine,
+                             &object->apiobj.collision_position, 0, 0);
+    if (WORLD->current_level == ENDORBATTLEC_LDATA && static_cast<i8>(object->apiobj.flags_low) < 0) {
+        NewTerrPlatformsOff();
+        if (GameShadow(NULL, &object->apiobj.position, 5.0f, -1) != 2000000.0f && ShadowInfo() == 0x0e)
+            object->apiobj.velocity.y = -3.0f;
+    }
+    GizmoBlowupCheckProximity(WORLD, object);
 }
 
 void Move_CRITTER(GameObject_s *) {
@@ -941,8 +993,24 @@ void Move_DEFAULT(GameObject_s *object) {
         ApplyGravity(object, NULL, 0.0f, 0.0f, NULL);
 }
 
-void Move_DRAGBOMB(GameObject_s *) {
-    STUBBED();
+void Move_DRAGBOMB(GameObject_s *object) {
+    DropInOutCode(object);
+    if ((object->field_0xe20 & 0x20) != 0)
+        return;
+    ApplyGravity(object, NULL, 0.0f, 0.0f, NULL);
+    if (WORLD != NULL && WORLD->area == GUNSHIP_ADATA && object->apiobj.velocity.y > 1.0f)
+        object->apiobj.velocity.y = 1.0f;
+    if (object->apiobj.supporting_platform_id != -1 ||
+        (object->apiobj.collision_contact_mask != 0 &&
+         (object->apiobj.collision_contact_mask &
+          ~(player2 != NULL ? player->apiobj.collision_identity_mask | player2->apiobj.collision_identity_mask
+                            : player->apiobj.collision_identity_mask)) != 0))
+        KillGameObject(object, 2, 0);
+    if (object->character_context == 0x34) {
+        object->context_animation_timer += FRAMETIME;
+        if (object->context_animation_timer > 10.0f)
+            KillGameObject(object, 2, 1);
+    }
 }
 
 void Move_DROIDEKA(GameObject_s *) {
@@ -1633,8 +1701,22 @@ i32 MovePlayer_GUNSHIPIN(GameObject_s *object) {
     return 1;
 }
 
-void Move_REPUBLICGUNSHIP(GameObject_s *) {
-    STUBBED();
+void Move_REPUBLICGUNSHIP(GameObject_s *object) {
+    if (WORLD->area != NULL && (WORLD->area == GUNSHIP_ADATA || WORLD->area == BONUS_GUNSHIP_ADATA)) {
+        GAMEPAD_s *pad = object->pad_gamepad;
+        KeepWeaponOut(object);
+        DropInOutCode(object);
+        if ((object->field_0xe20 & 0x20) != 0)
+            return;
+        ApplyGravity(object, NULL, FindGunshipHoverHeight(object), 8.0f, NULL);
+        TakeHitCode(object);
+        FireCode(object, GAMEPAD_ACTION & object->pad_gamepad->buttons_pressed,
+                 GAMEPAD_ACTION & object->pad_gamepad->buttons_held, 0.3f, 0);
+        if ((object->apiobj.character_data->game_character->flags_090 & 0x400) != 0)
+            CableCode(object, GAMEPAD_SPECIAL & pad->buttons_pressed, 0.5f);
+    } else {
+        Move_VEHICLE(object);
+    }
 }
 
 void Move_SUPERBATTLEDROID(GameObject_s *) {
@@ -3241,8 +3323,26 @@ void Move_VEHICLE(GameObject_s *g) {
     (void)g;
 }
 
-void Move_ATAT(GameObject_s *) {
-    STUBBED();
+void Move_ATAT(GameObject_s *object) {
+    GAMEPAD_s *pad = object->pad_gamepad;
+    KeepWeaponOut(object);
+    DropInOutCode(object);
+    if (object->torpedo != NULL)
+        object->torpedo->count = 0;
+    if ((object->field_0xe20 & 0x20) != 0)
+        return;
+    ApplyGravity(object, NULL, 0.0f, 0.0f, NULL);
+    TakeHitCode(object);
+    DeactivatedCode(object);
+    if (ShootCode(object, GAMEPAD_ACTION & pad->buttons_pressed, 0, 0, 0, 0))
+        object->bolt_fire_phase = !object->bolt_fire_phase;
+    AwkwardShapeCode(object, 0);
+    HeadMovement(object);
+    if (CurrentAnim(&object->apiobj.anim_packet) == 0 && object->character_context != 0x17 &&
+        object->character_context != 0x41)
+        GameAudio_PlaySfxById(object->apiobj.character_data->game_character->sfx_engine,
+                             &object->apiobj.collision_position, 0, 0);
+    GizmoBlowupCheckProximity(WORLD, object);
 }
 
 void Move_JAWA(GameObject_s *) {

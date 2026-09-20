@@ -9,6 +9,7 @@
 #include "nu2api/nucore/nupad.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nu3d/nurndr.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/nucore/nustring.h"
 extern "C" {
@@ -16,6 +17,8 @@ extern "C" {
     extern i32 AIEDITOR_ROUTES;
     extern i32 near_clip_at_cursor;
     extern f32 default_path_heighttol;
+    extern f32 aiEditor_DrawYOffset;
+    void AiRndrLine3d(NURND_VERTEX3D *, numtl_s *, NUMTX *);
     void creatureEditor_PathNodeMoved(EDAIPATHNODE_s *);
     void locatorEditor_PathNodeMoved(EDAIPATHNODE_s *);
     void aieditor_cbCancelMainMenu(eduimenu_s *, eduimenu_s *);
@@ -70,8 +73,83 @@ extern "C" void aieditor_RegisterPathCnxType(const char *name, u32 connection_fl
     type.flags = flags;
 }
 
-void pathEditorDrawConnectionInfo(nuvec_s *, float, nuvec_s *, u32, i32) {
-    STUBBED();
+void pathEditorDrawConnectionInfo(nuvec_s *position, float radius, nuvec_s *other, u32 flags, i32 colour) {
+    if (flags == 0) {
+        return;
+    }
+    NUVEC start = {position->x, position->y + aiEditor_DrawYOffset, position->z};
+    NUVEC end = {other->x, other->y + aiEditor_DrawYOffset, other->z};
+    for (i32 i = 0; i < naipathcnxtypes; ++i) {
+        AIPATHCNXTYPE_s *type = &aipathcnxtypes[i];
+        if (type->context != nullptr && (type->connection_flag & flags) != 0) {
+            typedef void DrawConnection(NUVEC *, f32, NUVEC *, u32, i32);
+            reinterpret_cast<DrawConnection *>(type->context)(&start, radius, &end, flags, colour);
+            return;
+        }
+    }
+    NUVEC direction;
+    f32 length = NuVecXZDist(&end, &start, &direction);
+    if (length > 0.0f) {
+        direction.x /= length;
+        direction.z /= length;
+    }
+    NURND_VERTEX3D vertices[2];
+    vertices[0].position = start;
+    vertices[1].position = end;
+    vertices[0].colour = colour;
+    vertices[1].colour = colour;
+    AiRndrLine3d(vertices, nullptr, nullptr);
+    NuVecScale(&vertices[0].position, &direction, radius * 0.5f);
+    vertices[0].position.y = 0.0f;
+    NuVecAdd(&vertices[0].position, &vertices[0].position, &start);
+    vertices[1].position = start;
+    vertices[1].position.x += radius * direction.z * 0.5f;
+    vertices[1].position.z -= radius * direction.x * 0.5f;
+    AiRndrLine3d(vertices, nullptr, nullptr);
+    vertices[1].position = start;
+    vertices[1].position.x -= radius * direction.z * 0.5f;
+    vertices[1].position.z += radius * direction.x * 0.5f;
+    AiRndrLine3d(vertices, nullptr, nullptr);
+    if (flags & 0x40000000) {
+        NuVecScale(&vertices[0].position, &direction, radius * 0.5f);
+        vertices[0].position.y = 0.0f;
+        NuVecAdd(&vertices[0].position, &vertices[0].position, &start);
+        vertices[1].position.y = vertices[0].position.y;
+        vertices[1].position.x = vertices[0].position.x - radius * direction.z * 0.5f;
+        vertices[1].position.z = vertices[0].position.z + radius * direction.x * 0.5f;
+        vertices[0].position.x += radius * direction.z * 0.5f;
+        vertices[0].position.z -= radius * direction.x * 0.5f;
+        AiRndrLine3d(vertices, nullptr, nullptr);
+    } else if (flags & 0x80000000) {
+        NUVEC centre = vertices[0].position;
+        vertices[0].colour = colour / 2;
+        vertices[1].colour = colour / 2;
+        vertices[1].position.x = centre.x + radius * direction.z * 0.25f;
+        vertices[1].position.y = centre.y;
+        vertices[1].position.z = centre.z - radius * direction.x * 0.25f;
+        AiRndrLine3d(vertices, nullptr, nullptr);
+        vertices[1].position.x = centre.x - radius * direction.z * 0.25f;
+        vertices[1].position.y = centre.y;
+        vertices[1].position.z = centre.z + radius * direction.x * 0.25f;
+        AiRndrLine3d(vertices, nullptr, nullptr);
+    } else if (flags & 0x20000000) {
+        NUVEC centre = vertices[0].position;
+        NuVecScale(&vertices[0].position, &direction, radius);
+        vertices[0].position.y = 0.0f;
+        NuVecAdd(&vertices[0].position, &vertices[0].position, position);
+        vertices[1].position.x = centre.x + radius * direction.z * 0.15f;
+        vertices[1].position.y = centre.y;
+        vertices[1].position.z = centre.z - radius * direction.x * 0.15f;
+        AiRndrLine3d(vertices, nullptr, nullptr);
+        vertices[1].position.x = centre.x - radius * direction.z * 0.25f;
+        vertices[1].position.y = centre.y;
+        vertices[1].position.z = centre.z + radius * direction.x * 0.25f;
+        AiRndrLine3d(vertices, nullptr, nullptr);
+        vertices[1].position.x = centre.x - radius * direction.z * 0.35f;
+        vertices[1].position.y = centre.y;
+        vertices[1].position.z = centre.z + radius * direction.x * 0.35f;
+        AiRndrLine3d(vertices, nullptr, nullptr);
+    }
 }
 
 static u32 attr[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};

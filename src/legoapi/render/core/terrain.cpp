@@ -4857,28 +4857,11 @@ extern "C" void AddPickupTerr(i32 type, NUVEC *position) {
     ++curPickInst;
 }
 
-extern "C" i32 AddPickupTerrRot(i32 type, NUMTX *matrix, NUMTX *previous, i32 rotating) {
-    TERRSET *terrain = CurTerr;
-    if (terrain == NULL)
-        return -1;
-    if (rotating == 0 && previous == NULL) {
-        AddPickupTerr(type, reinterpret_cast<NUVEC *>(&matrix->m30));
-        return -1;
-    }
-    if (terrain->group_index_count >= terrain->max_group_indices || terrain->group_count >= terrain->max_groups ||
-        matrix == NULL || (rotating != 0 && previous == NULL))
-        return -1;
-    i16 source = PickupTerr->group_for_type[type];
-    if (source == -1 || terrain->removed_platform_count >= 32 || terrain->max_platforms <= 0)
-        return -1;
-    i32 index = 0;
-    while (terrain->platforms[index].scene_object != NULL) {
-        if (++index == terrain->max_platforms)
-            return -1;
-    }
+static inline i32 InstallExtraTerrainPlatform(TERRSET *terrain, TERRAIN_GROUP *source, NUMTX *matrix,
+                                              NUMTX *previous, i32 rotating, i32 index) {
     i16 group_index = terrain->group_count;
     TERRAIN_GROUP &group = terrain->groups[group_index];
-    group = PickupTerr->groups[source];
+    group = *source;
     group.scene_index = index;
     group.chunk_type = 1;
     TERRAIN_PLATFORM &platform = terrain->platforms[index];
@@ -4912,6 +4895,28 @@ extern "C" i32 AddPickupTerrRot(i32 type, NUMTX *matrix, NUMTX *previous, i32 ro
     ++terrain->group_count;
     terrain->removed_platforms[terrain->removed_platform_count++] = index;
     return index;
+}
+
+extern "C" i32 AddPickupTerrRot(i32 type, NUMTX *matrix, NUMTX *previous, i32 rotating) {
+    TERRSET *terrain = CurTerr;
+    if (terrain == NULL)
+        return -1;
+    if (rotating == 0 && previous == NULL) {
+        AddPickupTerr(type, reinterpret_cast<NUVEC *>(&matrix->m30));
+        return -1;
+    }
+    if (terrain->group_index_count >= terrain->max_group_indices || terrain->group_count >= terrain->max_groups ||
+        matrix == NULL || (rotating != 0 && previous == NULL))
+        return -1;
+    i16 source = PickupTerr->group_for_type[type];
+    if (source == -1 || terrain->removed_platform_count >= 32 || terrain->max_platforms <= 0)
+        return -1;
+    i32 index = 0;
+    while (terrain->platforms[index].scene_object != NULL) {
+        if (++index == terrain->max_platforms)
+            return -1;
+    }
+    return InstallExtraTerrainPlatform(terrain, &PickupTerr->groups[source], matrix, previous, rotating, index);
 }
 
 void TerrainSideClamp(NUVEC *axis, NUVEC *position) {
@@ -5502,8 +5507,28 @@ extern "C" void ReassignPickupInst(void) {
     STUBBED();
 }
 
-extern "C" void AddMSituExtraTerrRot(void) {
-    STUBBED();
+extern "C" i32 AddMSituExtraTerrRot(i32 source_index, NUMTX *matrix, NUMTX *previous, i32 rotating,
+                                   TERRSET *source) {
+    if (source == NULL)
+        return -1;
+    if (CurTerr == NULL) {
+        CurTerr = source;
+        for (i32 i = 0; i < CurTerr->removed_platform_count; ++i)
+            DeletePlatinst(CurTerr->removed_platforms[i]);
+        CurTerr->removed_platform_count = 0;
+        curSphereter = 0;
+    }
+    TERRSET *terrain = CurTerr;
+    if (terrain->group_index_count >= terrain->max_group_indices || terrain->group_count >= terrain->max_groups ||
+        matrix == NULL || (rotating != 0 && previous == NULL) || source->removed_platform_count >= 32 ||
+        source->group_count <= source_index || terrain->max_platforms <= 0)
+        return -1;
+    i32 index = 0;
+    while (terrain->platforms[index].scene_object != NULL) {
+        if (++index == terrain->max_platforms)
+            return -1;
+    }
+    return InstallExtraTerrainPlatform(terrain, &source->groups[source_index], matrix, previous, rotating, index);
 }
 
 extern "C" void TerrainWallSideSlide(NUVEC *movement, void *id, f32 speed, f32 upward_scale, NUANG angle) {

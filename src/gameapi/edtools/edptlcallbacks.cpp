@@ -4,6 +4,7 @@
 #include "gameapi/edtools/edui.h"
 #include "legoapi/render/fx/game_deb.h"
 #include "nu2api/nu3d/android/nuptl_android.h"
+#include "nu2api/nu3d/numtl.h"
 #include <string.h>
 
 extern "C" {
@@ -11,6 +12,7 @@ extern "C" {
     extern debinftype **debtab;
     extern void *ed_fnt;
     extern u32 edblack[4];
+    extern NUMTL *DebMat[];
     extern i32 edpp_readout;
     extern eduimenu_s *sscalemenu;
     extern eduimenu_s *ptlgravmenu;
@@ -37,6 +39,7 @@ static void cbPtlTorusMenu(eduimenu_s *, eduiitem_s *, u32);
 static void edptlcbCancelSoundControlMenu(eduimenu_s *, eduimenu_s *);
 static void cbCancelChangeNameMenu(eduimenu_s *, eduimenu_s *);
 static void cbCancelMessageMenu(eduimenu_s *, eduimenu_s *);
+static void cbPtlChangeTextureSelect(eduimenu_s *, eduiitem_s *, u32);
 
 static i32 edptl_superscale = 1;
 
@@ -543,12 +546,14 @@ static void cbPtlCopySize(eduimenu_s *, eduiitem_s *item, u32) {
     for (i32 i = 0; i < 8; ++i) {
         if (item->data == 1) {
             f32 grey = (effect->height_keys[i].value - effect->min_size) / (effect->max_size - effect->min_size);
-            eduiGradStageAddRGB(grad_size_h_item, effect->height_keys[i].time, grey, grey, grey);
+            eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_h_item),
+                                effect->height_keys[i].time, grey, grey, grey);
             if (effect->height_keys[i].time == 1.0f)
                 break;
         } else {
             f32 grey = (effect->width_keys[i].value - effect->min_size) / (effect->max_size - effect->min_size);
-            eduiGradStageAddRGB(grad_size_w_item, effect->width_keys[i].time, grey, grey, grey);
+            eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_w_item),
+                                effect->width_keys[i].time, grey, grey, grey);
             if (effect->width_keys[i].time == 1.0f)
                 break;
         }
@@ -1104,8 +1109,45 @@ static void cbPtlChangeSoundCutOff(eduimenu_s *, eduiitem_s *item, u32) {
     effect->sound_range_override = static_cast<edui_slider_s *>(item)->value;
 }
 
-static void cbPtlTextureSelectMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlTextureSelectMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+    if (edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    if (textureselectmenu == NULL) {
+        textureselectmenu = eduiMenuCreate(70, 70, 180, 300, ed_fnt, NULL, "Texture Select");
+        if (textureselectmenu == NULL) {
+            return;
+        }
+        eduiMenuAddItem(textureselectmenu,
+                       eduiItemTexturePickCreate(0, colours, cbPtlChangeTextureSelect, "Texture Select"));
+        edui_texture_pick_s *texture = static_cast<edui_texture_pick_s *>(edui_last_item);
+        NUMTL *material = NuMtlCreate(1);
+        texture->material = material;
+        NUMTL *source = DebMat[1];
+        material->tex_id = source->tex_id;
+        material->attribs.unknown_1_1_2 = source->attribs.unknown_1_1_2;
+        material->attribs.unknown_1_4_8 = source->attribs.unknown_1_4_8;
+        material->diffuse_color.r = source->diffuse_color.r;
+        material->diffuse_color.g = source->diffuse_color.g;
+        material->diffuse_color.b = source->diffuse_color.b;
+        material->opacity = source->opacity;
+        material->attribs.unknown_2_1_2 = source->attribs.unknown_2_1_2;
+        material->attribs.alpha_mode = source->attribs.alpha_mode;
+        material->attribs.z_mode = source->attribs.z_mode;
+        material->attribs.unknown_0_64_128 = source->attribs.unknown_0_64_128;
+        NuMtlUpdate(material);
+        texture->uv_x[0] = (effect->texture_u0 - 524288.0f) * (1.0f / 256.0f);
+        texture->uv_y[0] = (effect->texture_v0 - 524288.0f) * (1.0f / 256.0f);
+        texture->uv_x[1] = (effect->texture_u1 - 524288.0f) * (1.0f / 256.0f);
+        texture->uv_y[1] = (effect->texture_v1 - 524288.0f) * (1.0f / 256.0f);
+    }
+    if (textureselectmenu != NULL) {
+        eduiMenuAttach(menu, textureselectmenu);
+        textureselectmenu->x = menu->x + 10;
+        textureselectmenu->y = menu->y + 40;
+    }
 }
 
 static void cbPtlChangeCameraCutOff(eduimenu_s *, eduiitem_s *item, u32) {

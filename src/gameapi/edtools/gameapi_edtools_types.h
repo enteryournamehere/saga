@@ -72,7 +72,16 @@ struct EdMember {
     void *object;
     EdRef *reference;
 };
-struct EdObjectNotifier {};
+struct EdObjectNotifier {
+    struct VTable {
+        void (*create_object)(EdObjectNotifier *, void *, EdClass *, void *, i32, i32, i32);
+        void (*destroy_object)(EdObjectNotifier *, void *, EdClass *, i32, i32);
+        void (*defunct_object)(EdObjectNotifier *, void *, EdClass *, i32);
+        void (*revive_object)(EdObjectNotifier *, void *, EdClass *, i32);
+    };
+
+    VTable *vtable;
+};
 struct EdSubSystem {
     virtual ~EdSubSystem();
     virtual void SubInitialise(variptr_u &, variptr_u &, i32);
@@ -248,7 +257,19 @@ struct EdControl {
     void SetMenuItemAttr(i32, eduiitem_s *, eduiiattr_s *, eduiiattr_s *);
     void cbSelected(eduimenu_s *, eduiitem_s *, u32);
 };
+struct EdDefunctListEntry {
+    EdDefunctListEntry *next;
+    EdDefunctListEntry *previous;
+    EdClass *object_class;
+    void *object;
+
+    EdDefunctListEntry() : next(nullptr), previous(nullptr) {}
+};
 struct EdDefunctList {
+    EdDefunctListEntry *first;
+    EdDefunctListEntry *last;
+    i32 count;
+
     void ReviveAll(i32);
 };
 struct EdEnumControl {
@@ -465,43 +486,54 @@ struct EdRefSpline {
     void SetMemberData(void *, i32, void *, i32, i16 *);
 };
 struct EdRegistry {
-    u32 reserved_00;
+    struct NameMapping {
+        char *source;
+        char *destination;
+    };
+
+    i32 initialised;
     EdType *types;
     EdClass *classes;
-    u8 reserved_0c[0x10];
+    NameMapping *mappings;
+    EdObjectNotifier **notifiers;
+    i32 (*create_object_guid)();
+    i32 type_capacity;
     i32 type_count;
-    u32 reserved_20;
+    i32 class_capacity;
     i32 class_count;
-    u32 reserved_28;
+    i32 mapping_capacity;
     i32 object_count;
+    i32 notifier_capacity;
+    i32 notifier_count;
+    EdDefunctList defunct_objects;
 
-    void AddMapping(char *, char *);
+    i32 AddMapping(char *, char *);
     void AddObjectNotifier(EdObjectNotifier *);
     void ClassIFaceProcess(EdClass *, void *, EdInputContext &);
     void ClassIFaceProcess(i32, void *, EdInputContext &);
     void ClassIFaceRender(EdClass *, void *, i32);
     void ClassIFaceRender(i32, void *, i32);
-    void CreateObject(EdClassInterface *, void *, i32, i32, i32);
+    void *CreateObject(EdClassInterface *, void *, i32, i32, i32);
     void DefunctObject(EdClassInterface *, void *, i32, i32);
     void DestroyObject(EdClassInterface *, void *, i32, i32);
     void Flush();
-    void GetClass(char *);
+    EdClass *GetClass(char *);
     EdClass *GetClass(i32);
     i32 GetClassId(EdClass *);
-    void GetClassId(char *);
+    i32 GetClassId(char *);
     void GetStreamClassMapping(EdStream &, i32 *, i32 &, i32);
-    void GetType(char *);
+    EdType *GetType(char *);
     EdType *GetType(i32);
-    void GetTypeId(char *);
+    i32 GetTypeId(char *);
     void Initialise(variptr_u &, variptr_u &, i32, i32, i32, i32);
-    void MapName(char *);
+    char *MapName(char *);
     void NotifyCreateObject(void *, EdClass *, void *, i32, i32, i32);
     void NotifyDefunctObject(void *, EdClass *, i32);
     void NotifyDestroyObject(void *, EdClass *, i32, i32);
     void NotifyReviveObject(void *, EdClass *, i32);
     void RegisterBaseTypes();
-    void RegisterClass(char *, EdClassInterface *, i32);
-    void RegisterType(char *, i32, void (*)(EdStream &, void *, i32));
+    EdClass *RegisterClass(char *, EdClassInterface *, i32);
+    i32 RegisterType(char *, i32, void (*)(EdStream &, void *, i32));
     void Serialise(EdStream &);
     void SerialiseObjects(EdStream &, EdRegistry *);
 };
@@ -550,16 +582,38 @@ struct EdSystem {
     void Reset();
 };
 struct EdType {
-    u32 reserved_00;
+    char *name;
     i32 size;
-    u32 reserved_08;
+    void (*serialise)(EdStream &, void *, i32);
 
     void Serialise(EdStream &);
 };
 
+extern i32 EdType_Char;
+extern i32 EdType_Short;
+extern i32 EdType_Int;
+extern i32 EdType_Float;
+extern i32 EdType_VuVec;
+extern i32 EdType_VuMtx;
+extern i32 EdType_Enumeration;
+extern i32 EdType_String;
+extern i32 EdType_Colour3;
+extern i32 EdType_NuHSpecial;
+extern i32 EdType_NuVec;
+extern i32 EdType_NuMtx;
+extern EdRegistry theRegistry;
+
 static_assert(sizeof(void *) != 4 || sizeof(EdClass) == 0x18, "EdClass 32-bit size");
 static_assert(sizeof(void *) != 4 || sizeof(EdType) == 0xc, "EdType 32-bit size");
 static_assert(sizeof(void *) != 4 || sizeof(EdMember) == 0x8, "EdMember 32-bit size");
+static_assert(sizeof(void *) != 4 || sizeof(EdRegistry) == 0x44, "EdRegistry 32-bit size");
+static_assert(sizeof(void *) != 4 || sizeof(EdObjectNotifier) == 4, "EdObjectNotifier 32-bit size");
+static_assert(sizeof(void *) != 4 || sizeof(EdDefunctListEntry) == 0x10, "EdDefunctListEntry 32-bit size");
+static_assert(sizeof(void *) != 4 || sizeof(EdDefunctList) == 0xc, "EdDefunctList 32-bit size");
+static_assert(sizeof(void *) != 4 || offsetof(EdRegistry, defunct_objects) == 0x38,
+              "EdRegistry::defunct_objects 32-bit offset");
+static_assert(sizeof(void *) != 4 || offsetof(EdRegistry, notifier_count) == 0x34,
+              "EdRegistry::notifier_count 32-bit offset");
 static_assert(sizeof(void *) != 4 || offsetof(EdRegistry, types) == 0x4, "EdRegistry::types 32-bit offset");
 static_assert(sizeof(void *) != 4 || offsetof(EdRegistry, classes) == 0x8, "EdRegistry::classes 32-bit offset");
 static_assert(sizeof(void *) != 4 || offsetof(EdRegistry, type_count) == 0x1c, "EdRegistry::type_count 32-bit offset");

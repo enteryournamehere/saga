@@ -4774,7 +4774,9 @@ struct LevelEditor : BaseThing {
     BaseEditor *active_editor;
     char save_filename[0x80];
     char editor_filename[0x80];
-    u8 reserved_0xa44[0x18];
+    u8 reserved_0xa44[8];
+    u16 current_led_file;
+    u8 reserved_0xa4e[0xe];
     char text_buffer[0x400];
     i32 text_length;
     char *info_text[32];
@@ -4843,6 +4845,8 @@ DECOMP_ASSERT(offsetof(LevelEditor, text_buffer) == 0xa5c, "LevelEditor text buf
 DECOMP_ASSERT(offsetof(LevelEditor, info_text) == 0xe60, "LevelEditor info text offset");
 DECOMP_ASSERT(offsetof(LevelEditor, pad_text) == 0x1014, "LevelEditor pad text offset");
 DECOMP_ASSERT(sizeof(LevelEditor) == 0x10a8, "LevelEditor ABI");
+DECOMP_ASSERT(offsetof(LevelEditor, current_led_file) == 0xa4c, "LevelEditor current LED file offset");
+extern LevelEditor theLevelEditor;
 struct MemoryManager {
     usize cursor;
     usize end;

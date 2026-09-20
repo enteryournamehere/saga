@@ -10,6 +10,14 @@
 extern EdRegistry theRegistry;
 extern i32 EdType_String;
 
+DECOMP_ASSERT(offsetof(EdClass, flags) == 0x04, "EdClass flags offset");
+DECOMP_ASSERT(offsetof(EdClass, members) == 0x08, "EdClass members offset");
+DECOMP_ASSERT(offsetof(EdClass, last_member) == 0x0c, "EdClass last member offset");
+DECOMP_ASSERT(offsetof(EdClass, member_count) == 0x10, "EdClass member count offset");
+DECOMP_ASSERT(offsetof(EdClass, interface) == 0x14, "EdClass interface offset");
+DECOMP_ASSERT(sizeof(EdMember) == 0x08, "EdMember size");
+DECOMP_ASSERT(offsetof(EdMember, reference) == 0x04, "EdMember reference offset");
+
 i32 BaseEditor::blockDepth;
 i32 BaseEditor::blockStart[8];
 eduimenu_s *edLevelActiveMenu;

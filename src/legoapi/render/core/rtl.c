@@ -14,6 +14,7 @@
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nucore/nulst.h"
+#include "nu2api/numath/nurand.h"
 
 #include <math.h>
 #include <float.h>
@@ -47,6 +48,7 @@ static f32 rtl_shadow_blend_rate = 2.0f;
 static NUVEC rtl_shadow_flicker = {0.1f, 0.1f, 0.1f};
 static i32 rtl_dynamic_max;
 static i32 rtl_dynamic_cnt;
+static f32 rtl_frametime;
 static i16 rtl_uid = 1;
 u16 rtltimer1 = 0;
 f32 edrtl_text_scale = 1.0f;
@@ -386,8 +388,14 @@ extern "C" {
         return set;
     }
 
-    void rtlSaveSet(void) {
-        STUBBED();
+    void rtlSaveSet(char *path, rtlset *set) {
+        rtlSwapSetEndianess(set);
+        i32 file = NuFileOpen(path, NUFILE_WRITE);
+        if (file != 0) {
+            NuFileWrite(file, set, sizeof(rtlset));
+            NuFileClose(file);
+        }
+        rtlSwapSetEndianess(set);
     }
 
     rtlset *rtlGetCurrentSet(void) {
@@ -658,8 +666,74 @@ static __used__ void rtlApplyModifiersToSingleLight(rtl_s *light) {
     light->ambient.z += light->colour.z * scale;
 }
 
-static __used__ void rtlProcessLight(rtl_s *, f32) {
-    STUBBED();
+static __used__ void rtlProcessLight(rtl_s *light, f32 frame_time) {
+    f32 scale;
+    if (light->field_79 != -1 && light->field_7a == -1)
+        rtlApplyModifiersToChainLight(light);
+    switch (light->type) {
+        case 0:
+            return;
+        case 3:
+            if (light->parameter_54 >= 0.0f) {
+                light->parameter_54 -= frame_time;
+                light->ambient = light->colour;
+                if (light->parameter_54 <= 0.0f)
+                    light->parameter_54 = -light->parameters[2] - NuRandFloat() * light->parameters[3];
+            } else {
+                light->parameter_54 += frame_time;
+                light->ambient = light->secondary_colour;
+                if (light->parameter_54 >= 0.0f)
+                    light->parameter_54 = light->parameters[0] + NuRandFloat() * light->parameters[1];
+            }
+            break;
+        case 6:
+            if (light->field_64 == 0.0f) {
+                light->ambient.x = light->colour.x;
+                light->ambient.y = light->colour.y;
+                light->ambient.z = light->colour.z;
+            } else if (light->field_64 > 0.0f) {
+                light->parameter_54 += frame_time;
+                scale = MIN(1.0f, (MAX(0.0f, light->parameter_54 / light->field_64)));
+                light->ambient.x = light->colour.x * scale + (1.0f - scale) * light->secondary_colour.x;
+                light->ambient.y = light->colour.y * scale + (1.0f - scale) * light->secondary_colour.y;
+                light->ambient.z = light->colour.z * scale + (1.0f - scale) * light->secondary_colour.z;
+                if (light->parameter_54 >= light->field_64) {
+                    light->field_64 = -light->parameters[2] - NuRandFloat() * light->parameters[3];
+                    light->parameter_54 = 0.0f;
+                }
+            } else {
+                light->parameter_54 -= frame_time;
+                scale = MIN(1.0f, (MAX(0.0f, light->parameter_54 / light->field_64)));
+                light->ambient.x = light->secondary_colour.x * scale + (1.0f - scale) * light->colour.x;
+                light->ambient.y = light->secondary_colour.y * scale + (1.0f - scale) * light->colour.y;
+                light->ambient.z = light->secondary_colour.z * scale + (1.0f - scale) * light->colour.z;
+                if (light->parameter_54 <= light->field_64) {
+                    light->field_64 = light->parameters[0] + NuRandFloat() * light->parameters[1];
+                    light->parameter_54 = 0.0f;
+                }
+            }
+            break;
+        case 8:
+            light->ambient.x = light->secondary_colour.x * light->blend + (1.0f - light->blend) * light->colour.x;
+            light->ambient.y = light->secondary_colour.y * light->blend + (1.0f - light->blend) * light->colour.y;
+            light->ambient.z = light->secondary_colour.z * light->blend + (1.0f - light->blend) * light->colour.z;
+            light->blend += light->blend_rate * frame_time;
+            light->blend = MAX(0.0f, (MIN(1.0f, light->blend)));
+            light->parameter_54 -= frame_time;
+            if (light->parameter_54 <= 0.0f) {
+                light->parameter_54 = light->parameters[2];
+                if (light->blend_rate >= 0.0f)
+                    light->blend_rate = -(light->parameters[0] + NuRandFloat() * light->parameters[1]);
+                else
+                    light->blend_rate = light->parameters[0] + NuRandFloat() * light->parameters[1];
+            }
+            break;
+        default:
+            light->ambient = light->colour;
+            break;
+    }
+    if (light->field_79 == -1 && light->field_7a == -1)
+        rtlApplyModifiersToSingleLight(light);
 }
 
 extern "C" {
@@ -676,8 +750,29 @@ extern "C" {
         STUBBED();
     }
 
-    void rtlProcessLights(void *, f32) {
-        STUBBED();
+    void rtlProcessLights(void *set, f32 frame_time) {
+        rtl_s *light;
+        i32 i;
+        rtl_frametime = frame_time;
+        if (rtl_dynamic_pool != NULL) {
+            light = reinterpret_cast<rtl_s *>(NuLstGetNext(rtl_dynamic_pool, NULL));
+            while (light != NULL) {
+                rtlProcessLight(light, frame_time);
+                light = reinterpret_cast<rtl_s *>(
+                    NuLstGetNext(rtl_dynamic_pool, reinterpret_cast<NULNKHDR *>(light)));
+            }
+        }
+        if (set != NULL) {
+            rtlset *light_set = static_cast<rtlset *>(set);
+            light = light_set->lights;
+            for (i = 0; i < 128; ++i) {
+                if (light->type == 0)
+                    break;
+                if (light->field_7a == -1)
+                    rtlProcessLight(light, frame_time);
+                ++light;
+            }
+        }
     }
 
 } // extern "C"

@@ -36,7 +36,8 @@ struct rtl_s {
     u16 field_68;
     i16 uid;
     f32 intensity;
-    u8 pad_70[8];
+    f32 blend_rate;
+    f32 blend;
     u8 group_id;
     i8 field_79;
     i8 field_7a;
@@ -49,6 +50,8 @@ DECOMP_ASSERT(offsetof(rtl_s, colour) == 0x24, "RTL colour offset");
 DECOMP_ASSERT(offsetof(rtl_s, inner_radius) == 0x3c, "RTL radius offset");
 DECOMP_ASSERT(offsetof(rtl_s, type) == 0x58, "RTL type offset");
 DECOMP_ASSERT(offsetof(rtl_s, uid) == 0x6a, "RTL UID offset");
+DECOMP_ASSERT(offsetof(rtl_s, blend_rate) == 0x70, "RTL blend rate offset");
+DECOMP_ASSERT(offsetof(rtl_s, blend) == 0x74, "RTL blend factor offset");
 DECOMP_ASSERT(offsetof(rtl_s, field_7b) == 0x7b, "RTL modifier index offset");
 DECOMP_ASSERT(offsetof(rtl_s, field_7c) == 0x7c, "RTL chain base offset");
 DECOMP_ASSERT(offsetof(rtl_s, group_id) == 0x78, "RTL group ID offset");
@@ -119,5 +122,7 @@ extern "C" {
     void fogFree(rtlfog_s *);
     void rtlSetLights(rtldata_s *);
     rtlset *rtlLoadSet(char *, VARIPTR *, i32);
+    void rtlSaveSet(char *, rtlset *);
+    void rtlProcessLights(void *, f32);
     rtlfog_s *rtlGetFogSet(rtlset *, NUVEC *);
 }

@@ -805,7 +805,7 @@ i32 NetworkObjectManager::SendPushMessage(NetMessage *message, NetPeerPush const
         } else {
             theNetwork.ReliableSend(*message, 3, *peer, NULL, 0);
         }
-        return peer->vtable->GetAvailableMessages(peer) > 15;
+        return peer->vtable->get_available_messages(peer) > 15;
     }
     i32 available = 1;
     for (i32 i = 0; i < 8; ++i) {
@@ -816,7 +816,7 @@ i32 NetworkObjectManager::SendPushMessage(NetMessage *message, NetPeerPush const
             } else {
                 theNetwork.ReliableSend(*message, 3, *peer, NULL, 0);
             }
-            if (peer->vtable->GetAvailableMessages(peer) <= 15) {
+            if (peer->vtable->get_available_messages(peer) <= 15) {
                 available = 0;
             }
         }

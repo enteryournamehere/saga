@@ -70,7 +70,7 @@ struct NetListenerInterface {};
 struct NetPeer {
     struct Vtable {
         void *reserved_00[6];
-        i32 (*GetAvailableMessages)(NetPeer *);
+        i32 (*get_available_messages)(NetPeer *);
     } *vtable;
     u8 reserved_04[8];
     u8 local;

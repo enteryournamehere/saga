@@ -1,5 +1,8 @@
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
+#include "nu2api/nucore/NuDynamicLight.h"
+
+i16 Placeable::CurrentLedFile;
 
 void PlaceableHelper::Find(char *) {
     STUBBED();
@@ -77,22 +80,35 @@ void PlaceableNameControl::cbSelectObject(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-void Placeable::GetCurrentPosition() const {
-    STUBBED();
+VuVec const *Placeable::GetCurrentPosition() const {
+    VuMtx const *matrix = GetCurrentTransform();
+    return matrix ? reinterpret_cast<VuVec const *>(&matrix->matrix.m30) : NULL;
 }
 
-__attribute__((weak)) void Placeable::Reset() {
-    STUBBED();
+VuVec const *Placeable::GetInitialPosition() const {
+    VuMtx const *matrix = GetInitialTransform();
+    return matrix ? reinterpret_cast<VuVec const *>(&matrix->matrix.m30) : NULL;
 }
 
-void Placeable::GetInitialPosition() const {
-    STUBBED();
+void Placeable::SetCurrentPosition(VuVec const *position) {
+    NUMTX matrix;
+    VuMtx const *current = GetCurrentTransform();
+    // The original updates only a temporary matrix.
+    if (current) {
+        matrix = current->matrix;
+        NuMtxTranslate(&matrix, const_cast<NUVEC *>(&position->xyz));
+    } else {
+        NuMtxSetTranslation(&matrix, const_cast<NUVEC *>(&position->xyz));
+    }
 }
 
-void Placeable::SetCurrentPosition(VuVec const *) {
-    STUBBED();
-}
-
-void Placeable::SetInitialPosition(VuVec const *) {
-    STUBBED();
+void Placeable::SetInitialPosition(VuVec const *position) {
+    NUMTX matrix;
+    VuMtx const *initial = GetInitialTransform();
+    if (initial) {
+        matrix = initial->matrix;
+        NuMtxTranslate(&matrix, const_cast<NUVEC *>(&position->xyz));
+    } else {
+        NuMtxSetTranslation(&matrix, const_cast<NUVEC *>(&position->xyz));
+    }
 }

@@ -972,7 +972,8 @@ extern i32 Tag_DoneFirst;
 extern i32 Tag_DoneAny;
 extern i32 LevSfxFlag[4];
 extern struct AIANTINODE_s dynamic_antinodes[64]; // Dynamic AI obstacle pool, cleared per level.
-extern i32 LevInstAnim[12];
+extern nuinstanim_s *LevInstAnim[12];
+DECOMP_ASSERT(sizeof(LevInstAnim) == 0x30, "LevInstAnim clear extent");
 extern AIAREA_s *LevArea[4];
 extern i32 LevPathNodes[8];
 extern void *LevPathCnx[16];

@@ -1,10 +1,12 @@
 #include <string.h>
+#include <stdio.h>
 #include "decomp.h"
 #include "legoapi/world/level.h"
 #include "globals.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/render/core/terrain.h"
+#include "legoapi/render/fx/parts.h"
 #include "legoapi/props/doors/door.h"
 #include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
 #include "legoapi/gizmo/base/GizForceObjectInterface.h"
@@ -20,6 +22,7 @@
 #include "gameapi/ai/aisys/aisys.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nucore/nustring.h"
+#include "nu2api/numath/numtx.h"
 
 extern i32 LevFlag[4];
 
@@ -37,6 +40,13 @@ static GIZAIMESSAGE_s *KashyyykA_msg_TotalWookies;
 static NUVEC TempleC_StreamStatusPos = {52.57f, 0.76f, -16.54f};
 static GIZAIMESSAGE_s *KashyyykA_msg_WookiesToRescue;
 static GameObject_s *Grievous_obj; // current Grievous boss object
+static f32 BoulderWait;
+static i32 i_boulder;
+PART_s *boulder_part[2];
+i32 boulder_blowup_type = -1;
+
+void Boulder_Move(PART_s *, f32);
+void Boulder_Kill(PART_s *, i32);
 struct VADERA_s {
     GIZAIMESSAGE_s *in_control_room_message;
     GIZAIMESSAGE_s *ceiling_collapse_message;
@@ -282,7 +292,9 @@ void KashyyykC_Init(WORLDINFO_s *world) {
 }
 
 void KashyyykD_Init(WORLDINFO_s *) {
-    STUBBED();
+    i_boulder = 0;
+    BoulderWait = 0.0f;
+    boulder_blowup_type = GizmoBlowupGetTypeFromNameTableId(WORLD, GizmoBlowupGetNameTableId("ball_blowup_null"));
 }
 
 void KashyyykA_Panel(WORLDINFO_s *) {
@@ -313,8 +325,21 @@ void KashyyykB_Reset(WORLDINFO_s *) {
     STUBBED();
 }
 
-void KashyyykD_Reset(WORLDINFO_s *) {
-    STUBBED();
+void KashyyykD_Reset(WORLDINFO_s *world) {
+    char name[0x100];
+    for (i32 i = 0; i < 2; ++i) {
+        sprintf(name, "ball%ib", i + 1);
+        if (NuSpecialFind(world->current_gscn, &LevHSpecial[i], name, 1))
+            NuSpecialSetVisibility(&LevHSpecial[i], 0);
+        boulder_part[i] = NULL;
+        sprintf(name, "ball%i", i + 1);
+        if (NuSpecialFind(world->current_gscn, &LevHSpecial[i], name, 1)) {
+            NuSpecialSetVisibility(&LevHSpecial[i], 0);
+            LevInstAnim[i] = NuSpecialGetInstAnim(&LevHSpecial[i]);
+            LevInstAnim[i]->playing = 0;
+            LevInstAnim[i]->ltime = 0.0f;
+        }
+    }
 }
 
 i32 AnakinGreenSabre(GameObject_s *obj) {
@@ -339,7 +364,40 @@ void KashyyykC_Update(WORLDINFO_s *) {
 }
 
 void KashyyykD_Update(WORLDINFO_s *) {
-    STUBBED();
+    if (netclient != 0)
+        return;
+    if (BoulderWait <= 0.0f) {
+        if (boulder_part[i_boulder] != NULL)
+            return;
+        if (LevInstAnim[i_boulder] != NULL && LevHSpecial[i_boulder].display_special != NULL) {
+            ADDPART_s params = Default_ADDPART;
+            params.matrix = &numtx_identity;
+            params.velocity = &v000;
+            params.owner = NULL;
+            params.field_14 = 0.3f;
+            params.field_18 = 0.3f;
+            params.gravity = 0.0f;
+            params.special = &LevHSpecial[i_boulder];
+            params.flags = 0x80861a;
+            params.move_fn = Boulder_Move;
+            params.field_40 = PartCollide_3D;
+            params.field_44 = Boulder_Kill;
+            params.time_step = FRAMETIME;
+            PART_s *part = AddPart(&params);
+            if (part != NULL)
+                boulder_part[i_boulder] = part;
+            LevInstAnim[i_boulder]->ltime = 1.0f;
+            LevInstAnim[i_boulder]->playing = 1;
+            LevInstAnim[i_boulder]->mtx = numtx_identity;
+            NuSpecialSetVisibility(&LevHSpecial[i_boulder], 1);
+        }
+        ++i_boulder;
+        if (i_boulder == 2)
+            i_boulder = 0;
+        BoulderWait = 8.0f;
+    } else {
+        BoulderWait -= FRAMETIME;
+    }
 }
 
 // ===========================================================================

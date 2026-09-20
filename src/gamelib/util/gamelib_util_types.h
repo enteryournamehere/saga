@@ -471,7 +471,8 @@ struct NetworkObjectManager {
     } registered_calls[32];
     i32 registered_call_count;
     NetPeerPush peer_push[8];
-    u8 reserved_d8d8[0xd96c - 0xd8d8];
+    NetPeerPush default_push;
+    NetSmallStats *class_stats[32];
     u8 field_d96c;
 };
 static_assert(sizeof(void *) != 4 || offsetof(NetSession, local_peer) == 0x84, "NetSession local peer offset");
@@ -483,6 +484,10 @@ static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, guid_peers) 
               "NetworkObjectManager::guid_peers 32-bit offset");
 static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, peer_push) == 0xd838,
               "NetworkObjectManager::peer_push 32-bit offset");
+static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, default_push) == 0xd8d8,
+              "NetworkObjectManager::default_push 32-bit offset");
+static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, class_stats) == 0xd8ec,
+              "NetworkObjectManager::class_stats 32-bit offset");
 static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, field_d96c) == 0xd96c,
               "NetworkObjectManager::field_d96c 32-bit offset");
 static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, objects) == 0x30,

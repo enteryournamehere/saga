@@ -147,7 +147,19 @@ struct edui_colour_pick_s : eduiitem_s {
     f32 hue;
     f32 saturation;
     f32 value;
-    u8 unknown_60[0x10];
+    f32 red;
+    f32 green;
+    f32 blue;
+    union {
+        u8 interaction_flags;
+        struct {
+            u8 dragging_colour : 1;
+            u8 dragging_saturation : 1;
+            u8 accepted : 1;
+            u8 unknown_interaction_flags : 5;
+        };
+    };
+    u8 unknown_6d[3];
     EdUiItemCallback changed;
 };
 
@@ -156,7 +168,7 @@ struct edui_texture_pick_s : eduiitem_s {
     f32 uv_x[2];
     f32 uv_y[2];
     EdUiItemCallback changed;
-    u8 unknown_60[4];
+    i32 texture_id;
     i32 selected_corner;
     f32 zoom;
 };
@@ -167,7 +179,9 @@ struct edui_expander_s : eduiitem_s {
     eduiitem_s *last_child;
     u32 open : 1;
     u32 unknown_flags : 31;
-    u8 unknown_58[0xc];
+    f32 button_size;
+    f32 button_x;
+    f32 button_y;
     i32 depth;
     EdUiItemCallback changed;
 };
@@ -258,7 +272,12 @@ struct edui_gradient_pick_s : eduiitem_s {
     edui_gradient_node_s *first_stage;
     edui_gradient_node_s *selected_stage;
     EdUiItemCallback changed;
-    u8 unknown_58[0x18];
+    EdUiItemCallback press;
+    EdUiItemCallback add;
+    EdUiItemCallback remove;
+    EdUiItemCallback copy;
+    EdUiItemCallback paste;
+    i32 change_timer;
 };
 
 struct edui_filter_s : edui_prop_s {
@@ -390,4 +409,17 @@ extern "C" {
     void eduiItemExpanderAddChild(edui_expander_s *item, eduiitem_s *child);
     void eduiItemFilterAddItem(edui_filter_s *item, eduiitem_s *child);
     void eduiItemFilterRemoveItem(edui_filter_s *item, eduiitem_s *child);
+    void eduiGradStageDelete(edui_gradient_pick_s *item, edui_gradient_node_s *stage);
+    void eduiGradStageSetHSV(edui_gradient_node_s *stage, f32 hue, f32 saturation, f32 value);
+    void eduiGradStageSetRGB(edui_gradient_node_s *stage, f32 red, f32 green, f32 blue);
+    edui_gradient_node_s *eduiGradStageAdd(edui_gradient_pick_s *item, f32 time, f32 hue, f32 saturation, f32 value);
+    edui_gradient_node_s *eduiGradStageAddRGB(edui_gradient_pick_s *item, f32 time, f32 red, f32 green, f32 blue);
+    eduiitem_s *eduiItemGradPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text);
+    eduiitem_s *eduiItemGreyGradPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text);
+    eduiitem_s *eduiItemDataGradPickCreate(usize data, const void *colours, EdUiItemCallback callback,
+                                         EdUiItemCallback press, EdUiItemCallback add, EdUiItemCallback remove,
+                                         EdUiItemCallback copy, EdUiItemCallback paste, char *text);
+    eduiitem_s *eduiItemPropCreateEx(usize data, const void *colours, EdUiItemCallback selected,
+                                    EdUiItemCallback changed, EdUiItemCallback button, i32 button_type,
+                                    char *text, char *value, i32 extra_data);
 }

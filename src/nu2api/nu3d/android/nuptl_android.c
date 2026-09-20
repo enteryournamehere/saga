@@ -598,8 +598,8 @@ extern "C" void GenericDebinfoDmaTypeUpdate(debinftype *effect) {
         }
         const f32 sine = NU_SIN_LUT(rotation);
         const f32 cosine = NU_SIN_LUT(rotation + 16384.0f);
-        const f32 wave_x = effect->field_0b4 * NU_SIN_LUT(effect->field_0b0 * time * 65536.0f);
-        const f32 wave_y = effect->field_0bc * NU_SIN_LUT(effect->field_0b8 * time * 65536.0f);
+        const f32 wave_x = effect->jib_x_amplitude * NU_SIN_LUT(effect->jib_x_frequency * time * 65536.0f);
+        const f32 wave_y = effect->jib_y_amplitude * NU_SIN_LUT(effect->jib_y_frequency * time * 65536.0f);
         const f32 texture_x_numerator = cosine * (width * 0.25f) - sine * (height * 0.25f) + wave_x;
         const f32 texture_y_numerator = -sine * (width * 0.25f) - cosine * (height * 0.25f) + wave_y;
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nu2api/nucore/common.h"
+#include "decomp.h"
 
 struct eduimenu_s;
 struct eduiitem_s;
@@ -286,26 +287,25 @@ struct edui_filter_s : edui_prop_s {
     u8 unknown_84[8];
 };
 
-#ifndef HOST_BUILD
-static_assert(sizeof(eduiitem_s) == 0x48, "eduiitem_s ABI");
-static_assert(offsetof(eduiitem_s, colours) == 0x28, "eduiitem_s colours ABI");
-static_assert(offsetof(eduiitem_s, input) == 0x38, "eduiitem_s input ABI");
-static_assert(sizeof(edui_sel_s) == 0x54, "edui_sel_s ABI");
-static_assert(sizeof(edui_slider_s) == 0x6c, "edui_slider_s ABI");
-static_assert(sizeof(edui_colour_pick_s) == 0x74, "edui_colour_pick_s ABI");
-static_assert(sizeof(edui_texture_pick_s) == 0x6c, "edui_texture_pick_s ABI");
-static_assert(sizeof(edui_expander_s) == 0x6c, "edui_expander_s ABI");
-static_assert(sizeof(edui_graph_s) == 0xc0, "edui_graph_s ABI");
-static_assert(sizeof(edui_file_pick_s) == 0x2a4, "edui_file_pick_s ABI");
-static_assert(sizeof(edui_filter_s) == 0x8c, "edui_filter_s ABI");
-static_assert(sizeof(edui_prop_s) == 0x80, "edui_prop_s ABI");
-static_assert(sizeof(edui_textpicker_s) == 0x168, "edui_textpicker_s ABI");
-static_assert(offsetof(edui_textpicker_s, value) == 0x4c, "edui_textpicker_s value ABI");
-static_assert(offsetof(edui_textpicker_s, max_length) == 0x15a, "edui_textpicker_s length ABI");
-static_assert(sizeof(edui_gradient_stage_s) == 0x24, "edui_gradient_stage_s ABI");
-static_assert(sizeof(edui_gradient_node_s) == 0x20, "edui_gradient_node_s ABI");
-static_assert(sizeof(edui_gradient_pick_s) == 0x70, "edui_gradient_pick_s ABI");
-#endif
+DECOMP_ASSERT(sizeof(eduiitem_s) == 0x48, "eduiitem_s ABI");
+DECOMP_ASSERT(offsetof(eduiitem_s, colours) == 0x28, "eduiitem_s colours ABI");
+DECOMP_ASSERT(offsetof(eduiitem_s, input) == 0x38, "eduiitem_s input ABI");
+DECOMP_ASSERT(sizeof(edui_sel_s) == 0x54, "edui_sel_s ABI");
+DECOMP_ASSERT(sizeof(edui_slider_s) == 0x6c, "edui_slider_s ABI");
+DECOMP_ASSERT(sizeof(edui_colour_pick_s) == 0x74, "edui_colour_pick_s ABI");
+DECOMP_ASSERT(sizeof(edui_texture_pick_s) == 0x6c, "edui_texture_pick_s ABI");
+DECOMP_ASSERT(sizeof(edui_expander_s) == 0x6c, "edui_expander_s ABI");
+DECOMP_ASSERT(sizeof(edui_graph_s) == 0xc0, "edui_graph_s ABI");
+DECOMP_ASSERT(sizeof(edui_file_pick_s) == 0x2a4, "edui_file_pick_s ABI");
+DECOMP_ASSERT(sizeof(edui_filter_s) == 0x8c, "edui_filter_s ABI");
+DECOMP_ASSERT(sizeof(edui_prop_s) == 0x80, "edui_prop_s ABI");
+DECOMP_ASSERT(sizeof(edui_textpicker_s) == 0x168, "edui_textpicker_s ABI");
+DECOMP_ASSERT(offsetof(edui_textpicker_s, value) == 0x4c, "edui_textpicker_s value ABI");
+DECOMP_ASSERT(offsetof(edui_textpicker_s, max_length) == 0x15a, "edui_textpicker_s length ABI");
+DECOMP_ASSERT(sizeof(edui_gradient_stage_s) == 0x24, "edui_gradient_stage_s ABI");
+DECOMP_ASSERT(sizeof(edui_gradient_node_s) == 0x20, "edui_gradient_node_s ABI");
+DECOMP_ASSERT(sizeof(edui_gradient_pick_s) == 0x70, "edui_gradient_pick_s ABI");
+
 
 struct edui_interact_s {
     f32 x, y, width, height;

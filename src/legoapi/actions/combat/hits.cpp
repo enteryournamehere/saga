@@ -60,7 +60,6 @@ i32 Player_HasFastBuild(GameObject_s *);
 i32 Player_HasInvincibility(GameObject_s *);
 i32 ReleaseHearts();
 void KillParts(GameObject_s *, i32, i32, i32, f32, i32, u16 *);
-void KillGameObject(GameObject_s *, i32, i32);
 void GameCam_Judder(GAMECAMERA_s *, f32, i32, NUVEC *);
 void Arcade_Kill(i32, i32);
 i32 qrand();

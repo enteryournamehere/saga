@@ -3626,8 +3626,7 @@ struct ClassObjectList {
     i32 IsInList(void *, EdRef *);
 };
 struct EdManipulator;
-struct ClassEditor {
-    u8 reserved_0x00[0x10];
+struct ClassEditor : BaseEditor {
     EdTool *first_tool;
     EdTool *last_tool;
     i32 tool_count;
@@ -3645,6 +3644,8 @@ struct ClassEditor {
     i32 class_filter;
 
     ClassEditor();
+    virtual ~ClassEditor() {}
+    char *GetName() { return const_cast<char *>("Class Editor"); }
     void AddMenuItems(eduimenu_s *);
     void ClearLevel(i32);
     void *CreateObject();
@@ -3654,7 +3655,7 @@ struct ClassEditor {
     void DestroySelectedObjects();
     void DestroySelectedObjectsNow();
     void DrawObjectSphere(ClassObject &, i32);
-    void Editable(void *, EdClass *, i32);
+    i32 Editable(void *, EdClass *, i32);
     void Enter();
     void Exit();
     void FindNearestObject(VuVec &, ClassObject &, ClassObject &, i32);
@@ -3691,8 +3692,8 @@ struct ClassEditor {
     void ViewSelected();
     void WriteBlock(i32);
     static void cbDestroyMenu(eduimenu_s *, eduimenu_s *);
-    void cbDestroyObject(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassDeleteObject(eduimenu_s *, eduiitem_s *, u32);
+    static void cbDestroyObject(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassDeleteObject(eduimenu_s *, eduiitem_s *, u32);
     static void cbEdClassExportMenu(eduimenu_s *, eduiitem_s *, u32);
     void cbEdClassFileMenu(eduimenu_s *, eduiitem_s *, u32);
     static void cbEdClassImportMenu(eduimenu_s *, eduiitem_s *, u32);
@@ -3701,9 +3702,9 @@ struct ClassEditor {
     void cbEdClassNewObject(eduimenu_s *, eduiitem_s *, u32);
     void cbEdClassRemoveDuplicates(eduimenu_s *, eduiitem_s *, u32);
     void cbEdClassSelectClassMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassSelectObject(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassSelectObject(eduimenu_s *, eduiitem_s *, u32);
     void cbEdClassSelectObjectMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassSetMode(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassSetMode(eduimenu_s *, eduiitem_s *, u32);
     static void cbEdClassSetPinned(eduimenu_s *, eduiitem_s *, u32);
     static void cbEdClassSetSnap(eduimenu_s *, eduiitem_s *, u32);
     static void cbEdClassSetView(eduimenu_s *, eduiitem_s *, u32);
@@ -3715,7 +3716,7 @@ struct ClassEditor {
     void cbEdFilterLED(eduimenu_s *, eduiitem_s *, u32);
     void cbEdLevelDeselectAll(eduimenu_s *, eduiitem_s *, u32);
     void cbEdLevelSelectAll(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdPadSetManipulatorMode(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdPadSetManipulatorMode(eduimenu_s *, eduiitem_s *, u32);
     void cbFileSelected(eduimenu_s *, eduiitem_s *, u32);
 };
 DECOMP_ASSERT(offsetof(ClassEditor, selected_objects) == 0x24, "ClassEditor selection offset");

@@ -34,6 +34,14 @@ DECOMP_ASSERT(offsetof(EdClass, interface) == 0x14, "EdClass interface offset");
 DECOMP_ASSERT(sizeof(EdMember) == 0x08, "EdMember size");
 DECOMP_ASSERT(offsetof(EdMember, reference) == 0x04, "EdMember reference offset");
 
+
+extern EdRegistry theRegistry;
+extern ClassEditor theClassEditor;
+extern LevelEditor theLevelEditor;
+extern MemoryManager theMemoryManager;
+extern eduimenu_s *edLevelNextMenu;
+void eduiSetPinnedMenu(eduimenu_s *);
+
 i32 BaseEditor::blockDepth;
 i32 BaseEditor::blockStart[8];
 eduimenu_s *edLevelActiveMenu;
@@ -183,15 +191,44 @@ void ClassEditor::DestroySelectedObjects() {
 }
 
 void ClassEditor::DestroySelectedObjectsNow() {
-    STUBBED();
+    while (selected_objects.first != NULL) {
+        ClassObjectListEntry *entry = selected_objects.first;
+        if (current_object.object == entry->object && current_object.reference == entry->reference) {
+            current_object.ed_class = NULL;
+            current_object.object = NULL;
+        }
+        theRegistry.DestroyObject(entry->ed_class->interface, entry->object, 0, 0);
+        if (entry->next != NULL) {
+            entry->next->previous = entry->previous;
+        } else {
+            selected_objects.last = entry->previous;
+        }
+        if (entry->previous != NULL) {
+            entry->previous->next = entry->next;
+        } else {
+            selected_objects.first = entry->next;
+        }
+        entry->next = NULL;
+        entry->previous = NULL;
+        --selected_objects.count;
+        theMemoryManager.FreePool(entry, sizeof(*entry));
+    }
 }
 
 void ClassEditor::DrawObjectSphere(ClassObject &, i32) {
     STUBBED();
 }
 
-void ClassEditor::Editable(void *, EdClass *, i32) {
-    STUBBED();
+i32 ClassEditor::Editable(void *object, EdClass *object_class, i32 index) {
+    i16 scene = 0;
+    if (object == NULL) {
+        return (class_filter >> index) & 1;
+    }
+    EdMember member;
+    if (object_class->FindMember(&member, object, 256, 1)) {
+        member.reference->GetAttributeData(member.object, 256, EdType_Short, &scene, 0);
+    }
+    return theLevelEditor.IsEditable(scene) != 0;
 }
 
 void ClassEditor::FindNearestObject(VuVec &, ClassObject &, ClassObject &, i32) {
@@ -347,12 +384,15 @@ void ClassEditor::cbDestroyMenu(eduimenu_s *menu, eduimenu_s *) {
     }
 }
 
-void ClassEditor::cbDestroyObject(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void ClassEditor::cbDestroyObject(eduimenu_s *, eduiitem_s *item, u32) {
+    if (item->data != 0) {
+        theClassEditor.DestroySelectedObjectsNow();
+    }
+    theLevelEditor.CloseMenu();
 }
 
 void ClassEditor::cbEdClassDeleteObject(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    theClassEditor.DestroySelectedObjects();
 }
 
 void ClassEditor::cbEdClassExportMenu(eduimenu_s *, eduiitem_s *, u32) {
@@ -385,16 +425,22 @@ void ClassEditor::cbEdClassSelectClassMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-void ClassEditor::cbEdClassSelectObject(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void ClassEditor::cbEdClassSelectObject(eduimenu_s *, eduiitem_s *item, u32) {
+    theClassEditor.pending_object.object = item->data_ptr;
+    if (theClassEditor.pending_object.object != NULL) {
+        theClassEditor.SelectObject(theClassEditor.pending_object, 0);
+        theClassEditor.FocusSelected();
+        theLevelEditor.CloseMenu();
+    }
 }
 
 void ClassEditor::cbEdClassSelectObjectMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-void ClassEditor::cbEdClassSetMode(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void ClassEditor::cbEdClassSetMode(eduimenu_s *menu, eduiitem_s *item, u32) {
+    theClassEditor.SetMode(item->data);
+    eduiMenuHighlight(menu, item);
 }
 
 void ClassEditor::cbEdClassSetPinned(eduimenu_s *menu, eduiitem_s *item, u32) {
@@ -471,7 +517,14 @@ void ClassEditor::cbEdLevelSelectAll(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 void ClassEditor::cbEdPadSetManipulatorMode(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    if (theClassEditor.mode == 4) {
+        theClassEditor.mode = 5;
+    } else if (theClassEditor.mode == 5) {
+        theClassEditor.mode = 3;
+    } else if (theClassEditor.mode == 3) {
+        theClassEditor.mode = 4;
+    }
+    theClassEditor.SetMode(theClassEditor.mode);
 }
 
 void ClassEditor::cbFileSelected(eduimenu_s *, eduiitem_s *, u32) {

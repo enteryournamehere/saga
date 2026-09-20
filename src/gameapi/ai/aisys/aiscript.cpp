@@ -515,7 +515,7 @@ static void xConditions(NUFPAR *parser) {
             NuFParGetWord(parser);
 
             if (cond->param_cond == NULL) {
-                char param_idx;
+                u8 param_idx;
                 char *param;
 
                 param = NuStrIStr(parser->word_buf, "param");
@@ -531,9 +531,10 @@ static void xConditions(NUFPAR *parser) {
                         }
                     }
                 } else {
-                    cond->param_idx = NuAToI(param);
+                    param_idx = NuAToI(param);
+                    cond->param_idx = param_idx;
 
-                    if (cond->param_idx < 4) {
+                    if (param_idx < 4) {
                         cond->is_param_idx_valid = 1;
                     }
                 }
@@ -1057,7 +1058,6 @@ static i32 AIScriptBuildDerivedScript(AISCRIPT *script, VARIPTR *buf, VARIPTR *b
         }
     }
 
-    script->is_level_script = 0;
     script->is_derived = 0;
 
     return 1;
@@ -1101,9 +1101,9 @@ void AIScriptLoadAllPakFile(void *pak, char *path, VARIPTR *buf, VARIPTR *buf_en
 
     if (file != 0) {
         parser = NuFParOpen(file);
+        i = 0;
 
         if (parser != NULL) {
-            i = 0;
             while (NuFParGetLine(parser) != 0) {
                 NuFParGetWord(parser);
                 NuStrLen(parser->word_buf);

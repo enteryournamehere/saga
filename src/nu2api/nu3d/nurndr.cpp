@@ -124,7 +124,27 @@ void NuRndrRectUV2diZ(i32 x, i32 y, i32 width, i32 height, f32 u0, f32 v0, f32 u
     NuPrim2DEnd();
 }
 
+static NUMTL *pZClearMaterial;
+static NUMTL *pAlphaMask;
+
 void NuRndrInitGeneric() {
+    const i32 render_plane = NuMtlSetCurrentRenderPlane(22);
+    if (!pZClearMaterial) {
+        pZClearMaterial = NuMtlCreate(1);
+        pZClearMaterial->attribs.z_mode = 2;
+        pZClearMaterial->attribs.alpha_mode = 2;
+        pZClearMaterial->attribs.alpha_test = 1;
+        NuMtlUpdate(pZClearMaterial);
+    }
+    if (!pAlphaMask) {
+        pAlphaMask = NuMtlCreate(1);
+        pAlphaMask->attribs.alpha_fail = 0;
+        pAlphaMask->attribs.z_mode = 2;
+        pAlphaMask->attribs.alpha_test = 6;
+        pAlphaMask->attribs.alpha_ref = 0;
+        pAlphaMask->attribs.alpha_mode = 2;
+    }
+    NuMtlSetCurrentRenderPlane(render_plane);
     NuVpResetRegions();
 }
 

@@ -454,36 +454,104 @@ void NetworkObjectManager::Receive(NetMessage, unsigned char, NetPeer const &) {
     STUBBED();
 }
 
-void NetworkObjectManager::ReceiveAcquireMessage(NetMessage &, NetPeer const &) {
-    STUBBED();
+void NetworkObjectManager::ReceiveAcquireMessage(NetMessage &message, NetPeer const &peer) {
+    i16 id;
+    message.Read16(id);
+    NetworkObject *object = &objects[id];
+    if (object->id == id && object->owner->local != 0 && theNetwork.NosAcquire(object, peer) == 1) {
+        RemoveFromLocalObjectList(object);
+        objects[id].owner = &peer;
+        objects[id].flags |= 0x20;
+        theNetwork.NosAdopted(&objects[id], peer);
+        SendAcquiredMessage(id, peer);
+    }
 }
 
-void NetworkObjectManager::ReceiveAcquiredMessage(NetMessage &, NetPeer const &) {
-    STUBBED();
+void NetworkObjectManager::ReceiveAcquiredMessage(NetMessage &message, NetPeer const &) {
+    i16 id;
+    message.Read16(id);
+    objects[id].owner = theSession->local_peer;
+    AddToLocalObjectList(&objects[id]);
+    SendAdoptedMessage(id);
+    theNetwork.NosAdopted(&objects[id], *objects[id].owner);
+    RemovePendingObject(&objects[id]);
 }
 
-void NetworkObjectManager::ReceiveAdoptedMessage(NetMessage &, NetPeer const &) {
-    STUBBED();
+void NetworkObjectManager::ReceiveAdoptedMessage(NetMessage &message, NetPeer const &peer) {
+    i16 id;
+    message.Read16(id);
+    objects[id].flags &= ~0x20;
+    if (objects[id].owner != &peer) {
+        objects[id].owner = &peer;
+        theNetwork.NosAdopted(&objects[id], peer);
+    }
 }
 
 void NetworkObjectManager::ReceiveConstructorMessage(NetMessage &, NetPeer const &) {
     STUBBED();
 }
 
-void NetworkObjectManager::ReceiveContinuityBreak(NetMessage &, NetPeer const &) {
-    STUBBED();
+void NetworkObjectManager::ReceiveContinuityBreak(NetMessage &message, NetPeer const &) {
+    i16 id;
+    i16 class_id;
+    message.Read16(id);
+    message.Read16(class_id);
+    EdClass *object_class = theRegistry.GetClass(class_id);
+    NetworkObject *object = &objects[id];
+    if (object->object_class == object_class) {
+        object->flags &= 2;
+    }
 }
 
-void NetworkObjectManager::ReceiveObjectCallMessage(NetMessage &, NetPeer const &) {
-    STUBBED();
+void NetworkObjectManager::ReceiveObjectCallMessage(NetMessage &message, NetPeer const &peer) {
+    u8 call_id;
+    message.Read8(call_id);
+    if (static_cast<i8>(call_id) <= 0) {
+        return;
+    }
+    i32 call_index = static_cast<i8>(call_id - 1);
+    if (registered_calls[call_index].type != 1) {
+        return;
+    }
+
+    i16 id;
+    i16 class_id;
+    message.Read16(id);
+    message.Read16(class_id);
+    EdClass *object_class = theRegistry.GetClass(class_id);
+    NetworkObject *object = &objects[id];
+    if (object->object == NULL && (registered_calls[call_index].flags & 1) != 0) {
+        void *instance = theRegistry.CreateObject(object_class->interface, NULL, 0, id, 1);
+        object->Initialise(id, instance, object_class, peer, 0);
+    }
+    if (object->object != NULL) {
+        reinterpret_cast<void (*)(void *, NetMessage &)>(registered_calls[call_index].callback)(object->object,
+                                                                                             message);
+    }
 }
 
-void NetworkObjectManager::ReceiveReleaseMessage(NetMessage &, NetPeer const &) {
-    STUBBED();
+void NetworkObjectManager::ReceiveReleaseMessage(NetMessage &message, NetPeer const &) {
+    i16 id;
+    i16 class_id;
+    message.Read16(id);
+    message.Read16(class_id);
+    NetworkObject *object = &objects[id];
+    if (object->id == id && class_id == theRegistry.GetClassId(object->object_class) && object->object != NULL) {
+        theRegistry.DestroyObject(object->object_class->interface, object->object, id, 1);
+        RemoveFromLocalObjectList(object);
+        object->Destroy();
+    }
 }
 
-void NetworkObjectManager::ReceiveRemoteCallMessage(NetMessage &, NetPeer const &) {
-    STUBBED();
+void NetworkObjectManager::ReceiveRemoteCallMessage(NetMessage &message, NetPeer const &) {
+    u8 call_id;
+    message.Read8(call_id);
+    if (static_cast<i8>(call_id) > 0) {
+        i32 call_index = static_cast<i8>(call_id - 1);
+        if (registered_calls[call_index].type == 0) {
+            reinterpret_cast<void (*)(NetMessage &)>(registered_calls[call_index].callback)(message);
+        }
+    }
 }
 
 void NetworkObjectManager::ReceiveReplicaMessage(NetMessage &, NetPeer const &) {
@@ -510,22 +578,26 @@ void NetworkObjectManager::RegisterObject(void *, EdClass *, i32) {
     STUBBED();
 }
 
-void NetworkObjectManager::RegisterObjectCall(void (*callback)(void *, NetMessage &), i32 id) {
+i32 NetworkObjectManager::RegisterObjectCall(void (*callback)(void *, NetMessage &), i32 flags) {
     if (registered_call_count <= 31) {
-        RegisteredCall &call = registered_calls[registered_call_count++];
+        RegisteredCall &call = registered_calls[registered_call_count];
+        call.flags = flags;
         call.type = 1;
         call.callback = reinterpret_cast<void *>(callback);
-        call.id = id;
+        return ++registered_call_count;
     }
+    return 0;
 }
 
-void NetworkObjectManager::RegisterRemoteCall(void (*callback)(NetMessage &), i32 id) {
+i32 NetworkObjectManager::RegisterRemoteCall(void (*callback)(NetMessage &), i32 flags) {
     if (registered_call_count <= 31) {
-        RegisteredCall &call = registered_calls[registered_call_count++];
+        RegisteredCall &call = registered_calls[registered_call_count];
+        call.flags = flags;
         call.type = 0;
         call.callback = reinterpret_cast<void *>(callback);
-        call.id = id;
+        return ++registered_call_count;
     }
+    return 0;
 }
 
 void NetworkObjectManager::ReleaseObject(void *, EdClass *, i32) {

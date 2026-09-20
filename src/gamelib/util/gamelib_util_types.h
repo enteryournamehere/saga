@@ -339,7 +339,7 @@ struct NetTransporter {
     void FtpComplete(FtpFile *, i32) const;
     void FtpDownload(FtpFile *) const;
     void FtpUpload(FtpFile *) const;
-    void NosAcquire(NetworkObject *, NetPeer const &) const;
+    i32 NosAcquire(NetworkObject *, NetPeer const &) const;
     void NosAdopted(NetworkObject *, NetPeer const &) const;
     void PeerDead(NetPeer const &) const;
     void PeerJoined(NetPeer const &) const;
@@ -433,8 +433,8 @@ struct NetworkObjectManager {
     void ReceiveStopMessage(NetMessage &, NetPeer const &);
     void Recover(NetworkObject *);
     void RegisterObject(void *, EdClass *, i32);
-    void RegisterObjectCall(void (*)(void *, NetMessage &), i32);
-    void RegisterRemoteCall(void (*)(NetMessage &), i32);
+    i32 RegisterObjectCall(void (*)(void *, NetMessage &), i32);
+    i32 RegisterRemoteCall(void (*)(NetMessage &), i32);
     void ReleaseObject(void *, EdClass *, i32);
     void RemoteCall(i32, NetMessage, NetPeer const *);
     void RemoveFromLocalObjectList(NetworkObject *);
@@ -466,8 +466,8 @@ struct NetworkObjectManager {
     NOSFilter *filters[64];
     struct RegisteredCall {
         i32 type;
+        i32 flags;
         void *callback;
-        i32 id;
     } registered_calls[32];
     i32 registered_call_count;
     NetPeerPush peer_push[8];
@@ -504,6 +504,8 @@ static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, registered_c
               "NetworkObjectManager::registered_calls 32-bit offset");
 static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, registered_call_count) == 0xd834,
               "NetworkObjectManager::registered_call_count 32-bit offset");
+DECOMP_ASSERT(offsetof(NetworkObjectManager::RegisteredCall, flags) == 4, "RegisteredCall flags offset");
+DECOMP_ASSERT(offsetof(NetworkObjectManager::RegisteredCall, callback) == 8, "RegisteredCall callback offset");
 struct TouchHacks {
     static bool TouchControlsActive;
 

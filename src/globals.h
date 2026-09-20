@@ -176,9 +176,16 @@ DECOMP_ASSERT(sizeof(CUSTOMISESAVE) == 0x6f, "CUSTOMISESAVE size");
 struct EPISODESAVE_s {
     f32 superstory_time_limit;
     i32 superstory_score_target;
-    u32 flags;
+    union {
+        u32 flags;
+        struct {
+            u8 superstory_complete;
+            u8 reserved_0x9[3];
+        };
+    };
 };
 DECOMP_ASSERT(sizeof(EPISODESAVE_s) == 0xc, "EPISODESAVE size");
+DECOMP_ASSERT(offsetof(EPISODESAVE_s, superstory_complete) == 0x8, "EPISODESAVE superstory completion offset");
 
 struct GAMESAVE_s {
     u8 field_0x0;

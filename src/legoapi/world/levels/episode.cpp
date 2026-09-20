@@ -1,7 +1,13 @@
 #include "legoapi/world/levels/episode.h"
 
+#include "MechInputTouch/MechInputTouch_types.h"
 #include "globals.h"
+#include "legoapi/characters/core/character.h"
+#include "legoapi/characters/motion/gameanim.h"
+#include "legoapi/core/config/cheat.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/items/base/apiobject.h"
+#include "legoapi/menus/core/gamemessages.h"
 #include "legoapi/menus/core/text.h"
 #include "legoapi/menus/screens/store.h"
 #include "legoapi/render/core/render.h"
@@ -191,12 +197,34 @@ struct SHOPINPUT;
 // Episode bookkeeping
 // ===========================================================================
 
-void BossKilled(i32) {
-    STUBBED();
+GameObject_s *FindGameObject(i32, u32, i32, i32, i32);
+
+GameObject_s *BossKilled(i32 character_id) {
+    GameObject_s *object = FindGameObject(character_id, 1, 1, 1, 0);
+    if (object != NULL) {
+        if ((object->field_0xefb & 8) != 0) {
+            if (object->apiobj.field_0x287 == 0 && object->current_hp != 0) {
+                object = NULL;
+            }
+        } else {
+            object = NULL;
+        }
+    }
+    return object;
 }
 
-void CountOpenEpisodes() {
-    STUBBED();
+i32 CountOpenEpisodes() {
+    if (Game_AreaSave == NULL) {
+        return 0;
+    }
+
+    i32 open = 0;
+    for (i32 i = 0; i < EPISODECOUNT; ++i) {
+        if (Game_AreaSave[EDataList[i].area_ids[0]].complete != 0) {
+            ++open;
+        }
+    }
+    return open;
 }
 
 i32 Episode_IsComplete(EPISODEDATA *episode, i32 *completed_area_count) {
@@ -227,12 +255,34 @@ i32 Episodes_Completed() {
     return completed;
 }
 
+void ReCalculateCompletionPoints();
+
 void Episodes_CompleteAllSuperStories() {
-    STUBBED();
+    if (Game_EpisodeSave != NULL) {
+        for (i32 i = 0; i < EPISODECOUNT; ++i) {
+            EPISODESAVE_s *episode = &Game_EpisodeSave[i];
+            episode->superstory_complete = 1;
+            if (episode->superstory_score_target == 0) {
+                episode->superstory_score_target = 1234560;
+            }
+            if (episode->superstory_time_limit <= 0.0f) {
+                episode->superstory_time_limit = 3598.76f;
+            }
+        }
+        ReCalculateCompletionPoints();
+    }
 }
 
-void Episode_FindFromArea(i32) {
-    STUBBED();
+i32 Episode_FindFromArea(i32 area_id) {
+    for (i32 i = 0; i < EPISODECOUNT; ++i) {
+        EPISODEDATA *episode = &EDataList[i];
+        for (i32 j = 0; j < episode->area_count; ++j) {
+            if (episode->area_ids[j] == area_id) {
+                return i;
+            }
+        }
+    }
+    return -1;
 }
 
 i32 EpCompleteTotal, EpCompleteCount;
@@ -343,12 +393,35 @@ void TrooperShoot(WORLDINFO_s *, minitrooperteam_s *, minisnowtrooper_s *, u16 *
     STUBBED();
 }
 
-void SetBobaRocketTarget(MechObjectInterface *) {
-    STUBBED();
+NuMechPtr<MechObjectInterface, 4> BobaRocketTarget;
+
+void SetBobaRocketTarget(MechObjectInterface *target) {
+    BobaRocketTarget = target;
 }
 
-void FireBountyHunterRocket(GameObject_s *) {
-    STUBBED();
+bool FireBountyHunterRocket(GameObject_s *object) {
+    if (object->character_context == -1) {
+        characterdata_s *data = object->apiobj.character_data;
+        if ((data->model_flags & 0x01000000) != 0 || object->field_0x108e == 6) {
+            i32 locator = data->game_character->rocket_locator;
+            if (locator != -1 && object->apiobj.character_model->points_of_interest[locator] != NULL &&
+                (object->apiobj.field_0x27c == -1 || (object->apiobj.player_controlled && Cheat_IsOn(39)))) {
+                if (object->timer_d5c == 2.0f) {
+                    object->timer_d5c = 0.0f;
+                    FindGameMsgsWithID(2, 1, -1, NULL);
+                }
+                object->context_animation = object->apiobj.field_0x27d == 0 ? 77 : 2;
+                object->context_animation_timer =
+                    AnimDuration(object->id, object->apiobj.field_0x27d == 0 ? 77 : 2, 0.0f, 0.0f, 1);
+                object->field_0xe22 &= ~4;
+                if (object->context_animation_timer > 0.0f) {
+                    object->character_context = 20;
+                }
+                return object->character_context == 20;
+            }
+        }
+    }
+    return false;
 }
 
 void ResetTrooperCannons(WORLDINFO_s *, i32) {

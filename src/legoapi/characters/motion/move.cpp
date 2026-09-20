@@ -609,7 +609,7 @@ extern i16 id_DROIDEKA, id_RANCOR;
 extern "C" i16 id_ATST, id_MINIATST, id_ATST_LOWRES, id_MINIATAT, id_MINIATTE;
 void SecurityDoor_MoveCode(WORLDINFO_s *, GameObject_s *);
 void Batarang_MoveCode(GameObject_s *);
-void FireBountyHunterRocket(GameObject_s *);
+bool FireBountyHunterRocket(GameObject_s *);
 f32 DIEAIRSPEED = 1.5f;
 f32 DIEAIRJUMPSPEED = 2.0f;
 void SetObjAsHeadTarget(GameObject_s *, GameObject_s *, i8, f32, f32, f32);

@@ -51,6 +51,11 @@ extern "C" {
     void DebrisEmitterOrientation(i32, i16, i16, i16);
     void DebrisReflectionOrientation(i32, i16, i16, f32, f32);
     void DebrisSetFacing(i32, i8, i16, i16);
+    void DebrisStartOffset(i32, f32);
+    void DebrisSetGroupID(i32, i16);
+    void DebrisSetPriority(i32, u16, i8);
+    void DebrisSetRoomID(i32, i32);
+    void DebrisSetDetailLevels(i32, i32);
     void AddDebrisEffect(i32 *, i32, f32, f32, f32);
     extern debkeydatatype_s *debkeydata;
     extern debinftype **debtab;
@@ -59,6 +64,8 @@ extern "C" {
     extern i32 edanim_particle_type;
     extern i32 edanim_emitrotz;
     extern i32 edanim_emitroty;
+    extern f32 edpp_offset;
+    i32 edbits_particle_level_page;
 }
 
 i32 edpartLookupObjectInScene(char *, NUGSCN *);
@@ -147,8 +154,72 @@ void edpartDoInput(nupad_s *) {
     STUBBED();
 }
 
-void edppPtlCreate(nuvec_s *, i32) {
-    STUBBED();
+i32 edppPtlCreate(NUVEC *position, i32 effect_index) {
+    if (edpp_instances_used == 512)
+        return -1;
+    i32 index = 0;
+    while (edpp_ptls[index].instance_id != -1)
+        ++index;
+    AddDebrisEffect(&edpp_ptls[index].instance_id, effect_index, position->x, position->y, position->z);
+    edpp_particle_s *particle = &edpp_ptls[index];
+    if (particle->instance_id == -1)
+        return -1;
+    debkeydata[particle->instance_id].field_2f9 = 0;
+    particle->position = *position;
+    particle->effect_index = effect_index;
+    particle->rotation_z = edpp_rotz;
+    particle->rotation_y = edpp_roty;
+    particle->emitter_rotation_z = edpp_emitrotz;
+    particle->emitter_rotation_y = edpp_emitroty;
+    particle->emitter_rotation_x = edpp_emitrotx;
+    particle->start_offset = edpp_offset;
+    particle->switch_type = 0;
+    particle->switch_id = -1;
+    particle->switch_variable = 0.0f;
+    particle->reflection_offset = 0.0f;
+    particle->reflection_bounce = 0.9f;
+    particle->render_group = 0;
+    particle->page = edbits_particle_level_page;
+    particle->detail_levels = 7;
+    switch (debtab[effect_index]->particle_type) {
+    case 0:
+        particle->render_priority = 20000;
+        break;
+    case 2:
+        particle->render_priority = static_cast<i16>(40000);
+        break;
+    case 3:
+        particle->render_priority = 30000;
+        break;
+    case 7:
+        particle->render_priority = 10000;
+        break;
+    }
+    particle = &edpp_ptls[index];
+    particle->dynamic_priority = 0;
+    particle->facing_mode = 0;
+    particle->facing_rotation_x = 0;
+    particle->facing_rotation_y = 0;
+    strcpy(particle->name, debtab[particle->effect_index]->name);
+    DebrisOrientation(particle->instance_id, particle->rotation_z, particle->rotation_y);
+    DebrisEmitterOrientation(particle->instance_id, particle->emitter_rotation_z,
+                             particle->emitter_rotation_y, particle->emitter_rotation_x);
+    DebrisStartOffset(particle->instance_id, particle->start_offset);
+    DebrisReflectionOrientation(particle->instance_id, particle->reflection_rotation_z,
+                                particle->reflection_rotation_y, particle->reflection_offset,
+                                particle->reflection_bounce);
+    DebrisSetFacing(particle->instance_id, particle->facing_mode,
+                    particle->facing_rotation_x, particle->facing_rotation_y);
+    DebrisSetGroupID(particle->instance_id, particle->render_group);
+    DebrisSetPriority(particle->instance_id, particle->render_priority, particle->dynamic_priority);
+    DebrisSetRoomID(particle->instance_id, 0);
+    DebrisSetDetailLevels(particle->instance_id, particle->detail_levels);
+    ++edpp_instances_used;
+    edpp_page_used[edbits_particle_level_page] = 1;
+    edpp_page_on[edbits_particle_level_page] = 1;
+    if (edpp_page_scene[edbits_particle_level_page] == 0)
+        edpp_page_scene[edbits_particle_level_page] = reinterpret_cast<usize>(edbits_base_scene);
+    return index;
 }
 
 void edppPtlShelve(i32 index) {

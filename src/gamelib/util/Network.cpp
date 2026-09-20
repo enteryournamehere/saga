@@ -4,7 +4,9 @@
 #include "gameapi/edtools/gameapi_edtools_types.h"
 #include "legoapi/legoapi_types.h"
 #include <string.h>
+#include <new>
 NetSession *theSession;
+NetworkObjectManager *theNos;
 i16 NetReplicator::smNextId;
 i16 NetChangedReplicator::mTableInited;
 i16 NetChangedReplicator::mCrc32Table[256];
@@ -774,4 +776,63 @@ void NetworkObjectManager::UpdateLocalObjectList() {
 }
 
 NetworkObjectManager::~NetworkObjectManager() {
+}
+
+static void ReleasePushMessage(NetMessage *&message) {
+    if (message != NULL) {
+        message->~NetMessage();
+        theMemoryManager.FreePool(message, sizeof(NetMessage));
+    }
+    message = NULL;
+}
+
+static NetMessage *GetPushMessage(NetworkObjectManager::NetPeerPush *push, NetMessage *&message,
+                                  i32 size, i32 unreliable) {
+    if (message != NULL) {
+        i32 available = message->data != NULL ? 0x4af - message->write_offset : 0;
+        if (size > available) {
+            theNos->SendPushMessage(message, push, unreliable);
+            ReleasePushMessage(message);
+        }
+    }
+    if (message == NULL) {
+        message = new (theMemoryManager.AllocPool(sizeof(NetMessage), 1)) NetMessage;
+    }
+    return message;
+}
+
+void NetworkObjectManager::NetPeerPush::FlushMessages() {
+    if (message != NULL) {
+        theNos->SendPushMessage(message, this, 1);
+        ReleasePushMessage(message);
+    }
+    if (reliable_message != NULL) {
+        theNos->SendPushMessage(reliable_message, this, 0);
+        ReleasePushMessage(reliable_message);
+    }
+}
+
+NetMessage *NetworkObjectManager::NetPeerPush::GetMessage(i32 size) {
+    return GetPushMessage(this, message, size, 1);
+}
+
+NetMessage *NetworkObjectManager::NetPeerPush::GetReliableMessage(i32 size) {
+    return GetPushMessage(this, reliable_message, size, 0);
+}
+
+void NetworkObjectManager::NetPeerPush::NextStage() {
+    if (stage < 3) {
+        field_10 = 0;
+        stage++;
+    }
+}
+
+void NetworkObjectManager::NetPeerPush::Stop() {
+    field_10 = 0;
+    stage = 0;
+}
+
+void NetworkObjectManager::NetPeerPush::Sync() {
+    field_10 = 0;
+    stage = 1;
 }

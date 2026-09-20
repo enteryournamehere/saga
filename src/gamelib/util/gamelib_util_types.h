@@ -381,14 +381,14 @@ struct NetworkObjectManager {
     // The manager reset routine is an intentional no-op in the original.
     struct NetPeerPush {
         NetPeer const *peer;
-        NetMessage *reliable_message;
         NetMessage *message;
+        NetMessage *reliable_message;
         i32 stage;
         i32 field_10;
 
         void FlushMessages();
-        void GetMessage(i32);
-        void GetReliableMessage(i32);
+        NetMessage *GetMessage(i32);
+        NetMessage *GetReliableMessage(i32);
         void NextStage();
         void Stop();
         void Sync();
@@ -528,6 +528,7 @@ static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, registered_c
               "NetworkObjectManager::registered_call_count 32-bit offset");
 DECOMP_ASSERT(offsetof(NetworkObjectManager::RegisteredCall, flags) == 4, "RegisteredCall flags offset");
 DECOMP_ASSERT(offsetof(NetworkObjectManager::RegisteredCall, callback) == 8, "RegisteredCall callback offset");
+extern NetworkObjectManager *theNos;
 struct TouchHacks {
     static bool TouchControlsActive;
 

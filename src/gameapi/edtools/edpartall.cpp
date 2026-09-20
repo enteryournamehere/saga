@@ -7,6 +7,7 @@
 #include "gameapi/edtools/edstubs.h"
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nucore/nustring.h"
+#include "nu2api/numusic/sfx.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -143,6 +144,11 @@ static void edpartCancelEmitVelMenu(eduimenu_s *, eduimenu_s *);
 static void edpartCancelVarEmitMenu(eduimenu_s *, eduimenu_s *);
 static void edpartCancelVarStartMenu(eduimenu_s *, eduimenu_s *);
 static void edpartCancelChangeMaxLifeMenu(eduimenu_s *, eduimenu_s *);
+static void edpartSoundIDMenu(eduimenu_s *, eduiitem_s *, u32);
+static void edpartSoundControlMenu(eduimenu_s *, eduiitem_s *, u32);
+static void edpartCancelSoundXMenu(eduimenu_s *, eduimenu_s *);
+static void edpartCancelSoundsMenu(eduimenu_s *, eduimenu_s *);
+static void edpartCancelSoundIDMenu(eduimenu_s *, eduimenu_s *);
 
 extern "C" {
     i32 edpart_which_scene = 1;
@@ -378,11 +384,37 @@ static void edpartSetSoundID(eduimenu_s *menu, eduiitem_s *item, u32) {
     eduiMenuDetach(menu);
     eduiMenuDestroy(menu);
 }
-static void edpartSoundXMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartSoundXMenu(eduimenu_s *menu, eduiitem_s *item, u32) {
+    if (edpart_nearest_type != NULL) {
+        char title[20];
+        sprintf(title, "Sound %d Menu", item->data + 1);
+        edpart_soundx_menu = eduiMenuCreate(70, 70, 250, 300, ed_fnt, edpartCancelSoundXMenu, title);
+        if (edpart_soundx_menu != NULL) {
+            eduiMenuAddItem(edpart_soundx_menu,
+                           eduiItemSelCreate(item->data, edblack, 0, 0, edpartSoundIDMenu, "Sound ID..."));
+            eduiMenuAddItem(edpart_soundx_menu,
+                           eduiItemSelCreate(item->data, edblack, 0, 0, edpartSoundControlMenu, "Sound Control..."));
+            eduiMenuAttach(menu, edpart_soundx_menu);
+            edpart_soundx_menu->x = menu->x + 10;
+            edpart_soundx_menu->y = menu->y + 40;
+        }
+    }
 }
-static void edpartSoundsMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartSoundsMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    if (edpart_nearest_type != NULL) {
+        edpart_sounds_menu = eduiMenuCreate(70, 70, 250, 300, ed_fnt, edpartCancelSoundsMenu, "Attached Sounds");
+        if (edpart_sounds_menu != NULL) {
+            char text[20];
+            for (i32 sound = 0; sound < 4; ++sound) {
+                sprintf(text, "Sound %d...", sound + 1);
+                eduiMenuAddItem(edpart_sounds_menu,
+                               eduiItemSelCreate(sound, edblack, 0, 0, edpartSoundXMenu, text));
+            }
+            eduiMenuAttach(menu, edpart_sounds_menu);
+            edpart_sounds_menu->x = menu->x + 10;
+            edpart_sounds_menu->y = menu->y + 40;
+        }
+    }
 }
 static void edpartSwitchMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
@@ -416,8 +448,35 @@ static void edpartSetSwitchId(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpart_nearest_emit)
         edpart_nearest_emit->field_46 = static_cast<i32>(static_cast<edui_slider_s *>(item)->value);
 }
-static void edpartSoundIDMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartSoundIDMenu(eduimenu_s *menu, eduiitem_s *item, u32) {
+    if (edpart_nearest_type != NULL) {
+        edpart_soundid_menu = eduiMenuCreate(70, 70, 250, 200, ed_fnt, edpartCancelSoundIDMenu, "Sound ID");
+        if (edpart_soundid_menu != NULL) {
+            eduiMenuAddItem(edpart_soundid_menu,
+                           eduiItemCheckCreate((item->data << 16) + 9999, edblack,
+                                               edpart_nearest_type->sounds[item->data] == -1, 0,
+                                               edpartSetSoundID, "NONE"));
+            for (i32 sound = 0; sound < 1600; ++sound) {
+                if (g_soundInfo[sound].sfx_name != NULL) {
+                    if (edpart_nearest_type->sounds[item->data] == sound) {
+                        eduiMenuAddItem(edpart_soundid_menu,
+                                       eduiItemCheckCreate((item->data << 16) + sound, edblack, 1, 1,
+                                                           edpartSetSoundID,
+                                                           const_cast<char *>(g_soundInfo[sound].sfx_name)));
+                        edpart_soundid_menu->selected = edui_last_item;
+                    } else {
+                        eduiMenuAddItem(edpart_soundid_menu,
+                                       eduiItemCheckCreate((item->data << 16) + sound, edblack, 0, 1,
+                                                           edpartSetSoundID,
+                                                           const_cast<char *>(g_soundInfo[sound].sfx_name)));
+                    }
+                }
+            }
+            eduiMenuAttach(menu, edpart_soundid_menu);
+            edpart_soundid_menu->x = menu->x + 10;
+            edpart_soundid_menu->y = menu->y + 40;
+        }
+    }
 }
 static void edpartVarEmitMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     if (edpart_nearest_type != NULL) {

@@ -35,6 +35,14 @@ typedef enum {
     NUSOUND_STEREO_STREAM_FINISHED = 2,
 } NUSOUND_STEREO_STREAM_STATUS;
 
+typedef struct NuSoundStreamInfo {
+    u8 field_0x0[12];
+    f32 playback_position;
+} NuSoundStreamInfo;
+
+DECOMP_ASSERT(sizeof(NuSoundStreamInfo) == 0x10, "NuSoundStreamInfo size");
+DECOMP_ASSERT(offsetof(NuSoundStreamInfo, playback_position) == 0xc, "NuSoundStreamInfo playback position offset");
+
 #ifdef __cplusplus
 enum MusicPlaybackState : i16 {
     MUSIC_PLAYBACK_STOPPED = 0,
@@ -117,6 +125,7 @@ extern "C" {
     void NuSound3Update(void);
     i32 NuSound3GetStereoStreamStatus(i32 stream_index);
     f32 NuSound3GetStreamPlaybackTime(i32 stream_index);
+    void NuSound3GetStreamInfo(i32 stream_index, NuSoundStreamInfo *info);
 
     void NuSound3StopStereoStream(i32 stream_index);
     void NuSound3PauseStereoStream(i32 stream_index);

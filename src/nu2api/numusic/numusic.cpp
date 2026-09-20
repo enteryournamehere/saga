@@ -22,6 +22,7 @@
 
 #include "nu2api/nufile/nufpar.h"
 #include "legoapi/audio/audio.h"
+#include "nu2api/nu3d/nuqfnt.h"
 #include "nu2api/numusic/numusic.h"
 #include "nu2api/nusound/nusound.h"
 
@@ -83,22 +84,19 @@ NuMusic::~NuMusic() {
 }
 
 i32 NuMusic::ClassToIX(u32 i) {
-    switch (i) {
-        case TRACK_CLASS_QUIET:
-            return 0;
-        case TRACK_CLASS_ACTION:
-            return 1;
-        case TRACK_CLASS_4:
-            return 2;
-        case TRACK_CLASS_8:
-            return 3;
-        case TRACK_CLASS_CUTSCENE:
-            return 4;
-        case TRACK_CLASS_NOMUSIC:
-            return 5;
-        default:
-            return -1;
-    }
+    if (i == TRACK_CLASS_QUIET)
+        return 0;
+    if (i == TRACK_CLASS_ACTION)
+        return 1;
+    if (i == TRACK_CLASS_4)
+        return 2;
+    if (i == TRACK_CLASS_8)
+        return 3;
+    if (i == TRACK_CLASS_CUTSCENE)
+        return 4;
+    if (i == TRACK_CLASS_NOMUSIC)
+        return 5;
+    return -1;
 }
 
 NuMusic::Track *NuMusic::Album::GetTrack(u32 clazz) {
@@ -422,20 +420,19 @@ NuMusic::Voice *NuMusic::FindVoiceByClass(TRACK_CLASS clazz) {
 }
 
 NuMusic::Voice *NuMusic::FindIdleVoice() {
-    i32 i = this->voices[0].status;
-    if (i != 1) {
-        if (this->voices[1].status == 1) {
-            return &this->voices[1];
-        }
-        if (i != 3) {
-            if (this->voices[1].status != 3) {
-                return NULL;
-            }
-            return &this->voices[1];
-        }
+    i32 index;
+    if (voices[0].status == VOICE_STATUS_READY) {
+        index = 0;
+    } else if (voices[1].status == VOICE_STATUS_READY) {
+        index = 1;
+    } else if (voices[0].status == VOICE_STATUS_STOPPED) {
+        index = 0;
+    } else if (voices[1].status == VOICE_STATUS_STOPPED) {
+        index = 1;
+    } else {
+        return NULL;
     }
-
-    return &this->voices[0];
+    return &voices[index];
 }
 
 bool NuMusic::SelectTrackByHandle(TRACK_CLASS clazz, i32 trackHandle) {
@@ -984,15 +981,15 @@ void NuMusic::Process(f32 delta) {
     // Ramp the fader toward its target, snapping when it arrives.
     if (this->fader_current != this->fader_target) {
         f32 step = delta * this->fader_rate;
-        if (this->fader_target <= this->fader_current) {
-            this->fader_current -= step;
-            if (this->fader_current <= this->fader_target) {
+        if (this->fader_target > this->fader_current) {
+            this->fader_current += step;
+            if (this->fader_target <= this->fader_current) {
                 this->fader_rate = 0.0f;
                 this->fader_current = this->fader_target;
             }
         } else {
-            this->fader_current += step;
-            if (this->fader_target <= this->fader_current) {
+            this->fader_current -= step;
+            if (this->fader_current <= this->fader_target) {
                 this->fader_rate = 0.0f;
                 this->fader_current = this->fader_target;
             }
@@ -1014,45 +1011,27 @@ void NuMusic::Process(f32 delta) {
         this->duck_gain = duck_target;
 
         f32 rate = 1.0f / track0->duck_fade;
-        if (rate <= 1.0f) {
-            rate = 1.0f;
-        }
-        this->duck_rate = rate;
+        this->duck_rate = MAX(rate, 1.0f);
     }
 
     Track *track1 = this->voices[1].tracks[this->voices[1].track_index];
     if (track1 != NULL && this->voices[1].status == VOICE_STATUS_PLAYING_LOADED) {
         f32 vol = track1->duck_volume;
-        if (vol <= duck_target) {
-            duck_target = vol;
-        }
+        duck_target = MIN(duck_target, vol);
         this->duck_gain = duck_target;
 
         f32 rate = 1.0f / track1->duck_fade;
-        if (rate <= this->duck_rate) {
-            rate = this->duck_rate;
-        }
-        this->duck_rate = rate;
+        this->duck_rate = MAX(rate, this->duck_rate);
     }
 
     // Ramp duck_current toward duck_gain without overshooting.
     f32 duck_current = this->duck_current;
-    if (duck_current <= duck_target) {
-        if (duck_current < duck_target) {
-            duck_current += delta * this->duck_rate;
-            if (duck_target <= duck_current) {
-                duck_current = duck_target;
-            }
-            this->duck_current = duck_current;
-        }
-    } else {
+    if (duck_current > duck_target) {
         duck_current -= delta * this->duck_rate;
-        if (duck_target <= duck_current) {
-            duck_current = duck_current;
-        } else {
-            duck_current = duck_target;
-        }
-        this->duck_current = duck_current;
+        this->duck_current = MAX(duck_target, duck_current);
+    } else if (duck_current < duck_target) {
+        duck_current += delta * this->duck_rate;
+        this->duck_current = MIN(duck_target, duck_current);
     }
 
     for (i32 vi = 0; vi < 2; vi++) {
@@ -1141,8 +1120,47 @@ const char *NuMusic::ClassToName(u32) {
     return "UNKNOWN";
 }
 
-void NuMusic::Debug(i32, i32) {
-    STUBBED();
+static const char *voice_status_txt[] = {
+    "IDLE_PENDING", "IDLE", "PAUSED_PENDING", "PAUSED", "SEEKING_PENDING", "SEEKING", "PLAYPENDING", "PLAYING",
+};
+
+void NuMusic::Debug(i32, i32 y) {
+    const char *class_names[] = {"INVALID", "QUIET", "ACTION", "SIGNATURE", "OVERLAY", "CUTSCENE", "NOMUSIC"};
+    NuSoundStreamInfo stream_info;
+    NuQFntPushPrintMode(2);
+    NuQFntPushCoordinateSystem(NUQFNT_CSMODE_PS2);
+    NuQFntSet(system_qfont);
+    NuQFntSetPointSize(system_qfont, 1.0f, 1.0f);
+    NuQFntSetScale(system_qfont, 0.8f, 0.8f);
+    NuQFntSetColour(system_qfont, 0x80ffffff);
+
+    for (i32 i = 0; i < 2; i++) {
+        Voice *voice = &voices[i];
+        NuSound3GetStreamInfo(voice->stream_index, &stream_info);
+        NuQFntPrintEx(system_qfont, 4800, y, 0x10, "VOICE:%d", i);
+        y += (i32)NuQFntHeight(system_qfont);
+        if (voice->tracks[voice->track_index] == NULL) {
+            NuQFntPrintEx(system_qfont, 4800, y, 0x10, "TRACK:NONE");
+            y += (i32)NuQFntHeight(system_qfont);
+            NuQFntPrintEx(system_qfont, 4800, y, 0x10, "CLASS:NONE");
+        } else {
+            NuQFntPrintEx(system_qfont, 4800, y, 0x10, "TRACK:%s",
+                         voice->tracks[voice->track_index]->filenames[voice->track_sub[voice->track_index]]);
+            y += (i32)NuQFntHeight(system_qfont);
+            NuQFntPrintEx(system_qfont, 4800, y, 0x10, "CLASS:%s",
+                         class_names[ClassToIX(voice->tracks[voice->track_index]->clazz) + 1]);
+        }
+        y += (i32)NuQFntHeight(system_qfont);
+        NuQFntPrintEx(system_qfont, 4800, y, 0x10, "STATUS:%s", voice_status_txt[voice->status]);
+        y += (i32)NuQFntHeight(system_qfont);
+        NuQFntPrintEx(system_qfont, 4800, y, 0x10, "VOLUME:%f (%f)", voice->gain, voice->last_volume);
+        y += (i32)NuQFntHeight(system_qfont);
+        NuQFntPrintEx(system_qfont, 4800, y, 0x10, "FADE:%f", voice->fade_rate);
+        y += (i32)NuQFntHeight(system_qfont);
+        NuQFntPrintEx(system_qfont, 4800, y, 0x10, "POS:%f", stream_info.playback_position);
+        y += (i32)NuQFntHeight(system_qfont);
+    }
+    NuQFntPopPrintMode();
 }
 
 i32 NuMusic::GetAlbumHandle(char const *name) {

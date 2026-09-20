@@ -80,6 +80,7 @@ i32 UnicodeToIndexFast(VUCHARIDX *map, i32 count, u16 unicode);
 extern "C" {
 #endif
     extern NUQFNT_CSMODE NuQFntCSMode;
+    extern NUQFNT *system_qfont;
     extern i32 NuQFntCSModeStackIndex;
     extern NUQFNT_CSMODE NuQFntCSModeStack[16];
     NUQFNT_CSMODE NuQFntGetCoordinateSystem(void);
@@ -126,6 +127,7 @@ extern "C" {
     void NuQFntMove(NUQFNT *font, f32 x, f32 y, f32 z);
     void NuQFntPrintW(NUQFNT *font, u16 *text);
     void NuQFntPrintU(NUQFNT *font, char *text);
+    void NuQFntPrintEx(NUQFNT *font, i32 x, i32 y, i32 alignment, const char *format, ...);
     void NuQFntPushPrintMode(u32 mode);
     void NuQFntPopPrintMode(void);
     f32 NuQFntHeightScale(void);

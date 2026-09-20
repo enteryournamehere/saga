@@ -3,6 +3,7 @@
 #include "editor/path_connections.h"
 #include <string.h>
 #include <stdio.h>
+#include <float.h>
 
 #include "gameapi/edtools/edui.h"
 #include "gameapi/edtools/edcam.h"
@@ -47,6 +48,8 @@ DECOMP_ASSERT(sizeof(AIPATHCNXTYPE_s) == 0x4c, "editor path connection type size
 DECOMP_ASSERT(offsetof(AIPATHCNXTYPE_s, flags) == 0x48, "editor path connection options offset");
 static AIPATHCNXTYPE_s aipathcnxtypes[32];
 static i32 naipathcnxtypes;
+static i32 iterator_count;
+static i32 distance_tables;
 
 extern "C" void aieditor_ClearAllPathCnxTypes(void) {
     naipathcnxtypes = 0;
@@ -364,8 +367,40 @@ static __used__ void pathEditor_cbShareNodeMenu(eduimenu_s *parent, eduiitem_s *
     eduiMenuAttach(parent, menu);
 }
 
-static __used__ void pathEditorCalcRouteIterator(AIPATH_s *, f32 *, u8 *, i32, i32, f32, i32) {
-    STUBBED();
+static __used__ void pathEditorCalcRouteIterator(AIPATH_s *path, f32 *distances, u8 *visited, i32 previous,
+                                               i32 current, f32 distance, i32 route_mask) {
+    ++iterator_count;
+    if ((visited[current / 8] & (1 << (current % 8))) != 0) {
+        return;
+    }
+    visited[current / 8] |= 1 << (current % 8);
+    AIPATHNODE_s *node = &path->nodes[current];
+    NUVEC difference;
+    distance += NuVecDist(&path->nodes[previous].position, &node->position, &difference);
+    if (distances[current] >= distance) {
+        distances[current] = distance;
+        if (route_mask != 0) {
+            for (i32 index = 0; index < node->connection_count; ++index) {
+                AIPATHCNX_s *connection = node->connections[index];
+                bool direction = connection->node_indices[0] != current;
+                if ((connection->traversal_flags[direction] & 0x40000000) == 0 &&
+                    (connection->route_mask & route_mask) != 0) {
+                    pathEditorCalcRouteIterator(path, distances, visited, current,
+                                                connection->node_indices[!direction], distance, route_mask);
+                }
+            }
+        } else {
+            for (i32 index = 0; index < node->connection_count; ++index) {
+                AIPATHCNX_s *connection = node->connections[index];
+                bool direction = connection->node_indices[0] != current;
+                if ((connection->traversal_flags[direction] & 0x40000000) == 0) {
+                    pathEditorCalcRouteIterator(path, distances, visited, current,
+                                                connection->node_indices[!direction], distance, 0);
+                }
+            }
+        }
+    }
+    visited[current / 8] &= ~(1 << (current % 8));
 }
 
 static __used__ void pathEditor_cbCnxFlagsToggle(eduimenu_s *, eduiitem_s *, u32) {
@@ -497,8 +532,29 @@ static __used__ void pathEditor_cbDisconnectPathNode(eduimenu_s *, eduiitem_s *,
     STUBBED();
 }
 
-static __used__ void pathEditorCalculateDistanceTable(AIPATH_s *, i32, variptr_u *, variptr_u *) {
-    STUBBED();
+static __used__ f32 **pathEditorCalculateDistanceTable(AIPATH_s *path, i32 route_mask, variptr_u *cursor,
+                                                     variptr_u *end) {
+    if (distance_tables == 0 || path == nullptr || path->nodes == nullptr) {
+        return nullptr;
+    }
+    f32 **table = (f32 **)AISysBufferAlloc(cursor, end, path->node_count * sizeof(f32 *));
+    if (table == nullptr) {
+        return nullptr;
+    }
+    memset(table, 0, path->node_count * sizeof(f32 *));
+    for (i32 row = 0; row < path->node_count; ++row) {
+        f32 *distances = (f32 *)AISysBufferAlloc(cursor, end, path->node_count * sizeof(f32));
+        table[row] = distances;
+        for (i32 column = 0; column < path->node_count; ++column) {
+            distances[column] = FLT_MAX;
+        }
+    }
+    for (i32 row = 0; row < path->node_count; ++row) {
+        u8 visited[32];
+        memset(visited, 0, sizeof(visited));
+        pathEditorCalcRouteIterator(path, table[row], visited, row, row, 0.0f, route_mask);
+    }
+    return table;
 }
 
 static __used__ void pathEditor_cbCancelDeleteAreaMenu(eduimenu_s *, eduimenu_s *) {

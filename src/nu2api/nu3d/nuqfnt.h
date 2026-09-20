@@ -193,8 +193,8 @@ extern "C" {
     i32 NuFntToUpper(void);
     i32 NuFntToLower(void);
     void NuFntSetPen(void);
-    void NuFntSet(void);
-    void NuFntScale(void);
+    void NuFntSet(i32);
+    void NuFntScale(i32, i32);
     i32 NuFntGetScreenHeight(void);
     void NuFntPointSize(void);
     void NuFntMoveAbs(void);

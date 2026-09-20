@@ -5447,7 +5447,7 @@ struct ThingManager {
     virtual void AddThing(BaseThing *);
     virtual void AddThingAfterThis(BaseThing *);
     virtual void RemoveTemporaryThings();
-    virtual void RemoveDependanciesThings(ThingRemoveData *);
+    virtual i32 RemoveDependanciesThings(ThingRemoveData *);
     virtual void ResetThings(ThingResetData *);
     virtual void EnterLevelThings(ThingLevelData *);
     virtual void ExitLevelThings(ThingLevelData *);
@@ -5457,25 +5457,27 @@ struct ThingManager {
     virtual void EffectsThings(ThingRenderData *);
     void EnableActions(i32, i32, i32);
     ThingManager(i32);
-    void cbEdTimingSelect(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdTrackCancel(eduimenu_s *, eduimenu_s *);
-    void edTimingEnter();
-    void edTimingInit();
-    void edTimingProc(float, nupad_s *);
-    void edTimingRender();
+    static void cbEdTimingSelect(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdTrackCancel(eduimenu_s *, eduimenu_s *);
+    static void edTimingEnter();
+    static void edTimingInit();
+    static i32 edTimingProc(float, nupad_s *);
+    static void edTimingRender();
 
     // data (object is 0x24 bytes; the ctor carves `things` from theMemoryManager)
     BaseThing **things; // 0x04
     i32 max_things;     // 0x08
     i32 count;          // 0x0c
-    u32 field_0x10;     // 0x10 high-water cursor (written by the ctor / AllocPool)
+    i32 permanent_count;
     i32 field_0x14;     // 0x14 AddThingAfterThis reservation, folded in by the next AddThing
     i32 timebar;        // 0x18 NuTimeBarCreateSet index
     u32 field_0x1c;
     i32 ed_timing_state; // 0x20 editor timing selection state
 };
 DECOMP_ASSERT(sizeof(ThingManager) == 0x24, "ThingManager ABI");
+DECOMP_ASSERT(offsetof(ThingManager, permanent_count) == 0x10, "ThingManager permanent count offset");
 DECOMP_ASSERT(offsetof(ThingManager, ed_timing_state) == 0x20, "ThingManager timing state offset");
+DECOMP_ASSERT(offsetof(BaseThing, profiling_0xc) == 0xc, "BaseThing profiling flag offset");
 // GameThingManager shares the base vtable entries (only the dtors differ) and
 // registers itself in theGameThings (ctor @0x4e8b00 / D1 dtor @0x4e8a80).
 struct GameThingManager : ThingManager {

@@ -18,6 +18,7 @@
 #include "decomp.h"
 #include "gameapi/ai/aisys/aisys.h"
 #include "gameapi/edtools/edfile.h"
+#include "gameapi/edtools/edui.h"
 #include "gameapi/gui/apimenu.h"
 #include "globals.h"
 #include "gamelib/util/gamelib_util_types.h"
@@ -60,6 +61,7 @@
 #include "legoapi/gizmos/transport/grapples.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/nuqfnt.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numusic/sfx.h"
 #include "nu2api/nucore/numemory.h"
@@ -5146,13 +5148,13 @@ void ThingManager::DisplayThings(ThingRenderData *data) {
         BaseThing *thing = this->things[i];
         if (thing == NULL || (thing->flags & THING_FLAG_SKIP_DISPLAY)) {
         } else {
-            if (thing->profiling_0xc != NULL) {
+            if (thing->profiling_0xc != 0) {
                 _NuTimeBarSlotBegin(this->timebar, 3, name);
                 thing = this->things[i];
             }
             thing->Display(data);
             thing = this->things[i];
-            if (thing->profiling_0xc != NULL) {
+            if (thing->profiling_0xc != 0) {
                 _NuTimeBarSlotEnd(this->timebar, 3);
             }
         }
@@ -5160,8 +5162,20 @@ void ThingManager::DisplayThings(ThingRenderData *data) {
     } while (i < this->count);
 }
 
-void ThingManager::EffectsThings(ThingRenderData *) {
-    STUBBED();
+void ThingManager::EffectsThings(ThingRenderData *data) {
+    const char *name = "Fx";
+    for (i32 i = 0; i < this->count; ++i) {
+        if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_EFFECTS) != 0) {
+            continue;
+        }
+        if (this->things[i]->profiling_0xc != 0) {
+            _NuTimeBarSlotBegin(this->timebar, 5, name);
+        }
+        this->things[i]->Effects(data);
+        if (this->things[i]->profiling_0xc != 0) {
+            _NuTimeBarSlotEnd(this->timebar, 5);
+        }
+    }
 }
 
 // ThingManager::EnableActions @0x425930. Finds the first thing whose 0x4 id
@@ -5187,85 +5201,92 @@ void ThingManager::EnableActions(i32 id, i32 flags, i32 invert) {
     }
 }
 
-void ThingManager::EnterLevelThings(ThingLevelData *) {
-    STUBBED();
+void ThingManager::EnterLevelThings(ThingLevelData *data) {
+    for (i32 i = 0; i < this->count; ++i) {
+        if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_ENTER_LEVEL) != 0) {
+            continue;
+        }
+        this->things[i]->EnterLevel(data);
+    }
 }
 
-void ThingManager::ExitLevelThings(ThingLevelData *) {
-    STUBBED();
+void ThingManager::ExitLevelThings(ThingLevelData *data) {
+    for (i32 i = 0; i < this->count; ++i) {
+        if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_EXIT_LEVEL) != 0) {
+            continue;
+        }
+        this->things[i]->ExitLevel(data);
+    }
 }
 
 // ThingManager::ProcessThings @0x425460. Pass 1 always runs
 // ProcessEvenWhenPaused first; then, per ThingProcessData.paused, either
 // Process or ProcessOnlyWhenPaused. Each pass has its own opt-out flag. The count
 // is re-read every iteration because thing Process calls may add things.
-// Profiling: things with a non-NULL profiling handle are bracketed with
-// NuTimeBarSlotBegin/End (stubbed no-ops on this build).
+// Profiling flags select which things receive NuTimeBarSlotBegin/End calls.
 void ThingManager::ProcessThings(ThingProcessData *data) {
-    static const char *name = "PROC"; // timebar slot name @0x5734e3
-
+    const char *name = "PROC";
     if (this->count <= 0) {
         return;
     }
-    for (i32 i = 0; i < this->count; i++) {
-        BaseThing *thing = this->things[i];
-        if (thing == NULL || (thing->flags & THING_FLAG_SKIP_PROCESS_EVEN_WHEN_PAUSED)) {
+    for (i32 i = 0; i < this->count; ++i) {
+        if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_PROCESS_EVEN_WHEN_PAUSED) != 0) {
             continue;
         }
-        if (thing->profiling_0xc != NULL) {
+        if (this->things[i]->profiling_0xc != 0) {
             _NuTimeBarSlotBegin(this->timebar, 0, name);
         }
-        thing->ProcessEvenWhenPaused(data);
-        thing = this->things[i];
-        if (thing->profiling_0xc != NULL) {
+        this->things[i]->ProcessEvenWhenPaused(data);
+        if (this->things[i]->profiling_0xc != 0) {
             _NuTimeBarSlotEnd(this->timebar, 0);
         }
     }
-    if (data->paused != 0) {
-        if (this->count <= 0) {
-            return;
-        }
-        for (i32 i = 0; i < this->count; i++) {
-            BaseThing *thing = this->things[i];
-            if (thing == NULL || (thing->flags & THING_FLAG_SKIP_PROCESS_ONLY_WHEN_PAUSED)) {
+    if (data->paused == 0) {
+        for (i32 i = 0; i < this->count; ++i) {
+            if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_PROCESS) != 0) {
                 continue;
             }
-            if (thing->profiling_0xc != NULL) {
+            if (this->things[i]->profiling_0xc != 0) {
                 _NuTimeBarSlotBegin(this->timebar, 0, name);
             }
-            thing->ProcessOnlyWhenPaused(data);
-            thing = this->things[i];
-            if (thing->profiling_0xc != NULL) {
+            this->things[i]->Process(data);
+            if (this->things[i]->profiling_0xc != 0) {
                 _NuTimeBarSlotEnd(this->timebar, 0);
             }
         }
     } else {
-        if (this->count <= 0) {
-            return;
-        }
-        for (i32 i = 0; i < this->count; i++) {
-            BaseThing *thing = this->things[i];
-            if (thing == NULL || (thing->flags & THING_FLAG_SKIP_PROCESS)) {
+        for (i32 i = 0; i < this->count; ++i) {
+            if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_PROCESS_ONLY_WHEN_PAUSED) != 0) {
                 continue;
             }
-            if (thing->profiling_0xc != NULL) {
+            if (this->things[i]->profiling_0xc != 0) {
                 _NuTimeBarSlotBegin(this->timebar, 0, name);
             }
-            thing->Process(data);
-            thing = this->things[i];
-            if (thing->profiling_0xc != NULL) {
+            this->things[i]->ProcessOnlyWhenPaused(data);
+            if (this->things[i]->profiling_0xc != 0) {
                 _NuTimeBarSlotEnd(this->timebar, 0);
             }
         }
     }
 }
 
-void ThingManager::RemoveDependanciesThings(ThingRemoveData *) {
-    STUBBED();
+i32 ThingManager::RemoveDependanciesThings(ThingRemoveData *data) {
+    i32 removed = 1;
+    for (i32 i = 0; i < this->count; ++i) {
+        if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_REMOVE_DEPENDANCIES) != 0) {
+            continue;
+        }
+        removed &= this->things[i]->RemoveDependancies(data);
+    }
+    return removed;
 }
 
 void ThingManager::RemoveTemporaryThings() {
-    STUBBED();
+    for (i32 i = this->count - 1; this->permanent_count <= i; --i) {
+        delete this->things[i];
+        this->things[i] = NULL;
+    }
+    this->count = this->permanent_count;
 }
 
 // ThingManager::RenderThings @0x425390. Single pass over Render,
@@ -5281,13 +5302,13 @@ void ThingManager::RenderThings(ThingRenderData *data) {
         BaseThing *thing = this->things[i];
         if (thing == NULL || (thing->flags & THING_FLAG_SKIP_RENDER)) {
         } else {
-            if (thing->profiling_0xc != NULL) {
+            if (thing->profiling_0xc != 0) {
                 _NuTimeBarSlotBegin(this->timebar, 1, name);
                 thing = this->things[i];
             }
             thing->Render(data);
             thing = this->things[i];
-            if (thing->profiling_0xc != NULL) {
+            if (thing->profiling_0xc != 0) {
                 _NuTimeBarSlotEnd(this->timebar, 1);
             }
         }
@@ -5303,13 +5324,13 @@ void ThingManager::ResetThings(ThingResetData *data) {
         do {
             BaseThing *thing = this->things[i];
             if (thing != NULL && (thing->flags & 8) == 0) {
-                if (thing->profiling_0xc != NULL) {
+                if (thing->profiling_0xc != 0) {
                     _NuTimeBarSlotBegin(this->timebar, 4, name);
                 }
                 thing = this->things[i];
                 thing->Reset(data);
                 thing = this->things[i];
-                if (thing->profiling_0xc != NULL) {
+                if (thing->profiling_0xc != 0) {
                     _NuTimeBarSlotEnd(this->timebar, 4);
                 }
             }
@@ -5347,28 +5368,71 @@ ThingManager::ThingManager(i32 max_things) {
 ThingManager::~ThingManager() {
 }
 
-void ThingManager::cbEdTimingSelect(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static eduimenu_s *edTimingMenu;
+static u32 EdAttr[] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+
+void ThingManager::cbEdTimingSelect(eduimenu_s *menu, eduiitem_s *item, u32) {
+    ThingManager *manager = static_cast<ThingManager *>(theThingManager);
+    u32 selection = item->data;
+    manager->ed_timing_state = selection;
+    manager->field_0x1c = selection - 3;
+    if (selection <= 3) {
+        i32 enabled = selection == 3;
+        for (i32 i = 0; i < manager->count; ++i) {
+            manager->things[i]->profiling_0xc = enabled;
+        }
+        if (selection <= 1) {
+            eduiMenuDestroy(menu);
+            edTimingMenu = NULL;
+        } else {
+            i32 index = 0;
+            for (eduiitem_s *entry = menu->first->next; entry != NULL; entry = entry->next) {
+                entry->highlighted = index < 3 ? 0 : enabled;
+                ++index;
+            }
+        }
+        NuTimeBarEnable(item->data != 0);
+    } else {
+        manager->things[selection - 4]->profiling_0xc ^= 1;
+    }
 }
 
-void ThingManager::cbEdTrackCancel(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+void ThingManager::cbEdTrackCancel(eduimenu_s *menu, eduimenu_s *) {
+    eduiMenuDestroy(menu);
+    edTimingMenu = NULL;
 }
 
 void ThingManager::edTimingEnter() {
-    STUBBED();
+    edTimingMenu = eduiMenuCreate(30, 30, 250, 320, NULL, cbEdTrackCancel, "Timings");
+    if (edTimingMenu != NULL) {
+        eduiMenuAddItem(edTimingMenu, eduiItemSelCreate(0, EdAttr, 0, 1, cbEdTimingSelect, "Off"));
+        eduiMenuAddItem(edTimingMenu, eduiItemSelCreate(1, EdAttr, 0, 2, cbEdTimingSelect, "System"));
+        eduiMenuAddItem(edTimingMenu, eduiItemSelCreate(2, EdAttr, 0, 3, cbEdTimingSelect, "No Things"));
+        eduiMenuAddItem(edTimingMenu, eduiItemSelCreate(3, EdAttr, 0, 4, cbEdTimingSelect, "All Things"));
+        for (i32 i = 0; i < static_cast<ThingManager *>(theThingManager)->count; ++i) {
+            eduiMenuAddItem(edTimingMenu,
+                           eduiItemToggleCreate(i + 4, EdAttr,
+                                               static_cast<ThingManager *>(theThingManager)->things[i]->profiling_0xc,
+                                               i + 5, cbEdTimingSelect,
+                                               const_cast<char *>(static_cast<ThingManager *>(theThingManager)
+                                                                      ->things[i]->GetName())));
+        }
+    }
 }
 
 void ThingManager::edTimingInit() {
     static_cast<ThingManager *>(theThingManager)->ed_timing_state = 0;
 }
 
-void ThingManager::edTimingProc(float, nupad_s *) {
-    STUBBED();
+i32 ThingManager::edTimingProc(float delta_time, nupad_s *pad) {
+    NuFntSet(0);
+    NuFntScale(12, 12);
+    eduiMenuProcess(edTimingMenu, delta_time, pad);
+    return edTimingMenu == NULL ? 2 : 0;
 }
 
 void ThingManager::edTimingRender() {
-    STUBBED();
+    eduiMenuRender(edTimingMenu);
 }
 
 void SpecialObject::Exists() const {
@@ -5491,7 +5555,7 @@ CantPickupBombTimerAddon::~CantPickupBombTimerAddon() {
 BaseThing::BaseThing() {
     this->field_0x4 = 0;
     this->flags = 0;
-    this->profiling_0xc = NULL;
+    this->profiling_0xc = 0;
 }
 
 // BaseThing defaults @0x424bf0 (dtor) and 0x425990..0x425a20 (interface

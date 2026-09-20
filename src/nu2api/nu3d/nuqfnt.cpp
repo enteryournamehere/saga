@@ -1339,11 +1339,11 @@ i32 NuFntFindEnd(nutex_s *, i32 *, i32 *, i32, i32) {
 
 extern "C" {
 
-    void NuFntSet(void) {
+    void NuFntSet(i32) {
         STUBBED();
     }
 
-    void NuFntScale(void) {
+    void NuFntScale(i32, i32) {
         STUBBED();
     }
 

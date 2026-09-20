@@ -14,7 +14,7 @@
 //   0x4  id matched by ThingManager::EnableActions
 //   0x8  flags bitmask (0x10 process / 0x20 process-even-when-paused /
 //        0x40 process-only-when-paused / 0x80 render skip bits)
-//   0xc  profiling handle: when non-NULL the manager brackets the virtual
+//   0xc  profiling flag: when nonzero the manager brackets the virtual
 //        call with NuTimeBarSlotBegin/End
 #pragma once
 
@@ -27,11 +27,15 @@ struct ThingRenderData;
 struct ThingResetData;
 
 enum BASETHING_FLAGS {
+    THING_FLAG_SKIP_REMOVE_DEPENDANCIES = 0x01,
+    THING_FLAG_SKIP_ENTER_LEVEL = 0x02,
+    THING_FLAG_SKIP_EXIT_LEVEL = 0x04,
     THING_FLAG_SKIP_PROCESS = 0x10,
     THING_FLAG_SKIP_PROCESS_EVEN_WHEN_PAUSED = 0x20,
     THING_FLAG_SKIP_PROCESS_ONLY_WHEN_PAUSED = 0x40,
     THING_FLAG_SKIP_RENDER = 0x80,
     THING_FLAG_SKIP_DISPLAY = 0x100,
+    THING_FLAG_SKIP_EFFECTS = 0x200,
 };
 
 struct BaseThing {
@@ -51,5 +55,5 @@ struct BaseThing {
 
     u32 field_0x4;
     u32 flags;
-    void *profiling_0xc;
+    i32 profiling_0xc;
 };

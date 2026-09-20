@@ -9,6 +9,7 @@
 #include "legoapi/gizmos/object/gizbuildits.h"
 #include "legoapi/gizmo/object/gizmoblowups.h"
 #include "legoapi/render/core/render.h"
+#include "legoapi/render/core/rtl.h"
 #include "legoapi/audio/audio.h"
 #include "legoapi/gizmos/transport/grapples.h"
 #include "legoapi/gizmos/transport/gizportal.h"
@@ -193,11 +194,14 @@ extern i32 LEGO_AIPATHCNX_BLOCKAGE;
 extern "C" i32 AISysSetLevelPath(AISYS_s *system, char *path_name);
 
 GAMEFOG_STATE GameFog = {};
+f32 dof_fstop;
 
 static i32 GameFogSnap;
-static i32 GameFogSet;
+static rtlfog_s *GameFogSet;
 static f32 GameFogDuration;
 static f32 GameFogTime;
+static GAMEFOG_STATE GameFogOld;
+static GAMEFOG_STATE GameFogNew;
 
 enum AI_ACTION_SPEED_MODE : u8 {
     AI_ACTION_SPEED_RUN = 0,
@@ -3231,8 +3235,110 @@ extern "C" void MenuRegisterSoundFX(i32 move, i32 select, i32 back, i32 no_entry
 i32 GameAudio_GetSfxId(i32 sfx);
 void GameAudio_PlaySfxById(i32 sfx_id, nuvec_s *position, i32 flags, i32 volume);
 
-void GameFog_Update(WORLDINFO_s *) {
-    STUBBED();
+void GameFog_Update(WORLDINFO_s *world) {
+    rtlfog_s *previous = GameFogSet;
+    if (world->rtl_set != NULL &&
+        !(CUTSTOPGAME != 0 && CutStopInfo != NULL && (static_cast<CUTINFO *>(CutStopInfo)->flags & 4) != 0)) {
+        GameFogSet = rtlGetFogSet(world->rtl_set, NUMTX_GET_ROW_VEC(&pNuCam->mtx, 3));
+    } else {
+        GameFogSet = NULL;
+    }
+
+    if (GameFogSnap == 0 && GameFogSet != previous) {
+        GameFogOld = GameFog;
+        GameFogTime = 0.0f;
+        GameFogDuration = 3.0f;
+    }
+    if (GameFogSnap != 0 || GameFogSet != previous) {
+        if (GameFogSet != NULL) {
+            u32 colour = GameFogSet->colour;
+            GameFogNew.high_quality_colour_channels[0] = colour >> 24;
+            GameFogNew.high_quality_colour_channels[1] = (colour >> 16) & 0xff;
+            GameFogNew.high_quality_colour_channels[2] = (colour >> 8) & 0xff;
+            GameFogNew.high_quality_colour_channels[3] = colour & 0xff;
+            GameFogNew.high_quality_start = GameFogSet->start;
+            GameFogNew.high_quality_end = GameFogSet->end;
+            GameFogNew.high_quality_density = GameFogSet->density;
+            GameFogNew.low_quality_density = GameFogSet->low_quality_density;
+            colour = GameFogSet->low_quality_colour;
+            GameFogNew.low_quality_colour_channels[0] = colour >> 24;
+            GameFogNew.low_quality_colour_channels[1] = (colour >> 16) & 0xff;
+            GameFogNew.low_quality_colour_channels[2] = (colour >> 8) & 0xff;
+            GameFogNew.low_quality_colour_channels[3] = colour & 0xff;
+        } else {
+            GameFogNew.high_quality_colour_channels[0] = GameFogNew.high_quality_colour_channels[1] =
+                GameFogNew.high_quality_colour_channels[2] = GameFogNew.high_quality_colour_channels[3] = 0.0f;
+            GameFogNew.high_quality_start = 5.0f;
+            GameFogNew.high_quality_end = 20.0f;
+            GameFogNew.high_quality_density = 0.0f;
+            GameFogNew.low_quality_density = 0.0f;
+            GameFogNew.low_quality_colour_channels[0] = GameFogNew.low_quality_colour_channels[1] =
+                GameFogNew.low_quality_colour_channels[2] = GameFogNew.low_quality_colour_channels[3] = 0.0f;
+        }
+    }
+
+    f32 fstop = 22.0f;
+    if (GameFogSet != NULL) {
+        fstop = static_cast<f32>(static_cast<u32>(GameFogSet->depth_of_field_fstop)) / 10.0f;
+        if (fstop == 0.0f)
+            fstop = 22.0f;
+    }
+    dof_fstop = fstop;
+
+    if (NuIOS_IsLowEndDevice() && world->current_level != NULL) {
+        GameFogNew.low_quality_end = world->current_level->data_display.far_clip;
+        GameFogNew.low_quality_start = world->current_level->data_display.fog_start;
+    }
+    if (GameFogSnap != 0) {
+        GameFog = GameFogNew;
+        GameFogDuration = 0.0f;
+        GameFogTime = 0.0f;
+    } else {
+        if (GameFogTime < GameFogDuration) {
+            GameFogTime += FRAMETIME;
+            if (GameFogTime > GameFogDuration)
+                GameFogTime = GameFogDuration;
+        }
+        if (GameFogTime >= GameFogDuration) {
+            GameFog = GameFogNew;
+        } else {
+            f32 blend = 1.0f - (NU_SIN_LUT(GameFogTime / GameFogDuration * 32768.0f + 16384.0f) + 1.0f) * 0.5f;
+            GameFog.high_quality_colour_channels[0] = GameFogOld.high_quality_colour_channels[0] +
+                (GameFogNew.high_quality_colour_channels[0] - GameFogOld.high_quality_colour_channels[0]) * blend;
+            GameFog.high_quality_colour_channels[1] = GameFogOld.high_quality_colour_channels[1] +
+                (GameFogNew.high_quality_colour_channels[1] - GameFogOld.high_quality_colour_channels[1]) * blend;
+            GameFog.high_quality_colour_channels[2] = GameFogOld.high_quality_colour_channels[2] +
+                (GameFogNew.high_quality_colour_channels[2] - GameFogOld.high_quality_colour_channels[2]) * blend;
+            GameFog.high_quality_colour_channels[3] = GameFogOld.high_quality_colour_channels[3] +
+                (GameFogNew.high_quality_colour_channels[3] - GameFogOld.high_quality_colour_channels[3]) * blend;
+            GameFog.high_quality_start = GameFogOld.high_quality_start +
+                (GameFogNew.high_quality_start - GameFogOld.high_quality_start) * blend;
+            GameFog.high_quality_end = GameFogOld.high_quality_end +
+                (GameFogNew.high_quality_end - GameFogOld.high_quality_end) * blend;
+            GameFog.high_quality_density = GameFogOld.high_quality_density +
+                (GameFogNew.high_quality_density - GameFogOld.high_quality_density) * blend;
+            GameFog.low_quality_density = GameFogOld.low_quality_density +
+                (GameFogNew.low_quality_density - GameFogOld.low_quality_density) * blend;
+            GameFog.low_quality_colour_channels[0] = GameFogOld.low_quality_colour_channels[0] +
+                (GameFogNew.low_quality_colour_channels[0] - GameFogOld.low_quality_colour_channels[0]) * blend;
+            GameFog.low_quality_colour_channels[1] = GameFogOld.low_quality_colour_channels[1] +
+                (GameFogNew.low_quality_colour_channels[1] - GameFogOld.low_quality_colour_channels[1]) * blend;
+            GameFog.low_quality_colour_channels[2] = GameFogOld.low_quality_colour_channels[2] +
+                (GameFogNew.low_quality_colour_channels[2] - GameFogOld.low_quality_colour_channels[2]) * blend;
+            GameFog.low_quality_colour_channels[3] = GameFogOld.low_quality_colour_channels[3] +
+                (GameFogNew.low_quality_colour_channels[3] - GameFogOld.low_quality_colour_channels[3]) * blend;
+        }
+    }
+    GameFog.colour = (static_cast<i32>(GameFog.high_quality_colour_channels[0]) << 24) +
+        (static_cast<i32>(GameFog.high_quality_colour_channels[1]) << 16) +
+        (static_cast<i32>(GameFog.high_quality_colour_channels[2]) << 8) +
+        static_cast<i32>(GameFog.high_quality_colour_channels[3]);
+    GameFog.low_quality_colour = (static_cast<i32>(GameFog.low_quality_colour_channels[0]) << 24) +
+        (static_cast<i32>(GameFog.low_quality_colour_channels[1]) << 16) +
+        (static_cast<i32>(GameFog.low_quality_colour_channels[2]) << 8) +
+        static_cast<i32>(GameFog.low_quality_colour_channels[3]);
+    GameFogSnap = 0;
+    g_BackgroundColour = GameFog.colour;
 }
 
 void *GameBufferAlloc(variptr_u *buf, variptr_u *buf_end, i32 size) {
@@ -3923,8 +4029,14 @@ void GameObjectSetCanUse(GameObject_s *object, void *target, unsigned char actio
     object->use_action_frames = grapple_attach_frames;
 }
 
-void GameObjOwnsAnyCables(GameObject_s *) {
-    STUBBED();
+CABLE_s *GameObjOwnsAnyCables(GameObject_s *object) {
+    CABLE_s *cable = cables;
+    for (i32 i = 0; i < 8; ++i, ++cable) {
+        // The original checks the first cable's owner for the entire array.
+        if (cables->source == object && (cable->flags_1e9 & 1) != 0)
+            return cable;
+    }
+    return NULL;
 }
 
 void GameObjectDimensionsExtra_LSW(GameObject_s *object);
@@ -4374,8 +4486,9 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
     }
 }
 
-void GameObjectDimensionsExtra_LSW(GameObject_s *) {
-    STUBBED();
+void GameObjectDimensionsExtra_LSW(GameObject_s *object) {
+    if (object->id == id_ATAT && object->character_context == 0x17 && object->context_animation == 0x41)
+        object->apiobj.field_0x1dc *= 2.0f;
 }
 
 i32 AnakinGreenSabre(GameObject_s *object);
@@ -6698,8 +6811,9 @@ void ManageGameObjects() {
     }
 }
 
-void PowerUp_Particles(WORLDINFO_s *, nuvec_s *) {
-    STUBBED();
+void PowerUp_Particles(WORLDINFO_s *world, NUVEC *position) {
+    if (VehicleArea == 0 && ParticlesPerSecond(10.0f, FRAMETIME) > 0)
+        AddGameDebris(world->debris_sys, GizBuilditGDeb[qrand() / 10923], position);
 }
 
 extern i32 adaptivedifficulty[3];

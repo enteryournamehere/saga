@@ -48,16 +48,23 @@ DECOMP_ASSERT(offsetof(rtl_s, type) == 0x58, "RTL type offset");
 DECOMP_ASSERT(offsetof(rtl_s, uid) == 0x6a, "RTL UID offset");
 
 struct rtlfog_s {
-    u8 reserved_00[0x8];
+    f32 start;
+    f32 end;
     u32 colour;
-    u8 reserved_0c[0x8];
+    i32 low_quality_density;
+    u32 low_quality_colour;
     i32 type;
-    u8 reserved_18[0x4];
+    u8 depth_of_field_fstop;
+    u8 reserved_19[3];
     f32 radius;
     NUVEC position;
-    u8 reserved_2c[0x20];
+    f32 density;
+    u8 reserved_30[0x1c];
 };
 DECOMP_ASSERT(sizeof(rtlfog_s) == 0x4c, "RTL fog size");
+DECOMP_ASSERT(offsetof(rtlfog_s, low_quality_density) == 0x0c, "RTL low-quality fog density offset");
+DECOMP_ASSERT(offsetof(rtlfog_s, depth_of_field_fstop) == 0x18, "RTL fog depth-of-field offset");
+DECOMP_ASSERT(offsetof(rtlfog_s, density) == 0x2c, "RTL fog density offset");
 
 struct rtlset {
     u32 header;
@@ -88,4 +95,5 @@ extern "C" {
     void rtlDynamicMasterEnable(i32);
     void rtlSetLights(rtldata_s *);
     rtlset *rtlLoadSet(char *, VARIPTR *, i32);
+    rtlfog_s *rtlGetFogSet(rtlset *, NUVEC *);
 }

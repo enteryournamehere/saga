@@ -671,8 +671,37 @@ extern "C" {
         STUBBED();
     }
 
-    void rtlGetFogSet(void) {
-        STUBBED();
+    rtlfog_s *rtlGetFogSet(rtlset *set, NUVEC *position) {
+        i32 i;
+        rtlset *fog_set = set;
+        i32 selected = -1;
+        if (fog_set != NULL) {
+            for (i = 0; i < 32; ++i) {
+                if (fog_set->fog[i].type == 0) {
+                    continue;
+                }
+                f32 distance_squared =
+                    (position->x - fog_set->fog[i].position.x) *
+                        (position->x - fog_set->fog[i].position.x) +
+                    (position->y - fog_set->fog[i].position.y) *
+                        (position->y - fog_set->fog[i].position.y) +
+                    (position->z - fog_set->fog[i].position.z) *
+                        (position->z - fog_set->fog[i].position.z);
+                if (distance_squared < fog_set->fog[i].radius * fog_set->fog[i].radius) {
+                    if (selected != -1) {
+                        if (fog_set->fog[i].radius < fog_set->fog[selected].radius) {
+                            selected = i;
+                        }
+                    } else {
+                        selected = i;
+                    }
+                }
+            }
+            if (selected != -1) {
+                return &fog_set->fog[selected];
+            }
+        }
+        return NULL;
     }
 
 } // extern "C"

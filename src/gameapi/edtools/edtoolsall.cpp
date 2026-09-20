@@ -54,7 +54,7 @@ extern "C" {
     void DebrisStartOffset(i32, f32);
     void DebrisSetGroupID(i32, i16);
     void DebrisSetPriority(i32, u16, i8);
-    void DebrisSetRoomID(i32, i32);
+    void DebrisSetRoomID(i32, NUGSCN *);
     void DebrisSetDetailLevels(i32, i32);
     void AddDebrisEffect(i32 *, i32, f32, f32, f32);
     extern debkeydatatype_s *debkeydata;
@@ -438,8 +438,52 @@ void edppPtlChangeType(i32 index, i32 effect_index) {
     }
 }
 
-void edppPtlCreateCopy(nuvec_s *, i32) {
-    STUBBED();
+i32 edppPtlCreateCopy(NUVEC *position, i32 source_index) {
+    if (edpp_instances_used == 512)
+        return -1;
+    i32 index = 0;
+    while (edpp_ptls[index].instance_id != -1)
+        ++index;
+    edpp_particle_s *source = &edpp_ptls[source_index];
+    AddDebrisEffect(&edpp_ptls[index].instance_id, source->effect_index,
+                    position->x, position->y, position->z);
+    edpp_particle_s *particle = &edpp_ptls[index];
+    if (particle->instance_id == -1)
+        return -1;
+    debkeydata[particle->instance_id].field_2f9 = 0;
+    particle->position = *position;
+    particle->effect_index = source->effect_index;
+    particle->rotation_z = source->rotation_z;
+    particle->rotation_y = source->rotation_y;
+    particle->emitter_rotation_z = source->emitter_rotation_z;
+    particle->emitter_rotation_y = source->emitter_rotation_y;
+    particle->start_offset = source->start_offset;
+    particle->switch_type = source->switch_type;
+    particle->switch_id = source->switch_id;
+    particle->switch_variable = source->switch_variable;
+    particle->reflection_offset = source->reflection_offset;
+    particle->reflection_bounce = source->reflection_bounce;
+    particle->render_group = source->render_group;
+    particle->page = source->page;
+    particle->detail_levels = source->detail_levels;
+    particle->facing_mode = source->facing_mode;
+    particle->facing_rotation_x = source->facing_rotation_x;
+    particle->facing_rotation_y = source->facing_rotation_y;
+    strcpy(edpp_ptls[index].name, debtab[particle->effect_index]->name);
+    DebrisOrientation(particle->instance_id, particle->rotation_z, particle->rotation_y);
+    DebrisEmitterOrientation(particle->instance_id, particle->emitter_rotation_z,
+                             particle->emitter_rotation_y, particle->emitter_rotation_x);
+    DebrisStartOffset(particle->instance_id, particle->start_offset);
+    DebrisReflectionOrientation(particle->instance_id, particle->reflection_rotation_z,
+                                particle->reflection_rotation_y, particle->reflection_offset,
+                                particle->reflection_bounce);
+    DebrisSetFacing(particle->instance_id, particle->facing_mode,
+                    particle->facing_rotation_x, particle->facing_rotation_y);
+    DebrisSetGroupID(particle->instance_id, particle->render_group);
+    DebrisSetRoomID(particle->instance_id, reinterpret_cast<NUGSCN *>(edpp_page_scene[particle->page]));
+    DebrisSetDetailLevels(particle->instance_id, particle->detail_levels);
+    ++edpp_instances_used;
+    return index;
 }
 
 void EdDrawPolyCylinder(VuMtx const &, float, float, float, i32, i32, i32, i32) {

@@ -322,8 +322,18 @@ void *NetworkObjectManager::GetObject(i32 id) {
     return objects[id].object;
 }
 
-void NetworkObjectManager::GetPeerStatus() {
-    STUBBED();
+i32 NetworkObjectManager::GetPeerStatus() {
+    i32 status = 0;
+    for (i32 i = 0; i < 8; i++) {
+        if (peer_push[i].peer != NULL && peer_push[i].stage != 3) {
+            if (status == 0 && (peer_push[i].stage == 1 || peer_push[i].stage == 2)) {
+                status = 1;
+            } else {
+                status = 2;
+            }
+        }
+    }
+    return status;
 }
 
 void NetworkObjectManager::ImportObjects() {
@@ -349,12 +359,22 @@ i32 NetworkObjectManager::IsLocal(i32 id) {
     return network_object->owner->local;
 }
 
-void NetworkObjectManager::IsPeerReady(NetPeer const &) const {
-    STUBBED();
+i32 NetworkObjectManager::IsPeerReady(NetPeer const &peer) const {
+    for (i32 i = 0; i < 8; i++) {
+        if (peer_push[i].peer == &peer) {
+            return peer_push[i].stage == 3;
+        }
+    }
+    return 0;
 }
 
-void NetworkObjectManager::IsPeerStarted(NetPeer const &) const {
-    STUBBED();
+i32 NetworkObjectManager::IsPeerStarted(NetPeer const &peer) const {
+    for (i32 i = 0; i < 8; i++) {
+        if (peer_push[i].peer == &peer) {
+            return peer_push[i].stage > 0;
+        }
+    }
+    return 0;
 }
 
 NetworkObjectManager::NetworkObjectManager() {
@@ -400,8 +420,25 @@ void NetworkObjectManager::PeerJoined(NetPeer const &) {
     STUBBED();
 }
 
-void NetworkObjectManager::PeerLeft(NetPeer const &, ePeerLeftReason) {
-    STUBBED();
+void NetworkObjectManager::PeerLeft(NetPeer const &peer, ePeerLeftReason) {
+    if (!peer.local && (theSession->status == 3 || theSession->status == 4)) {
+        for (i32 i = 0; i < 2; i++) {
+            if (guid_peers[i] == &peer) {
+                guid_peers[i] = NULL;
+            }
+        }
+        for (i32 i = 0; i < 2048; i++) {
+            if (objects[i].id != 0 && objects[i].owner == &peer) {
+                Recover(&objects[i]);
+            }
+        }
+    }
+    for (i32 i = 0; i < 8; i++) {
+        if (peer_push[i].peer != NULL && peer_push[i].peer == &peer) {
+            peer_push[i].peer = NULL;
+            peer_push[i].Stop();
+        }
+    }
 }
 
 void NetworkObjectManager::Push(NetworkObject const *, NetReplicator *, ReplicatorData &,
@@ -519,7 +556,6 @@ void NetworkObjectManager::RemovePendingObject(NetworkObject *object) {
 }
 
 void NetworkObjectManager::Reset() {
-    STUBBED();
 }
 
 void NetworkObjectManager::SendAcquireMessage(NetworkObject *) {

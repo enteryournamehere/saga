@@ -175,8 +175,12 @@ struct NetMessage {
     void RaiseError();
 };
 struct NetSession {
-    u8 reserved_00[0x34];
+    u8 reserved_00[4];
+    i32 status;
+    u8 reserved_08[0x34 - 8];
     u32 error;
+    u8 reserved_38[0x84 - 0x38];
+    NetPeer *local_peer;
 };
 extern NetSession *theSession;
 DECOMP_ASSERT(sizeof(NetMessage) == 0x10, "NetMessage ABI");
@@ -265,6 +269,12 @@ static_assert(sizeof(void *) != 4 || sizeof(NetworkObject) == 0x18, "NetworkObje
 struct NetworkObjectManager {
     // The manager reset routine is an intentional no-op in the original.
     struct NetPeerPush {
+        NetPeer const *peer;
+        NetMessage *reliable_message;
+        NetMessage *message;
+        i32 stage;
+        i32 field_10;
+
         void FlushMessages();
         void GetMessage(i32);
         void GetReliableMessage(i32);
@@ -293,13 +303,13 @@ struct NetworkObjectManager {
     i32 GetGuid(void *);
     i32 GetNextGuid();
     void *GetObject(i32);
-    void GetPeerStatus();
+    i32 GetPeerStatus();
     void ImportObjects();
     void Init();
     void InitClassStats();
     i32 IsLocal(i32);
-    void IsPeerReady(NetPeer const &) const;
-    void IsPeerStarted(NetPeer const &) const;
+    i32 IsPeerReady(NetPeer const &) const;
+    i32 IsPeerStarted(NetPeer const &) const;
     NetworkObjectManager();
     void NotifyCreateObject(void *, EdClass *, void *, i32, i32, i32);
     void NotifyDestroyObject(void *, EdClass *, i32, i32);
@@ -345,9 +355,10 @@ struct NetworkObjectManager {
     void UpdateLocalObjectList();
     virtual ~NetworkObjectManager();
 
-    u8 reserved_04[0xc];
+    u8 reserved_04[8];
+    i32 active;
     NOSContext context;
-    u8 reserved_20[8];
+    NetPeer const *guid_peers[2];
     i32 guid_group;
     i32 next_guid;
     NetworkObject objects[2048];
@@ -362,7 +373,21 @@ struct NetworkObjectManager {
         i32 id;
     } registered_calls[32];
     i32 registered_call_count;
+    NetPeerPush peer_push[8];
+    u8 reserved_d8d8[0xd96c - 0xd8d8];
+    u8 field_d96c;
 };
+static_assert(sizeof(void *) != 4 || offsetof(NetSession, local_peer) == 0x84, "NetSession local peer offset");
+static_assert(sizeof(void *) != 4 || sizeof(NetworkObjectManager::NetPeerPush) == 0x14,
+              "NetworkObjectManager::NetPeerPush 32-bit size");
+static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, active) == 0xc,
+              "NetworkObjectManager::active 32-bit offset");
+static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, guid_peers) == 0x20,
+              "NetworkObjectManager::guid_peers 32-bit offset");
+static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, peer_push) == 0xd838,
+              "NetworkObjectManager::peer_push 32-bit offset");
+static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, field_d96c) == 0xd96c,
+              "NetworkObjectManager::field_d96c 32-bit offset");
 static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, objects) == 0x30,
               "NetworkObjectManager::objects 32-bit offset");
 static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, local_object_count) == 0xc030,

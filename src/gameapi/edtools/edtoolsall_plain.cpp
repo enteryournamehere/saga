@@ -2019,7 +2019,7 @@ extern "C" {
     void eduiGradStageAddRGB(void) {
         STUBBED();
     }
-    void eduiGradStageDelete(void) {
+    void eduiGradStageDelete(edui_gradient_pick_s *, edui_gradient_node_s *) {
         STUBBED();
     }
     void eduiGradStageSetHSV(void) {

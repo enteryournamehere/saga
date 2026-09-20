@@ -60,16 +60,16 @@ void NetPredictor3::PredictValue(EdClass const *, void *, NetPredictor::Predicto
 }
 
 NetReplicator::NetReplicator(i32 group, float minimum_seconds, float maximum_seconds) {
-    list_previous = 0;
-    list_next = 0;
+    next = 0;
+    previous = 0;
     minimum_interval = minimum_seconds < 0.1f ? 100 : static_cast<u32>(minimum_seconds * 1000.0f);
     if (maximum_seconds > 0.0f && maximum_seconds < 0.1f) {
         maximum_interval = 100;
     } else {
         maximum_interval = static_cast<u32>(maximum_seconds * 1000.0f);
     }
-    field_14 = 0;
-    field_16 = 0;
+    data_size = 0;
+    message_size = 0;
     id = smNextId++;
     replication_group = static_cast<u16>(group);
 }
@@ -254,8 +254,26 @@ void NetworkObjectManager::BindFilter(NOSFilter *filter, EdClass const *object_c
     filters[theRegistry.GetClassId(const_cast<EdClass *>(object_class))] = filter;
 }
 
-void NetworkObjectManager::BindReplicator(NetReplicator *, EdClass const *) {
-    STUBBED();
+void NetworkObjectManager::BindReplicator(NetReplicator *replicator, EdClass const *object_class) {
+    i32 class_id = theRegistry.GetClassId(const_cast<EdClass *>(object_class));
+    ReplicatorList &list = replicators[class_id];
+    replicator->next = NULL;
+    replicator->previous = list.tail;
+    if (list.tail != NULL) {
+        list.tail->next = replicator;
+    }
+    list.tail = replicator;
+    if (list.head == NULL) {
+        list.head = replicator;
+    }
+    list.count++;
+
+    i32 data_size;
+    i32 message_size;
+    CalcReplicatorDataSize(replicator, object_class, data_size, message_size);
+    replicator_data_sizes[class_id] += data_size;
+    replicator->data_size = static_cast<u16>(data_size);
+    replicator->message_size = static_cast<u16>(message_size);
 }
 
 void NetworkObjectManager::CalcReplicatorDataSize(NetReplicator *, EdClass const *, i32 &, i32 &) {

@@ -72,9 +72,12 @@ struct NetPeer {
     u8 local;
 };
 struct ReplicatorData {
-    u8 reserved_00[8];
+    u8 *start;
+    u8 *end;
     u8 *cursor;
 };
+DECOMP_ASSERT(sizeof(ReplicatorData) == 0xc, "ReplicatorData ABI");
+DECOMP_ASSERT(offsetof(ReplicatorData, cursor) == 8, "ReplicatorData cursor offset");
 struct WORLDINFO_s;
 struct ePeerLeftReason {};
 
@@ -112,14 +115,14 @@ struct FtpFile {
 struct NetReplicator {
     static i16 smNextId;
 
-    u32 list_previous;
-    u32 list_next;
+    NetReplicator *next;
+    NetReplicator *previous;
     u16 id;
     u16 replication_group;
     u16 minimum_interval;
     u16 maximum_interval;
-    u16 field_14;
-    u16 field_16;
+    u16 data_size;
+    u16 message_size;
 
     NetReplicator(i32, float, float);
     virtual bool AllowPush(EdClass const *, void const *, ReplicatorData &, i32, i32) = 0;
@@ -322,6 +325,8 @@ struct NetSimpleReplicator : NetReplicator {
     bool AllowPush(EdClass const *, void const *, ReplicatorData &, i32, i32) override;
 };
 static_assert(sizeof(void *) != 4 || sizeof(NetReplicator) == 0x18, "NetReplicator 32-bit size");
+DECOMP_ASSERT(offsetof(NetReplicator, next) == 4, "NetReplicator next offset");
+DECOMP_ASSERT(offsetof(NetReplicator, data_size) == 0x14, "NetReplicator data size offset");
 struct NetSmallStats {
     struct eInfo {};
     void Draw(float, float, float, float, NetSmallStats::eInfo) const;
@@ -462,7 +467,12 @@ struct NetworkObjectManager {
     i32 local_object_count;
     NetworkObject *local_objects[1024];
     PendingObject pending_objects[32];
-    u8 reserved_d1b4[0x400];
+    struct ReplicatorList {
+        NetReplicator *head;
+        NetReplicator *tail;
+        i32 count;
+    } replicators[64];
+    i32 replicator_data_sizes[64];
     NOSFilter *filters[64];
     struct RegisteredCall {
         i32 type;
@@ -498,6 +508,9 @@ static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, local_object
               "NetworkObjectManager::local_objects 32-bit offset");
 static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, pending_objects) == 0xd034,
               "NetworkObjectManager::pending_objects 32-bit offset");
+DECOMP_ASSERT(offsetof(NetworkObjectManager, replicators) == 0xd1b4, "NetworkObjectManager replicator lists");
+DECOMP_ASSERT(offsetof(NetworkObjectManager, replicator_data_sizes) == 0xd4b4,
+              "NetworkObjectManager replicator data sizes");
 static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, filters) == 0xd5b4,
               "NetworkObjectManager::filters 32-bit offset");
 static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, registered_calls) == 0xd6b4,

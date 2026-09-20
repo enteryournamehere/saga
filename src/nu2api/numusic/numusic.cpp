@@ -1004,10 +1004,7 @@ void NuMusic::Process(f32 delta) {
     Track *track0 = this->voices[0].tracks[this->voices[0].track_index];
     f32 duck_target = 1.0f;
     if (track0 != NULL && this->voices[0].status == VOICE_STATUS_PLAYING_LOADED) {
-        duck_target = track0->duck_volume;
-        if (duck_target > 1.0f) {
-            duck_target = 1.0f;
-        }
+        duck_target = MIN(1.0f, track0->duck_volume);
         this->duck_gain = duck_target;
 
         f32 rate = 1.0f / track0->duck_fade;
@@ -1052,15 +1049,8 @@ void NuMusic::Process(f32 delta) {
         // Fade gain; a fade that reaches zero (or below) stops the stream.
         if (voice->status == VOICE_STATUS_PLAYING_LOADED && voice->fade_rate != 0.0f) {
             f32 gain = voice->fade_rate * delta + voice->gain;
-            if (gain < 1.0f) {
-                if (gain < 0.0f) {
-                    voice->gain = 0.0f;
-                } else {
-                    voice->gain = gain;
-                    if (gain != 0.0f) {
-                        goto volume_mix;
-                    }
-                }
+            voice->gain = MAX(0.0f, MIN(gain, 1.0f));
+            if (voice->gain == 0.0f) {
                 // Fade finished: reset for the next play and mark the track as
                 // having played (so its next Play fades in instead of snapping).
                 voice->fade_rate = 0.0f;
@@ -1069,12 +1059,9 @@ void NuMusic::Process(f32 delta) {
                 voice->fade_rate = 1.0f;
                 Track *cur = this->voices[vi].tracks[this->voices[vi].track_index];
                 ((u8 *)&cur->flags)[1] = 1;
-            } else {
-                voice->gain = 1.0f;
             }
         }
 
-    volume_mix:
         // Final mix: duck * master * voice gain * class volume * fader *
         // track attenuation * global attenuation, pushed as a 14-bit volume.
         f32 duck = this->duck_current;

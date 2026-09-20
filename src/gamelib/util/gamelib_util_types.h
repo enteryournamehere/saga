@@ -5,7 +5,9 @@
 #include "nu2api/nucore/fixed_width.h"
 #include "decomp.h"
 #include "gamelib/util/CRC16.h"
+#include "gameapi/edtools/edfile.h"
 #include <stddef.h>
+#include <string.h>
 
 struct AIPATHNODE_s;
 struct AndroidOBBUtils;
@@ -171,8 +173,103 @@ struct NetMessage {
     MessageData *data;
     u32 read_offset;
     u32 write_offset;
+
+    NetMessage() : swap_endianness(1), data(NULL), read_offset(0x20), write_offset(0x20) {
+        for (i32 i = 0; i < 512; ++i) {
+            if (sm_poolMessageData[i].references == 0) {
+                data = &sm_poolMessageData[i];
+                data->references = 1;
+                break;
+            }
+        }
+    }
+    NetMessage(NetMessage const &other)
+        : swap_endianness(other.swap_endianness), data(other.data), read_offset(other.read_offset),
+          write_offset(other.write_offset) {
+        if (data != NULL) {
+            ++data->references;
+        } else {
+            RaiseError();
+        }
+    }
+    ~NetMessage() {
+        if (data != NULL) {
+            if (data->references > 1) {
+                --data->references;
+            } else {
+                data->references = 0;
+            }
+        }
+    }
+    void Read8(u8 &value) {
+        if (data != NULL) {
+            value = data->bytes[read_offset++];
+        }
+    }
+    void Read16(i16 &value) {
+        if (data != NULL) {
+            memmove(&value, data->bytes + read_offset, 2);
+            if (swap_endianness) {
+                EdFileSwapEndianess16(&value);
+            }
+            read_offset += 2;
+        }
+    }
+    void Read32(i32 &value) {
+        if (data != NULL) {
+            memmove(&value, data->bytes + read_offset, 4);
+            if (swap_endianness) {
+                EdFileSwapEndianess32(&value);
+            }
+            read_offset += 4;
+        }
+    }
+    void ReadFloat(float &value) {
+        if (data != NULL) {
+            memmove(&value, data->bytes + read_offset, 4);
+            if (swap_endianness) {
+                EdFileSwapEndianess32(&value);
+            }
+            read_offset += 4;
+        }
+    }
+    void Read(void *value, u32 size) {
+        if (data != NULL) {
+            memmove(value, data->bytes + read_offset, size);
+            read_offset += size;
+        }
+    }
+    void Write8(u8 value) {
+        if (data != NULL) {
+            data->bytes[write_offset++] = value;
+        }
+    }
+    void Write16(i16 value) {
+        if (data != NULL) {
+            memcpy(data->bytes + write_offset, &value, 2);
+            if (swap_endianness) {
+                EdFileSwapEndianess16(data->bytes + write_offset);
+            }
+            write_offset += 2;
+        }
+    }
+    void Write32(i32 value) {
+        if (data != NULL) {
+            memcpy(data->bytes + write_offset, &value, 4);
+            if (swap_endianness) {
+                EdFileSwapEndianess32(data->bytes + write_offset);
+            }
+            write_offset += 4;
+        }
+    }
+    void Write(void const *value, u32 size) {
+        if (data != NULL) {
+            memmove(data->bytes + write_offset, value, size);
+            write_offset += size;
+        }
+    }
     void DebugPrint() const;
-    void RaiseError();
+    static void RaiseError();
 };
 struct NetSession {
     u8 reserved_00[4];

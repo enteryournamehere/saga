@@ -172,6 +172,10 @@ static void edpartVarEmitMenu(eduimenu_s *, eduiitem_s *, u32);
 static void edpartChangeGenRateMenu(eduimenu_s *, eduiitem_s *, u32);
 static void edpartEmitTimeMenu(eduimenu_s *, eduiitem_s *, u32);
 static void edpartCutOffMenu(eduimenu_s *, eduiitem_s *, u32);
+static void edpartGeneralTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static void edpartLevelTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static void edpartCancelTypeMenu(eduimenu_s *, eduimenu_s *);
+static void edpartCancelInstanceSettingsMenu(eduimenu_s *, eduimenu_s *);
 
 extern "C" {
     i32 edpart_which_scene = 1;
@@ -407,8 +411,17 @@ static void edpartTintMenu(eduimenu_s *menu, eduiitem_s *, u32) {
         }
     }
 }
-static void edpartTypeMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartTypeMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    edpart_type_menu = eduiMenuCreate(70, 70, 250, 250, ed_fnt, edpartCancelTypeMenu, "Emitter Type");
+    if (edpart_type_menu != NULL) {
+        eduiMenuAddItem(edpart_type_menu,
+                       eduiItemSelCreate(1, edblack, 0, 0, edpartGeneralTypeMenu, "General List..."));
+        eduiMenuAddItem(edpart_type_menu,
+                       eduiItemSelCreate(1, edblack, 0, 0, edpartLevelTypeMenu, "Level List..."));
+        eduiMenuAttach(menu, edpart_type_menu);
+        edpart_type_menu->x = menu->x + 10;
+        edpart_type_menu->y = menu->y + 40;
+    }
 }
 static void edpartChangeGrav(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpart_nearest_type)
@@ -1266,8 +1279,26 @@ static void edpartGeneralPartIndexMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void edpartInstanceSettingsMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartInstanceSettingsMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    if (edpart_nearest_type != NULL) {
+        edpart_instancesettings_menu =
+            eduiMenuCreate(70, 70, 250, 300, ed_fnt, edpartCancelInstanceSettingsMenu, "Instance Settings");
+        if (edpart_instancesettings_menu != NULL) {
+            eduiMenuAddItem(edpart_instancesettings_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartChangeMaxLifeMenu, "Max Instance Life..."));
+            eduiMenuAddItem(edpart_instancesettings_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartInstanceOrientMenu, "Instance Orientation..."));
+            eduiMenuAddItem(edpart_instancesettings_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartInstanceFlagsMenu, "Instance Flags..."));
+            eduiMenuAddItem(edpart_instancesettings_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartTintMenu, "Instance Tint..."));
+            eduiMenuAddItem(edpart_instancesettings_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartInstanceScaleMenu, "Instance Scale..."));
+        }
+        eduiMenuAttach(menu, edpart_instancesettings_menu);
+        edpart_instancesettings_menu->x = menu->x + 10;
+        edpart_instancesettings_menu->y = menu->y + 40;
+    }
 }
 
 static void edpartLevelDebrisIndexMenu(eduimenu_s *, eduiitem_s *, u32) {

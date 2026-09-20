@@ -10,12 +10,8 @@
 MISSIONSYS *MissionSys = NULL;
 
 MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, MISSIONSAVE *save) {
-    i16 psVar2;
-    i16 sVar1;
     nufpar_s *fp;
-    LEVELDATA *pLVar2;
     i32 i;
-    u16 uVar3;
     MISSIONSYS *dest;
     i32 charId;
     MISSIONSYS sys;
@@ -26,16 +22,12 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
         memset(&sys, 0, sizeof(sys));
 
         sys.flags = 1;
-        buffer = reinterpret_cast<MISSIONDATA *>(ALIGN(bufferStart->addr, alignof(MISSIONDATA)));
-        bufferStart->void_ptr = buffer;
-        sys.mission_save = save;
+        bufferStart->addr = ALIGN(bufferStart->addr, alignof(MISSIONDATA));
+        buffer = static_cast<MISSIONDATA *>(bufferStart->void_ptr);
         sys.missions = buffer;
+        sys.mission_save = save;
 
-        do {
-            i = NuFParGetLine(fp);
-            if (i == 0)
-                break;
-
+        while (sys.count < 20 && NuFParGetLine(fp) != 0) {
             NuFParGetWord(fp);
 
             i = NuStrICmp(fp->word_buf, "party");
@@ -73,73 +65,43 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
                         buffer->bounty2 = 0x186a0;
                         buffer->time = 0xb4;
                         buffer->count = sys.count;
-                    LAB_004f0bd0:
-                        i = NuFParGetWord(fp);
-                        if (i != 0) {
-                            while (i = NuStrICmp(fp->word_buf, "find"), i == 0) {
-                                i = NuFParGetWord(fp);
-                                if (i == 0)
-                                    goto LAB_004f0bd0;
-                                sVar1 = CharIDFromName(fp->word_buf);
-                                buffer->find_char = sVar1;
-                                i = NuFParGetWord(fp);
-                                if (i == 0)
-                                    goto LAB_004f0c1f;
-                            }
-                            i = NuStrICmp(fp->word_buf, "in_level");
-                            if (i == 0) {
-                                i = NuFParGetWord(fp);
-                                if ((i != 0) && (pLVar2 = Level_FindByName(fp->word_buf, &charId), pLVar2 != NULL)) {
+                        while (NuFParGetWord(fp) != 0) {
+                            if (NuStrICmp(fp->word_buf, "find") == 0) {
+                                if (NuFParGetWord(fp) != 0) {
+                                    buffer->find_char = CharIDFromName(fp->word_buf);
+                                }
+                            } else if (NuStrICmp(fp->word_buf, "in_level") == 0) {
+                                if (NuFParGetWord(fp) != 0 && Level_FindByName(fp->word_buf, &charId) != NULL) {
                                     buffer->level = (i16)charId;
                                 }
-                            } else {
-                                i = NuStrICmp(fp->word_buf, "time");
-                                if (i == 0) {
-                                    i = NuFParGetInt(fp);
-                                    uVar3 = 3;
-                                    if (2 < (u16)i) {
-                                        uVar3 = (u16)i;
-                                    }
-                                    buffer->time = uVar3;
-                                } else {
-                                    i = NuStrICmp(fp->word_buf, "bounty");
-                                    if (i == 0) {
-                                        i = NuFParGetInt(fp);
-                                        buffer->bounty = i;
-                                        i = NuFParGetInt(fp);
-                                        buffer->bounty2 = i;
-                                    } else {
-                                        i = NuStrICmp(fp->word_buf, "name_id");
-                                        if (i == 0) {
-                                            i = NuFParGetInt(fp);
-                                            buffer->name_id = (i16)i;
-                                        } else {
-                                            i = NuStrICmp(fp->word_buf, "text_id");
-                                            if (i == 0) {
-                                                i = NuFParGetInt(fp);
-                                                buffer->text_id = (i16)i;
-                                            }
-                                        }
-                                    }
-                                }
+                            } else if (NuStrICmp(fp->word_buf, "time") == 0) {
+                                u16 time = (u16)NuFParGetInt(fp);
+                                buffer->time = time < 3 ? 3 : time;
+                            } else if (NuStrICmp(fp->word_buf, "bounty") == 0) {
+                                buffer->bounty = NuFParGetInt(fp);
+                                buffer->bounty2 = NuFParGetInt(fp);
+                            } else if (NuStrICmp(fp->word_buf, "name_id") == 0) {
+                                buffer->name_id = (i16)NuFParGetInt(fp);
+                            } else if (NuStrICmp(fp->word_buf, "text_id") == 0) {
+                                buffer->text_id = (i16)NuFParGetInt(fp);
                             }
-                            goto LAB_004f0bd0;
                         }
-                    LAB_004f0c1f:
                         if (buffer->find_char != -1 && buffer->level != -1) {
                             sys.count = sys.count + 1;
                             ++buffer;
-                            bufferStart->void_ptr = buffer;
+                            bufferStart->addr += sizeof(MISSIONDATA);
                         }
                     }
                 }
             }
-        } while (sys.count < 20);
+        }
 
         NuFParDestroy(fp);
         if (sys.count != 0) {
-            dest = BUFFER_ALLOC_T(bufferStart, MISSIONSYS);
-            *dest = sys;
+            bufferStart->addr = ALIGN(bufferStart->addr, alignof(MISSIONSYS));
+            dest = static_cast<MISSIONSYS *>(bufferStart->void_ptr);
+            memmove(dest, &sys, sizeof(sys));
+            bufferStart->addr = ALIGN(bufferStart->addr + sizeof(MISSIONSYS), alignof(MISSIONSYS));
             return dest;
         }
     }

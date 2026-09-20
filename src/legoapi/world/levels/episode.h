@@ -22,6 +22,9 @@ extern "C" {
 
 #ifdef __cplusplus
 
+struct GameObject_s;
+GameObject_s *BossKilled(i32 character_id);
+
 EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, i32 maxCount, i32 *countDest);
 
 i32 Episode_ContainsArea(i32 areaId, i32 *areaIndex);

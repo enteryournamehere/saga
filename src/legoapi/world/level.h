@@ -169,8 +169,8 @@ typedef struct LEVELDATA_s {
 
     char area_level_index;
 
-    char blob_shadow_fade_near;
-    char blob_shadow_fade_far;
+    u8 blob_shadow_fade_near;
+    u8 blob_shadow_fade_far;
 
     char cam_pos_seek;
     char cam_angle_seek;
@@ -244,13 +244,19 @@ typedef struct LEVELDATA_s {
     i32 music_tracks[3][2];
 } LEVELDATA;
 
+DECOMP_ASSERT(offsetof(LEVELDATA, blob_shadow_fade_near) == 0xd5, "Level blob shadow fade near offset");
+DECOMP_ASSERT(offsetof(LEVELDATA, blob_shadow_fade_far) == 0xd6, "Level blob shadow fade far offset");
+
 typedef struct LEVELOBJECT {
     u8 kind;
     u8 pad_01;
-    u8 pad_02;
-    u8 pad_03;
+    u16 reflection;
     char *name;
 } LEVELOBJECT;
+
+DECOMP_ASSERT(sizeof(LEVELOBJECT) == 8, "LEVELOBJECT size");
+DECOMP_ASSERT(offsetof(LEVELOBJECT, reflection) == 2, "LEVELOBJECT reflection offset");
+DECOMP_ASSERT(offsetof(LEVELOBJECT, name) == 4, "LEVELOBJECT name offset");
 
 enum LEVEL_OBJECT_SCENE_KIND : u8 {
     LEVEL_OBJECT_SCENE_THINGS = 0,

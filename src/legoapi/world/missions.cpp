@@ -17,8 +17,7 @@ void EndMission(MISSIONSYS *ms, i32 param1, i32 param2) {
     if (netclient == 0 || param2 == 0) {
         ms->field8_0x1d = (u8)param1;
         SetBonusWinner(qrand() / 0x8000);
-        if (Player[BonusWinner] != NULL && *(i8 *)&Player[BonusWinner]->apiobj.field_0x1f8 < 0) {
-        } else {
+        if (Player[BonusWinner] == NULL || (Player[BonusWinner]->apiobj.field_0x1f8 & 0x80) == 0) {
             BonusWinner = (BonusWinner == 0);
         }
         BonusWinFlag = 0;
@@ -41,8 +40,7 @@ void EndChallenge(i32 param1, i32 param2) {
     if (netclient == 0 || param2 == 0) {
         ChallengeMode = param1;
         SetBonusWinner(qrand() / 0x8000);
-        if (Player[BonusWinner] != NULL && *(i8 *)&Player[BonusWinner]->apiobj.field_0x1f8 < 0) {
-        } else {
+        if (Player[BonusWinner] == NULL || (Player[BonusWinner]->apiobj.field_0x1f8 & 0x80) == 0) {
             BonusWinner = (BonusWinner == 0);
         }
         BonusWinFlag = 0;
@@ -191,27 +189,17 @@ i32 Missions_NumCompleted(MISSIONSYS *ms, MISSIONSAVE *save, i32 count) {
     if (ms == NULL) {
         ms = MissionSys;
     }
-    if (ms == NULL) {
-        return 0;
-    }
-    if (ms->count == 0) {
-        return 0;
-    }
-
-    if (count != 0) {
+    if (ms != NULL) {
         for (i = 0; i < ms->count; i++) {
-            ((u8 *)save)[0x50 + i] = 1;
-            if (((f32 *)save)[i] == 0.0f) {
-                u16 t = (u16)ms->mission[i].time;
-                ((f32 *)save)[i] = ((f32)(t >> 16) * 98304.0f) + (f32)t - 1.0f;
+            if (count != 0) {
+                save->completed[i] = 1;
+                if (save->best_times[i] == 0.0f) {
+                    save->best_times[i] = (f32)ms->missions[i].time - 1.0f;
+                }
+                total++;
+            } else if (save->completed[i] != 0) {
+                total++;
             }
-        }
-        return ms->count;
-    }
-
-    for (i = 0; i < ms->count; i++) {
-        if (((u8 *)save)[0x50 + i] == 1) {
-            total++;
         }
     }
     return total;

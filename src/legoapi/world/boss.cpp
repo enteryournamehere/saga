@@ -1,9 +1,30 @@
 #include "decomp.h"
 #include "legoapi/world/level.h"
+#include "legoapi/world/levels/episode.h"
 #include "globals.h"
 
-i32 KillBoss(i32, i32, float) {
-    STUBBED();
+extern i32 LevFlag[4];
+
+i32 KillBoss(i32 character_id, i32 flag_index, float delay) {
+    u8 *flags = reinterpret_cast<u8 *>(LevFlag);
+    switch (flags[flag_index]) {
+    case 0:
+        if (BossKilled(character_id) != NULL) {
+            if (delay <= 0.0f) {
+                flags[flag_index] = 2;
+                return 1;
+            }
+            flags[flag_index] = 1;
+        }
+        break;
+    case 1:
+        LevTime[0] += FRAMETIME;
+        if (LevTime[0] >= delay) {
+            flags[flag_index] = 2;
+            return 1;
+        }
+        break;
+    }
     return 0;
 }
 

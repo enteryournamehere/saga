@@ -239,7 +239,6 @@ void CalcSplinePointFromDist(flightspline_s *, _vuv_s *, float) {
 }
 
 static LEVELSPLINE *LevSplList;
-static i32 LEVELSPLINECOUNT;
 static i32 levspl_i_start = -1;
 static i32 levspl_i_startcam = -1;
 

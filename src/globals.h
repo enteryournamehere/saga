@@ -712,12 +712,14 @@ extern APICHARACTERMODELLIST_s Area_StoryModelList[52];
 // ------------------------------------------------------------------------
 // Level object tables
 // ------------------------------------------------------------------------
-extern i32 LevObjRef_FirstObj;
-extern i32 LevObjRef_LastObj;
-extern i32 LevObjRef_FirstRefObj;
+extern i32 LEVOBJREF_FIRSTOBJ;
+extern i32 LEVOBJREF_LASTOBJ;
+extern i32 LEVOBJREF_FIRSTREFOBJ;
+extern i32 LEVOBJREF_LASTREFOBJ;
 extern LEVELOBJECT *ObjTabList;
 extern i32 LEVELOBJECTCOUNT;
 extern i32 EXTRALEVELOBJECTCOUNT;
+extern i32 LEVELSPLINECOUNT;
 extern i32 KNOBS;
 extern i32 PLAYERHITPOINTS_2HEARTSIN1;
 extern i32 drawbosshitpoints_2rows;

@@ -2234,8 +2234,8 @@ void Level_Update(WORLDINFO *world) {
 }
 
 i32 LevelObject_GetReflection(i32 objId) {
-    if (objId != -1 && LevObjRef_FirstObj <= objId && objId <= LevObjRef_LastObj) {
-        objId = (objId - LevObjRef_FirstObj) + LevObjRef_FirstRefObj;
+    if (objId != -1 && LEVOBJREF_FIRSTOBJ <= objId && objId <= LEVOBJREF_LASTOBJ) {
+        objId = (objId - LEVOBJREF_FIRSTOBJ) + LEVOBJREF_FIRSTREFOBJ;
     }
     return objId;
 }
@@ -2260,8 +2260,8 @@ i32 LevelObject_FindIndexFromName(char *name) {
 }
 
 i32 LevelObject_FindIndexFromName_RefOnly(char *name) {
-    if (ObjTabList != NULL && LevObjRef_FirstObj != -1 && LevObjRef_FirstObj <= LevObjRef_LastObj) {
-        for (i32 i = LevObjRef_FirstObj; i <= LevObjRef_LastObj; ++i) {
+    if (ObjTabList != NULL && LEVOBJREF_FIRSTOBJ != -1 && LEVOBJREF_FIRSTOBJ <= LEVOBJREF_LASTOBJ) {
+        for (i32 i = LEVOBJREF_FIRSTOBJ; i <= LEVOBJREF_LASTOBJ; ++i) {
             if (NuStrICmp(ObjTabList[i].name, name) == 0) {
                 return i;
             }

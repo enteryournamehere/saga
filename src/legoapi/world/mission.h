@@ -22,10 +22,13 @@ typedef struct MISSIONDATA_s {
     i16 text_id;   // 0x06
     i32 bounty;    // 0x08
     i32 bounty2;   // 0x0c
-    i16 time;      // 0x10
+    u16 time;      // 0x10
     u8 count;      // 0x12
     u8 pad[0x5];   // 0x13 .. 0x18
 } MISSIONDATA;
+
+DECOMP_ASSERT(sizeof(MISSIONDATA) == 0x18, "MISSIONDATA size");
+DECOMP_ASSERT(offsetof(MISSIONDATA, time) == 0x10, "MISSIONDATA time offset");
 
 struct MISSIONSYS_s {
     MISSIONDATA *missions;     // mission table

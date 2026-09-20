@@ -12,46 +12,37 @@ static char *ExtraLevelObject_NameTable;
 static i32 ExtraLevelObject_NameTableSize;
 static i32 ExtraLevelObject_NameTableIndex;
 
-// LevelObjects_InitForGame @0x475400. Registers the perm-loaded object table
-// (ObjTab: 8-byte {kind, pad, ref-flag, name} entries terminated by kind 0xff)
-// as ObjTabList, counts the entries into LEVELOBJECTCOUNT, remembers the range
-// of reference entries (ref-flag == 1) for LevelObject_GetReflection, and
-// reserves the extra-object name table from the perm buffer. The original also
-// resets four unnamed scratch slots to -1 (last-ref bookkeeping state consumed
-// by the level-editor paths); our three named LevObjRef_* globals carry the
-// same information the game reads back.
 void LevelObjects_InitForGame(LEVELOBJECT *tab, VARIPTR *buf, VARIPTR *buf_end, i32 max, i32 name_table_size) {
-    (void)buf_end;
-    i32 count;
-    i32 first = -1;
-    i32 last = -1;
-    LEVELOBJECT *entry;
-
-    ExtraLevelObject_NameTableIndex = 0;
+    LEVOBJREF_FIRSTOBJ = -1;
+    LEVOBJREF_LASTOBJ = -1;
+    LEVOBJREF_FIRSTREFOBJ = -1;
+    LEVOBJREF_LASTREFOBJ = -1;
     LEVELOBJECTMAX = max;
     ObjTabList = tab;
+    LEVELSPLINECOUNT = 0;
 
-    // Walk the table from the start until the 0xff terminator, tracking
-    // ref-flag entries; the counter continues from LEVELOBJECTCOUNT.
-    count = LEVELOBJECTCOUNT;
-    entry = tab;
-    if ((u8)entry->kind != 0xff) {
-        while ((u8)entry->kind != 0xff) {
-            if (*(u16 *)&entry->pad_02 == 1) {
-                if (first == -1) {
-                    first = count;
-                }
-                last = count;
+    for (; tab->kind != 0xff; ++tab, ++LEVELOBJECTCOUNT) {
+        if (tab->reflection == 1) {
+            if (LEVOBJREF_FIRSTOBJ == -1) {
+                LEVOBJREF_FIRSTOBJ = LEVELOBJECTCOUNT;
             }
-            entry++;
-            count++;
+            LEVOBJREF_LASTOBJ = LEVELOBJECTCOUNT;
+        } else if (tab->reflection == 2) {
+            if (LEVOBJREF_FIRSTREFOBJ == -1) {
+                LEVOBJREF_FIRSTREFOBJ = LEVELOBJECTCOUNT;
+            }
+            LEVOBJREF_LASTREFOBJ = LEVELOBJECTCOUNT;
         }
     }
-    LEVELOBJECTCOUNT = count;
-    LevObjRef_FirstObj = first;
-    LevObjRef_LastObj = last;
 
-    // Carve the extra-object name table from the perm buffer.
+    const i32 reflection_range = LEVOBJREF_LASTREFOBJ - LEVOBJREF_FIRSTREFOBJ;
+    const i32 object_range = LEVOBJREF_LASTOBJ - LEVOBJREF_FIRSTOBJ;
+    if (object_range > reflection_range) {
+        LEVOBJREF_LASTOBJ = LEVOBJREF_FIRSTOBJ + reflection_range;
+    } else if (object_range < reflection_range) {
+        LEVOBJREF_LASTREFOBJ = LEVOBJREF_FIRSTREFOBJ + object_range;
+    }
+
     if (name_table_size > 0) {
         ExtraLevelObject_NameTable = (char *)buf->u8_ptr;
         ExtraLevelObject_NameTableSize = name_table_size;
@@ -62,9 +53,9 @@ void LevelObjects_InitForGame(LEVELOBJECT *tab, VARIPTR *buf, VARIPTR *buf_end, 
 i32 LevelObject_AddExtra(char *name, i32 kind) {
     if (LEVELOBJECTCOUNT < LEVELOBJECTMAX && ExtraLevelObject_NameTable != NULL) {
         i32 nameLen = NuStrLen(name);
-        char *nameDest = ExtraLevelObject_NameTable + ExtraLevelObject_NameTableIndex;
-        LEVELOBJECT *obj = &ObjTabList[LEVELOBJECTCOUNT];
-        if (nameLen + 1 + ExtraLevelObject_NameTableIndex < ExtraLevelObject_NameTableSize) {
+        if (nameLen + ExtraLevelObject_NameTableIndex + 1 < ExtraLevelObject_NameTableSize) {
+            char *nameDest = ExtraLevelObject_NameTable + ExtraLevelObject_NameTableIndex;
+            LEVELOBJECT *obj = &ObjTabList[LEVELOBJECTCOUNT];
             obj->kind = (u8)kind;
             obj->name = nameDest;
             LEVELOBJECTCOUNT++;
@@ -90,7 +81,7 @@ void LevObj_FixUpPlatIDs(WORLDINFO_s *world) {
         if (world->terrain != NULL) {
             if (NuSpecialExistsFn(&obj->special)) {
                 if (ObjTabList[i].kind == 1) {
-                    i++;
+                    obj = &world->lev_objs[i];
                     obj->platform_id = FindPlatInst(NuSpecialGetInstanceix(&obj->special));
                 }
             }
@@ -99,19 +90,8 @@ void LevObj_FixUpPlatIDs(WORLDINFO_s *world) {
 }
 
 void *LevObj_FindByPlatID(WORLDINFO_s *world, i32 platID) {
-    i32 count = LEVELOBJECTCOUNT;
-    LEVEL_OBJECT_RUNTIME *obj;
-    i32 i;
-
-    if (count <= 0) {
-        return NULL;
-    }
-    obj = world->lev_objs;
-    if (obj->platform_id == platID) {
-        return obj;
-    }
-    for (i = 1; i < count; i++) {
-        obj++;
+    LEVEL_OBJECT_RUNTIME *obj = world->lev_objs;
+    for (i32 i = 0; i < LEVELOBJECTCOUNT; i++, obj++) {
         if (obj->platform_id == platID) {
             return obj;
         }

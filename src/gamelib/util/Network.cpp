@@ -652,10 +652,9 @@ void NetworkObjectManager::RegisterObject(void *, EdClass *, i32) {
 
 i32 NetworkObjectManager::RegisterObjectCall(void (*callback)(void *, NetMessage &), i32 flags) {
     if (registered_call_count <= 31) {
-        RegisteredCall &call = registered_calls[registered_call_count];
-        call.flags = flags;
-        call.type = 1;
-        call.callback = reinterpret_cast<void *>(callback);
+        registered_calls[registered_call_count].flags = flags;
+        registered_calls[registered_call_count].type = 1;
+        registered_calls[registered_call_count].callback = reinterpret_cast<void *>(callback);
         return ++registered_call_count;
     }
     return 0;
@@ -663,10 +662,9 @@ i32 NetworkObjectManager::RegisterObjectCall(void (*callback)(void *, NetMessage
 
 i32 NetworkObjectManager::RegisterRemoteCall(void (*callback)(NetMessage &), i32 flags) {
     if (registered_call_count <= 31) {
-        RegisteredCall &call = registered_calls[registered_call_count];
-        call.flags = flags;
-        call.type = 0;
-        call.callback = reinterpret_cast<void *>(callback);
+        registered_calls[registered_call_count].flags = flags;
+        registered_calls[registered_call_count].type = 0;
+        registered_calls[registered_call_count].callback = reinterpret_cast<void *>(callback);
         return ++registered_call_count;
     }
     return 0;

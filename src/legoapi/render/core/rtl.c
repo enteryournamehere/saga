@@ -51,9 +51,13 @@ i32 modifier_cnt = 1;
 static i32 curFogLoc = -1;
 f32 rtltimer1adv = 2500.0f;
 static i32 numsegs = 16;
+static i32 hide_types[9];
 
 extern "C" {
     rtlset *curr_set = NULL;
+    rtl_s *curr_rtl;
+    rtl_s *rtl_locked;
+    rtl_s *base_rtl;
 }
 
 extern "C" {

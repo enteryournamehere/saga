@@ -81,6 +81,7 @@ extern "C" {
     char edgra_filter_string[16] = "GRASS";
     i32 edgra_mode = 1;
     extern NUGSCN *edbits_base_scene;
+    extern part_type_s part_types[128];
     i32 edgra_last_clump_in_buffer = -1;
     i32 edgra_copy_source = -1;
     f32 edgra_global_fadein = 15.0f, edgra_global_fadeout = 25.0f;
@@ -338,8 +339,38 @@ void edanimFileSave(char *) {
     STUBBED();
 }
 
-void edpartInitType(i32) {
-    STUBBED();
+void edpartInitType(i32 index) {
+    part_type_s *type = &part_types[index];
+    for (i32 variant = 0; variant < 8; ++variant) {
+        type->effect_ids[variant] = -1;
+        type->effect_pages[variant] = 1;
+    }
+    type->variant_count = 0;
+    type->lifetime = 0.0f;
+    type->speed = 1.0f;
+    type->gravity = 0.0f;
+    type->emission_rate = 1.0f;
+    type->emission_period = 1.0f;
+    type->emission_period_random = 0.0f;
+    type->emission_pause = 0.0f;
+    type->emission_pause_random = 0.0f;
+    type->rotation[0] = 0;
+    type->rotation[1] = 0;
+    type->rotation[2] = 0;
+    type->flags = 0;
+    type->trail_effects[0] = -1;
+    type->trail_effects[1] = -1;
+    type->attached_effect = -1;
+    type->kill_effect = -1;
+    type->impact_effect = -1;
+    type->impact_part = -1;
+    type->last_used_time = 0.0f;
+    type->field_174 = -1;
+    type->scale = 1.0f;
+    for (i32 sound = 0; sound < 4; ++sound) {
+        type->sounds[sound] = -1;
+        type->sound_modes[sound] = 0;
+    }
 }
 
 void edppDrawCursor() {

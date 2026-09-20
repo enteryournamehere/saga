@@ -251,7 +251,7 @@ static void LoadPermData(BGPROCINFO *proc) {
         legal_tex_base.addr = superbuffer_end.addr - kLegalTextureReserve;
 
         const char *legal_path = (Text_Language == 2) ? "stuff\\legal\\LEGAL_FRENCH" : "stuff\\legal\\LEGAL_ENGLISH";
-        legal_tid = NuTexRead(const_cast<char *>(legal_path), &legal_tex_base, &superbuffer_end);
+        legal_tid = NuTexRead(const_cast<char *>(legal_path), &legal_tex_base, superbuffer_end);
         loadlegal_done = true;
         LOG_INFO("LoadPermData: legal_tid=%d", legal_tid);
     }

@@ -62,7 +62,7 @@ void NuTexLoadHires(i32 tex_id) {
     i32 tex_id_hi;
 
     NuTexHiresFilename(tex_id, hires_path);
-    tex_id_hi = NuTexRead(hires_path, NULL, NULL);
+    tex_id_hi = NuTexRead(hires_path, NULL, VARIPTR{});
     NuTexSwapHires(tex_id, tex_id_hi);
 }
 

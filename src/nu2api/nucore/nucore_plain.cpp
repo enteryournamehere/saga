@@ -3007,7 +3007,7 @@ extern "C" {
     extern "C++" NuWindGType *NuWindAllocateGrp();
     extern "C++" void NuWindFreeGrp(NuWindGType *group);
 
-    i32 NuWindLoad(NUWIND *wind, i32 index, char *name, VARIPTR *buffer, VARIPTR *buffer_end) {
+    i32 NuWindLoad(NUWIND *wind, i32 index, char *name, VARIPTR *buffer, VARIPTR buffer_end) {
         if (wind != NULL) {
             if ((u32)index < 8) {
                 if (wind->unk0[index] >= 0) {

@@ -24,7 +24,7 @@ NUMTL *CreateSubtractiveTexture(char *name) {
 
 NUMTL *CreateAlphaBlendTexture(VARIPTR *buffer, VARIPTR buffer_end, char *name, i32 disable_depth_write, i32 alpha_mode,
                                i32 sort_priority, i32 depth_mode) {
-    const i32 texture_id = NuTexRead(name, buffer, &buffer_end);
+    const i32 texture_id = NuTexRead(name, buffer, buffer_end);
     buffer->addr = ALIGN(buffer->addr, 0x10);
     NUMTL *material = NuMtlCreate3D(1);
     material->diffuse_color.r = 1.0f;

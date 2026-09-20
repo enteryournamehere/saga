@@ -23,7 +23,7 @@ i32 NuTexCreate(NUTEX *tex) {
     return 0;
 }
 
-i32 NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end) {
+i32 NuTexRead(char *name, VARIPTR *buf, VARIPTR buf_end) {
     i32 file_size;
     char *ext;
     bool is_pvrtc_supported;

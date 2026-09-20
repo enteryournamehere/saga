@@ -777,7 +777,7 @@ void InitRopeMtl(char *name, variptr_u *buffer, variptr_u *buffer_end) {
     ropemtl->attribs.filter_mode = 1;
     NuStrCat(path, name);
     buffer->addr = ALIGN(buffer->addr, 16);
-    ropemtl->tex_id = NuTexRead(path, buffer, reinterpret_cast<VARIPTR *>(buffer_end->addr));
+    ropemtl->tex_id = NuTexRead(path, buffer, *buffer_end);
     if (ropemtl->tex_id == 0) {
         NuMtlDestroy(ropemtl);
         ropemtl = NULL;

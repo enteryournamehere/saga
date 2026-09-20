@@ -1743,7 +1743,7 @@ void LoadPerm1() {
     attributes[1] = (attributes[1] & 0x0f) | 0x60;
     attributes[0] = (attributes[0] & 0xf0) | 1;
     attributes[2] = (attributes[2] & 0x8c) | 0x12;
-    ShadowMat->tex_id = static_cast<i16>(NuTexRead((char *)"stuff\\gradient", &permbuffer_ptr, &permbuffer_end));
+    ShadowMat->tex_id = static_cast<i16>(NuTexRead((char *)"stuff\\gradient", &permbuffer_ptr, permbuffer_end));
     NuMtlUpdate(ShadowMat);
 
     u8 shadow_random[0x800];

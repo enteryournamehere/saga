@@ -78,7 +78,7 @@ void InitRippleMtl(char *name, numtl_s **result, variptr_u *buffer, variptr_u *b
         NuStrCat(filename, name);
         buffer->addr = (buffer->addr + 15) & ~static_cast<usize>(15);
         NuStrCat(filename, ".tex");
-        i32 texture = NuTexRead(filename, buffer, reinterpret_cast<VARIPTR *>(buffer_end->addr));
+        i32 texture = NuTexRead(filename, buffer, *buffer_end);
         if (texture != 0) {
             numtl_s *material = NuMtlCreateEx3D(1, 1);
             *result = material;

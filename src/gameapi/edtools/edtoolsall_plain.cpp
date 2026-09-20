@@ -164,6 +164,9 @@ extern "C" {
     void eduicbItemDestroyProp(eduimenu_s *, eduiitem_s *);
     i32 eduicbInteractSlider(edui_interact_s *);
     static i32 eduicbProcessSel(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessGradPick(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *);
     static i32 eduicbProcessSlider(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
     static i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
     static i32 eduicbProcessGraph(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
@@ -2144,20 +2147,66 @@ extern "C" {
         }
         return count;
     }
-    void eduiGradStageAdd(void) {
-        STUBBED();
+    edui_gradient_node_s *eduiGradStageAdd(edui_gradient_pick_s *item, f32 time, f32 hue, f32 saturation, f32 value) {
+        edui_gradient_node_s *stage = static_cast<edui_gradient_node_s *>(NU_ALLOC(sizeof(*stage), 4, 1, "", 0));
+        if (!stage)
+            return NULL;
+        memset(stage, 0, sizeof(*stage));
+        edui_gradient_node_s *previous = NULL;
+        edui_gradient_node_s *next = item->first_stage;
+        while (next && !(next->time > time)) {
+            previous = next;
+            next = next->next;
+        }
+        if (previous)
+            previous->next = stage;
+        else
+            item->first_stage = stage;
+        if (next)
+            next->previous = stage;
+        stage->previous = previous;
+        stage->time = time;
+        stage->next = next;
+        eduiGradStageSetHSV(stage, hue, saturation, value);
+        item->selected_stage = stage;
+        return stage;
     }
-    void eduiGradStageAddRGB(void) {
-        STUBBED();
+    edui_gradient_node_s *eduiGradStageAddRGB(edui_gradient_pick_s *item, f32 time, f32 red, f32 green, f32 blue) {
+        f32 hue = 0.0f, saturation = 0.0f, value;
+        eduiRGBToHSV(red, green, blue, hue, saturation, value);
+        return eduiGradStageAdd(item, time, hue, saturation, value);
     }
-    void eduiGradStageDelete(edui_gradient_pick_s *, edui_gradient_node_s *) {
-        STUBBED();
+    void eduiGradStageDelete(edui_gradient_pick_s *item, edui_gradient_node_s *stage) {
+        edui_gradient_node_s *previous = stage->previous;
+        edui_gradient_node_s *next = stage->next;
+        if (previous)
+            previous->next = next;
+        else
+            item->first_stage = next;
+        if (next)
+            next->previous = previous;
+        item->selected_stage = next ? next : previous;
+        NU_FREE(stage);
     }
-    void eduiGradStageSetHSV(void) {
-        STUBBED();
+    void eduiGradStageSetHSV(edui_gradient_node_s *stage, f32 hue, f32 saturation, f32 value) {
+        f32 red = 0.0f, green = 0.0f, blue = 0.0f;
+        eduiHSVToRGB(hue, saturation, value, red, green, blue);
+        stage->hue = hue;
+        stage->saturation = saturation;
+        stage->value = value;
+        stage->colour = 0x80000000u | static_cast<u32>(static_cast<i32>(red * 255.0f)) |
+                        (static_cast<u32>(static_cast<i32>(green * 255.0f)) << 8) |
+                        (static_cast<u32>(static_cast<i32>(blue * 255.0f)) << 16);
     }
-    void eduiGradStageSetRGB(void) {
-        STUBBED();
+    void eduiGradStageSetRGB(edui_gradient_node_s *stage, f32 red, f32 green, f32 blue) {
+        f32 hue = 0.0f, saturation = 0.0f, value;
+        eduiRGBToHSV(red, green, blue, hue, saturation, value);
+        stage->hue = hue;
+        stage->saturation = saturation;
+        stage->value = value;
+        stage->colour = 0x80000000u | static_cast<u32>(static_cast<i32>(red)) |
+                        (static_cast<u32>(static_cast<i32>(green)) << 8) |
+                        (static_cast<u32>(static_cast<i32>(blue)) << 16);
     }
     void eduiIitemExpanderSetDepth(edui_expander_s *item, i32 depth) {
         STUBBED();
@@ -2210,20 +2259,81 @@ extern "C" {
         }
         return item;
     }
-    void eduiItemColourPickCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemColourPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text) {
+        edui_colour_pick_s *item = static_cast<edui_colour_pick_s *>(NU_ALLOC(sizeof(edui_colour_pick_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 10;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessColourPick;
+        item->render = eduicbRenderColourPick;
+        item->destroy = eduicbItemDestroy;
+        item->interact = eduicbInteractColourPick;
+        item->text_alignment = 0x40;
+        item->selection_group = 0;
+        eduiItemSetText(item, text);
+        item->cursor_x = 0.5f;
+        item->cursor_y = 0.5f;
+        item->hue = 180.0f;
+        item->value = 0.5f;
+        item->saturation = 1.0f;
+        item->changed = callback;
+        return item;
     }
-    void eduiItemColourPickSetHSV(void) {
-        STUBBED();
+    void eduiItemColourPickSetHSV(edui_colour_pick_s *item, f32 hue, f32 saturation, f32 value) {
+        item->hue = hue;
+        item->saturation = saturation;
+        item->value = value;
+        item->cursor_x = hue / 360.0f;
+        item->cursor_y = value;
     }
-    void eduiItemColourPickSetRGB(void) {
-        STUBBED();
+    void eduiItemColourPickSetRGB(edui_colour_pick_s *item, f32 red, f32 green, f32 blue) {
+        eduiRGBToHSV(red, green, blue, item->hue, item->saturation, item->value);
+        item->cursor_x = item->hue / 360.0f;
+        item->cursor_y = item->value;
     }
-    void eduiItemColourSliderCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemColourSliderCreate(usize data, const void *colours, i32 group, EdUiItemCallback callback,
+                                          f32 minimum, f32 range, f32 value, u8 red, u8 green, u8 blue, char *text) {
+        edui_colour_slider_s *item = static_cast<edui_colour_slider_s *>(NU_ALLOC(sizeof(edui_colour_slider_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 13;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessColourSlider;
+        item->render = eduicbRenderColourSlider;
+        item->destroy = eduicbItemSliderDestroy;
+        item->selection_group = group;
+        item->text_alignment = 0x40;
+        eduiItemSetText(item, text);
+        item->granularity = 1.0f;
+        item->format = NULL;
+        item->changed = callback;
+        item->minimum = minimum;
+        item->range = range;
+        item->red = red;
+        item->green = green;
+        item->blue = blue;
+        eduiItemSliderSetFmt(item, (char *)"(%d)");
+        eduiItemSliderSetVal(item, value);
+        return item;
     }
-    void eduiItemDataGradPickCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemDataGradPickCreate(usize data, const void *colours, EdUiItemCallback callback,
+                                         EdUiItemCallback press, EdUiItemCallback add, EdUiItemCallback remove,
+                                         EdUiItemCallback copy, EdUiItemCallback paste, char *text) {
+        edui_gradient_pick_s *item = static_cast<edui_gradient_pick_s *>(eduiItemGradPickCreate(data, colours, callback, text));
+        if (item) {
+            item->type = 9;
+            item->press = press;
+            item->add = add;
+            item->remove = remove;
+            item->copy = copy;
+            item->paste = paste;
+        }
+        return item;
     }
     void eduiItemExpanderAddChild(edui_expander_s *item, eduiitem_s *child) {
         STUBBED();
@@ -2246,8 +2356,23 @@ extern "C" {
     void eduiItemFilterRemoveItem(edui_filter_s *item, eduiitem_s *child) {
         STUBBED();
     }
-    void eduiItemGradPickCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemGradPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text) {
+        edui_gradient_pick_s *item = static_cast<edui_gradient_pick_s *>(NU_ALLOC(sizeof(edui_gradient_pick_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 7;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessGradPick;
+        item->render = eduicbRenderGradPick;
+        item->destroy = eduicbItemGradPickDestroy;
+        item->text_alignment = 0x40;
+        item->selection_group = 0;
+        eduiItemSetText(item, text);
+        item->change_timer = 0;
+        item->changed = callback;
+        return item;
     }
     void eduiItemGraphAddOnionSkin(edui_graph_s *item, nugraph_s *graph) {
         STUBBED();
@@ -2261,14 +2386,27 @@ extern "C" {
     void eduiItemGraphSetLabels(edui_graph_s *item, char *x, char *y, char *title) {
         STUBBED();
     }
-    void eduiItemGreyGradPickCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemGreyGradPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text) {
+        eduiitem_s *item = eduiItemGradPickCreate(data, colours, callback, text);
+        if (item)
+            item->type = 8;
+        return item;
     }
-    void eduiItemGreyPickCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemGreyPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text) {
+        eduiitem_s *item = eduiItemColourPickCreate(data, colours, callback, text);
+        if (item) {
+            item->type = 11;
+            item->process = eduicbProcessGreyPick;
+            item->render = eduicbRenderGreyPick;
+        }
+        return item;
     }
-    void eduiItemNumberCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemNumberCreate(usize data, const void *colours, i32 group, EdUiItemCallback callback,
+                                    f32 minimum, f32 range, f32 value, char *text) {
+        eduiitem_s *item = eduiItemSliderCreate(data, colours, group, callback, minimum, range, value, text);
+        if (item)
+            item->render = eduicbRenderNumber;
+        return item;
     }
     void eduiItemPropCreate(void) {
         STUBBED();
@@ -2409,11 +2547,54 @@ extern "C" {
     void eduiItemTextPickSetFmt(edui_textpicker_s *item, char *format) {
         STUBBED();
     }
-    void eduiItemTextSelectorCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemTextSelectorCreate(usize data, const void *colours, i32 group,
+                                          EdUiItemCallback callback, i32 count, i32 selected,
+                                          char *text, char **options) {
+        edui_text_selector_s *item = static_cast<edui_text_selector_s *>(NU_ALLOC(sizeof(edui_text_selector_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 6;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessSlider;
+        item->render = eduicbRenderTextSelector;
+        item->destroy = eduicbItemSliderDestroy;
+        item->interact = eduicbInteractSlider;
+        item->selection_group = group;
+        item->text_alignment = 0x40;
+        eduiItemSetText(item, text);
+        item->format = NULL;
+        item->changed = callback;
+        item->minimum = 0.0f;
+        item->range = static_cast<f32>(count - 1);
+        item->granularity = 1.0f;
+        eduiItemSliderSetVal(item, static_cast<f32>(selected));
+        item->options = options;
+        return item;
     }
-    void eduiItemTexturePickCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemTexturePickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text) {
+        edui_texture_pick_s *item = static_cast<edui_texture_pick_s *>(NU_ALLOC(sizeof(edui_texture_pick_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 12;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessTexturePick;
+        item->render = eduicbRenderTexturePick;
+        item->destroy = eduicbItemDestroy;
+        item->text_alignment = 0x40;
+        item->selection_group = 0;
+        eduiItemSetText(item, text);
+        item->uv_x[0] = 0.4f;
+        item->uv_y[0] = 0.4f;
+        item->uv_x[1] = 0.5f;
+        item->uv_y[1] = 0.5f;
+        item->zoom = 1.0f;
+        item->selected_corner = 0;
+        item->changed = callback;
+        return item;
     }
     eduiitem_s *eduiItemToggleCreate(usize data, const void *colours, i32 selected, i32 group,
                                     EdUiItemCallback callback, char *text) {

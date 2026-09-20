@@ -2,6 +2,27 @@
 
 #include "nu2api/numath/nufloat.h"
 
+static inline void eduiRGBToHSV(f32 red, f32 green, f32 blue, f32 &hue, f32 &saturation, f32 &value) {
+    f32 maximum = red > (green > blue ? green : blue) ? red : (green > blue ? green : blue);
+    f32 minimum = red < (green < blue ? green : blue) ? red : (green < blue ? green : blue);
+    value = maximum;
+    saturation = maximum != 0.0f ? (maximum - minimum) / maximum : 0.0f;
+    if (saturation != 0.0f) {
+        f32 delta = maximum - minimum;
+        if (red == maximum)
+            hue = (green - blue) / delta;
+        else if (green == maximum)
+            hue = 2.0f + (blue - red) / delta;
+        else if (blue == maximum)
+            hue = 4.0f + (red - green) / delta;
+        hue *= 60.0f;
+        if (hue < 0.0f)
+            hue += 360.0f;
+    } else {
+        hue = 0.0f;
+    }
+}
+
 static inline void eduiHSVToRGB(f32 hue, f32 saturation, f32 value, f32 &red, f32 &green, f32 &blue) {
     if (saturation == 0.0f) {
         red = green = blue = value;

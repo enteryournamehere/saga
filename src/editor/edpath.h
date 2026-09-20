@@ -27,6 +27,7 @@ extern "C" {
     void InitFn_AIPathNodeDeleted(AIEDITORPATHNODECALLBACK *function);
     void pathEditor_OnPathCheck(nuvec_s *point, EDAIPATHCHECK_s *result, EDAIPATH_s *path, f32 tolerance);
     void pathEditor_QuickOnPathCheck(nuvec_s *point, EDAIPATHCHECK_s *previous, EDAIPATHCHECK_s *result);
+    void pathEditorSaveData(AIPATHSYS_s *system);
 }
 
 eduimenu_s *pathEditor_Process(nupad_s *pad);

@@ -6,6 +6,7 @@
 #include <float.h>
 
 #include "gameapi/edtools/edui.h"
+#include "gameapi/edtools/edfile.h"
 #include "gameapi/edtools/edcam.h"
 #include "nu2api/nucore/nupad.h"
 #include "nu2api/numath/nufloat.h"
@@ -17,6 +18,7 @@
 extern "C" {
     extern void *ed_fnt;
     extern i32 AIEDITOR_ROUTES;
+    extern i32 aidata_version;
     extern i32 near_clip_at_cursor;
     extern f32 default_path_heighttol;
     extern f32 aiEditor_DrawYOffset;
@@ -723,8 +725,149 @@ extern "C" {
         }
     }
 
-    void pathEditorSaveData(void) {
-        STUBBED();
+    void pathEditorSaveData(AIPATHSYS_s *system) {
+        EdFileWriteInt(system->path_count);
+        for (i32 path_index = 0; path_index < system->path_count; ++path_index) {
+            AIPATH_s *path = system->paths[path_index];
+            EdFileWrite(path->name, 16);
+            EdFileWriteChar(path->node_count);
+            EdFileWriteChar(path->flags);
+            EdFileWriteShort(path->connection_count);
+            for (i32 index = 0; index < path->connection_count; ++index) {
+                AIPATHCNX_s *connection = &path->connections[index];
+                EdFileWriteChar(connection->node_indices[0]);
+                EdFileWriteChar(connection->node_indices[1]);
+                if (aidata_version > 11) {
+                    EdFileWriteInt(connection->traversal_flags[0]);
+                    EdFileWriteInt(connection->traversal_flags[1]);
+                } else if (aidata_version > 8) {
+                    EdFileWriteShort(connection->traversal_flags[0]);
+                    EdFileWriteShort(connection->traversal_flags[1]);
+                } else {
+                    EdFileWriteChar(connection->traversal_flags[0]);
+                    EdFileWriteChar(connection->traversal_flags[1]);
+                }
+                EdFileWriteShort(connection->rotation);
+                EdFileWriteShort(connection->route_mask);
+                EdFileWriteFloat(connection->distance);
+                EdFileWriteFloat(connection->horizontal_distance);
+            }
+            for (i32 index = 0; index < path->node_count; ++index) {
+                AIPATHNODE_s *node = &path->nodes[index];
+                i32 length = node->name != nullptr ? strlen(node->name) + 1 : 0;
+                EdFileWriteInt(length);
+                if (length != 0) {
+                    EdFileWrite(node->name, length);
+                }
+                EdFileWriteFloat(node->position.x);
+                EdFileWriteFloat(node->position.y);
+                EdFileWriteFloat(node->position.z);
+                EdFileWriteFloat(node->radius);
+                if (aidata_version > 7) {
+                    EdFileWriteFloat(node->min_height);
+                    EdFileWriteFloat(node->max_height);
+                }
+                EdFileWriteChar(node->connection_count);
+                EdFileWriteChar(node->flags);
+                EdFileWriteChar(0);
+                EdFileWriteChar(node->runtime_flags);
+                EdFileWriteShort(node->path_flags);
+                if (aidata_version > 18) {
+                    EdFileWriteChar(node->special_route_index);
+                } else {
+                    EdFileWriteChar(0);
+                }
+                char *special_name = nullptr;
+                if (NuSpecialExistsFn(&node->special_handle)) {
+                    special_name = NuSpecialGetName(&node->special_handle);
+                }
+                if (special_name != nullptr) {
+                    i32 special_length = strlen(special_name) + 1;
+                    EdFileWriteChar(special_length);
+                    EdFileWrite(special_name, special_length);
+                    EdFileWriteFloat(node->special_position.x);
+                    EdFileWriteFloat(node->special_position.y);
+                    EdFileWriteFloat(node->special_position.z);
+                } else {
+                    EdFileWriteChar(0);
+                }
+                for (i32 connection = 0; connection < node->connection_count; ++connection) {
+                    EdFileWriteShort(node->connections[connection] - path->connections);
+                }
+                if (node->connection_count & 1) {
+                    EdFileWriteShort(0);
+                }
+                EdFileWriteShort(node->route_membership_mask);
+                EdFileWriteShort(node->route_boundary_mask);
+            }
+            for (i32 index = 0; index < path->node_count; ++index) {
+                EdFileWrite(path->route_matrix[index], path->node_count);
+            }
+            EdFileWriteChar(path->route_count);
+            for (i32 index = 0; index < path->route_count; ++index) {
+                AIPATHROUTE_s *route = &path->routes[index];
+                i32 length = strlen(route->name) + 1;
+                EdFileWriteChar(length);
+                EdFileWrite(route->name, length);
+                EdFileWriteChar(route->route_count);
+                EdFileWriteChar(route->exit_node_count);
+                EdFileWriteChar(0);
+                EdFileWriteChar(0);
+                if (route->route_count != 0) {
+                    EdFileWrite(route->node_routes, path->node_count);
+                    EdFileWrite(route->node_directions, route->route_count);
+                    for (i32 node = 0; node < route->route_count; ++node) {
+                        EdFileWrite(route->route_nodes[node], route->route_count);
+                    }
+                    if (route->exit_node_count != 0) {
+                        EdFileWrite(route->exit_nodes, route->exit_node_count);
+                    }
+                }
+                if (SpecialRouteCharacterNameFn != nullptr) {
+                    i32 user_count = 0;
+                    for (i32 user = 0; user < 64; ++user) {
+                        user_count += (route->character_masks[1] >> user) & 1;
+                    }
+                    EdFileWriteChar(user_count);
+                    for (i32 user = 0; user < 63; ++user) {
+                        if ((route->character_masks[1] >> user) & 1) {
+                            char *name = SpecialRouteCharacterNameFn(user);
+                            if (name != nullptr) {
+                                i32 name_length = strlen(name) + 1;
+                                EdFileWriteChar(name_length);
+                                EdFileWrite(name, name_length);
+                            } else {
+                                EdFileWriteChar(0);
+                            }
+                        }
+                    }
+                    if ((route->character_masks[1] >> 63) & 1) {
+                        EdFileWriteChar(9);
+                        EdFileWrite((char *)"Everyone", 9);
+                    }
+                } else {
+                    EdFileWriteChar(0);
+                }
+            }
+            if (aidata_version > 18) {
+                EdFileWriteChar(path->special_route_count);
+                AIPATHNODELINK_s *link = path->special_routes;
+                for (i32 index = 0; index < path->special_route_count; ++index, ++link) {
+                    EdFileWriteUnsignedChar(link->node_index);
+                    EdFileWriteShort(link->special_route_index);
+                }
+            }
+        }
+        if (aidata_version > 18) {
+            EdFileWriteShort(system->special_route_count);
+            AIPATHSPECIALROUTE_s *route = system->special_routes;
+            for (i32 index = 0; index < system->special_route_count; ++index, ++route) {
+                EdFileWriteChar(route->path_count);
+                for (i32 path = 0; path < route->path_count; ++path) {
+                    EdFileWriteChar(route->paths[path]->index);
+                }
+            }
+        }
     }
 
     void pathEditor_CalcNodeIXs(void) {

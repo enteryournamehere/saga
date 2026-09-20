@@ -264,6 +264,7 @@ extern "C" {
     u32 eddarkred[4] = {0x80000050, 0x80ff0000, 0x80808080, 0x80404040};
     NUMTL *uimtls[5];
     i32 ui_bgmtl;
+    i32 ui_outmtl;
 
     eduimenu_s *edgra_active_menu;
     eduimenu_s *edgra_options_menu;

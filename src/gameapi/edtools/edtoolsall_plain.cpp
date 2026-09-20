@@ -186,6 +186,8 @@ static i32 edanimProc(f32 delta_time, nupad_s *pad);
 static void edanimRender();
 
 extern "C" {
+    void nugraphInit(nugraph_s *graph);
+    i32 nugraphCalcCurve(nugraph_s *graph, i32 point_count);
     void eduicbItemDestroy(eduimenu_s *, eduiitem_s *);
     void eduicbItemDestroyProp(eduimenu_s *, eduiitem_s *);
     i32 eduicbInteractSlider(edui_interact_s *);
@@ -2271,7 +2273,15 @@ extern "C" {
                         (static_cast<u32>(static_cast<i32>(blue)) << 16);
     }
     void eduiIitemExpanderSetDepth(edui_expander_s *item, i32 depth) {
-        STUBBED();
+        item->depth = depth;
+        for (eduiitem_s *child = item->first_child; child; child = child->next) {
+            if (child->type == 19)
+                eduiIitemExpanderSetDepth(static_cast<edui_expander_s *>(child), depth + 1);
+            if (child->type == 17)
+                static_cast<edui_prop_s *>(child)->depth = depth + 1;
+            if (child == item->last_child)
+                break;
+        }
     }
     void eduiInit(void) {
         STUBBED();
@@ -2398,10 +2408,36 @@ extern "C" {
         return item;
     }
     void eduiItemExpanderAddChild(edui_expander_s *item, eduiitem_s *child) {
-        STUBBED();
+        child->previous = item->last_child;
+        if (item->last_child)
+            item->last_child->next = child;
+        item->last_child = child;
+        if (!item->first_child)
+            item->first_child = child;
+        child->next = NULL;
+        if (child->type == 19)
+            eduiIitemExpanderSetDepth(static_cast<edui_expander_s *>(child), item->depth + 1);
+        if (child->type == 17)
+            static_cast<edui_prop_s *>(child)->depth = item->depth + 1;
     }
-    void eduiItemExpanderCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemExpanderCreate(usize data, const void *colours, EdUiItemCallback callback, char *text) {
+        edui_expander_s *item = static_cast<edui_expander_s *>(NU_ALLOC(sizeof(edui_expander_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 19;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessExpander;
+        item->render = eduicbRenderExpander;
+        item->destroy = eduicbItemDestroyExpander;
+        item->interact = eduicbInteractExpander;
+        item->highlighted = 0;
+        item->text_alignment = 0x40;
+        item->selection_group = 0;
+        eduiItemSetText(item, text);
+        item->changed = callback;
+        return item;
     }
     void eduiItemFilePickCreate(void) {
         STUBBED();
@@ -2410,13 +2446,42 @@ extern "C" {
         STUBBED();
     }
     void eduiItemFilterAddItem(edui_filter_s *item, eduiitem_s *child) {
-        STUBBED();
+        eduiitem_s *first = item->first_child;
+        child->previous = NULL;
+        child->next = first;
+        if (first)
+            first->previous = child;
+        item->first_child = child;
     }
-    void eduiItemFilterCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemFilterCreate(usize data, const void *colours, char *text, char *value) {
+        edui_filter_s *item = static_cast<edui_filter_s *>(NU_ALLOC(sizeof(edui_filter_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 20;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessFilter;
+        item->render = eduicbRenderFilter;
+        item->destroy = eduicbItemDestroyFilter;
+        item->interact = eduicbInteractFilter;
+        item->highlighted = 0;
+        item->text_alignment = 0x40;
+        item->selection_group = 0;
+        eduiItemSetText(item, text);
+        eduiItemPropSetText(item, value);
+        item->label_width = 50.0f;
+        return item;
     }
     void eduiItemFilterRemoveItem(edui_filter_s *item, eduiitem_s *child) {
-        STUBBED();
+        if (item->first_child == child)
+            item->first_child = child->next;
+        if (child->next)
+            child->next->previous = child->previous;
+        if (child->previous)
+            child->previous->next = child->next;
+        child->next = NULL;
+        child->previous = NULL;
     }
     eduiitem_s *eduiItemGradPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text) {
         edui_gradient_pick_s *item = static_cast<edui_gradient_pick_s *>(NU_ALLOC(sizeof(edui_gradient_pick_s), 4, 1, "", 0));
@@ -2437,16 +2502,60 @@ extern "C" {
         return item;
     }
     void eduiItemGraphAddOnionSkin(edui_graph_s *item, nugraph_s *graph) {
-        STUBBED();
+        if (item->type == 15) {
+            for (i32 i = 0; i < 8; ++i) {
+                if (!item->onion_skins[i]) {
+                    item->onion_skins[i] = graph;
+                    break;
+                }
+            }
+        }
     }
-    void eduiItemGraphCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemGraphCreate(usize data, const void *colours, EdUiItemCallback callback,
+                                   nugraph_s *graph, i32 width, i32 height) {
+        edui_graph_s *item = static_cast<edui_graph_s *>(NU_ALLOC(sizeof(edui_graph_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 15;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessGraph;
+        item->render = eduicbRenderGraph;
+        item->destroy = eduicbItemDestroy;
+        item->changed = callback;
+        item->graph = graph;
+        item->width = width;
+        item->height = height;
+        item->text_alignment = 0x40;
+        item->selection_group = 0;
+        item->selected_point = -1;
+        item->cursor_x = 0.5f;
+        item->cursor_y = 0.5f;
+        item->x_scale = 1.0f;
+        item->y_scale = 1.0f;
+        for (i32 i = 0; i != 8; ++i)
+            item->onion_skins[i] = NULL;
+        if (graph->point_count <= 1)
+            nugraphInit(graph);
+        nugraphCalcCurve(graph, 100);
+        return item;
     }
     void eduiItemGraphSetCursor(edui_graph_s *item, f32 x, f32 y) {
-        STUBBED();
+        if (item->type == 15) {
+            item->cursor_x = x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x);
+            item->cursor_y = y < 0.0f ? 0.0f : (y > 1.0f ? 1.0f : y);
+        }
     }
     void eduiItemGraphSetLabels(edui_graph_s *item, char *x, char *y, char *title) {
-        STUBBED();
+        if (item->type == 15) {
+            if (x)
+                NuStrCpy(item->x_label, x);
+            if (y)
+                NuStrCpy(item->y_label, y);
+            if (title)
+                NuStrCpy(item->title, title);
+        }
     }
     eduiitem_s *eduiItemGreyGradPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text) {
         eduiitem_s *item = eduiItemGradPickCreate(data, colours, callback, text);
@@ -2470,11 +2579,37 @@ extern "C" {
             item->render = eduicbRenderNumber;
         return item;
     }
-    void eduiItemPropCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemPropCreate(usize data, const void *colours, EdUiItemCallback selected,
+                                  EdUiItemCallback changed, EdUiItemCallback button, i32 button_type,
+                                  char *text, char *value) {
+        return eduiItemPropCreateEx(data, colours, selected, changed, button, button_type, text, value, 0);
     }
-    void eduiItemPropCreateEx(void) {
-        STUBBED();
+    eduiitem_s *eduiItemPropCreateEx(usize data, const void *colours, EdUiItemCallback selected,
+                                    EdUiItemCallback changed, EdUiItemCallback button, i32 button_type,
+                                    char *text, char *value, i32 extra_data) {
+        edui_prop_s *item = static_cast<edui_prop_s *>(NU_ALLOC(sizeof(edui_prop_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 17;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessProp;
+        item->render = eduicbRenderProp;
+        item->destroy = eduicbItemDestroyProp;
+        item->interact = eduicbInteractProp;
+        item->highlighted = 0;
+        item->text_alignment = 0x40;
+        item->selection_group = 0;
+        eduiItemSetText(item, text);
+        eduiItemPropSetText(item, value);
+        item->button_type = button_type;
+        item->label_width = 50.0f;
+        item->selected = selected;
+        item->changed = changed;
+        item->button = button;
+        item->extra_data = extra_data;
+        return item;
     }
     i32 eduiItemPropSetText(edui_prop_s *item, char *text) {
         if (item->property_text && NuStrLen(item->property_text) < NuStrLen(text)) {

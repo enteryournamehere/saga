@@ -43,6 +43,8 @@ struct NUFRUSTRUM;
 
 static NULSTHDR *rtl_dynamic_pool;
 static i32 rtl_dynamic_lights_enabled = 1;
+static f32 rtl_shadow_blend_rate = 2.0f;
+static NUVEC rtl_shadow_flicker = {0.1f, 0.1f, 0.1f};
 static i32 rtl_dynamic_max;
 static i32 rtl_dynamic_cnt;
 static i16 rtl_uid = 1;
@@ -51,10 +53,13 @@ f32 edrtl_text_scale = 1.0f;
 static f32 default_modifiers = 1.0f;
 f32 *modifiers = &default_modifiers;
 i32 modifier_cnt = 1;
+extern char **modifier_names;
 static i32 curFogLoc = -1;
 f32 rtltimer1adv = 2500.0f;
 static i32 numsegs = 16;
 static i32 hide_types[9];
+f32 min_r = 1.0f;
+f32 def_fr = 2.0f;
 
 extern "C" {
     rtlset *curr_set = NULL;
@@ -159,11 +164,15 @@ extern "C" {
         return -1;
     }
 
-    void rtlGetDirection(usize rtl_set, i32 id, void **out) {
-        STUBBED();
-        (void)rtl_set;
-        (void)id;
-        (void)out;
+    i32 rtlGetDirection(usize rtl_set, i32 id, void **out) {
+        if (rtl_set != 0 && out != NULL) {
+            rtlset *set = reinterpret_cast<rtlset *>(rtl_set);
+            if (id < 0 || id > 128)
+                return 0;
+            *out = &set->lights[id].direction;
+            return 1;
+        }
+        return 0;
     }
 
     i32 rtlDynamicAlloc(void) {
@@ -295,12 +304,21 @@ extern "C" {
         return previous;
     }
 
-    void rtlDynamicSetDirection(void) {
-        STUBBED();
+    i32 rtlDynamicSetDirection(i32 id, NUVEC *direction) {
+        if (rtl_dynamic_pool == NULL || id < 0 || id >= rtl_dynamic_max)
+            return 0;
+        rtl_s *light = reinterpret_cast<rtl_s *>(NuLstGetByIdx(rtl_dynamic_pool, id));
+        if (light != NULL && direction != NULL) {
+            light->direction = *direction;
+            return 1;
+        }
+        return 0;
     }
 
-    void rtlDynamicMasterEnable(i32 enabled) {
-        STUBBED();
+    i32 rtlDynamicMasterEnable(i32 enabled) {
+        i32 previous = rtl_dynamic_lights_enabled;
+        rtl_dynamic_lights_enabled = enabled;
+        return previous;
     }
 
     void rtlResetDynamic(void) {
@@ -322,12 +340,15 @@ extern "C" {
         return max_lights;
     }
 
-    void rtlSetShadowFlickerScale(void) {
-        STUBBED();
+    void rtlSetShadowFlickerScale(NUVEC *scale) {
+        rtl_shadow_flicker = *scale;
     }
 
-    void rtlSetShadowFlickerBlendTime(void) {
-        STUBBED();
+    void rtlSetShadowFlickerBlendTime(f32 time) {
+        if (time != 0.0f)
+            rtl_shadow_blend_rate = 1.0f / time;
+        else
+            rtl_shadow_blend_rate = 10000.0f;
     }
 }
 
@@ -369,8 +390,8 @@ extern "C" {
         STUBBED();
     }
 
-    void rtlGetCurrentSet(void) {
-        STUBBED();
+    rtlset *rtlGetCurrentSet(void) {
+        return curr_set;
     }
 
     void rtlResetEx(rtldata_s *data, i32 reset_cached) {
@@ -410,8 +431,10 @@ static __used__ double ApplyAntilights(rtl_s *, rtlidata_s *, float) {
 }
 
 extern "C" {
-    void rtlSetModifiers(void) {
-        STUBBED();
+    void rtlSetModifiers(f32 *values, char **names, i32 count) {
+        modifiers = values;
+        modifier_names = names;
+        modifier_cnt = count < 32 ? count : 32;
     }
 
     void rtlSetLights(rtldata_s *data) {
@@ -600,12 +623,39 @@ extern "C" {
 
 } // extern "C"
 
-static __used__ void rtlApplyModifiersToChainLight(rtl_s *) {
-    STUBBED();
+static __used__ void rtlApplyModifiersToChainLight(rtl_s *light) {
+    const NUVEC zero = {0.0f, 0.0f, 0.0f};
+    if (light->field_7c != NULL && light->field_79 != -1) {
+        light->colour = zero;
+        light->secondary_colour = zero;
+        NuVecClear(&light->direction);
+        rtl_s *source = &light->field_7c[light->field_79];
+        for (;;) {
+            f32 scale = modifiers[source->field_7b];
+            light->colour.x += source->colour.x * scale;
+            light->colour.y += source->colour.y * scale;
+            light->colour.z += source->colour.z * scale;
+            light->secondary_colour.x += source->secondary_colour.x * scale;
+            light->secondary_colour.y += source->secondary_colour.y * scale;
+            light->secondary_colour.z += source->secondary_colour.z * scale;
+            light->direction.x += source->direction.x * scale;
+            light->direction.y += source->direction.y * scale;
+            light->direction.z += source->direction.z * scale;
+            if (source->field_79 == -1)
+                break;
+            source = &light->field_7c[source->field_79];
+        }
+        NuVecNorm(&light->direction, &light->direction);
+    }
 }
 
-static __used__ void rtlApplyModifiersToSingleLight(rtl_s *) {
-    STUBBED();
+static __used__ void rtlApplyModifiersToSingleLight(rtl_s *light) {
+    if (light->field_79 == -1 && light->field_7a == -1)
+        return;
+    f32 scale = modifiers[light->field_7b];
+    light->ambient.x += light->colour.x * scale;
+    light->ambient.y += light->colour.y * scale;
+    light->ambient.z += light->colour.z * scale;
 }
 
 static __used__ void rtlProcessLight(rtl_s *, f32) {
@@ -672,28 +722,71 @@ static __used__ i32 rtlCmp(rtl_s *first, rtl_s *second) {
 }
 
 extern "C" {
-    void rtlSetMinR(void) {
-        STUBBED();
+    void rtlSetMinR(f32 radius) {
+        min_r = radius;
+        def_fr = min_r * 2.0f;
     }
 
     void rtlSetUndoBuffer(void) {
         STUBBED();
     }
 
-    void rtlAlloc(void) {
-        STUBBED();
+    rtl_s *rtlAlloc(void) {
+        if (curr_set != NULL) {
+            for (i32 i = 0; i < 128; ++i) {
+                if (curr_set->lights[i].type == 0)
+                    return &curr_set->lights[i];
+            }
+        }
+        return NULL;
     }
 
-    void rtlFree(void) {
-        STUBBED();
+    void rtlFree(rtl_s *light) {
+        if (light->field_79 != -1 && light->field_7a == -1) {
+            while (light->field_79 != -1)
+                rtlFree(&curr_set->lights[light->field_79]);
+        }
+        if (light->field_7a != -1) {
+            curr_set->lights[light->field_7a].field_79 = light->field_79;
+            if (light->field_79 != -1)
+                curr_set->lights[light->field_79].field_7a = light->field_7a;
+        }
+        i32 index = light - curr_set->lights;
+        for (rtl_s *entry = curr_set->lights; entry < &curr_set->lights[128]; ++entry) {
+            if (entry->field_79 >= index)
+                --entry->field_79;
+            if (entry->field_7a >= index)
+                --entry->field_7a;
+        }
+        rtl_s *next = light + 1;
+        while (light < &curr_set->lights[128] && light->type != 0) {
+            *light = *next;
+            ++light;
+            ++next;
+        }
+        --light;
+        light->type = 0;
     }
 
-    void fogAlloc(void) {
-        STUBBED();
+    rtlfog_s *fogAlloc(void) {
+        if (curr_set != NULL) {
+            for (i32 i = 0; i < 32; ++i) {
+                if (curr_set->fog[i].type == 0)
+                    return &curr_set->fog[i];
+            }
+        }
+        return NULL;
     }
 
-    void fogFree(void) {
-        STUBBED();
+    void fogFree(rtlfog_s *fog) {
+        rtlfog_s *next = fog + 1;
+        while (fog < &curr_set->fog[32] && fog->type != 0) {
+            *fog = *next;
+            ++fog;
+            ++next;
+        }
+        --fog;
+        fog->type = 0;
     }
 
     rtlfog_s *rtlGetFogSet(rtlset *set, NUVEC *position) {

@@ -421,7 +421,7 @@ struct TouchHacks {
     static i32 GetLoseStudsDieValue();
     static i32 GetLoseStudsFallValue();
     bool InParty(GameObject_s &);
-    void PlaySmartBombBuildupEffects(GameObject_s &, float, float);
+    static void PlaySmartBombBuildupEffects(GameObject_s &, float, float);
     static bool ShouldAutoGrabDragBomb(GameObject_s &);
     static bool ShouldBlock(GameObject_s &);
     static i32 ShouldDeflectBolt(GameObject_s &, BOLT_s &);
@@ -429,7 +429,7 @@ struct TouchHacks {
     static bool ShouldKeepWeaponOut(GameObject_s &);
     static bool ShouldPutWeaponAway(GameObject_s &);
     bool SolveRoot(float, float, float, float &, float &);
-    void TriggerVehicleSmartBomb(GameObject_s &);
+    static void TriggerVehicleSmartBomb(GameObject_s &);
 };
 struct V2SessionManager {
     u8 reserved_00[0x4];

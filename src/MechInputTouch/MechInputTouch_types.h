@@ -801,8 +801,8 @@ struct MechInputTouchGestureBasedController : MechInputTouchMainController, Mech
     u8 field_a5;
     u8 field_a6;
     u8 pad_a7;
-    TouchHolder *current_task;
-    NuMechPtr<MechObjectInterface, 4> target;
+    TouchHolder *smart_bomb_touch;
+    NuMechPtr<MechTouchUIElement, 4> tag_button;
 };
 DECOMP_ASSERT(sizeof(MechInputTouchGestureBasedController) == 0xb8, "Gesture touch controller ABI");
 DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, temporary_position) == 0x70,
@@ -812,10 +812,10 @@ DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, stick_mode) == 0x8c
 DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, active) == 0xa4, "Gesture controller active flag offset");
 DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, field_90) == 0x90, "Gesture controller first touch offset");
 DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, field_94) == 0x94, "Gesture controller second touch offset");
-DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, current_task) == 0xa8,
-              "Gesture controller current task offset");
-DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, target) == 0xac,
-              "Gesture controller target reference offset");
+DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, smart_bomb_touch) == 0xa8,
+              "Gesture controller smart bomb touch offset");
+DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, tag_button) == 0xac,
+              "Gesture controller tag button reference offset");
 struct MechTouchTask {
     MechTouchTask(MechInputTouchGestureBasedController &);
     virtual ~MechTouchTask();

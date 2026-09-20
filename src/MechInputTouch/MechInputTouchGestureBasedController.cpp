@@ -7,9 +7,12 @@
 #include "gamelib/util/gamelib_util_types.h"
 #include "nu2api/nucore/numemory.h"
 #include "legoapi/menus/core/gamehint.h"
+#include "legoapi/core/input/gamepads.h"
+#include "legoapi/world/levels/levels.h"
 #include "nu2api/numath/nutrig.h"
 
 #include <new>
+#include <string.h>
 
 i32 GetMenuID();
 CABLE_s *GameObjOwnsAnyCables(GameObject_s *);
@@ -66,11 +69,11 @@ void MechInputTouchGestureBasedController::KillTasks(bool kill_active_task) {
 
 MechInputTouchGestureBasedController::MechInputTouchGestureBasedController(
     i32 index, MechInputTouchGestureBasedController::StickMode mode)
-    : MechInputTouchMainController(index), temporary_position(), stick_mode(mode), field_a5(0), target(NULL) {
+    : MechInputTouchMainController(index), temporary_position(), stick_mode(mode), field_a5(0), tag_button(NULL) {
     active = 0;
     field_a6 = 0;
     field_98 = 0.0f;
-    current_task = NULL;
+    smart_bomb_touch = NULL;
     field_90 = NULL;
     field_94 = NULL;
     field_9c = 0.0f;
@@ -124,9 +127,9 @@ bool MechInputTouchGestureBasedController::OnDown(GameObject_s &object, TouchHol
             field_94 = &holder;
         }
     }
-    if (current_task == NULL && player != NULL && holder.target_object == player->GetMechObjectInterface() &&
+    if (smart_bomb_touch == NULL && player != NULL && holder.target_object == player->GetMechObjectInterface() &&
         TouchHacks::CanUseVehicleSmartBomb(object)) {
-        current_task = &holder;
+        smart_bomb_touch = &holder;
     }
     return true;
 }
@@ -137,8 +140,8 @@ bool MechInputTouchGestureBasedController::OnHold(GameObject_s &, TouchHolder &)
 }
 
 bool MechInputTouchGestureBasedController::OnRelease(GameObject_s &object, TouchHolder &holder) {
-    if (current_task == &holder) {
-        current_task = NULL;
+    if (smart_bomb_touch == &holder) {
+        smart_bomb_touch = NULL;
     }
     if (field_94 == &holder) {
         field_94 = NULL;
@@ -229,7 +232,7 @@ void MechInputTouchGestureBasedController::ProcessDragMovement(GameObject_s &obj
     }
     const i32 context = object.character_context;
     if (context == 0x2b || context == 0x0f || context == 0x36 || context == 0x2a || context == 0x4a ||
-        context == 0x47 || context == 0x22 || context == 0x61 || context == 0x3c || target.Get() != NULL || !moving) {
+        context == 0x47 || context == 0x22 || context == 0x61 || context == 0x3c || tag_button.Get() != NULL || !moving) {
         field_9c = 0.0f;
         return;
     }
@@ -305,8 +308,71 @@ void MechInputTouchGestureBasedController::TriggerJumpTask(JumpTriggerPacket con
     STUBBED();
 }
 
-void MechInputTouchGestureBasedController::Update(NuInputTouchData const *) {
-    STUBBED();
+void MechInputTouchGestureBasedController::Update(NuInputTouchData const *data) {
+    if (player != NULL && NewMode == 0 && NewLData == NULL && FadeSys.fade == 0.0f && Paused == 0 &&
+        CUTSTOPGAME == 0 && !MenuDisable() && TouchHacks::TouchControlsActive && GetMenuID() == -1 &&
+        MiniCutCam != 2 && !Controller_IsConnected()) {
+        Activate();
+    } else {
+        Deactivate();
+    }
+    memset(stick_values, 0, sizeof(stick_values));
+    if (!active || data == NULL) {
+        return;
+    }
+    GameObject_s *object = Player[player_id];
+    if (object != NULL) {
+        if (object->apiobj.field_0x27d != 0) {
+            isBucking = false;
+        }
+        if (object->touch_task != NULL) {
+            for (MechTouchTask *task = object->touch_task->next; task != NULL; task = task->next) {
+                task->BackgroundProcess();
+            }
+            if (object->touch_task->character != player || !object->touch_task->Update()) {
+                if (object->touch_task != NULL) {
+                    TouchHolder *holder = object->touch_task->touch_holder;
+                    if ((object->touch_task->flags & 1) != 0) {
+                        field_a0 = 0.75f;
+                    }
+                    MechTouchTask *next = object->touch_task->next;
+                    object->touch_task->OnStop();
+                    delete object->touch_task;
+                    object->touch_task = next;
+                    if (next != NULL) {
+                        next->OnResume();
+                    }
+                    if (object->touch_task == NULL && holder->is_down && field_90 == NULL) {
+                        field_90 = holder;
+                        field_a5 = 0;
+                    }
+                }
+            }
+        }
+        ProcessDragMovement(*object);
+        if (VehicleArea == 0 && (object->apiobj.character_data->model_flags & 0x2000) == 0) {
+            ProcessAutoJumpOverGap(object);
+            ProcessAutoJumpWhenStuck(*object);
+        }
+        if (smart_bomb_touch != NULL) {
+            MechObjectInterface *touched_object = smart_bomb_touch->target_object;
+            VuVec position(smart_bomb_touch->down_position.x, smart_bomb_touch->down_position.y, 0.0f, 1.0f);
+            if (touched_object == MechInputTouchSystem::FindTargetObject(*object, position, 1, touched_object, NULL)) {
+                if (smart_bomb_touch->held_time >= 1.0f) {
+                    TouchHacks::TriggerVehicleSmartBomb(*player);
+                    smart_bomb_touch = NULL;
+                } else {
+                    TouchHacks::PlaySmartBombBuildupEffects(*player, smart_bomb_touch->held_time, 1.0f);
+                }
+            } else {
+                smart_bomb_touch = NULL;
+            }
+        }
+        if (tag_button.Get() != NULL && tag_button.Get()->on_click != NULL) {
+            tag_button = NuMechPtr<MechTouchUIElement, 4>();
+        }
+    }
+    UpdateButtons();
 }
 
 MechInputTouchGestureBasedController::~MechInputTouchGestureBasedController() {

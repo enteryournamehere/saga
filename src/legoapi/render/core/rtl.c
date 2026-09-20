@@ -832,8 +832,19 @@ struct numtx_s;
 
 typedef rtlfog_s EDRTLFOG_s;
 
+rtlfog_s *curr_fog;
+rtl_s clipboard_light;
+rtlfog_s clipboard_fog;
+extern f32 *modifiers;
+static f32 game_nearclip;
+static f32 game_farclip;
+static i32 rtl_zoff;
+static i32 ctl_ix = 1;
+static rtl_s menu_undo;
+
 extern NUQFNT *system_qfont;
 extern "C" {
+    void AddColourPick(eduimenu_s *, eduiitem_s *, f32 *, f32 *, f32 *, u32 *);
     void CreateColourPicker();
     void cbCancelSubMenu(eduimenu_s *, eduimenu_s *);
     void cbCancelSubMenuFromItem(eduimenu_s *, eduiitem_s *, u32);
@@ -951,101 +962,217 @@ static void cbLoad(eduimenu_s *, eduiitem_s *, u32) {
 static void cbSave(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
-static void cbMultiplier(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbMultiplier(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_rtl->intensity = slider->value;
 }
-static void cbGroupID(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbGroupID(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_rtl->group_id = static_cast<i32>(slider->value);
 }
-static void cbModifierType(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbModifierType(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    curr_rtl->field_7b = item->data;
+    RefreshUI();
 }
-extern "C" void cbModifierAdjust(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+extern "C" void cbModifierAdjust(eduimenu_s *, eduiitem_s *item, u32) {
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    modifiers[item->data] = slider->value;
 }
-static void cbToggleCastShadow(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbToggleCastShadow(eduimenu_s *, eduiitem_s *item, u32) {
+    curr_rtl->cast_shadow = item->highlighted;
 }
-static void cbToggleHasSpecular(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbToggleHasSpecular(eduimenu_s *, eduiitem_s *item, u32) {
+    curr_rtl->has_specular = item->highlighted;
 }
-static void cbHighColour(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbHighColour(eduimenu_s *menu, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    AddColourPick(menu, item, &curr_rtl->colour.x, &curr_rtl->colour.y, &curr_rtl->colour.z, NULL);
 }
-static void cbLowColour(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbLowColour(eduimenu_s *menu, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    AddColourPick(menu, item, &curr_rtl->secondary_colour.x, &curr_rtl->secondary_colour.y,
+                  &curr_rtl->secondary_colour.z, NULL);
 }
-static void cbHighTime(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbHighTime(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_rtl->parameters[0] = slider->value;
 }
-static void cbRHighTime(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbRHighTime(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_rtl->parameters[1] = slider->value;
 }
-static void cbLowTime(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbLowTime(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_rtl->parameters[2] = slider->value;
 }
-static void cbRLowTime(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbRLowTime(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_rtl->parameters[3] = slider->value;
 }
-static void cbLightType(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbLightType(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    curr_rtl->type = item->data;
+    RefreshUI();
 }
-static void cbAssocID(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbAssocID(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    curr_rtl->field_5e &= ~(1 << item->data);
+    if (item->highlighted)
+        curr_rtl->field_5e |= 1 << item->data;
+    curr_rtl->field_60 &= ~curr_rtl->field_5e;
+    RefreshUI();
 }
-static void cbExcludeID(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbExcludeID(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    curr_rtl->field_60 &= ~(1 << item->data);
+    if (item->highlighted)
+        curr_rtl->field_60 |= 1 << item->data;
+    curr_rtl->field_5e &= ~curr_rtl->field_60;
+    RefreshUI();
 }
-static void cbUserID(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbUserID(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    curr_rtl->field_68 = item->data;
+    RefreshUI();
 }
-static void cbFogColour(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogColour(eduimenu_s *menu, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    AddColourPick(menu, item, NULL, NULL, NULL, &curr_fog->colour);
 }
-static void cbHazeColour(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbHazeColour(eduimenu_s *menu, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    AddColourPick(menu, item, NULL, NULL, NULL, &curr_fog->low_quality_colour);
 }
-static void cbFogAlpha(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogAlpha(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->colour &= 0xffffff;
+    curr_fog->colour |= static_cast<i32>(slider->value) << 24;
 }
-static void cbFogDensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogDensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->density = slider->value;
 }
-static void cbFogDensityWii(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogDensityWii(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->density_wii = slider->value;
 }
-static void cbHazeDensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbHazeDensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->low_quality_colour &= 0xffffff;
+    curr_fog->low_quality_colour |= static_cast<i32>(slider->value) << 24;
 }
-static void cbBlurDensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbBlurDensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->low_quality_density = static_cast<i32>(slider->value * 128.0f);
 }
-static void cbFogStartPSP(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogStartPSP(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->start_psp = slider->value;
 }
-static void cbFogEndPSP(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogEndPSP(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->end_psp = slider->value;
 }
-static void cbFogStart(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogStart(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->start = slider->value;
 }
-static void cbFogEnd(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogEnd(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->end = slider->value;
 }
-static void cbFogAdjRng(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogAdjRng(eduimenu_s *, eduiitem_s *item, u32) {
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    f32 range = slider->value;
+    if (fogstart_item) {
+        static_cast<edui_slider_s *>(fogstart_item)->range = range;
+        eduiItemSliderSetValEx(static_cast<edui_slider_s *>(fogstart_item),
+                              static_cast<edui_slider_s *>(fogstart_item)->value, 0, 0);
+    }
+    if (fogend_item) {
+        static_cast<edui_slider_s *>(fogend_item)->range = range;
+        eduiItemSliderSetValEx(static_cast<edui_slider_s *>(fogend_item),
+                              static_cast<edui_slider_s *>(fogend_item)->value, 0, 0);
+    }
+    if (fogstartpsp_item) {
+        static_cast<edui_slider_s *>(fogstartpsp_item)->range = range;
+        eduiItemSliderSetValEx(static_cast<edui_slider_s *>(fogstartpsp_item),
+                              static_cast<edui_slider_s *>(fogstartpsp_item)->value, 0, 0);
+    }
+    if (fogendpsp_item) {
+        static_cast<edui_slider_s *>(fogendpsp_item)->range = range;
+        eduiItemSliderSetValEx(static_cast<edui_slider_s *>(fogendpsp_item),
+                              static_cast<edui_slider_s *>(fogendpsp_item)->value, 0, 0);
+    }
 }
-static void cbFogAdjNear(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogAdjNear(eduimenu_s *, eduiitem_s *item, u32) {
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    game_nearclip = slider->value;
+    if (fogadjfar_item) {
+        static_cast<edui_slider_s *>(fogadjfar_item)->minimum = game_nearclip * 2.0f;
+        game_farclip = game_farclip > game_nearclip + 1.0f ? game_farclip : game_nearclip + 1.0f;
+        eduiItemSliderSetValEx(static_cast<edui_slider_s *>(fogadjfar_item), game_farclip, 0, 0);
+    }
 }
-static void cbFogAdjFar(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogAdjFar(eduimenu_s *, eduiitem_s *item, u32) {
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    game_farclip = slider->value;
+    if (fogadjnear_item) {
+        static_cast<edui_slider_s *>(fogadjnear_item)->range =
+            game_farclip - static_cast<edui_slider_s *>(fogadjnear_item)->minimum;
+        game_nearclip = game_nearclip > game_farclip ? game_farclip : game_nearclip;
+        eduiItemSliderSetValEx(static_cast<edui_slider_s *>(fogadjnear_item), game_nearclip, 0, 0);
+    }
 }
-static void cbDOFFStop(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbDOFFStop(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->depth_of_field_fstop = static_cast<i32>(slider->value * 10.0f);
 }
 static void cbCopyLight(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    if (curr_rtl)
+        clipboard_light = *curr_rtl;
 }
 static void cbPasteLight(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
@@ -1057,13 +1184,14 @@ static void cbCopyToGroup(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 static void cbUndoLight(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    edrtlUndo();
 }
 static void cbRedoLight(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    edrtlRedo();
 }
 static void cbCopyFog(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    if (curr_fog)
+        clipboard_fog = *curr_fog;
 }
 static void cbPasteFog(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
@@ -1071,29 +1199,52 @@ static void cbPasteFog(eduimenu_s *, eduiitem_s *, u32) {
 static void cbPasteIntoFog(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
-static void cbHideType(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbHideType(eduimenu_s *, eduiitem_s *item, u32) {
+    hide_types[item->data] = item->highlighted;
 }
-static void cbNoZBuffer(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbNoZBuffer(eduimenu_s *, eduiitem_s *item, u32) {
+    rtl_zoff = item->highlighted;
 }
-static void cbLightProperties(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbLightProperties(eduimenu_s *menu, eduiitem_s *item, u32 flags) {
+    menu_undo = *curr_rtl;
+    cbTriggerSubMenu(menu, item, flags);
 }
-static void cbCancelLightProperties(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+static void cbCancelLightProperties(eduimenu_s *menu, eduimenu_s *) {
+    if (rtlCmp(curr_rtl, &menu_undo)) {
+        rtl_s light = *curr_rtl;
+        *curr_rtl = menu_undo;
+        edrtlSaveUndo();
+        *curr_rtl = light;
+    }
+    eduiMenuDetach(menu);
 }
-static void cbSetControls(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbSetControls(eduimenu_s *, eduiitem_s *item, u32) {
+    ctl_ix = item->data;
 }
-static void cbScaleAllMultipliersUp(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbScaleAllMultipliersUp(eduimenu_s *menu, eduiitem_s *, u32) {
+    edrtlSaveUndo();
+    for (i32 i = 0; i < 128; ++i)
+        curr_set->lights[i].intensity = curr_set->lights[i].intensity *
+                                        static_cast<edui_slider_s *>(global_scale_item)->value;
+    eduiMenuAttach(menu, global_confirm_menu);
+    global_confirm_menu->x = menu->x + 10;
+    global_confirm_menu->y = menu->y + 10;
+    RefreshUI();
 }
-static void cbScaleAllMultipliersDown(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbScaleAllMultipliersDown(eduimenu_s *menu, eduiitem_s *, u32) {
+    edrtlSaveUndo();
+    for (i32 i = 0; i < 128; ++i)
+        curr_set->lights[i].intensity = curr_set->lights[i].intensity /
+                                        static_cast<edui_slider_s *>(global_scale_item)->value;
+    eduiMenuAttach(menu, global_confirm_menu);
+    global_confirm_menu->x = menu->x + 10;
+    global_confirm_menu->y = menu->y + 10;
+    RefreshUI();
 }
-extern "C" void rtlScaleSetMultipliers(void) {
-    STUBBED();
+extern "C" void rtlScaleSetMultipliers(f32 scale, rtlset *set_ptr) {
+    rtlset *set = set_ptr;
+    for (i32 i = 0; i < 128; ++i)
+        set->lights[i].intensity = set->lights[i].intensity * scale;
 }
 static __used__ void InitUI() {
     static i32 initialised;

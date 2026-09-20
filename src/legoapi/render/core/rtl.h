@@ -125,4 +125,5 @@ extern "C" {
     void rtlSaveSet(char *, rtlset *);
     void rtlProcessLights(void *, f32);
     rtlfog_s *rtlGetFogSet(rtlset *, NUVEC *);
+    rtlfog_s *edrtlGetFogSet(void);
 }

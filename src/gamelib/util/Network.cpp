@@ -749,7 +749,7 @@ void NetworkObjectManager::SendAdoptedMessage(i16) {
 }
 
 i32 NetworkObjectManager::SendPushMessage(NetMessage *message, NetPeerPush const *push, i32 flags) {
-    NetPeer *peer = push->peer;
+    NetPeer *peer = const_cast<NetPeer *>(push->peer);
     if (message == NULL || message->data == NULL || static_cast<i32>(message->write_offset - message->read_offset) <= 0) {
         return 1;
     }
@@ -763,7 +763,7 @@ i32 NetworkObjectManager::SendPushMessage(NetMessage *message, NetPeerPush const
     }
     i32 available = 1;
     for (i32 i = 0; i < 8; ++i) {
-        peer = peer_push[i].peer;
+        peer = const_cast<NetPeer *>(peer_push[i].peer);
         if (peer != NULL && peer_push[i].stage == 3) {
             if (flags & 1) {
                 theNetwork.Send(*message, 3, *peer);

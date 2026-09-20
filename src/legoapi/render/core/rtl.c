@@ -2,11 +2,13 @@
 #include "decomp.h"
 #include "gameapi/edtools/edui.h"
 #include "gameapi/edtools/edfile.h"
+#include "gameapi/edtools/edcam.h"
 #include "gameapi/edtools/gameapi_edtools_types.h"
 #include "legoapi/render/core/rtl.h"
 #include "legoapi/render/core/render.h"
 #include "nu2api/nu3d/nuqfnt.h"
 #include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/numtl.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nucamera.h"
@@ -62,12 +64,18 @@ static i32 numsegs = 16;
 static i32 hide_types[9];
 f32 min_r = 1.0f;
 f32 def_fr = 2.0f;
+static i32 fogmode;
+static NUCAMERA *usr_cam;
+static NUMTL *mtls[3];
 
 extern "C" {
     rtlset *curr_set = NULL;
     rtl_s *curr_rtl;
     rtl_s *rtl_locked;
     rtl_s *base_rtl;
+    i32 RTL_EditorActive;
+    extern rtlfog_s *curr_fog;
+    extern rtl_s clipboard_light;
 }
 
 extern "C" {
@@ -2020,7 +2028,27 @@ static void edrtlBurnMainMenu() {
     STUBBED();
 }
 static void edrtlInit() {
-    STUBBED();
+    usr_cam = NuCameraCreate();
+    clipboard_light.type = 0;
+    mtls[0] = NuMtlCreate3D(1);
+    if (mtls[0] != NULL) {
+        mtls[0]->attribs.z_mode = 0;
+        mtls[0]->attribs.alpha_mode = 0;
+        NuMtlUpdate(mtls[0]);
+    }
+    mtls[1] = NuMtlCreate3D(1);
+    if (mtls[1] != NULL) {
+        mtls[1]->attribs.z_mode = 3;
+        mtls[1]->attribs.alpha_mode = 0;
+        NuMtlUpdate(mtls[1]);
+    }
+    mtls[2] = NuMtlCreate3D(1);
+    if (mtls[2] != NULL) {
+        mtls[2]->attribs.z_mode = 3;
+        mtls[2]->attribs.alpha_mode = 1;
+        NuMtlUpdate(mtls[2]);
+    }
+    InitUI();
 }
 
 // RTL editor subsystem stubs (static, internal linkage).
@@ -2034,7 +2062,8 @@ static void edrtlEnter() {
 }
 
 static void edrtlLeave() {
-    STUBBED();
+    edmainExtCamera(NULL);
+    RTL_EditorActive = 0;
 }
 
 static __used__ rtl_s *FindNearestRTL(nuvec_s *position, int ignore_radius) {
@@ -2163,8 +2192,10 @@ static __used__ EDRTLFOG_s *FindNearestFog(nuvec_s *position) {
     return NULL;
 }
 
-extern "C" void edrtlGetFogSet(void) {
-    STUBBED();
+extern "C" rtlfog_s *edrtlGetFogSet(void) {
+    if (fogmode == 0)
+        return curr_fog;
+    return FindNearestFog(NUMTX_GET_ROW_VEC(&global_camera.mtx, 3));
 }
 
 static EDRTLFOG_s *SelectPrevFog() {

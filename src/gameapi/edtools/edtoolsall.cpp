@@ -21,6 +21,7 @@
 
 EdRegistry theRegistry;
 extern MemoryManager theMemoryManager;
+extern LevelEditor theLevelEditor;
 i32 EdType_Char;
 i32 EdType_Short;
 i32 EdType_Int;
@@ -1064,8 +1065,15 @@ void EdRegistry::DefunctObject(EdClassInterface *interface, void *object, i32, i
     }
 }
 
-void EdRegistry::DestroyObject(EdClassInterface *, void *, i32, i32) {
-    STUBBED();
+void EdRegistry::DestroyObject(EdClassInterface *interface, void *object, i32 index, i32 flags) {
+    theLevelEditor.destroying_objects = 1;
+    if (object) {
+        if (!(flags & 2)) {
+            NotifyDestroyObject(object, interface->object_class, index, flags);
+        }
+        interface->vtable->destroy_object(interface, object, flags);
+    }
+    theLevelEditor.destroying_objects = 0;
 }
 
 void EdRegistry::Flush() {
@@ -1235,8 +1243,8 @@ EdClass *EdRegistry::RegisterClass(char *name, EdClassInterface *interface, i32 
     i32 index = class_count++;
     EdClass *object_class = &classes[index];
     object_class->name = name;
-    object_class->flags = flags;
     object_class->interface = interface;
+    object_class->flags = flags;
     if (interface != nullptr) {
         interface->object_class = object_class;
     }

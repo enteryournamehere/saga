@@ -251,6 +251,9 @@ extern "C" {
     void NuMtlSetShaderDescPS(NUMTL *mtl, NUSHADERMTLDESC *desc);
     i32 NuMtlSetCurrentRenderPlane(i32 render_plane);
     NUMTL *NuMtlCreate(i32 count);
+    NUMTL *NuMtlCreateBuff(i32 count, VARIPTR *buffer);
+    NUMTL *NuMtlCreateBuff3D(i32 count, VARIPTR *buffer);
+    void NuMtlAnimateShaderMtlTextures(f32 frame_time);
     void NuMtlUpdate(NUMTL *mtl);
 #ifdef __cplusplus
 }

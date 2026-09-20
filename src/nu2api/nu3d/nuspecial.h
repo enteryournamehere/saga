@@ -108,6 +108,7 @@ extern "C" {
     i32 NuSpecialGetCollision(nuhspecial_s *special);
     i32 NuSpecialForceToAlpha(nuhspecial_s *special);
     NUMTL *NuSpecialGetMtl(nuhspecial_s *special, i32 index);
+    i32 NuMtlSpecialSetUV(nuhspecial_s *special, f32 u, f32 v);
     void NuSpecialMtl(NUMTL *material);
     void NuSpecialForceMtl(NUMTL *material);
     void NuSpecialMtlMap(i32 count, NUMTL **materials);

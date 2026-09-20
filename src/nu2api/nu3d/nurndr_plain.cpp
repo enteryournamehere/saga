@@ -220,24 +220,70 @@ extern "C" void NuMtlAnimateSetMask(i32 mask) {
 extern "C" void NuMtlAnimateSetSpeedScale(f32 speed_scale) {
     mtl_animation_speed_scale = speed_scale;
 }
-extern "C" void NuMtlAnimateShaderMtlTextures(void) {
-    STUBBED();
+extern "C" void NuMtlAnimateShaderMtlTextures(f32 frame_time) {
+    static i32 firstcall = 1;
+    static f32 sinetime;
+    sinetime += frame_time;
+    if (firstcall) {
+        for (i32 i = 0; i < global_dlist_manager.ndisplay_lists; ++i) {
+            NUDLDLISTSCENE *scene = global_dlist_manager.dlists[i];
+            if (scene->gscene->shader_texture_animation_enabled) {
+                for (i32 j = 0; j < static_cast<i32>(scene->nmtls); ++j) {
+                    NUMTL *material = scene->mtls[j];
+                    for (i32 layer = 0; layer < 4; ++layer) {
+                        material->shader_desc.tex_anim_offsets[layer][0] = 0.0f;
+                        material->shader_desc.tex_anim_offsets[layer][1] = 0.0f;
+                    }
+                }
+            }
+        }
+        firstcall = 0;
+    }
 }
 static void NuMtlCreate3D(void) {
     STUBBED();
 }
-extern "C" void NuMtlCreateBuff(void) {
-    STUBBED();
+static inline NUMTL *NuMtlAllocateBuff(VARIPTR *buffer) {
+    NUMTL *material = reinterpret_cast<NUMTL *>(ALIGN(buffer->addr, 16));
+    buffer->addr = reinterpret_cast<usize>(material + 1);
+    memset(material, 0, sizeof(*material));
+    DefaultMtl(material);
+    material->unknown_0_4 = false;
+    return material;
 }
-extern "C" void NuMtlCreateBuff3D(void) {
-    STUBBED();
+extern "C" NUMTL *NuMtlCreateBuff(i32, VARIPTR *buffer) {
+    NUMTL *material = NuMtlAllocateBuff(buffer);
+    material->attribs.unknown_6_128 = true;
+    NuMtlCreatePS(material, 0);
+    return material;
+}
+extern "C" NUMTL *NuMtlCreateBuff3D(i32, VARIPTR *buffer) {
+    NUMTL *material = NuMtlAllocateBuff(buffer);
+    NuDisplayListCreateMtl(material);
+    NuMtlCreatePS(material, 1);
+    return material;
 }
 
 static void NuMtlSetRenderStatesPS(void) {
     STUBBED();
 }
-extern "C" void NuMtlSpecialSetUV(void) {
-    STUBBED();
+extern "C" i32 NuMtlSpecialSetUV(nuhspecial_s *special, f32 u, f32 v) {
+    if (special->scene == NULL) {
+        return 0;
+    }
+    NUDLDLISTSCENE *scene = special->scene->display_list;
+    NUCLIPOBJECT *object = special->display_special->clip_objects;
+    for (i32 i = 0; i < object->nmaterials; ++i) {
+        NUMTL *material = scene->mtls[object->material_ids[i]];
+        if (material == NULL) {
+            break;
+        }
+        do {
+            NuMtlSetUVOffsetPS(material, 0, u, v);
+            material = material->next;
+        } while (material != NULL);
+    }
+    return 0;
 }
 
 // Debug / visualisation geometry

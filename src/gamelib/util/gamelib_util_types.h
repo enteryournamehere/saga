@@ -457,7 +457,7 @@ struct NetworkObjectManager {
     void SendAcquireMessage(NetworkObject *);
     void SendAcquiredMessage(i16, NetPeer const &);
     void SendAdoptedMessage(i16);
-    void SendPushMessage(NetMessage *, NetworkObjectManager::NetPeerPush const *, i32);
+    i32 SendPushMessage(NetMessage *, NetworkObjectManager::NetPeerPush const *, i32);
     void Start(NOSContext const &);
     PendingObject *StealPendingObject();
     void Stop();

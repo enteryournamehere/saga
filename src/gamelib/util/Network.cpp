@@ -505,8 +505,23 @@ void NetworkObjectManager::ReceiveAdoptedMessage(NetMessage &message, NetPeer co
     }
 }
 
-void NetworkObjectManager::ReceiveConstructorMessage(NetMessage &, NetPeer const &) {
-    STUBBED();
+void NetworkObjectManager::ReceiveConstructorMessage(NetMessage &message, NetPeer const &peer) {
+    i16 guid;
+    i16 class_id;
+    i16 size;
+    u8 constructor_data[256];
+    message.Read16(guid);
+    message.Read16(class_id);
+    message.Read16(size);
+    if (size > 0) {
+        message.Read(constructor_data, size);
+    }
+    EdClass *object_class = theRegistry.GetClass(class_id);
+    NetworkObject *network_object = &objects[guid];
+    if (network_object->object == NULL) {
+        void *object = theRegistry.CreateObject(object_class->interface, constructor_data, size, guid, 1);
+        network_object->Initialise(guid, object, object_class, peer, 0);
+    }
 }
 
 void NetworkObjectManager::ReceiveContinuityBreak(NetMessage &message, NetPeer const &) {
@@ -576,16 +591,55 @@ void NetworkObjectManager::ReceiveReplicaMessage(NetMessage &, NetPeer const &) 
     STUBBED();
 }
 
-void NetworkObjectManager::ReceiveStartMessage(NetMessage &, NetPeer const &) {
-    STUBBED();
+void NetworkObjectManager::ReceiveStartMessage(NetMessage &message, NetPeer const &peer) {
+    NOSContext received_context = {};
+    message.Read(&received_context, sizeof(received_context));
+    if (!active) {
+        return;
+    }
+    for (i32 i = 0; i < 8; ++i) {
+        if (peer_push[i].peer != NULL && peer_push[i].peer == &peer) {
+            i32 accepted = memcmp(&received_context, &context, sizeof(context)) == 0;
+            if (accepted) {
+                peer_push[i].Sync();
+            } else {
+                peer_push[i].Stop();
+            }
+            NetMessage reply;
+            reply.Write8(11);
+            reply.Write32(accepted);
+            reply.Write(&context, sizeof(context));
+            theNetwork.ReliableSend(reply, 3, const_cast<NetPeer &>(peer), NULL, 0);
+            return;
+        }
+    }
 }
 
-void NetworkObjectManager::ReceiveStatusMessage(NetMessage &, NetPeer const &) {
-    STUBBED();
+void NetworkObjectManager::ReceiveStatusMessage(NetMessage &message, NetPeer const &peer) {
+    NOSContext received_context = {};
+    i32 accepted;
+    message.Read32(accepted);
+    message.Read(&received_context, sizeof(received_context));
+    bool matching_context = accepted && memcmp(&received_context, &context, sizeof(context)) == 0;
+    for (i32 i = 0; i < 8; ++i) {
+        if (peer_push[i].peer != NULL && peer_push[i].peer == &peer) {
+            if (!matching_context) {
+                peer_push[i].Stop();
+            } else if (peer_push[i].stage != 3 && peer_push[i].stage != 1 && peer_push[i].stage != 2) {
+                peer_push[i].Sync();
+            }
+            return;
+        }
+    }
 }
 
-void NetworkObjectManager::ReceiveStopMessage(NetMessage &, NetPeer const &) {
-    STUBBED();
+void NetworkObjectManager::ReceiveStopMessage(NetMessage &, NetPeer const &peer) {
+    for (i32 i = 0; i < 8; ++i) {
+        if (peer_push[i].peer != NULL && peer_push[i].peer == &peer) {
+            peer_push[i].Stop();
+            return;
+        }
+    }
 }
 
 void NetworkObjectManager::Recover(NetworkObject *) {
@@ -660,8 +714,34 @@ void NetworkObjectManager::SendAdoptedMessage(i16) {
     STUBBED();
 }
 
-void NetworkObjectManager::SendPushMessage(NetMessage *, NetworkObjectManager::NetPeerPush const *, i32) {
-    STUBBED();
+i32 NetworkObjectManager::SendPushMessage(NetMessage *message, NetPeerPush const *push, i32 flags) {
+    NetPeer *peer = push->peer;
+    if (message == NULL || message->data == NULL || static_cast<i32>(message->write_offset - message->read_offset) <= 0) {
+        return 1;
+    }
+    if (peer != NULL) {
+        if ((flags & 1) && push->stage != 1 && push->stage != 2) {
+            theNetwork.Send(*message, 3, *peer);
+        } else {
+            theNetwork.ReliableSend(*message, 3, *peer, NULL, 0);
+        }
+        return peer->vtable->GetAvailableMessages(peer) > 15;
+    }
+    i32 available = 1;
+    for (i32 i = 0; i < 8; ++i) {
+        peer = peer_push[i].peer;
+        if (peer != NULL && peer_push[i].stage == 3) {
+            if (flags & 1) {
+                theNetwork.Send(*message, 3, *peer);
+            } else {
+                theNetwork.ReliableSend(*message, 3, *peer, NULL, 0);
+            }
+            if (peer->vtable->GetAvailableMessages(peer) <= 15) {
+                available = 0;
+            }
+        }
+    }
+    return available;
 }
 
 void NetworkObjectManager::Start(NOSContext const &) {

@@ -1049,7 +1049,7 @@ void EdClass::SerialiseObject(EdStream &stream, void *object) {
     stream.EndBlock();
 }
 
-u8 EdClass::SerialiseObjectHeader(EdStream &stream, void *object) {
+i32 EdClass::SerialiseObjectHeader(EdStream &stream, void *object) {
     u8 present = 0;
     if (stream.mode == 2 && object != NULL) {
         present = 1;

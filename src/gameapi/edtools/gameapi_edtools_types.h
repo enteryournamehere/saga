@@ -185,7 +185,7 @@ struct EdClass {
     void Serialise(EdStream &, i32 *);
     void SerialiseObject(EdStream &, void *);
     void SerialiseObject(EdStream &, void *, EdClass *, EdRegistry *);
-    u8 SerialiseObjectHeader(EdStream &, void *);
+    i32 SerialiseObjectHeader(EdStream &, void *);
 };
 struct EdClassInterfaceVTable {
     void (*destroy)(EdClassInterface *);

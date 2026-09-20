@@ -30,7 +30,9 @@
 #include "nu2api/nu3d/nuportal.h"
 #include "nu2api/nu3d/android/nuptl_android.h"
 #include "legoapi/characters/core/character.h"
+#include "legoapi/characters/motion.h"
 #include "legoapi/items/base/apiobject.h"
+#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/world/levels/levels.h"
 #include "nu2api/numath/numtx.h"
@@ -42,6 +44,7 @@
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufile.h"
+#include "legoapi/render/fx/edsplines.h"
 
 #include <float.h>
 #include <math.h>
@@ -583,17 +586,131 @@ static __used__ void PowerUp_UpdateMsg(GAMEMESSAGE_s *message) {
         message->target_position.y = PowerUp_GetPanelY(message->player_index) + STATSPOSY;
 }
 
+struct BIKEPART_s {
+    SPLINEPOS_s spline_position;
+    u8 active;
+    u8 pad_21[3];
+    GameObject_s *rider;
+    NUVEC rider_position;
+};
+DECOMP_ASSERT(sizeof(BIKEPART_s) == 0x34, "BIKEPART size");
+DECOMP_ASSERT(offsetof(BIKEPART_s, active) == 0x20, "BIKEPART active offset");
+DECOMP_ASSERT(offsetof(BIKEPART_s, rider) == 0x24, "BIKEPART rider offset");
+DECOMP_ASSERT(offsetof(BIKEPART_s, rider_position) == 0x28, "BIKEPART rider position offset");
+static BIKEPART_s bikeParts[8];
+
+void KillParts(GameObject_s *, i32, i32, i32, f32, i32, u16 *);
+
 static __used__ i32 SpeederPart_Draw(PART_s *) {
-    STUBBED();
-    return true;
+    return 1;
 }
 
-static __used__ void SpeederPart_Kill(PART_s *, i32) {
-    STUBBED();
+static __used__ void SpeederPart_Kill(PART_s *part, i32) {
+    AddGameDebris(WORLD->debris_sys, 0x6a, &part->position);
+    if (part->speeder_index != -1.0f) {
+        GameObject_s *rider = bikeParts[static_cast<i32>(part->speeder_index)].rider;
+        if (rider != NULL && (rider->apiobj.field_0x1f8 & 0x1001) == 0x1001) {
+            rider->field_0xefe &= ~0x40;
+            KillParts(bikeParts[static_cast<i32>(part->speeder_index)].rider, -1, -1, 1, 0.0f, 0, NULL);
+            KillGameObject(bikeParts[static_cast<i32>(part->speeder_index)].rider, 2, 0);
+        }
+        memset(&bikeParts[static_cast<i32>(part->speeder_index)], 0, sizeof(BIKEPART_s));
+    }
 }
 
-static __used__ void SpeederPart_Update(PART_s *) {
-    STUBBED();
+static __used__ void SpeederPart_Update(PART_s *part) {
+    f32 time = part->field_100 / part->field_104;
+    f32 distance = Player[0]->apiobj.horizontal_velocity_magnitude * FRAMETIME * 1.1f;
+    BIKEPART_s *bike = &bikeParts[static_cast<i32>(part->speeder_index)];
+    GAMECAMERA_s *camera = GameCam;
+    NUVEC previous_position;
+    NUVEC position;
+    NUVEC velocity;
+    NUMTX_ALIGNED16 matrix;
+    if (bike->spline_position.spline != NULL) {
+        previous_position = bike->spline_position.position;
+        MoveSplinePosition(&bike->spline_position, distance);
+        u16 yaw, pitch;
+        PointAlongSpline(bike->spline_position.spline, bike->spline_position.along, &position, &yaw, &pitch, 1);
+        yaw -= 0x8000;
+        if (distance < 0.0f) {
+            yaw += 0x8000;
+            pitch = -pitch;
+        }
+        f32 tilt = NU_SIN_LUT(static_cast<i32>(time * 32768.0f + 16384.0f));
+        i32 spin = static_cast<i32>((NU_SIN_LUT(static_cast<i32>(time * 16384.0f + 32768.0f + 16384.0f)) +
+                                     1.0f) * 196608.0f);
+        part->rotation_x = SeekRot(part->rotation_x,
+                                  static_cast<i32>(-((1.0f - (tilt + 1.0f) * 0.5f) * 5461.0f)) - pitch,
+                                  10.0f);
+        part->rotation_y = SeekRot(part->rotation_y, yaw + static_cast<i32>(2730.0f -
+                                                                            (1.0f - fabsf(tilt)) * 5461.0f),
+                                  10.0f);
+        part->field_13c = SeekRot(part->field_13c, spin + yaw, 10.0f);
+        GameShadow(NULL, &bike->spline_position.position, 3.0f, 0);
+        NuMtxSetIdentity(&matrix);
+        NuMtxPreRotateX(&matrix, part->rotation_x);
+        NuMtxPreRotateY(&matrix, part->rotation_y);
+        NuMtxPreRotateZ(&matrix, part->field_13c);
+        NuMtxTranslate(&matrix, &bike->spline_position.position);
+        part->transform = matrix;
+        NuVecSub(&velocity, &bike->spline_position.position, &previous_position);
+        NuVecScale(&velocity, &velocity, 1.0f / FRAMETIME);
+        part->velocity = velocity;
+        AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[96].effect,
+                                          &bikeParts[static_cast<i32>(part->speeder_index)].spline_position.position,
+                                          5, FRAMETIME, pitch, yaw, NULL);
+    } else {
+        previous_position = part->position;
+        f32 tilt = fabsf(NU_SIN_LUT(static_cast<i32>(time * 32768.0f + 16384.0f)));
+        i32 turn = static_cast<i32>(2730.0f - (1.0f - tilt) * 5461.0f);
+        i32 spin = static_cast<i32>((NU_SIN_LUT(static_cast<i32>(time * 16384.0f + 32768.0f + 16384.0f)) +
+                                     1.0f) * 196608.0f);
+        part->rotation_x = SeekRot(part->rotation_x, 0xd556, 10.0f);
+        part->rotation_y = SeekRot(part->rotation_y, Player[0]->apiobj.field_0x276 + 0x4000, 10.0f);
+        part->field_13c = SeekRot(part->field_13c, spin, 10.0f);
+        GameShadow(NULL, &previous_position, 3.0f, 0);
+        velocity = v001;
+        NuVecRotateY(&velocity, &velocity, turn);
+        NuVecScale(&velocity, &velocity, Player[0]->apiobj.horizontal_velocity_magnitude / FRAMETIME);
+        velocity.y = 1.0f / NU_COS_LUT(part->rotation_x);
+        position.x = SeekLinearF(previous_position.x, camera->mtx.m30, FRAMETIME * 1.8f);
+        position.y = SeekLinearF(previous_position.y, camera->mtx.m31, FRAMETIME * 1.8f);
+        position.z = SeekLinearF(previous_position.z, camera->mtx.m32, FRAMETIME * 1.8f);
+        NuVecAdd(&position, &position, &velocity);
+        NuMtxSetIdentity(&matrix);
+        NuMtxPreRotateX(&matrix, part->rotation_x);
+        NuMtxPreRotateY(&matrix, part->rotation_y);
+        NuMtxPreRotateZ(&matrix, part->field_13c);
+        NuMtxTranslate(&matrix, &position);
+        part->transform = matrix;
+        AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[96].effect, &position, 5, FRAMETIME,
+                                          part->field_13c, part->rotation_x, NULL);
+    }
+    if (bike->rider != NULL) {
+        if ((bike->rider->apiobj.field_0x1f8 & 0x1001) == 0x1001) {
+            bike->rider->field_0xefe |= 0x40;
+            bike->rider->apiobj.flags_low |= 0x20;
+            bike->rider->field_0xf00 |= 0x20;
+            bike->rider_position.x = SeekLinearF(bike->rider_position.x, camera->mtx.m30, FRAMETIME);
+            bike->rider_position.y = SeekLinearF(bike->rider_position.y, camera->mtx.m31 - 2.0f, FRAMETIME * 1.5f);
+            bike->rider_position.z = SeekLinearF(bike->rider_position.z, camera->mtx.m32, FRAMETIME);
+            bike->rider->apiobj.position = bike->rider_position;
+            bike->rider->saved_position = bike->rider_position;
+            bike->rider->apiobj.velocity = velocity;
+            bike->rider->apiobj.pitch_angle += static_cast<i32>(NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 2730.0f);
+            bike->rider->apiobj.field_0x276 += static_cast<i32>(NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 2730.0f);
+            bike->rider->apiobj.roll_angle += static_cast<i32>(NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 2730.0f);
+            bike->rider->lighting_state.intensity[0].r = 1.0f;
+            bike->rider->lighting_state.intensity[0].g = 1.0f;
+            bike->rider->lighting_state.intensity[0].b = 1.0f;
+            bike->rider->lighting_state.intensity[1].r = 1.0f;
+            bike->rider->lighting_state.intensity[1].g = 1.0f;
+            bike->rider->lighting_state.intensity[1].b = 1.0f;
+        } else {
+            bike->rider = NULL;
+        }
+    }
 }
 
 extern WORLDINFO_s *WORLD;

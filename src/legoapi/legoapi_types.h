@@ -5063,6 +5063,7 @@ struct PART_s {
     union {
         u32 field_20c;
         f32 crate_spawn_delay;
+        f32 speeder_index; // 0x20c, bikeParts slot stored as a float
     };
     union {
         f32 field_210;
@@ -5085,6 +5086,7 @@ struct PART_s {
     MechObjectInterface *GetMechObjectInterface();
 };
 DECOMP_ASSERT(sizeof(PART_s) == 0x224, "PART size");
+DECOMP_ASSERT(offsetof(PART_s, speeder_index) == 0x20c, "PART speeder index offset");
 DECOMP_ASSERT(offsetof(PART_s, grabber_blowup) == 0x210, "PART grabber callback data offset");
 DECOMP_ASSERT(offsetof(PART_s, field_1c0) == 0x1c0, "PART kill callback offset");
 DECOMP_ASSERT(offsetof(PART_s, debris_key) == 0x1d8, "PART debris key offset");

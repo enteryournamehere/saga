@@ -55,6 +55,32 @@ static char *edpp_save_names[6];
 static i32 edptl_count;
 static NUVEC entry_position;
 
+static inline i32 edppCurveSegment(const debris_float_key_s *keys, f32 time) {
+    if (time >= keys[0].time && time <= keys[1].time)
+        return 0;
+    if (time >= keys[1].time && time <= keys[2].time)
+        return 1;
+    if (time >= keys[2].time && time <= keys[3].time)
+        return 2;
+    if (time >= keys[3].time && time <= keys[4].time)
+        return 3;
+    if (time >= keys[4].time && time <= keys[5].time)
+        return 4;
+    if (time >= keys[5].time && time <= keys[6].time)
+        return 5;
+    if (time >= keys[6].time && time <= keys[7].time)
+        return 6;
+    return 7;
+}
+
+static inline f32 edppInterpolateTorusCurve(const debris_float_key_s *keys, f32 time) {
+    i32 index = edppCurveSegment(keys, time);
+    if (index == 7)
+        return 0.0f;
+    return ((time - keys[index].time) / (keys[index + 1].time - keys[index].time)) *
+               (keys[index + 1].value - keys[index].value) + keys[index].value;
+}
+
 void edppDoInput(nupad_s *pad);
 void edppDetermineNearest(f32 distance);
 void edppDrawCursor();
@@ -1812,11 +1838,47 @@ extern "C" {
         for (i32 index = 0; index < 512; ++index)
             edppPtlDestroy(index);
     }
-    void edppDrawSpheres(void) {
-        STUBBED();
+    extern f32 globaltime;
+
+    void edppDrawSpheres(debinftype *effect, i32 key_index) {
+        if (effect->process_spheres == 0)
+            return;
+        for (i32 sphere_index = 0; sphere_index < static_cast<i8>(effect->process_spheres); ++sphere_index) {
+            debris_process_sphere_s *sphere = &debkeydata[key_index].process_spheres[sphere_index];
+            f32 time = globaltime - sphere->time;
+            if (time >= 0.0f && time <= effect->particle_lifetime) {
+                NUVEC position;
+                position.x = sphere->position.x + sphere->momentum.x * time;
+                position.y = sphere->position.y + (sphere->momentum.y * time + time * time * effect->field_0a0);
+                position.z = sphere->position.z + sphere->momentum.z * time;
+                time /= effect->particle_lifetime;
+                i32 first = edppCurveSegment(effect->collision_keys, time);
+                f32 radius = ((time - effect->collision_keys[first].time) /
+                              (effect->collision_keys[first + 1].time - effect->collision_keys[first].time)) *
+                                 (effect->collision_keys[first + 1].value - effect->collision_keys[first].value) +
+                             effect->collision_keys[first].value;
+                edbitsDrawSphere(&position, radius, 0xffff0000, edpp_mtl);
+            }
+        }
     }
-    void edppDrawTorus(void) {
-        STUBBED();
+    void edppDrawTorus(debinftype *effect, i32 key_index) {
+        if (effect->torus_lifetime == 0.0f)
+            return;
+        debkeydatatype_s *key = &debkeydata[key_index];
+        f32 time;
+        if (globaltime > key->emission_time)
+            time = globaltime - key->emission_time;
+        else
+            time = globaltime - key->previous_emission_time;
+        if (time > 0.0f && time < effect->torus_lifetime) {
+            time /= effect->torus_lifetime;
+            f32 radius = edppInterpolateTorusCurve(effect->torus_keys1, time);
+            f32 radial_extent = edppInterpolateTorusCurve(effect->torus_keys2, time);
+            f32 vertical_extent = edppInterpolateTorusCurve(effect->torus_keys3, time);
+            NUVEC position = key->position;
+            edbitsDrawTorus(&position, radius * effect->torus_radius1, radial_extent * effect->torus_radius2,
+                            vertical_extent * effect->torus_radius2, 0xffff0000, edpp_mtl);
+        }
     }
     i32 edppFindAllSounds(i32 page, NUVEC *positions, i32 (*sounds)[4], i32 capacity, i32 skip) {
         i32 count = 0;

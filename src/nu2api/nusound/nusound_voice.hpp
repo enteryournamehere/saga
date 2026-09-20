@@ -122,7 +122,14 @@ class NuSoundVoice : public NuSoundBufferCallback {
     f32 start_offset;   // +0x110
     u32 output_devices; // +0x114, defaults to device bit 0
     u8 controller_bits; // +0x118
-    u8 flags;           // +0x119: low nybble pause counter; bit4 requests a mix update
+    union {
+        u8 flags;
+        struct {
+            u8 pause_count : 4;
+            bool mix_update : 1;
+            u8 reserved : 3;
+        } playback_flags;
+    };
     u8 padding_0x11a[2];
 
     NuSoundBus *output_bus; // +0x11c, defaults to NuSoundSystem::sMasterBus
@@ -242,6 +249,8 @@ class NuSoundVoice : public NuSoundBufferCallback {
 };
 
 DECOMP_ASSERT(sizeof(NuSoundVoice) == 0x14c, "NuSoundVoice size");
+DECOMP_ASSERT(offsetof(NuSoundVoice, playback_flags) == 0x119, "NuSoundVoice playback flags offset");
+DECOMP_ASSERT(sizeof(((NuSoundVoice *)0)->playback_flags) == 1, "NuSoundVoice playback flags size");
 
 class NuVoiceAndroid : public NuSoundVoice {
   public:

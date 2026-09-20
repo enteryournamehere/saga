@@ -1,8 +1,8 @@
 #include "nu2api/nusound/nusound_source.hpp"
 
-const u32 NuSoundSource::sNumInitialBuffers[2] = {1, 2};
+const i32 NuSoundSource::sNumInitialBuffers[2] = {1, 2};
 
-u32 NuSoundSource::GetNumInitialBuffers() const {
+i32 NuSoundSource::GetNumInitialBuffers() const {
     return NuSoundSource::sNumInitialBuffers[(u32)this->feed_type];
 }
 #include "nu2api/nusound/nusound_weakptr.hpp"

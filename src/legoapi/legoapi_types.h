@@ -3296,18 +3296,37 @@ struct edpp_particle_s {
     NUVEC position;
     i32 effect_index;
     i32 instance_id;
-    u8 pad_0x14[0x34 - 0x14];
+    i16 rotation_z;
+    i16 rotation_y;
+    i16 emitter_rotation_z;
+    i16 emitter_rotation_y;
+    i16 emitter_rotation_x;
+    u8 reserved_1e[2];
+    f32 start_offset;
+    char name[16];
     i32 switch_type;
     i32 switch_id;
     f32 switch_variable;
-    u8 pad_0x40[0x4c - 0x40];
+    i16 reflection_rotation_z;
+    i16 reflection_rotation_y;
+    f32 reflection_offset;
+    f32 reflection_bounce;
     i16 render_group;
-    u8 pad_0x4e[0x51 - 0x4e];
+    i16 render_priority;
+    i8 dynamic_priority;
     i8 page;
     i8 detail_levels;
-    u8 pad_0x53[0x58 - 0x53];
+    i8 facing_mode;
+    i16 facing_rotation_x;
+    i16 facing_rotation_y;
 };
 DECOMP_ASSERT(sizeof(edpp_particle_s) == 0x58, "edpp_particle_s ABI");
+DECOMP_ASSERT(offsetof(edpp_particle_s, rotation_z) == 0x14, "edpp particle rotation offset");
+DECOMP_ASSERT(offsetof(edpp_particle_s, start_offset) == 0x20, "edpp particle start offset");
+DECOMP_ASSERT(offsetof(edpp_particle_s, name) == 0x24, "edpp particle name offset");
+DECOMP_ASSERT(offsetof(edpp_particle_s, reflection_rotation_z) == 0x40, "edpp particle reflection offset");
+DECOMP_ASSERT(offsetof(edpp_particle_s, render_priority) == 0x4e, "edpp particle priority offset");
+DECOMP_ASSERT(offsetof(edpp_particle_s, facing_mode) == 0x53, "edpp particle facing offset");
 struct pushblock_s {
     union {
         f32 ground_offset; // 0x00

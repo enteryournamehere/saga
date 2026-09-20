@@ -17,6 +17,8 @@ void edpartDetermineNearest(f32 distance);
 void edpartDrawCursor();
 void edpartHighlightNearest();
 void edpartScaleType(i32 type, f32 scale);
+void edpartInitType(i32 type);
+void edpartDestroy(i32 index);
 
 extern "C" {
     i32 edpart_set_part = 5;
@@ -25,6 +27,8 @@ extern "C" {
     i32 edpart_first_time_this_level;
     i32 edpart_curr;
     i32 edpart_create_type = -1;
+    i32 edpart_nearest_orphans;
+    i32 edpart_nearest_duplicates;
     i8 edpart_effect_list;
     i32 edpart_emitrotx;
     i32 edpart_emitroty;
@@ -37,6 +41,12 @@ extern "C" {
     extern part_type_s part_types[128];
     extern part_emit_s part_emits[512];
     extern i32 part_types_used;
+    extern i32 part_page_on[8];
+    extern i32 part_page_used[8];
+    extern NUGSCN *part_scene[32];
+    extern i32 part_scene_pageid[32];
+    extern NUGSCN *edbits_base_scene;
+    extern NUGSCN *edbits_things_scene;
     extern eduimenu_s *edpart_active_menu;
     extern eduimenu_s *edpart_opt_menu;
     extern eduimenu_s *edpart_type_menu;
@@ -85,6 +95,53 @@ extern "C" {
     eduimenu_s *edpart_leveltype_menu;
     eduimenu_s *edpart_generaltype_menu;
     eduimenu_s *edpart_type_menu;
+}
+
+static inline void edpartRemoveInstance(part_typedesc_s *type, i32 index) {
+    for (i32 next = index; next < 7; ++next) {
+        type->effect_ids[next] = type->effect_ids[next + 1];
+        type->effect_pages[next] = type->effect_pages[next + 1];
+    }
+    --type->variant_count;
+    type->effect_ids[7] = -1;
+    type->effect_pages[7] = -1;
+}
+
+static inline void edpartFinishMenu(eduimenu_s *menu) {
+    eduimenu_s *parent = menu->parent;
+    if (parent)
+        eduiMenuDetach(menu);
+    if (menu->callback)
+        menu->callback(menu, parent);
+}
+
+static inline void edpartAddType(eduimenu_s *menu, i8 page) {
+    if (part_types_used < 128) {
+        for (i32 index = 0; index < 128; ++index) {
+            part_typedesc_s *type = &part_types[index];
+            if (type->name[0] == '\0') {
+                sprintf(type->name, "New%d", index);
+                edpartInitType(index);
+                type->field_b3 = page;
+                type->page = page;
+                for (i32 variant = 0; variant < 8; ++variant) {
+                    type->effect_ids[variant] = -1;
+                    type->effect_pages[variant] = -1;
+                }
+                part_page_on[page] = 1;
+                ++part_types_used;
+                part_page_used[page] = 1;
+                part_scene[page] = page == 0 ? edbits_things_scene : edbits_base_scene;
+                part_scene_pageid[page] = page;
+                edpart_create_type = index;
+                type->field_160 = 1.0f;
+                type->field_164 = 1.0f;
+                type->field_168 = 1.0f;
+                break;
+            }
+        }
+    }
+    edpartFinishMenu(menu);
 }
 
 static eduiitem_s *edpart_nullobject_highlight;
@@ -451,8 +508,22 @@ static void edpartCutOffMenu(eduimenu_s *menu, eduiitem_s *, u32) {
         }
     }
 }
-static void edpartDeleteType(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartDeleteType(eduimenu_s *menu, eduiitem_s *, u32) {
+    if (edpart_nearest_type == &part_types[edpart_create_type]) {
+        edpart_nearest_type = NULL;
+        edpart_nearest = -1;
+        edpart_nearest_emit = NULL;
+    }
+    for (i32 emitter = 0; emitter < 40; ++emitter) {
+        if (part_emits[emitter].effect_id == edpart_create_type)
+            edpartDestroy(emitter);
+    }
+    edpartDetermineNearest(1.0f);
+    part_types[edpart_create_type].name[0] = '\0';
+    part_types[edpart_create_type].effect_ids[0] = -1;
+    --part_types_used;
+    edpartFinishMenu(menu);
+    edpart_create_type = -1;
 }
 static void edpartSScaleMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     edpart_sscale_menu = eduiMenuCreate(70, 70, 180, 300, ed_fnt, edpartCancelSScaleMenu, "Super Scale");
@@ -602,8 +673,8 @@ static void edpartVarEmitMenu(eduimenu_s *menu, eduiitem_s *, u32) {
         }
     }
 }
-static void edpartAddLevelType(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartAddLevelType(eduimenu_s *menu, eduiitem_s *, u32) {
+    edpartAddType(menu, 1);
 }
 static void edpartChangeBounce(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpart_nearest_type)
@@ -741,8 +812,8 @@ static void edpartSetSwitchType(eduimenu_s *menu, eduiitem_s *item, u32) {
     eduiMenuDetach(menu);
     eduiMenuDestroy(menu);
 }
-static void edpartAddGeneralType(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartAddGeneralType(eduimenu_s *menu, eduiitem_s *, u32) {
+    edpartAddType(menu, 0);
 }
 static void edpartApplyScaleType(eduimenu_s *menu, eduiitem_s *, u32) {
     if (edpart_nearest_type)
@@ -884,13 +955,7 @@ static void edpartSetInstanceType(eduimenu_s *, eduiitem_s *item, u32) {
     } else {
         for (i32 index = 0; index < 8; ++index) {
             if (edpart_nearest_type->effect_ids[index] == item->data) {
-                for (i32 next = index; next < 7; ++next) {
-                    edpart_nearest_type->effect_ids[next] = edpart_nearest_type->effect_ids[next + 1];
-                    edpart_nearest_type->effect_pages[next] = edpart_nearest_type->effect_pages[next + 1];
-                }
-                edpart_nearest_type->effect_ids[7] = -1;
-                edpart_nearest_type->effect_pages[7] = -1;
-                --edpart_nearest_type->variant_count;
+                edpartRemoveInstance(edpart_nearest_type, index);
                 break;
             }
         }
@@ -1267,8 +1332,10 @@ static void edpartChangeInstanceVarRot(eduimenu_s *, eduiitem_s *item, u32) {
     }
 }
 
-static void edpartDeleteInstanceOrphan(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartDeleteInstanceOrphan(eduimenu_s *menu, eduiitem_s *item, u32) {
+    edpartRemoveInstance(edpart_nearest_type, item->data);
+    --edpart_nearest_orphans;
+    edpartFinishMenu(menu);
 }
 
 static void edpartFileSaveEffectsLevel(eduimenu_s *, eduiitem_s *, u32) {
@@ -1393,8 +1460,15 @@ static void edpartCancelThingsInstanceMenu(eduimenu_s *, eduimenu_s *) {
     edpart_thingsinstance_menu = NULL;
 }
 
-static void edpartDeleteAllInstanceOrphans(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartDeleteAllInstanceOrphans(eduimenu_s *menu, eduiitem_s *, u32) {
+    for (i32 index = 0; index < 8; ++index) {
+        if (edpart_nearest_type->effect_ids[index] == 9998) {
+            edpartRemoveInstance(edpart_nearest_type, index);
+            --index;
+        }
+    }
+    edpart_nearest_orphans = 0;
+    edpartFinishMenu(menu);
 }
 
 static void edpartCancelInstanceOrphansMenu(eduimenu_s *, eduimenu_s *) {
@@ -1415,8 +1489,21 @@ static void edpartCancelInstanceSettingsMenu(eduimenu_s *, eduimenu_s *) {
     edpart_instancesettings_menu = NULL;
 }
 
-static void edpartDeleteAllInstanceDuplicates(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartDeleteAllInstanceDuplicates(eduimenu_s *menu, eduiitem_s *, u32) {
+    for (i32 index = 0; index < 8; ++index) {
+        i16 effect = edpart_nearest_type->effect_ids[index];
+        if (effect == 9999 || effect == -1 || effect == 9998)
+            continue;
+        for (i32 previous = 0; previous < index; ++previous) {
+            if (effect == edpart_nearest_type->effect_ids[previous]) {
+                edpartRemoveInstance(edpart_nearest_type, index);
+                --index;
+                break;
+            }
+        }
+    }
+    edpart_nearest_duplicates = 0;
+    edpartFinishMenu(menu);
 }
 
 extern "C" {

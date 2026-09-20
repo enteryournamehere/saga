@@ -80,7 +80,7 @@ extern "C" {
                          struct numtl_s *material);
     i32 NuRndrSetBlendData(void);
     void NuRndrShadowOnOff(i32 enabled);
-    void NuRndrLine3d(NURND_VERTEX3D *vertices, struct numtl_s *material, NUMTX *matrix);
+    i32 NuRndrLine3d(NURND_VERTEX3D *vertices, struct numtl_s *material, NUMTX *matrix);
     void NuRndrLine3dDbg(f32 x0, f32 y0, f32 z0, f32 x1, f32 y1, f32 z1, i32 colour);
     void NuRndrLine3dDbgFlush(void);
     extern i32 g_minmiplevel;
@@ -93,7 +93,7 @@ extern "C" {
     void NuRndrBoundingBox(NUVEC *minimum, NUVEC *maximum, NUMTX *matrix, i32 colour);
     void NuRndrAxes(NUMTX *matrix, f32 length);
     void NuRndrAxisBright(NUMTX *matrix, f32 length, i32 brightness);
-    void NuRndrCircle(f32 x, f32 y, f32 radius, f32 aspect, i32 count, f32 u0, f32 v0, f32 u1, f32 v1, i32 colour,
+    i32 NuRndrCircle(f32 x, f32 y, f32 radius, f32 aspect, i32 count, f32 u0, f32 v0, f32 u1, f32 v1, i32 colour,
                       struct numtl_s *material);
     i32 NuRndrHighResScreenGrab(char *prefix, f32 scale, f32 a, f32 b, f32 c, i32 number);
     void NuRndrScreenGrabTileInit(void *, i32, f32, f32, f32);

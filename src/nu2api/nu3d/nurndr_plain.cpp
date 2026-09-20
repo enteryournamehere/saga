@@ -424,7 +424,7 @@ extern "C" void NuRndrBoundingBox(NUVEC *minimum, NUVEC *maximum, NUMTX *matrix,
 f32 circle_scale_radius = 0.5f;
 static inline void NuRndrPrimSetColour(i32 colour);
 static inline void NuRndrPrimUV(f32 u, f32 v);
-extern "C" void NuRndrCircle(f32 x, f32 y, f32 radius, f32 aspect, i32 count, f32 u0, f32 v0, f32 u1, f32 v1,
+extern "C" i32 NuRndrCircle(f32 x, f32 y, f32 radius, f32 aspect, i32 count, f32 u0, f32 v0, f32 u1, f32 v1,
                              i32 colour, numtl_s *material) {
     NuPrim2DBegin(0, 7, material);
     radius *= circle_scale_radius;
@@ -458,6 +458,7 @@ extern "C" void NuRndrCircle(f32 x, f32 y, f32 radius, f32 aspect, i32 count, f3
         previous_v = next_v;
     }
     NuPrim2DEnd();
+    return 1;
 }
 
 extern "C" void NuRndrEndReflectionRender(void) {
@@ -489,32 +490,24 @@ static inline u32 NuRndrPrimColour(u32 colour) {
     return (colour & 0xff000000u) | ((colour >> 1) & 0x007f7f7fu);
 }
 
-static inline void NuRndrPrimAttributes(u32 colour, bool u_one, bool v_one) {
-    u8 *vertex = reinterpret_cast<u8 *>(g_NuPrim_StreamBufferPtr->addr);
-    *reinterpret_cast<u32 *>(vertex + 0xc) = NuRndrPrimColour(colour);
-    if (g_NuPrim_NeedsHalfUVs != 0) {
-        *reinterpret_cast<u16 *>(vertex + 0x10) = u_one ? 0x3c00 : 0;
-        *reinterpret_cast<u16 *>(vertex + 0x12) = v_one ? 0x3c00 : 0;
-    } else {
-        *reinterpret_cast<f32 *>(vertex + 0x10) = u_one ? 1.0f : 0.0f;
-        *reinterpret_cast<f32 *>(vertex + 0x14) = v_one ? 1.0f : 0.0f;
-    }
-}
-
 extern "C" void NuRndrGradRect2di(i32 x, i32 y, i32 w, i32 h, i32 *colour, numtl_s *mtl) {
-    const f32 sx = static_cast<f32>(x) * 0.2f;
-    const f32 sy = static_cast<f32>(y) * 0.2f;
-    const f32 sw = static_cast<f32>(w) * 0.2f;
-    const f32 sh = static_cast<f32>(h) * 0.2f;
+    const f32 sx = static_cast<f32>(x) * 0.0625f;
+    const f32 sy = static_cast<f32>(y) * 0.0625f;
+    const f32 sw = static_cast<f32>(w) * 0.0625f;
+    const f32 sh = static_cast<f32>(h) * 0.0625f;
 
     NuPrim2DBegin(1, 7, mtl);
-    NuRndrPrimAttributes(static_cast<u32>(colour[0]), false, false);
+    NuRndrPrimSetColour(colour[0]);
+    NuRndrPrimUV(0.0f, 0.0f);
     NuPrim2DAddXYZ(sx, sy, 0.0f);
-    NuRndrPrimAttributes(static_cast<u32>(colour[1]), true, false);
+    NuRndrPrimSetColour(colour[1]);
+    NuRndrPrimUV(1.0f, 0.0f);
     NuPrim2DAddXYZ(sx + sw, sy, 0.0f);
-    NuRndrPrimAttributes(static_cast<u32>(colour[2]), false, true);
+    NuRndrPrimSetColour(colour[2]);
+    NuRndrPrimUV(0.0f, 1.0f);
     NuPrim2DAddXYZ(sx, sy + sh, 0.0f);
-    NuRndrPrimAttributes(static_cast<u32>(colour[3]), true, true);
+    NuRndrPrimSetColour(colour[3]);
+    NuRndrPrimUV(1.0f, 1.0f);
     NuPrim2DAddXYZ(sx + sw, sy + sh, 0.0f);
     NuPrim2DEnd();
 }
@@ -794,7 +787,7 @@ extern "C" void NuRndrLine2di(i32 x0, i32 y0, i32 x1, i32 y1, i32 colour, NUMTL 
     NuPrim2DAddXYZ(ex, ey, 0.0f);
     NuPrim2DEnd();
 }
-extern "C" void NuRndrLine3d(NURND_VERTEX3D *vertices, NUMTL *material, NUMTX *matrix) {
+extern "C" i32 NuRndrLine3d(NURND_VERTEX3D *vertices, NUMTL *material, NUMTX *matrix) {
     NuPrim3DBegin(2, 7, material, matrix);
     for (i32 i = 0; i < 2; ++i) {
         if (!g_NuPrim_NeedsOverbrightening)
@@ -814,6 +807,7 @@ extern "C" void NuRndrLine3d(NURND_VERTEX3D *vertices, NUMTL *material, NUMTX *m
         ++g_NuPrim_VertexCount;
     }
     NuPrim3DEnd();
+    return 1;
 }
 extern "C" void NuRndrLine3dDbg(f32 x0, f32 y0, f32 z0, f32 x1, f32 y1, f32 z1, i32 colour) {
     NuPrim3DBegin(2, 5, nullptr, &numtx_identity);
@@ -948,15 +942,17 @@ extern "C" void NuRndrRect2d(f32 x, f32 y, f32 z, f32 width, f32 height, i32 col
     NuPrim2DEnd();
 }
 extern "C" void NuRndrRect2di(i32 x, i32 y, i32 w, i32 h, i32 colour, numtl_s *mtl) {
-    const f32 sx = static_cast<f32>(x) * 0.2f;
-    const f32 sy = static_cast<f32>(y) * 0.2f;
-    const f32 sw = static_cast<f32>(w) * 0.2f;
-    const f32 sh = static_cast<f32>(h) * 0.2f;
+    const f32 sx = static_cast<f32>(x) * 0.0625f;
+    const f32 sy = static_cast<f32>(y) * 0.0625f;
+    const f32 sw = static_cast<f32>(w) * 0.0625f;
+    const f32 sh = static_cast<f32>(h) * 0.0625f;
 
     NuPrim2DBegin(4, 7, mtl);
-    NuRndrPrimAttributes(static_cast<u32>(colour), false, false);
+    NuRndrPrimSetColour(colour);
+    NuRndrPrimUV(0.0f, 0.0f);
     NuPrim2DAddXYZ(sx, sy, 0.0f);
-    NuRndrPrimAttributes(static_cast<u32>(colour), true, false);
+    NuRndrPrimSetColour(colour);
+    NuRndrPrimUV(1.0f, 1.0f);
     NuPrim2DAddXYZ(sx + sw, sy + sh, 0.0f);
     NuPrim2DEnd();
 }

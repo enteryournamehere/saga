@@ -45,13 +45,13 @@ static inline void NuRndrPrimSetColour(i32 colour) {
 }
 
 static inline void NuRndrPrimUV(f32 u, f32 v) {
-    u8 *vertex = reinterpret_cast<u8 *>(g_NuPrim_StreamBufferPtr->addr);
+    PrimVertexRaw *vertex = (PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr;
     if (g_NuPrim_NeedsHalfUVs != 0) {
-        *reinterpret_cast<u16 *>(vertex + 0x10) = NuRndrFloatToHalf(u);
-        *reinterpret_cast<u16 *>(vertex + 0x12) = NuRndrFloatToHalf(v);
+        vertex->half_uv[0] = NuRndrFloatToHalf(u);
+        vertex->half_uv[1] = NuRndrFloatToHalf(v);
     } else {
-        *reinterpret_cast<f32 *>(vertex + 0x10) = u;
-        *reinterpret_cast<f32 *>(vertex + 0x14) = v;
+        vertex->float_uv[0] = u;
+        vertex->float_uv[1] = v;
     }
 }
 

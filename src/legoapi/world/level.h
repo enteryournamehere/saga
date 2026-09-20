@@ -54,7 +54,7 @@ struct LEVEL_PROGRESS_s {
     f32 grabber_field_0x48c;
     f32 grabber_field_0x484;
     f32 grabber_field_0x494;
-    u32 rebuilt_trooper_cannon_mask;
+    u32 destroyed_trooper_cannon_mask;
     u32 played_cutscene_mask;
     LEVELSCRIPTPROGRESS_s scripts[32];
     GIZFLOWPROGRESS_s giz_flow_progress;
@@ -62,7 +62,7 @@ struct LEVEL_PROGRESS_s {
 };
 
 DECOMP_ASSERT(offsetof(LEVEL_PROGRESS_s, played_cutscene_mask) == 0x281c, "LEVEL_PROGRESS cutscene mask offset");
-DECOMP_ASSERT(offsetof(LEVEL_PROGRESS_s, rebuilt_trooper_cannon_mask) == 0x2818,
+DECOMP_ASSERT(offsetof(LEVEL_PROGRESS_s, destroyed_trooper_cannon_mask) == 0x2818,
               "LEVEL_PROGRESS trooper cannon mask offset");
 DECOMP_ASSERT(offsetof(LEVEL_PROGRESS_s, flags_low) == 0x2800, "LEVEL_PROGRESS low flags offset");
 DECOMP_ASSERT(offsetof(LEVEL_PROGRESS_s, giz_flow_progress) == 0x2c20, "LEVEL_PROGRESS flow progress offset");

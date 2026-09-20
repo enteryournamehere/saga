@@ -89,7 +89,14 @@ captured Android x86 compiler/linker commands:
 | TrenchMove | 1.641% | 84.066% |
 | TrenchKilledCallback | 20.000% | 100.000% |
 | KilledTrooperCannon | 5.526% | 78.816% |
+| SpecialObjectFilter | 42.222% | 100.000% |
 
 `DeathStarBattleDReset` remains at 100%. The reconstructed callbacks compile and
-link; no native, browser, or WASM testing was performed. `SpecialObjectFilter`
-still awaits the canonical editor-object hierarchy.
+link; no native, browser, or WASM testing was performed.
+
+With the canonical `Placeable` and `SpecialObject` hierarchy restored separately,
+`SpecialObjectFilter` at `0x537860` compares the object's signed scene ID at 0x4
+with the helper's scene ID at 0x8. The original `SceneObject` constructor at
+`0x550d00` copies the same helper value into the object. The helper's original
+0xb0-byte global and its scene ID offset now have a canonical definition and
+layout assertions. No byte-offset alias type is used for the filter.

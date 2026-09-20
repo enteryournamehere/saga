@@ -5311,10 +5311,13 @@ struct SceneObject {
     SceneObject();
 };
 struct SceneObjectHelper {
-    u8 reserved_0x00[0x6c];
+    u8 reserved_0x00[8];
+    i32 scene_id;
+    u8 reserved_0x0c[0x60];
     i32 scene_object_count;
     u8 reserved_0x70[0x30];
     i32 owned_object_count;
+    u8 reserved_0xa4[0x0c];
 
     void AddMenuItems(eduimenu_s *);
     void ClearLevel(i32);
@@ -5333,6 +5336,10 @@ struct SceneObjectHelper {
     void cbEdSceneObjectShowHiddenWire(eduimenu_s *, eduiitem_s *, u32);
     void cbEdSceneObjectShowOwnedObjects(eduimenu_s *, eduiitem_s *, u32);
 };
+
+DECOMP_ASSERT(sizeof(SceneObjectHelper) == 0xb0, "SceneObjectHelper size");
+DECOMP_ASSERT(offsetof(SceneObjectHelper, scene_id) == 8, "SceneObjectHelper scene ID offset");
+extern SceneObjectHelper theSceneObjectHelper;
 
 struct SpecialObject : Placeable {
     nuhspecial_s special;

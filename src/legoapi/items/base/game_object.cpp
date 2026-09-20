@@ -321,9 +321,8 @@ static __used__ void PauseGame_ExtraCode() {
     Hub_ResetPanel();
 }
 
-static __used__ i32 SpecialObjectFilter(void *) {
-    STUBBED();
-    return 0;
+static __used__ i32 SpecialObjectFilter(void *object) {
+    return theSceneObjectHelper.scene_id == static_cast<SpecialObject *>(object)->scene_id;
 }
 
 static __used__ void KilledTrooperCannon(GameObject_s *object) {
@@ -342,6 +341,6 @@ static __used__ void KilledTrooperCannon(GameObject_s *object) {
         GizmoActivate(WORLD->gizmo_sys, gizmo, 1, 1);
         GizBuildit_SetVisibility(cannon.buildit, 1);
         cannon.rebuilding = 1;
-        WORLD->level_progress->rebuilt_trooper_cannon_mask |= 1u << i;
+        WORLD->level_progress->destroyed_trooper_cannon_mask |= 1u << i;
     }
 }

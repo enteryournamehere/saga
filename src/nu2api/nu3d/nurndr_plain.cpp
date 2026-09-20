@@ -518,17 +518,6 @@ extern "C" void NuRndrGradRect2di(i32 x, i32 y, i32 w, i32 h, i32 *colour, numtl
     NuPrim2DAddXYZ(sx + sw, sy + sh, 0.0f);
     NuPrim2DEnd();
 }
-static inline void NuRndrPrimUV(f32 u, f32 v) {
-    u8 *vertex = reinterpret_cast<u8 *>(g_NuPrim_StreamBufferPtr->addr);
-    if (g_NuPrim_NeedsHalfUVs != 0) {
-        *reinterpret_cast<u16 *>(vertex + 0x10) = NuRndrFloatToHalf(u);
-        *reinterpret_cast<u16 *>(vertex + 0x12) = NuRndrFloatToHalf(v);
-    } else {
-        *reinterpret_cast<f32 *>(vertex + 0x10) = u;
-        *reinterpret_cast<f32 *>(vertex + 0x14) = v;
-    }
-}
-
 extern "C" void NuRndrGradRectUV2di(i32 x, i32 y, i32 w, i32 h, f32 u0, f32 v0, f32 u1, f32 v1, u32 *colours,
                                     numtl_s *mtl) {
     const f32 sx = static_cast<f32>(x) * 0.0625f;

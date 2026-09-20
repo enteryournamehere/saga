@@ -518,24 +518,6 @@ extern "C" void NuRndrGradRect2di(i32 x, i32 y, i32 w, i32 h, i32 *colour, numtl
     NuPrim2DAddXYZ(sx + sw, sy + sh, 0.0f);
     NuPrim2DEnd();
 }
-static inline u16 NuRndrFloatToHalf(f32 value) {
-    union {
-        f32 value;
-        u32 bits;
-    } conversion = {value};
-    i32 mantissa = conversion.bits & 0x7fffff;
-    i32 sign = conversion.bits >> 31;
-    i32 exponent = static_cast<i32>((conversion.bits >> 23) & 0xff) - 0x70;
-    u16 half_exponent = 0;
-    if (exponent >= 0) {
-        half_exponent = 0x7c00;
-        if (exponent < 0x20) {
-            half_exponent = static_cast<u16>(exponent * 0x400);
-        }
-    }
-    return static_cast<u16>(mantissa >> 13) | static_cast<u16>(sign << 15) | half_exponent;
-}
-
 static inline void NuRndrPrimUV(f32 u, f32 v) {
     u8 *vertex = reinterpret_cast<u8 *>(g_NuPrim_StreamBufferPtr->addr);
     if (g_NuPrim_NeedsHalfUVs != 0) {
@@ -545,14 +527,6 @@ static inline void NuRndrPrimUV(f32 u, f32 v) {
         *reinterpret_cast<f32 *>(vertex + 0x10) = u;
         *reinterpret_cast<f32 *>(vertex + 0x14) = v;
     }
-}
-
-static inline void NuRndrPrimSetColour(i32 colour) {
-    if (g_NuPrim_NeedsOverbrightening)
-        ((PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr)->color = colour;
-    else
-        ((PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr)->color =
-            ((colour >> 1) & 0x007f7f7f) | (colour & 0xff000000);
 }
 
 extern "C" void NuRndrGradRectUV2di(i32 x, i32 y, i32 w, i32 h, f32 u0, f32 v0, f32 u1, f32 v1, u32 *colours,

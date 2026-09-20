@@ -435,6 +435,7 @@ struct EdRef {
     i32 replication_group;
 
     void CheckType(i32);
+    EdRef() : next(NULL), previous(NULL) {}
     EdRef(char *, char *, i32, i32, i32, EdControl *, i32);
     i32 GetAttributeData(void *, i32, i32, void *, i32);
     i32 GetTypeSize(i32, i32);

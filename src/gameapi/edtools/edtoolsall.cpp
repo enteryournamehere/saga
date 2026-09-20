@@ -45,7 +45,23 @@ extern "C" {
     i32 edgra_copy_source = -1;
     f32 edgra_global_fadein = 15.0f, edgra_global_fadeout = 25.0f;
     void edgraInitAllClumps(void);
+    void DebFreeInstantly(i32 *);
+    void DebrisEmitterPos(i32, f32, f32, f32);
+    void DebrisOrientation(i32, i16, i16);
+    void DebrisEmitterOrientation(i32, i16, i16, i16);
+    void DebrisReflectionOrientation(i32, i16, i16, f32, f32);
+    void DebrisSetFacing(i32, i8, i16, i16);
+    void AddDebrisEffect(i32 *, i32, f32, f32, f32);
+    extern debkeydatatype_s *debkeydata;
+    extern debinftype **debtab;
+    extern i32 part_page_used[8];
+    extern i32 edanim_params_used;
+    extern i32 edanim_particle_type;
+    extern i32 edanim_emitrotz;
+    extern i32 edanim_emitroty;
 }
+
+i32 edpartLookupObjectInScene(char *, NUGSCN *);
 
 void EdTerrInit(void *, void *) {
     STUBBED();
@@ -83,8 +99,28 @@ void edpartCreate(nuvec_s *, i32) {
     STUBBED();
 }
 
-void edppPtlPlace(i32, nuvec_s *) {
-    STUBBED();
+i32 edppPtlPlace(i32 index, NUVEC *position) {
+    edpp_particle_s *particle = &edpp_ptls[index];
+    DebrisEmitterPos(particle->instance_id, position->x, position->y, position->z);
+    DebrisOrientation(particle->instance_id, edpp_rotz, edpp_roty);
+    DebrisEmitterOrientation(particle->instance_id, edpp_emitrotz, edpp_emitroty, edpp_emitrotx);
+    DebrisReflectionOrientation(particle->instance_id, edpp_refrotz, edpp_refroty,
+                               particle->reflection_offset, particle->reflection_bounce);
+    if (particle->facing_mode != 0) {
+        particle->facing_rotation_x = edpp_facrotx;
+        particle->facing_rotation_y = edpp_facroty;
+        DebrisSetFacing(particle->instance_id, particle->facing_mode,
+                        particle->facing_rotation_x, particle->facing_rotation_y);
+    }
+    edpp_ptls[index].position = *position;
+    edpp_ptls[index].emitter_rotation_z = edpp_emitrotz;
+    edpp_ptls[index].emitter_rotation_y = edpp_emitroty;
+    edpp_ptls[index].emitter_rotation_x = edpp_emitrotx;
+    edpp_ptls[index].rotation_z = edpp_rotz;
+    edpp_ptls[index].rotation_y = edpp_roty;
+    edpp_ptls[index].reflection_rotation_z = edpp_refrotz;
+    edpp_ptls[index].reflection_rotation_y = edpp_refroty;
+    return index;
 }
 
 void EdDrawPolyTri(VuVec const &, VuVec const &, VuVec const &, i32) {
@@ -115,8 +151,12 @@ void edppPtlCreate(nuvec_s *, i32) {
     STUBBED();
 }
 
-void edppPtlShelve(i32) {
-    STUBBED();
+void edppPtlShelve(i32 index) {
+    edpp_particle_s *particle = &edpp_ptls[index];
+    if (particle->instance_id != -1 && particle->instance_id != 99999) {
+        DebFreeInstantly(&particle->instance_id);
+        particle->instance_id = 99999;
+    }
 }
 
 void EdDrawLineCube(VuMtx const &, float, i32) {
@@ -315,8 +355,16 @@ void edpartSaveEffects(char *, char) {
     STUBBED();
 }
 
-void edppPtlChangeType(i32, i32) {
-    STUBBED();
+void edppPtlChangeType(i32 index, i32 effect_index) {
+    edpp_particle_s *particle = &edpp_ptls[index];
+    if (particle->effect_index != effect_index) {
+        edppPtlDestroy(index);
+        AddDebrisEffect(&edpp_ptls[index].instance_id, effect_index,
+                        particle->position.x, particle->position.y, particle->position.z);
+        if (particle->instance_id != -1)
+            debkeydata[particle->instance_id].field_2f9 = 0;
+        edpp_ptls[index].effect_index = effect_index;
+    }
 }
 
 void edppPtlCreateCopy(nuvec_s *, i32) {
@@ -331,8 +379,10 @@ void EdDrawPolyCylinder(VuVec const &, VuVec const &, i32, i32, i32, float, floa
     STUBBED();
 }
 
-void edanimParamDestroy(i32) {
-    STUBBED();
+void edanimParamDestroy(i32 index) {
+    if (AnimParams[index].instance_id != -1)
+        AnimParams[index].instance_id = -1;
+    --edanim_params_used;
 }
 
 void edbitsDoSingleDump(i32 face) {
@@ -366,16 +416,60 @@ void edgraInstancePlace(i32 index, NUVEC *position) {
     edgraInitAllClumps();
 }
 
-void edpartLookupObject(char *) {
-    STUBBED();
+i32 edpartLookupObject(char *name) {
+    if (edbits_base_scene != NULL)
+        return edpartLookupObjectInScene(name, edbits_base_scene);
+    return -1;
 }
 
-void edSpline_FindAllBeg(nugscn_s *, char *, nugspline_s **, i32) {
-    STUBBED();
+i32 edSpline_FindAllBeg(NUGSCN *scene, char *prefix, NUGSPLINE **results, i32 capacity) {
+    i32 count = 0;
+    if (capacity <= 0)
+        return 0;
+    if (splineStore != NULL) {
+        for (i32 i = 0; i < numSplinesLoaded; ++i) {
+            if (NuStrNICmp(prefix, splineStore[i].name, -1) == 0) {
+                results[count++] = &splineStore[i];
+                if (count >= capacity)
+                    return count;
+            }
+        }
+    }
+    if (scene != NULL) {
+        for (i32 i = 0; i < scene->numsplines; ++i) {
+            if (NuStrNICmp(prefix, scene->splines[i].name, -1) == 0) {
+                results[count++] = &scene->splines[i];
+                if (count >= capacity)
+                    return count;
+            }
+        }
+    }
+    return count;
 }
 
-void edSpline_FindAllSub(nugscn_s *, char *, nugspline_s **, i32) {
-    STUBBED();
+i32 edSpline_FindAllSub(NUGSCN *scene, char *name, NUGSPLINE **results, i32 capacity) {
+    i32 count = 0;
+    if (capacity <= 0)
+        return 0;
+    if (splineStore != NULL) {
+        for (i32 i = 0; i < numSplinesLoaded; ++i) {
+            if (NuStrIStr(splineStore[i].name, name) != NULL) {
+                results[count++] = &splineStore[i];
+                if (count >= capacity)
+                    return count;
+            }
+        }
+    }
+    if (scene != NULL) {
+        for (i32 i = 0; i < scene->numsplines; ++i) {
+            if (NuStrIStr(scene->splines[i].name, name) != NULL) {
+                results[count++] = &scene->splines[i];
+                if (count >= capacity)
+                    return count;
+            }
+        }
+    }
+    return count;
 }
 
 i32 LoadEditorSplines(char *path, VARIPTR *buf, VARIPTR *buf_end) {
@@ -471,12 +565,24 @@ void edSpline_SplineList(nugscn_s *) {
     STUBBED();
 }
 
-void edanimParticlePlace(i32, nuvec_s *) {
-    STUBBED();
+void edanimParticlePlace(i32 index, NUVEC *position) {
+    nuhspecial_s special;
+    NuGScnGetSpecial(&special, edbits_base_scene, edanim_nearest);
+    NuVecSub(reinterpret_cast<NUVEC *>(AnimParams[edanim_nearest_param_id].effect_positions[index]),
+             position, NuSpecialGetPos(&special));
+    AnimParams[edanim_nearest_param_id].effect_angles[index] = edanim_emitrotz;
+    AnimParams[edanim_nearest_param_id].effect_angle_ranges[index] = edanim_emitroty;
 }
 
 void edanimStartAllPages() {
-    STUBBED();
+    edanimStartPage(0);
+    edanimStartPage(1);
+    edanimStartPage(2);
+    edanimStartPage(3);
+    edanimStartPage(4);
+    edanimStartPage(5);
+    edanimStartPage(6);
+    edanimStartPage(7);
 }
 
 void edgraInstanceCreate(NUVEC *position) {
@@ -491,11 +597,26 @@ void edpartPtlChangeType(i32, i32) {
 }
 
 void edppDestroyAllPages() {
-    STUBBED();
+    if (edpp_page_used[0]) edppClearPage(0);
+    if (edpp_page_used[1]) edppClearPage(1);
+    if (edpp_page_used[2]) edppClearPage(2);
+    if (edpp_page_used[3]) edppClearPage(3);
+    if (edpp_page_used[4]) edppClearPage(4);
+    if (edpp_page_used[5]) edppClearPage(5);
+    if (edpp_page_used[6]) edppClearPage(6);
+    if (edpp_page_used[7]) edppClearPage(7);
 }
 
-void edanimParticleCreate(nuvec_s *) {
-    STUBBED();
+void edanimParticleCreate(NUVEC *position) {
+    i32 index = AnimParams[edanim_nearest_param_id].effect_count;
+    if (index != 8 && edanim_particle_type != -1) {
+        edanimParticlePlace(index, position);
+        AnimParams[edanim_nearest_param_id].effect_ids[index] = edanim_particle_type;
+        strcpy(AnimParams[edanim_nearest_param_id].effect_names[index], debtab[edanim_particle_type]->name);
+        AnimParams[edanim_nearest_param_id].effect_intervals[index] = 60;
+        AnimParams[edanim_nearest_param_id].effect_flags[index] = 0;
+        ++AnimParams[edanim_nearest_param_id].effect_count;
+    }
 }
 
 void edgraInstanceDestroy(i32 index) {
@@ -575,7 +696,14 @@ void edgraSortVectorBuffer(i32 index) {
 }
 
 void edpartDestroyAllPages() {
-    STUBBED();
+    if (part_page_used[0]) edpartClearPage(0);
+    if (part_page_used[1]) edpartClearPage(1);
+    if (part_page_used[2]) edpartClearPage(2);
+    if (part_page_used[3]) edpartClearPage(3);
+    if (part_page_used[4]) edpartClearPage(4);
+    if (part_page_used[5]) edpartClearPage(5);
+    if (part_page_used[6]) edpartClearPage(6);
+    if (part_page_used[7]) edpartClearPage(7);
 }
 
 void edppMultipleCopyClear() {
@@ -1355,20 +1483,30 @@ void EdString::Set(char const *) {
 EdString::~EdString() {
 }
 
-void EdSystem::Initalise(variptr_u &, variptr_u &, i32) {
-    STUBBED();
+void EdSystem::Initalise(variptr_u &buffer, variptr_u &buffer_end, i32 flags) {
+    for (EdSubSystem *subsystem = first_subsystem; subsystem != NULL; subsystem = subsystem->next)
+        subsystem->SubInitialise(buffer, buffer_end, flags);
 }
 
-void EdSystem::Process(float) {
-    STUBBED();
+void EdSystem::Process(float delta_time) {
+    for (EdSubSystem *subsystem = first_subsystem; subsystem != NULL; subsystem = subsystem->next)
+        subsystem->SubProcess(delta_time);
 }
 
-void EdSystem::RegisterSubSystem(EdSubSystem *) {
-    STUBBED();
+void EdSystem::RegisterSubSystem(EdSubSystem *subsystem) {
+    subsystem->next = NULL;
+    subsystem->previous = last_subsystem;
+    if (last_subsystem != NULL)
+        last_subsystem->next = subsystem;
+    last_subsystem = subsystem;
+    if (first_subsystem == NULL)
+        first_subsystem = subsystem;
+    ++subsystem_count;
 }
 
 void EdSystem::Render() {
-    STUBBED();
+    for (EdSubSystem *subsystem = first_subsystem; subsystem != NULL; subsystem = subsystem->next)
+        subsystem->SubRender();
 }
 
 void EdSystem::Reset() {

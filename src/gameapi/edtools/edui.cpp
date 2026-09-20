@@ -1,13 +1,5 @@
 #include "gameapi/edtools/edui.h"
 
-struct edui_expander_s : eduiitem_s {
-    u32 field_48;
-    eduiitem_s *first_child;
-    eduiitem_s *last_child;
-    u32 open : 1;
-    u32 unknown_flags : 31;
-};
-
 extern "C" {
     static void eduicbItemExpanderClose(edui_expander_s *expander) {
         for (eduiitem_s *item = expander->first_child; item; item = item->next) {

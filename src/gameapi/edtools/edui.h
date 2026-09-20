@@ -12,6 +12,7 @@ struct eduiiattr_s {
     u32 highlight;
     u32 disabled;
 };
+struct nugraph_s;
 typedef void (*EdUiMenuCallback)(eduimenu_s *menu, eduimenu_s *parent);
 typedef void (*EdUiItemCallback)(eduimenu_s *menu, eduiitem_s *item, u32 value);
 
@@ -59,13 +60,16 @@ struct eduiitem_s {
             u8 unknown_flags : 6;
         };
     };
-    u8 unknown_12[6];
+    i8 text_alignment;
+    u8 unknown_13[5];
     i32 selection_group;
-    u8 unknown_1c[8];
+    i32 x;
+    i32 y;
     char *text;
-    u8 unknown_28[0x14];
+    u32 colours[4];
+    i32 (*input)(eduimenu_s *, eduiitem_s *, u32, u32);
     i32 (*process)(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
-    void *field_40;
+    i32 (*render)(eduimenu_s *, eduiitem_s *, i32, i32, i32);
     void (*destroy)(eduimenu_s *, eduiitem_s *);
 };
 
@@ -108,7 +112,7 @@ struct ed_module_s {
 };
 
 struct edui_slider_s : eduiitem_s {
-    u32 field_48;
+    i32 (*interact)(edui_interact_s *);
     void (*changed)(eduimenu_s *, eduiitem_s *, u32);
     f32 normalized_value;
     f32 value;
@@ -119,11 +123,107 @@ struct edui_slider_s : eduiitem_s {
     f32 granularity;
 };
 
+struct edui_sel_s : eduiitem_s {
+    i32 (*interact)(edui_interact_s *);
+    EdUiItemCallback selected;
+    EdUiItemCallback held;
+};
+
+struct edui_text_selector_s : edui_slider_s {
+    char **options;
+};
+
+struct edui_colour_slider_s : edui_slider_s {
+    u8 red;
+    u8 green;
+    u8 blue;
+    u8 unknown_6f;
+};
+
+struct edui_colour_pick_s : eduiitem_s {
+    i32 (*interact)(edui_interact_s *);
+    f32 cursor_x;
+    f32 cursor_y;
+    f32 hue;
+    f32 saturation;
+    f32 value;
+    u8 unknown_60[0x10];
+    EdUiItemCallback changed;
+};
+
+struct edui_texture_pick_s : eduiitem_s {
+    i32 (*interact)(edui_interact_s *);
+    f32 uv_x[2];
+    f32 uv_y[2];
+    EdUiItemCallback changed;
+    u8 unknown_60[4];
+    i32 selected_corner;
+    f32 zoom;
+};
+
+struct edui_expander_s : eduiitem_s {
+    i32 (*interact)(edui_interact_s *);
+    eduiitem_s *first_child;
+    eduiitem_s *last_child;
+    u32 open : 1;
+    u32 unknown_flags : 31;
+    u8 unknown_58[0xc];
+    i32 depth;
+    EdUiItemCallback changed;
+};
+
+struct edui_graph_s : eduiitem_s {
+    i32 (*interact)(edui_interact_s *);
+    nugraph_s *graph;
+    nugraph_s *onion_skins[8];
+    EdUiItemCallback changed;
+    f32 cursor_x;
+    f32 cursor_y;
+    i32 width;
+    i32 height;
+    f32 x_scale;
+    f32 y_scale;
+    i32 selected_point;
+    char x_label[16];
+    char y_label[16];
+    char title[16];
+};
+
+struct edui_file_pick_s : eduiitem_s {
+    i32 (*interact)(edui_interact_s *);
+    EdUiItemCallback changed;
+    char *format;
+    u8 unknown_54[4];
+    char name[0x40];
+    char directory[0x100];
+    char filename[0x108];
+    void *directory_list;
+};
+
 struct edui_prop_s : eduiitem_s {
     u8 unknown_48[0x1c];
     char *property_text;
     u8 unknown_68[0x18];
 };
+
+struct edui_filter_s : edui_prop_s {
+    eduiitem_s *first_child;
+    u8 unknown_84[8];
+};
+
+#ifndef HOST_BUILD
+static_assert(sizeof(eduiitem_s) == 0x48, "eduiitem_s ABI");
+static_assert(offsetof(eduiitem_s, colours) == 0x28, "eduiitem_s colours ABI");
+static_assert(offsetof(eduiitem_s, input) == 0x38, "eduiitem_s input ABI");
+static_assert(sizeof(edui_sel_s) == 0x54, "edui_sel_s ABI");
+static_assert(sizeof(edui_slider_s) == 0x6c, "edui_slider_s ABI");
+static_assert(sizeof(edui_colour_pick_s) == 0x74, "edui_colour_pick_s ABI");
+static_assert(sizeof(edui_texture_pick_s) == 0x6c, "edui_texture_pick_s ABI");
+static_assert(sizeof(edui_expander_s) == 0x6c, "edui_expander_s ABI");
+static_assert(sizeof(edui_graph_s) == 0xc0, "edui_graph_s ABI");
+static_assert(sizeof(edui_file_pick_s) == 0x2a4, "edui_file_pick_s ABI");
+static_assert(sizeof(edui_filter_s) == 0x8c, "edui_filter_s ABI");
+#endif
 
 struct edui_interact_s {
     f32 x, y, width, height;
@@ -195,7 +295,7 @@ extern "C" {
     i32 eduiProcessInteracts(eduimenu_s *menu, nupad_s *pad);
     void eduiFlushInteracts(void);
     i32 eduiCursorOverMenu(eduimenu_s *menu);
-    void cbInteractMenuTitle(void);
+    i32 cbInteractMenuTitle(edui_interact_s *interact);
     i32 cbInteractMenuScrollUp(edui_interact_s *interact);
     i32 cbInteractMenuScrollDown(edui_interact_s *interact);
     void cbInteractMenuScrollTo(eduimenu_s *menu, char *text);
@@ -210,4 +310,12 @@ extern "C" {
     void eduiMenuRemoveItem(eduimenu_s *menu, eduiitem_s *item);
     i32 eduiMenuItemMoveUp(eduimenu_s *menu, eduiitem_s *item);
     i32 eduiMenuItemMoveDown(eduimenu_s *menu, eduiitem_s *item);
+    void eduiMenuRender(eduimenu_s *menu);
+    void eduiMenuSetAttr(eduimenu_s *menu, const u32 *colours);
+    void eduiMenuSetTransparency(eduimenu_s *menu, const u32 *colours);
+    void eduiMenuSetDisabled(eduimenu_s *menu, i32 disabled);
+    void eduiMenuSortItemsByTxt(eduimenu_s *menu);
+    void eduiMenuFitOnScreen(eduimenu_s *menu, i32 padding);
+    f32 eduiGetAnalougePadValue(nupad_s *pad);
+    void eduiSetGlobalSliderAccel(f32 acceleration);
 }

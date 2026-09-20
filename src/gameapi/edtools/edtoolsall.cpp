@@ -13,6 +13,7 @@
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nucore/nuvideo.h"
 #include "nu2api/numath/nuvec.h"
+#include "nu2api/numath/numtx.h"
 #include "nu2api/nufile/nufile.h"
 #include <stdio.h>
 #include <string.h>
@@ -20,6 +21,11 @@
 
 EdRegistry theRegistry;
 extern MemoryManager theMemoryManager;
+extern i32 EdType_NuVec;
+extern i32 EdType_VuVec;
+extern i32 EdType_NuMtx;
+extern i32 EdType_VuMtx;
+extern i32 EdType_Short;
 i32 pad_disabled;
 eduimenu_s *edLevelPinnedMenu;
 
@@ -1652,40 +1658,143 @@ void EdClassObjectNameControl::cbSelectObject(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-void EdRef::CheckType(i32) {
-    STUBBED();
+void EdRef::CheckType(i32 requested_type) {
+    if (type_id == requested_type || (type_id == EdType_NuVec && requested_type == EdType_VuVec) ||
+        (type_id == EdType_NuMtx && requested_type == EdType_VuMtx)) {
+        return;
+    }
+    theRegistry.GetType(requested_type);
+    theRegistry.GetType(type_id);
 }
 
-EdRef::EdRef(char *, char *, i32, i32, i32, EdControl *, i32) {
-    STUBBED();
+EdRef::EdRef(char *type_name, char *member_name, i32 offset, i32 member_size, i32 member_attributes,
+             EdControl *member_control, i32 group)
+    : next(NULL), previous(NULL), attributes(0) {
+    char direct_type[32];
+    i32 length = NuStrLen(type_name);
+    if (length > 0 && type_name[length - 1] == '*') {
+        NuStrCpy(direct_type, type_name);
+        direct_type[length - 1] = '\0';
+        type_name = direct_type;
+        attributes |= 0x40000000;
+    }
+    type_id = theRegistry.GetTypeId(type_name);
+    if (type_id < 0) {
+        type_id = theRegistry.GetClassId(type_name);
+        theRegistry.GetClass(type_id);
+        attributes |= 0x80000000;
+    } else {
+        theRegistry.GetType(type_id);
+    }
+    name = member_name;
+    member_offset = offset;
+    size = member_size;
+    attributes |= member_attributes;
+    control = member_control;
+    replication_group = group;
 }
 
-void EdRef::GetAttributeData(void *, i32, i32, void *, i32) {
-    STUBBED();
+i32 EdRef::GetAttributeData(void *object, i32 attribute, i32 requested_type, void *data, i32 data_size) {
+    if (!(attributes & attribute)) {
+        return 0;
+    }
+    if ((attribute & 8) && type_id == EdType_VuMtx) {
+        NUMTX_ALIGNED16 matrix;
+        GetMemberData(object, type_id, &matrix, 0);
+        VuVec *position = static_cast<VuVec *>(data);
+        position->x = matrix.m30;
+        position->y = matrix.m31;
+        position->z = matrix.m32;
+        position->w = matrix.m33;
+        return 1;
+    }
+    if (attribute & 0x100) {
+        i16 value;
+        GetMemberData(object, EdType_Short, &value, 0);
+        *static_cast<i16 *>(data) = value;
+    } else {
+        GetMemberData(object, requested_type, data, data_size);
+    }
+    return 1;
 }
 
-void EdRef::GetMemberData(void *, i32, void *, i32) {
-    STUBBED();
+void EdRef::GetMemberData(void *object, i32 requested_type, void *data, i32 data_size) {
+    void *member = static_cast<u8 *>(object) + member_offset;
+    i32 type_size = GetTypeSize(requested_type, data_size);
+    if (member != NULL) {
+        if (attributes & 0x40000000) {
+            member = *static_cast<void **>(member);
+        }
+        memmove(data, member, type_size);
+    }
 }
 
-void EdRef::GetMemberObject(void *) {
-    STUBBED();
+void *EdRef::GetMemberObject(void *object) {
+    void *member = static_cast<u8 *>(object) + member_offset;
+    if (member != NULL && (attributes & 0x40000000)) {
+        member = *static_cast<void **>(member);
+    }
+    return member;
 }
 
-void EdRef::GetTypeSize(i32, i32) {
-    STUBBED();
+i32 EdRef::GetTypeSize(i32 requested_type, i32 data_size) {
+    CheckType(requested_type);
+    i32 type_size = size;
+    if (type_size <= 0) {
+        type_size = theRegistry.GetType(type_id)->size;
+    }
+    if (type_size > data_size && data_size > 0) {
+        theRegistry.GetType(type_id);
+    }
+    return type_size;
 }
 
-void EdRef::Serialise(EdStream &, i32 *) {
-    STUBBED();
+void EdRef::Serialise(EdStream &stream, i32 *class_mapping) {
+    if (stream.version != 0) {
+        if (attributes < 0 && class_mapping != NULL) {
+            stream.SerialiseBuffer(&class_mapping[type_id], sizeof(i32), 1);
+        } else {
+            stream.SerialiseBuffer(&type_id, sizeof(i32), 1);
+        }
+        stream.SerialiseString(&name);
+        stream.SerialiseBuffer(&member_offset, sizeof(i32), 1);
+        stream.SerialiseBuffer(&size, sizeof(i32), 1);
+    } else {
+        stream.SerialiseBuffer(&type_id, sizeof(i32), 1);
+        stream.SerialiseString(&name);
+        stream.SerialiseBuffer(&member_offset, sizeof(i32), 1);
+    }
+    stream.SerialiseBuffer(&attributes, sizeof(i32), 1);
 }
 
-void EdRef::SetAttributeData(void *, i32, i32, void *, i32) {
-    STUBBED();
+i32 EdRef::SetAttributeData(void *object, i32 attribute, i32 requested_type, void *data, i32 data_size) {
+    if (!(attributes & attribute)) {
+        return 0;
+    }
+    if ((attribute & 8) && type_id == EdType_VuMtx) {
+        NUMTX_ALIGNED16 matrix;
+        GetMemberData(object, type_id, &matrix, 0);
+        memmove(&matrix.m30, data, sizeof(VuVec));
+        SetMemberData(object, EdType_VuMtx, &matrix, 0, NULL);
+        return 1;
+    }
+    if (attribute & 0x100) {
+        SetMemberData(object, EdType_Short, &data, sizeof(i16), NULL);
+        return 0;
+    }
+    SetMemberData(object, requested_type, data, data_size, NULL);
+    return 1;
 }
 
-void EdRef::SetMemberData(void *, i32, void *, i32, i16 *) {
-    STUBBED();
+void EdRef::SetMemberData(void *object, i32 requested_type, void *data, i32 data_size, i16 *) {
+    void *member = static_cast<u8 *>(object) + member_offset;
+    i32 type_size = GetTypeSize(requested_type, data_size);
+    if (member != NULL) {
+        if (attributes & 0x40000000) {
+            member = *static_cast<void **>(member);
+        }
+        memmove(member, data, type_size);
+    }
 }
 
 void EdType::Serialise(EdStream &) {

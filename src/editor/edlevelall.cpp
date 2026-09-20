@@ -7,6 +7,18 @@
 #include <string.h>
 #include <new>
 
+#include <stdio.h>
+
+static inline i32 get_class_object_attribute(EdClass *ed_class, void *object, EdRef *reference,
+                                            i32 attribute, i32 type, void *data, i32 size) {
+    if (reference != NULL && reference->GetAttributeData(object, attribute, type, data, size)) {
+        return 1;
+    }
+    EdMember member;
+    return ed_class->FindMember(&member, object, attribute, 1) &&
+           member.reference->GetAttributeData(member.object, attribute, type, data, size);
+}
+
 extern EdRegistry theRegistry;
 extern ClassEditor theClassEditor;
 extern eduimenu_s *edLevelNextMenu;
@@ -421,12 +433,53 @@ void ClassEditor::cbFileSelected(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-void ClassObject::GetName(char *, i32) {
-    STUBBED();
+void ClassObject::GetName(char *destination, i32 size) {
+    if (object == NULL) {
+        NuStrNCpy(destination, "None", size);
+        return;
+    }
+
+    char name[128];
+    if (!get_class_object_attribute(ed_class, object, reference, 2, EdType_String, name, 128)) {
+        NuStrCpy(name, "NoName");
+    }
+    sprintf(destination, "%s.%s", ed_class->name, name);
 }
 
-void ClassObject::Set(char *) {
-    STUBBED();
+void ClassObject::Set(char *name) {
+    ed_class = NULL;
+    object = NULL;
+    char *separator = NuStrChr(name, '.');
+    if (separator == NULL) {
+        return;
+    }
+
+    char class_name[128];
+    char object_name[128];
+    char candidate_name[128];
+    EdMember member;
+    *separator = '\0';
+    NuStrCpy(class_name, name);
+    *separator = '.';
+    NuStrCpy(object_name, separator + 1);
+
+    ed_class = theRegistry.GetClass(class_name);
+    if (ed_class == NULL || !(ed_class->flags & 2) || ed_class->interface == NULL) {
+        return;
+    }
+
+    EdClassInterface *interface = ed_class->interface;
+    object = interface->vtable->get_next_object(interface, NULL);
+    while (object != NULL) {
+        if (ed_class->FindMember(&member, object, 2, 1)) {
+            member.reference->GetAttributeData(member.object, 2, EdType_String, candidate_name, 128);
+            if (NuStrICmp(object_name, candidate_name) == 0) {
+                break;
+            }
+        }
+        interface = ed_class->interface;
+        object = interface->vtable->get_next_object(interface, object);
+    }
 }
 
 void LevelEditor::AddInfoText(char *text) {
@@ -976,12 +1029,62 @@ void PropertyTool::ediMenuStoreMetrics(eduimenu_s *menu) {
     menu_startmetrics.height = menu->height;
 }
 
-void ClassObjectList::GetAveragePosition(VuVec &) {
-    STUBBED();
+i32 ClassObjectList::GetAveragePosition(VuVec &average) {
+    average = VuVec_Zero;
+    i32 position_count = 0;
+    for (ClassObjectListEntry *entry = first; entry != NULL; entry = entry->next) {
+        VuVec position;
+        if (get_class_object_attribute(entry->ed_class, entry->object, entry->reference,
+                                       8, EdType_VuVec, &position, 0)) {
+            average.x += position.x;
+            average.y += position.y;
+            average.z += position.z;
+            ++position_count;
+        }
+    }
+    if (position_count != 0) {
+        float scale = 1.0f / position_count;
+        average.x *= scale;
+        average.y *= scale;
+        average.z *= scale;
+    }
+    return position_count;
 }
 
-void ClassObjectList::GetAveragePosition(VuVec &, float &) {
-    STUBBED();
+i32 ClassObjectList::GetAveragePosition(VuVec &average, float &radius) {
+    average = VuVec_Zero;
+    i32 position_count = 0;
+    VuVec positions[64];
+    float radii[64];
+    for (ClassObjectListEntry *entry = first; entry != NULL && position_count < 64; entry = entry->next) {
+        VuVec &position = positions[position_count];
+        if (get_class_object_attribute(entry->ed_class, entry->object, entry->reference,
+                                       8, EdType_VuVec, &position, 0)) {
+            average.x += position.x;
+            average.y += position.y;
+            average.z += position.z;
+            radii[position_count] = 1.0f;
+            get_class_object_attribute(entry->ed_class, entry->object, entry->reference,
+                                       64, EdType_Float, &radii[position_count], 0);
+            ++position_count;
+        }
+    }
+    if (position_count != 0) {
+        float scale = 1.0f / position_count;
+        average.x *= scale;
+        average.y *= scale;
+        average.z *= scale;
+        radius = 0.0f;
+        for (i32 index = 0; index < position_count; ++index) {
+            NUVEC difference;
+            difference.x = average.x - positions[index].x;
+            difference.y = average.y - positions[index].y;
+            difference.z = average.z - positions[index].z;
+            float extent = NuVecMag(&difference) + radii[index];
+            radius = extent > radius ? extent : radius;
+        }
+    }
+    return position_count;
 }
 
 i32 ClassObjectList::IsInList(void *object, EdRef *reference) {

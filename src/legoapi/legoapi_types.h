@@ -3619,8 +3619,8 @@ struct ClassObjectList {
     ClassObjectListEntry *last;
     i32 count;
 
-    void GetAveragePosition(VuVec &);
-    void GetAveragePosition(VuVec &, float &);
+    i32 GetAveragePosition(VuVec &);
+    i32 GetAveragePosition(VuVec &, float &);
     i32 IsInList(ClassObject);
     i32 IsInList(EdClass *);
     i32 IsInList(void *, EdRef *);

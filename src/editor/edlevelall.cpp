@@ -8,6 +8,10 @@
 #include <new>
 
 extern EdRegistry theRegistry;
+extern ClassEditor theClassEditor;
+extern eduimenu_s *edLevelNextMenu;
+void eduiSetPinnedMenu(eduimenu_s *);
+
 extern i32 EdType_String;
 
 DECOMP_ASSERT(offsetof(EdClass, flags) == 0x04, "EdClass flags offset");
@@ -91,8 +95,8 @@ void ClassEditor::ClearLevel(i32) {
     STUBBED();
 }
 
-void ClassEditor::CreateObject() {
-    STUBBED();
+void *ClassEditor::CreateObject() {
+    return NULL;
 }
 
 void ClassEditor::CreateObject(ClassObject &) {
@@ -127,8 +131,8 @@ void ClassEditor::Process(EdInputContext &) {
     STUBBED();
 }
 
-void ClassEditor::ReadBlock(DATAPTR *) {
-    STUBBED();
+i32 ClassEditor::ReadBlock(DATAPTR *) {
+    return 0;
 }
 
 void ClassEditor::Render() {
@@ -140,7 +144,6 @@ void ClassEditor::Serialise(EdStream &) {
 }
 
 void ClassEditor::WriteBlock(i32) {
-    STUBBED();
 }
 
 void ClassEditor::DestroySelectedObjects() {
@@ -183,16 +186,16 @@ void ClassEditor::InitialiseObject(ClassObject &) {
     STUBBED();
 }
 
-void ClassEditor::IsSelectedClass(EdClass *) {
-    STUBBED();
+i32 ClassEditor::IsSelectedClass(EdClass *object_class) {
+    return selected_objects.IsInList(object_class);
 }
 
-void ClassEditor::IsSelectedObject(ClassObject &) {
-    STUBBED();
+i32 ClassEditor::IsSelectedObject(ClassObject &object) {
+    return selected_objects.IsInList(object);
 }
 
-void ClassEditor::IsSelectedObject(void *, EdRef *) {
-    STUBBED();
+i32 ClassEditor::IsSelectedObject(void *object, EdRef *reference) {
+    return selected_objects.IsInList(object, reference);
 }
 
 void ClassEditor::IsUniqueName(char *) {
@@ -231,16 +234,40 @@ void ClassEditor::SetMode(i32) {
     STUBBED();
 }
 
-void ClassEditor::SetViewMenuHilight(eduimenu_s *) {
-    STUBBED();
+void ClassEditor::SetViewMenuHilight(eduimenu_s *menu) {
+    for (eduiitem_s *item = menu->first; item != NULL; item = item->next) {
+        i32 index = item->data - 3;
+        if (static_cast<u32>(index) <= 60) {
+            item->highlighted = (theClassEditor.class_filter >> index) & 1;
+        }
+    }
 }
 
 void ClassEditor::SnapPoint(VuVec &) {
     STUBBED();
 }
 
-void ClassEditor::UpdateClassFilter(EdInputContext &) {
-    STUBBED();
+void ClassEditor::UpdateClassFilter(EdInputContext &input) {
+    i32 count = theRegistry.class_count;
+    if (count > 10) {
+        count = 10;
+    }
+    for (i32 i = 0; i < count; ++i) {
+        if (input.GetPress(i + 26) != 0.0f) {
+            if (input.GetHold(22) != 0.0f) {
+                class_filter = 1 << i;
+            } else {
+                class_filter ^= 1 << i;
+            }
+        }
+    }
+    if (input.GetPress(36) != 0.0f) {
+        if (input.GetHold(22) != 0.0f) {
+            class_filter = -1;
+        } else {
+            class_filter = ~class_filter;
+        }
+    }
 }
 
 void ClassEditor::UpdateLists(MemoryBuffer *, MemoryBuffer *) {
@@ -255,8 +282,12 @@ void ClassEditor::ViewSelected() {
     STUBBED();
 }
 
-void ClassEditor::cbDestroyMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+void ClassEditor::cbDestroyMenu(eduimenu_s *menu, eduimenu_s *) {
+    eduiMenuDetach(menu);
+    eduiMenuDestroy(menu);
+    if (theClassEditor.menu == menu) {
+        theClassEditor.menu = NULL;
+    }
 }
 
 void ClassEditor::cbDestroyObject(eduimenu_s *, eduiitem_s *, u32) {
@@ -268,7 +299,6 @@ void ClassEditor::cbEdClassDeleteObject(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 void ClassEditor::cbEdClassExportMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
 }
 
 void ClassEditor::cbEdClassFileMenu(eduimenu_s *, eduiitem_s *, u32) {
@@ -276,7 +306,6 @@ void ClassEditor::cbEdClassFileMenu(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 void ClassEditor::cbEdClassImportMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
 }
 
 void ClassEditor::cbEdClassModeMenu(eduimenu_s *, eduiitem_s *, u32) {
@@ -311,16 +340,45 @@ void ClassEditor::cbEdClassSetMode(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-void ClassEditor::cbEdClassSetPinned(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void ClassEditor::cbEdClassSetPinned(eduimenu_s *menu, eduiitem_s *item, u32) {
+    menu->flags ^= 4;
+    item->highlighted = !item->highlighted;
+    if (menu->flags & 4) {
+        eduiMenuDetach(menu);
+        eduiSetPinnedMenu(menu);
+    } else {
+        eduiMenuDetach(menu);
+        eduiMenuDestroy(menu);
+        if (edLevelNextMenu == menu) {
+            edLevelNextMenu = NULL;
+        }
+        eduiSetPinnedMenu(NULL);
+    }
 }
 
-void ClassEditor::cbEdClassSetSnap(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void ClassEditor::cbEdClassSetSnap(eduimenu_s *menu, eduiitem_s *item, u32) {
+    theClassEditor.snap_mode = item->data;
+    eduiMenuHighlight(menu, item);
 }
 
-void ClassEditor::cbEdClassSetView(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void ClassEditor::cbEdClassSetView(eduimenu_s *menu, eduiitem_s *item, u32) {
+    switch (item->data) {
+    case 0:
+        theClassEditor.class_filter = -1;
+        break;
+    case 1:
+        theClassEditor.class_filter = 0;
+        break;
+    case 2:
+        theClassEditor.class_filter = ~theClassEditor.class_filter;
+        break;
+    default:
+        if (item->data - 3 >= 0) {
+            theClassEditor.class_filter ^= 1 << (item->data - 3);
+        }
+        break;
+    }
+    SetViewMenuHilight(menu);
 }
 
 void ClassEditor::cbEdClassSnapMenu(eduimenu_s *, eduiitem_s *, u32) {
@@ -926,7 +984,7 @@ void ClassObjectList::GetAveragePosition(VuVec &, float &) {
     STUBBED();
 }
 
-bool ClassObjectList::IsInList(void *object, EdRef *reference) {
+i32 ClassObjectList::IsInList(void *object, EdRef *reference) {
     ClassObjectListEntry *entry = first;
     if (entry == NULL) {
         return false;
@@ -1344,7 +1402,7 @@ void ClassEditor::UpdateSnapRay(VuVec &position) {
     }
 }
 
-bool ClassObjectList::IsInList(ClassObject object) {
+i32 ClassObjectList::IsInList(ClassObject object) {
     for (ClassObjectListEntry *entry = first; entry != NULL; entry = entry->next) {
         if (entry->object == object.object && entry->reference == object.reference) {
             return true;
@@ -1353,7 +1411,7 @@ bool ClassObjectList::IsInList(ClassObject object) {
     return false;
 }
 
-bool ClassObjectList::IsInList(EdClass *ed_class) {
+i32 ClassObjectList::IsInList(EdClass *ed_class) {
     for (ClassObjectListEntry *entry = first; entry != NULL; entry = entry->next) {
         if (entry->ed_class == ed_class) {
             return true;

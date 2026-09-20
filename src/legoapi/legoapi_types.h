@@ -2,6 +2,7 @@
 #define LEGOAPI_TYPES_H
 #pragma once
 #include "gameapi/ai/aisys/aimessage_types.h"
+#include "gameapi/edtools/gameapi_edtools_types.h"
 #include "gamelib/util/gamelib_util_types.h"
 
 #include "nu2api/nu3d/ShaderManagerOpenGL.h"
@@ -3486,7 +3487,7 @@ struct BaseEditor {
     virtual ~BaseEditor() {}
     virtual void Initialise(variptr_u &, variptr_u &, i32);
     virtual char *GetName() { return const_cast<char *>(""); }
-    virtual void ReadBlock(DATAPTR *) {}
+    virtual i32 ReadBlock(DATAPTR *) { return 0; }
     virtual void WriteBlock(i32) {}
     virtual void Serialise(EdStream &) {}
     virtual void ClearLevel(i32) {}
@@ -4715,8 +4716,18 @@ struct LevelEditorScene {
 };
 DECOMP_ASSERT(sizeof(LevelEditorScene) == 0xa8, "LevelEditorScene ABI");
 
-struct LevelEditor {
-    u8 pad_0x000[0x299];
+struct LevelEditor : BaseThing {
+    f32 background_colour[4];
+    i32 field_0x20;
+    i32 field_0x24;
+    i32 field_0x28;
+    i32 field_0x2c;
+    i32 field_0x30;
+    f32 overlay_alpha;
+    i32 field_0x38;
+    i32 field_0x3c;
+    EdInputContext input;
+    u8 reserved_0x298;
     u8 destroying_objects;
     u8 reserved_0x29a[6];
     i32 reset_pending;
@@ -4731,11 +4742,26 @@ struct LevelEditor {
     char text_buffer[0x400];
     i32 text_length;
     char *info_text[32];
-    u8 reserved_0xee0[0x134];
+    i32 info_x;
+    i32 info_y;
+    i32 info_width;
+    i32 info_height;
+    u32 info_colour;
+    u32 info_background;
+    u8 reserved_0xef8[0x100];
+    i32 pad_x;
+    i32 pad_y;
+    i32 pad_width;
+    i32 pad_height;
+    u32 pad_background;
+    u32 pad_colour;
+    u8 reserved_0x1010[4];
     char *pad_text[32];
-    u8 reserved_0x1094[0xc];
+    EditorSettings settings;
     i32 editors_entered;
     i32 active;
+
+    virtual char const *GetName() { return "LevelEditor"; }
 
     void AddInfoText(char *);
     i32 AddScene(char *, nugscn_s *, i32);
@@ -4745,7 +4771,7 @@ struct LevelEditor {
     void CloseMenu();
     void CreateEditorList(eduimenu_s *, eduiitem_s *);
     void CreateMenu();
-    void Display(ThingRenderData *);
+    void Display(ThingRenderData *) override;
     void DrawInfoText(char **, i32, i32, i32, i32, i32, i32, i32);
     void EndMultiLoad(variptr_u *, variptr_u *);
     void Enter();
@@ -4761,7 +4787,7 @@ struct LevelEditor {
     LevelEditor();
     void Load(char *, variptr_u *, variptr_u *, i32);
     void LoadState(variptr_u *, variptr_u *, variptr_u *, variptr_u *, variptr_u *, variptr_u *);
-    void ProcessEvenWhenPaused(ThingProcessData *);
+    void ProcessEvenWhenPaused(ThingProcessData *) override;
     void ReadStream(EdFileInputStream &);
     void RegisterEditor(BaseEditor &);
     void Reset();

@@ -11,6 +11,7 @@ i32 BaseEditor::blockStart[8];
 eduimenu_s *edLevelActiveMenu;
 extern eduimenu_s *edLevelPinnedMenu;
 i32 edLevelDestroyActiveMenu;
+LevelEditor theLevelEditor;
 
 extern "C" void eduiSetCameraEnabled(i32);
 
@@ -507,7 +508,49 @@ i32 LevelEditor::IsEditable(i32 index) {
 }
 
 LevelEditor::LevelEditor() {
-    STUBBED();
+    first_editor = NULL;
+    last_editor = NULL;
+    editor_count = 0;
+    background_colour[3] = 1.0f;
+    overlay_alpha = 0.6f;
+    active = 0;
+    background_colour[0] = 0.0f;
+    reset_pending = 0;
+    background_colour[1] = 0.0f;
+    field_0x20 = 0;
+    background_colour[2] = 0.0f;
+    field_0x24 = 0;
+    field_0x28 = 1;
+    field_0x30 = 1;
+    field_0x38 = 1;
+    info_x = 0;
+    info_y = 0;
+    info_width = 640;
+    info_height = 448;
+    info_colour = 0x80808080;
+    info_background = 0x40000000;
+    pad_x = 0;
+    pad_y = 0;
+    pad_width = 640;
+    pad_height = 448;
+    pad_background = 0x80000000;
+    pad_colour = 0x80808080;
+    SetPadText(0x1000, const_cast<char *>("D-Up"));
+    SetPadText(0x4000, const_cast<char *>("D-Down"));
+    SetPadText(0x8000, const_cast<char *>("D-Left"));
+    SetPadText(0x2000, const_cast<char *>("D-Right"));
+    SetPadText(0x10, const_cast<char *>("Triangle"));
+    SetPadText(0x40, const_cast<char *>("Cross"));
+    SetPadText(0x80, const_cast<char *>("Square"));
+    SetPadText(0x20, const_cast<char *>("Circle"));
+    SetPadText(4, const_cast<char *>("L1"));
+    SetPadText(1, const_cast<char *>("L2"));
+    SetPadText(8, const_cast<char *>("R1"));
+    SetPadText(2, const_cast<char *>("R2"));
+    SetPadText(0x200, const_cast<char *>("L3"));
+    SetPadText(0x400, const_cast<char *>("R1"));
+    SetPadText(0x800, const_cast<char *>("START"));
+    SetPadText(0x100, const_cast<char *>("SELECT"));
 }
 
 void LevelEditor::Load(char *, variptr_u *, variptr_u *, i32) {
@@ -837,7 +880,8 @@ void EdClass::FindObject(char *) {
 }
 
 EditorSettings::EditorSettings() {
-    STUBBED();
+    cursor_radius = 1.0f;
+    snap_terrain = 1;
 }
 
 void EditorSettings::AddMenuItems(eduimenu_s *) {

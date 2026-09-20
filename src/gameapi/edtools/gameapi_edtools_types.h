@@ -453,10 +453,15 @@ struct EdVectorControl {
     void cbSelected(eduimenu_s *, eduiitem_s *, u32);
 };
 struct EditorSettings {
+    virtual ~EditorSettings() {}
+    f32 cursor_radius;
+    i32 snap_terrain;
+
     void AddMenuItems(eduimenu_s *);
     EditorSettings();
     void Serialise(EdStream &);
 };
+static_assert(sizeof(void *) != 4 || sizeof(EditorSettings) == 0xc, "EditorSettings 32-bit size");
 struct KnotHelper {
     void CreateObject(void *, i32, i32);
     void DestroyObject(void *, i32);

@@ -69,21 +69,8 @@ union variptr_u;
 
 struct ClassObjectList;
 struct EdMember {
-    struct VTable {
-        void *(*get_member_object)(EdMember *, void const *);
-        void (*get_member_data)(EdMember *, void const *, i32, void *, i32);
-    };
-
-    VTable *vtable;
-    EdMember *next;
-    u32 reserved_08;
-    i32 type_id;
-    u8 reserved_10[8];
-    i32 array_size;
-    i32 class_marker;
-    u32 reserved_20;
-    u16 replication_group;
-    u16 reserved_26;
+    void *object;
+    EdRef *reference;
 };
 struct EdObjectNotifier {};
 struct EdSubSystem {
@@ -185,7 +172,7 @@ struct EdClass {
     void *FindObject(char *);
     EdRef *FindTypeRef(char *, i32);
     EdRef *FindTypeRef(i32, i32);
-    void GetStreamClasses(EdStream &, i32 *, i32 &, i32);
+    i32 GetStreamClasses(EdStream &, i32 *, i32 &, i32);
     void Serialise(EdStream &, i32 *);
     void SerialiseObject(EdStream &, void *);
     void SerialiseObject(EdStream &, void *, EdClass *, EdRegistry *);
@@ -516,7 +503,7 @@ struct EdType {
 
 static_assert(sizeof(void *) != 4 || sizeof(EdClass) == 0x18, "EdClass 32-bit size");
 static_assert(sizeof(void *) != 4 || sizeof(EdType) == 0xc, "EdType 32-bit size");
-static_assert(sizeof(void *) != 4 || sizeof(EdMember) == 0x28, "EdMember 32-bit size");
+static_assert(sizeof(void *) != 4 || sizeof(EdMember) == 0x8, "EdMember 32-bit size");
 static_assert(sizeof(void *) != 4 || offsetof(EdRegistry, types) == 0x4, "EdRegistry::types 32-bit offset");
 static_assert(sizeof(void *) != 4 || offsetof(EdRegistry, classes) == 0x8, "EdRegistry::classes 32-bit offset");
 static_assert(sizeof(void *) != 4 || offsetof(EdRegistry, type_count) == 0x1c, "EdRegistry::type_count 32-bit offset");

@@ -190,7 +190,7 @@ void NetChangedReplicator::CheckSum(unsigned char const *bytes, u32 size, u32 &c
 }
 
 void NetChangedReplicator::CheckSumObject(EdClass const *object_class, void const *object, u32 &checksum) const {
-    EdMember *member = object_class->members;
+    EdRef *member = object_class->members;
     while (member != NULL) {
         if (member->class_marker < 0) {
             EdClass *member_class = theRegistry.GetClass(member->type_id);

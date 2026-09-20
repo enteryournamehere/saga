@@ -5,6 +5,7 @@
 #include "nu2api/nucore/fixed_width.h"
 #include "nu2api/nucore/hashedkey.hpp"
 #include "nu2api/nucore/numechptr.hpp"
+#include "nu2api/nucore/numemory.h"
 #include "nu2api/nucore/nulist.h"
 #include "legoapi/items/objects/basething.h"
 #include "legoapi/render/core/SwipeDecalRenderer.h"
@@ -220,11 +221,18 @@ struct MechAutoJumpManager : BaseThing {
     float streak_time;
 };
 DECOMP_ASSERT(sizeof(MechAutoJumpManager) == 0x28, "MechAutoJumpManager size");
-struct MechAutofireAddon {
+struct MechAutofireAddon : MechAddon {
+    static HashedKey s_hashId;
     MechAutofireAddon(MechObjectInterface &);
-    void OnProcess(MechAddon::ProcessStage, float);
-    virtual ~MechAutofireAddon();
+    bool OnProcess(MechAddon::ProcessStage, float) override;
+    ~MechAutofireAddon() override;
+    static void operator delete(void *allocation) {
+        NU_FREE(allocation);
+    }
+    GameObject_s *character;
 };
+DECOMP_ASSERT(sizeof(MechAutofireAddon) == 0x1c, "MechAutofireAddon ABI");
+DECOMP_ASSERT(offsetof(MechAutofireAddon, character) == 0x18, "MechAutofireAddon character offset");
 struct MechEdgeStopAddon : MechAddon {
     static HashedKey s_hashId;
     MechEdgeStopAddon(MechObjectInterface &);
@@ -676,7 +684,8 @@ struct MechSystems : BaseThing {
         struct {
             u32 reserved_10[3];
             struct numtl_s *radar_pulse_material;
-            u32 reserved_20[2];
+            MechInputTouchGestureBasedController *gesture_controller;
+            u32 reserved_24;
         };
     };
     MechInputTouchSystem input_touch_system;
@@ -710,6 +719,7 @@ struct MechSystems : BaseThing {
 DECOMP_ASSERT(sizeof(ClickToPressStartGestureTracker) == sizeof(u32), "click-to-start tracker size");
 DECOMP_ASSERT(offsetof(MechSystems, click_to_press_start_tracker_storage) == 0x2888, "click-to-start tracker offset");
 DECOMP_ASSERT(offsetof(MechSystems, gesture_tracking_system) == 0x84, "MechSystems gesture tracking system offset");
+DECOMP_ASSERT(offsetof(MechSystems, gesture_controller) == 0x20, "MechSystems gesture controller offset");
 DECOMP_ASSERT(offsetof(MechSystems, move_to_markers) == 0x288c, "MechSystems move markers offset");
 DECOMP_ASSERT(offsetof(MechSystems, swipe_markers) == 0x290c, "MechSystems swipe marker slots offset");
 DECOMP_ASSERT(offsetof(MechSystems, level_ui_elements) == 0x291c, "MechSystems level UI elements offset");

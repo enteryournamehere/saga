@@ -1008,10 +1008,16 @@ struct EdInputContext;
 struct EdRef;
 struct EdStream;
 struct EdTool {
-    u8 reserved_0x00[4];
+    virtual ~EdTool() {}
+    virtual void Initialise(variptr_u &, variptr_u &, i32) {}
+    virtual const char *GetName() { return ""; }
+    virtual i32 Process(EdInputContext &) { return 0; }
+    virtual void Render() {}
+
     EdTool *next;
     EdTool *previous;
 };
+DECOMP_ASSERT(sizeof(EdTool) == 0x0c, "EdTool ABI");
 enum FADETYPE_VALUE {
     FADE_TYPE_NONE = -1,
     FADE_TYPE_SCREEN = 0,

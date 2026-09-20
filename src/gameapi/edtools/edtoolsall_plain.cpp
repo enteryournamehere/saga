@@ -149,6 +149,50 @@ static i32 edanimProc(f32 delta_time, nupad_s *pad);
 static void edanimRender();
 
 extern "C" {
+    void eduicbItemDestroy(eduimenu_s *, eduiitem_s *);
+    void eduicbItemDestroyProp(eduimenu_s *, eduiitem_s *);
+    i32 eduicbInteractSlider(edui_interact_s *);
+    static i32 eduicbProcessSel(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessSlider(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessGraph(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessColourPick(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessGreyPick(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessTexturePick(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessColourSlider(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessExpander(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessFilter(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessFilePick(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessTextPick(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessProp(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderSelWithClipColour(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderGraph(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderColourPick(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderTexturePick(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderExpander(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderFilter(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderFilePick(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderProp(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static void eduicbItemSliderDestroy(eduimenu_s *, eduiitem_s *);
+    static void eduicbItemFilePickDestroy(eduimenu_s *, eduiitem_s *);
+    static void eduicbItemTextPickDestroy(eduimenu_s *, eduiitem_s *);
+    static void eduicbItemDestroyExpander(eduimenu_s *, eduiitem_s *);
+    static void eduicbItemDestroyFilter(eduimenu_s *, eduiitem_s *);
+    static i32 eduicbInteractSel(edui_interact_s *);
+    static i32 eduicbInteractColourPick(edui_interact_s *);
+    static i32 eduicbInteractExpander(edui_interact_s *);
+    static i32 eduicbInteractFilter(edui_interact_s *);
+    static i32 eduicbInteractProp(edui_interact_s *);
     typedef void (*EDBITSPLAYSOUNDCALLBACK)(NUVEC *, i32);
     typedef i32 (*EDBITSREQUESTSOUNDCALLBACK)(char *);
 
@@ -1945,8 +1989,9 @@ extern "C" {
     i32 eduiGetUsingMenuFocus(void) {
         return bUsingMenuFocus;
     }
-    void eduiGradPickRead(void) {
+    i32 eduiGradPickRead(eduiitem_s *, edui_gradient_stage_s *, i32) {
         STUBBED();
+        return 0;
     }
     void eduiGradStageAdd(void) {
         STUBBED();
@@ -1963,7 +2008,7 @@ extern "C" {
     void eduiGradStageSetRGB(void) {
         STUBBED();
     }
-    void eduiIitemExpanderSetDepth(void) {
+    void eduiIitemExpanderSetDepth(edui_expander_s *item, i32 depth) {
         STUBBED();
     }
     void eduiInit(void) {
@@ -2004,9 +2049,15 @@ extern "C" {
         uimtls[3]->attribs.alpha_mode = 1;
         NuMtlUpdate(uimtls[3]);
     }
-    eduiitem_s *eduiItemCheckCreate(usize, const void *, i32, i32, EdUiItemCallback, char *) {
-        STUBBED();
-        return NULL;
+    eduiitem_s *eduiItemCheckCreate(usize data, const void *colours, i32 selected, i32 group,
+                                    EdUiItemCallback callback, char *text) {
+        eduiitem_s *item = eduiItemSelCreate(data, colours, selected, group, callback, text);
+        if (item) {
+            item->type = 2;
+            item->process = eduicbProcessSel;
+            item->render = eduicbRenderCheck;
+        }
+        return item;
     }
     void eduiItemColourPickCreate(void) {
         STUBBED();
@@ -2023,7 +2074,7 @@ extern "C" {
     void eduiItemDataGradPickCreate(void) {
         STUBBED();
     }
-    void eduiItemExpanderAddChild(void) {
+    void eduiItemExpanderAddChild(edui_expander_s *item, eduiitem_s *child) {
         STUBBED();
     }
     void eduiItemExpanderCreate(void) {
@@ -2032,31 +2083,31 @@ extern "C" {
     void eduiItemFilePickCreate(void) {
         STUBBED();
     }
-    void eduiItemFilePickSetFmt(void) {
+    void eduiItemFilePickSetFmt(edui_file_pick_s *item, char *format) {
         STUBBED();
     }
-    void eduiItemFilterAddItem(void) {
+    void eduiItemFilterAddItem(edui_filter_s *item, eduiitem_s *child) {
         STUBBED();
     }
     void eduiItemFilterCreate(void) {
         STUBBED();
     }
-    void eduiItemFilterRemoveItem(void) {
+    void eduiItemFilterRemoveItem(edui_filter_s *item, eduiitem_s *child) {
         STUBBED();
     }
     void eduiItemGradPickCreate(void) {
         STUBBED();
     }
-    void eduiItemGraphAddOnionSkin(void) {
+    void eduiItemGraphAddOnionSkin(edui_graph_s *item, nugraph_s *graph) {
         STUBBED();
     }
     void eduiItemGraphCreate(void) {
         STUBBED();
     }
-    void eduiItemGraphSetCursor(void) {
+    void eduiItemGraphSetCursor(edui_graph_s *item, f32 x, f32 y) {
         STUBBED();
     }
-    void eduiItemGraphSetLabels(void) {
+    void eduiItemGraphSetLabels(edui_graph_s *item, char *x, char *y, char *title) {
         STUBBED();
     }
     void eduiItemGreyGradPickCreate(void) {
@@ -2092,12 +2143,34 @@ extern "C" {
     void eduiItemRender(void) {
         STUBBED();
     }
-    eduiitem_s *eduiItemSelCreate(usize, const void *, i32, i32, EdUiItemCallback, char *) {
-        STUBBED();
-        return NULL;
+    eduiitem_s *eduiItemSelCreate(usize data, const void *colours, i32 selected, i32 group,
+                                 EdUiItemCallback callback, char *text) {
+        edui_sel_s *item = static_cast<edui_sel_s *>(NU_ALLOC(sizeof(edui_sel_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 0;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessSel;
+        item->render = eduicbRenderSel;
+        item->destroy = eduicbItemDestroy;
+        item->interact = eduicbInteractSel;
+        item->selection_group = group;
+        item->highlighted = selected;
+        item->text_alignment = 0x40;
+        item->text = NULL;
+        eduiItemSetText(item, text ? text : (char *)"<no name>");
+        item->selected = callback;
+        item->held = NULL;
+        return item;
     }
-    void eduiItemSelWithClipColourCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemSelWithClipColourCreate(usize data, const void *colours, i32 selected, i32 group,
+                                              EdUiItemCallback callback, char *text) {
+        eduiitem_s *item = eduiItemSelCreate(data, colours, selected, group, callback, text);
+        if (item)
+            item->render = eduicbRenderSelWithClipColour;
+        return item;
     }
     void eduiItemSeparatorCreate(void) {
         STUBBED();
@@ -2117,13 +2190,41 @@ extern "C" {
         }
         return 0;
     }
-    eduiitem_s *eduiItemSliderCreate(usize, const void *, i32, EdUiItemCallback, f32, f32, f32, char *) {
-        STUBBED();
-        return NULL;
+    eduiitem_s *eduiItemSliderCreate(usize data, const void *colours, i32 group, EdUiItemCallback callback,
+                                    f32 minimum, f32 range, f32 value, char *text) {
+        edui_slider_s *item = static_cast<edui_slider_s *>(NU_ALLOC(sizeof(edui_slider_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 6;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessSlider;
+        item->render = eduicbRenderSlider;
+        item->destroy = eduicbItemSliderDestroy;
+        item->interact = eduicbInteractSlider;
+        item->selection_group = group;
+        item->text_alignment = 0x40;
+        eduiItemSetText(item, text);
+        item->granularity = 0.001f;
+        item->changed = callback;
+        item->minimum = minimum;
+        item->range = range;
+        item->format = NULL;
+        eduiItemSliderSetFmt(item, (char *)"(%1.03f)");
+        eduiItemSliderSetVal(item, value);
+        return item;
     }
-    eduiitem_s *eduiItemSliderCreateInt(usize, const void *, i32, EdUiItemCallback, i32, i32, i32, char *) {
-        STUBBED();
-        return NULL;
+    eduiitem_s *eduiItemSliderCreateInt(usize data, const void *colours, i32 group, EdUiItemCallback callback,
+                                       i32 minimum, i32 range, i32 value, char *text) {
+        edui_slider_s *item = static_cast<edui_slider_s *>(
+            eduiItemSliderCreate(data, colours, group, callback, minimum, range, value, text));
+        if (item) {
+            eduiItemSliderSetFmt(item, (char *)"(%d)");
+            item->granularity = 1.0f;
+            item->render = eduicbRenderSliderInt;
+        }
+        return item;
     }
     void eduiItemSliderSetFmt(edui_slider_s *item, char *format) {
         if (!item->format) {
@@ -2154,7 +2255,7 @@ extern "C" {
         STUBBED();
         return NULL;
     }
-    void eduiItemTextPickSetFmt(void) {
+    void eduiItemTextPickSetFmt(edui_textpicker_s *item, char *format) {
         STUBBED();
     }
     void eduiItemTextSelectorCreate(void) {
@@ -2163,9 +2264,15 @@ extern "C" {
     void eduiItemTexturePickCreate(void) {
         STUBBED();
     }
-    eduiitem_s *eduiItemToggleCreate(usize, const void *, i32, i32, EdUiItemCallback, char *) {
-        STUBBED();
-        return NULL;
+    eduiitem_s *eduiItemToggleCreate(usize data, const void *colours, i32 selected, i32 group,
+                                    EdUiItemCallback callback, char *text) {
+        eduiitem_s *item = eduiItemSelCreate(data, colours, selected, group, callback, text);
+        if (item) {
+            item->type = 3;
+            item->process = eduicbProcessSel;
+            item->render = eduicbRenderCheck;
+        }
+        return item;
     }
     eduiitem_s *edui_last_item;
     eduiitem_s *eduiMenuAddItem(eduimenu_s *menu, eduiitem_s *item) {

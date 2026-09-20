@@ -91,7 +91,8 @@ extern "C" {
     void NuSpecialList(void);
     i32 NuSpecialFind(NUGSCN *scene, nuhspecial_s *dest, char *name, i32 flags);
     i32 NuSpecialFindMulti(NUGSCN *scene, nuhspecial_s *dest, char *name, i32 capacity, i32 flags);
-    void NuSpecialFindMultiWC(void);
+    i32 NuSpecialFindMultiWC(NUGSCN *scene, nuhspecial_s *dest, char (*wildcards)[20], char *pattern, i32 capacity,
+                            i32 flags);
     i32 NuSpecialCompare(nuhspecial_s *first, nuhspecial_s *second);
     i32 NuSpecialExistsFn(void *special);
     void NuSpecialClear(void *special);

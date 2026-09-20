@@ -51,22 +51,56 @@ static NULSTHDR *g_overrideList;
 struct MTL_OVERRIDE_RECORD {
     NUMTL *material;
     NUMTL *original;
-    u32 field_8;
+    NUVERTEXDESCRIPTOR vertex_descriptor;
 };
 DECOMP_ASSERT(sizeof(MTL_OVERRIDE_RECORD) == 12, "Material override payload ABI");
+DECOMP_ASSERT(offsetof(NUMTL, shader_desc) + offsetof(NUSHADERMTLDESC, vtx_desc) == 0x1f0,
+              "Material override vertex descriptor offset");
 
 extern "C" void NuMtlInitOverride(i32 count, VARIPTR *buffer, VARIPTR *end) {
     g_overrideList = NuLstCreateBuff(count, sizeof(MTL_OVERRIDE_RECORD), buffer, *end, 16);
 }
 
-extern "C" void NuMtlRegisterForOverride(void) {
-    STUBBED();
+static NUMTL *FindOverrideMaterial(NUMTL *original, const NUVERTEXDESCRIPTOR &descriptor, NUMTL *fallback = NULL) {
+    for (NULNKHDR *node = NuLstGetNext(g_overrideList, NULL); node != NULL;
+         node = NuLstGetNext(g_overrideList, node)) {
+        MTL_OVERRIDE_RECORD *entry = reinterpret_cast<MTL_OVERRIDE_RECORD *>(node);
+        if (entry->original == original && entry->material->shader_desc.vtx_desc.flags == descriptor.flags) {
+            return entry->material;
+        }
+    }
+    return fallback;
 }
-extern "C" void NuMtlFindVariantMtl(void) {
-    STUBBED();
+
+extern "C" void NuMtlRegisterForOverride(NUMTL *original, NUVERTEXDESCRIPTOR *descriptors, i32 count) {
+    for (i32 i = 0; i < count; ++i) {
+        NUVERTEXDESCRIPTOR descriptor = descriptors[i];
+        if (FindOverrideMaterial(original, descriptor) == NULL) {
+            MTL_OVERRIDE_RECORD *entry = reinterpret_cast<MTL_OVERRIDE_RECORD *>(NuLstAlloc(g_overrideList));
+            entry->material = NuMtlCreate3D(1);
+            entry->original = original;
+            entry->vertex_descriptor = descriptors[i];
+            *entry->material = *original;
+            entry->material->shader_desc.vtx_desc = descriptors[i];
+            entry->material->shader_desc.shader_variant_id = 0;
+            entry->material->shader_desc.shader_id = 0;
+            NuMtlUpdate(entry->material);
+        }
+    }
 }
-extern "C" void NuMtlFindVariantMtlFromDesc(void) {
-    STUBBED();
+
+extern "C" NUMTL *NuMtlFindVariantMtl(NUMTL *source, NUMTL *original) {
+    NUMTL *material = FindOverrideMaterial(original, source->shader_desc.vtx_desc);
+    if (material != NULL) {
+        return material;
+    }
+    NuMtlRegisterForOverride(original, &source->shader_desc.vtx_desc, 1);
+    NUVERTEXDESCRIPTOR descriptor = source->shader_desc.vtx_desc;
+    return FindOverrideMaterial(original, descriptor);
+}
+
+extern "C" NUMTL *NuMtlFindVariantMtlFromDesc(NUMTL *original, NUVERTEXDESCRIPTOR descriptor) {
+    return FindOverrideMaterial(original, descriptor, original);
 }
 
 extern "C" void NuMtlDestroy(NUMTL *mtl) {

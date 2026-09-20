@@ -393,24 +393,52 @@ static void PartCollide(PART_s *part, i32 three_dimensional) {
     }
 }
 
-static __used__ void TiePart_Kill(PART_s *, i32) {
-    STUBBED();
+static __used__ void TiePart_Kill(PART_s *part, i32) {
+    AddGameDebris(WORLD->debris_sys, 0x6a, &part->position);
 }
 
-static __used__ void TiePart_Move(PART_s *, f32) {
-    STUBBED();
+static __used__ void TiePart_Move(PART_s *part, f32 time) {
+    part->field_124[3] = -32768;
+    part->field_13c = static_cast<i32>(-32768.0f * FRAMETIME);
+    NUVEC position;
+    position.x = part->position.x + part->velocity.x * time;
+    position.y = part->position.y + part->velocity.y * time;
+    position.z = part->position.z + part->velocity.z * time;
+    NuMtxRotateZ(&part->transform, part->field_13c);
+    part->position.x = position.x;
+    part->position.y = position.y;
+    part->position.z = position.z;
+    AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[100].effect, &position, 10, FRAMETIME, 0, 0, NULL);
 }
 
-static __used__ void TiePart_Impact(PART_s *) {
-    STUBBED();
+static __used__ void TiePart_Impact(PART_s *part) {
+    AddGameDebris(WORLD->debris_sys, 0x6a, &part->position);
 }
 
-static __used__ void TiePart_KillExplode(PART_s *, i32) {
-    STUBBED();
+static __used__ void TiePart_KillExplode(PART_s *part, i32) {
+    AddGameDebris(WORLD->debris_sys, 0x6b, &part->position);
+    AddPartDebris(WORLD->part_debris_sys, 3, &part->position);
 }
 
-static __used__ void TieSpinZPart_Move(PART_s *, f32) {
-    STUBBED();
+static __used__ void TieSpinZPart_Move(PART_s *part, f32 time) {
+    static NUVEC vec = {0.0f, 0.0f, -0.05f};
+    part->field_124[3] = 200000;
+    part->field_13c = static_cast<i32>(200000.0f * FRAMETIME);
+    NuMtxPreTranslate(&part->transform, &vec);
+    NUVEC position;
+    position.x = part->position.x + part->velocity.x * time;
+    position.y = part->position.y + part->velocity.y * time;
+    position.z = part->position.z + part->velocity.z * time;
+    NuMtxRotateZ(&part->transform, part->field_13c);
+    part->position.x = position.x;
+    part->position.y = position.y;
+    part->position.z = position.z;
+    AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[100].effect, &position, 10, FRAMETIME, 0, 0, NULL);
+    position.x = part->velocity.x * 0.1f;
+    position.y = part->velocity.y * 0.1f;
+    position.z = part->velocity.z * 0.1f;
+    AddVariableShotDebrisEffectTimed3(WORLD->debris_sys->entries[96].effect, &part->position, &position, 10,
+                                    FRAMETIME, NULL, NULL);
 }
 
 extern f32 coinimpactwait;

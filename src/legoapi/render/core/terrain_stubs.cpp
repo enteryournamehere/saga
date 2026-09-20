@@ -31,6 +31,7 @@ i16 TerrImpact;
 i32 terrhitflags;
 i32 TERRAINMASK_NONWEAPON = 0x20;
 i32 TERRAINMASK_NONDROID;
+i32 geom;
 NUVEC TerrImpactPos;
 NUVEC TerrImpactNormal;
 NUVEC ShadNorm;
@@ -430,15 +431,22 @@ void Particles_Load(WORLDINFO *world, char **debris_name, i32 count, i32 flags) 
 extern "C" {
 
     void AITerrInit(void) {
-        STUBBED();
     }
 
-    void AITerrShadow(void) {
-        STUBBED();
+    f32 AITerrShadow(NUVEC *position, f32 height_above, f32 height_below, i32 terrain_mask) {
+        f32 height = 0.0f;
+        if (geom == 0)
+            height = NewShadow(position, height_above, height_below, terrain_mask);
+        return height;
     }
 
-    void AITerrShadowOnPlatform(void) {
-        STUBBED();
+    i32 NewShadowOnPlatform(void);
+
+    i32 AITerrShadowOnPlatform(void) {
+        i32 platform = -1;
+        if (geom == 0)
+            platform = NewShadowOnPlatform();
+        return platform;
     }
 
     i32 CheckForPlatInst(i32 instance) {
@@ -1160,8 +1168,26 @@ extern "C" {
         return -1;
     }
 
-    void NewMSituTerrEx(void) {
-        STUBBED();
+    i32 NewMSituTerrEx(NUVEC *position, void *data, NUVEC *minimum, NUVEC *maximum, f32 radius) {
+        TERRSET *terrain = CurTerr;
+        if (terrain == NULL || terrain->group_index_count >= terrain->max_group_indices ||
+            terrain->group_count >= terrain->max_groups)
+            return -1;
+        i16 group_index = terrain->group_count;
+        TERRAIN_GROUP &group = terrain->groups[group_index];
+        group.platform_flags &= ~1;
+        group.origin = *position;
+        group.data = data;
+        group.bounds_min = *minimum;
+        group.bounds_max = *maximum;
+        group.field_0x32 = -1;
+        group.scene_index = -1;
+        group.chunk_type = 0;
+        group.radius = radius;
+        terrain->group_indices[terrain->group_index_count++] = group_index;
+        ++terrain->cells[TERRAIN_PLATFORM_CELL].group_count;
+        ++terrain->group_count;
+        return terrain->group_count - 1;
     }
 
     i32 NewPlatInst(void *object, i32 instance) {
@@ -1201,8 +1227,38 @@ extern "C" {
         return -1;
     }
 
-    void NewPlatInstMSitu(void) {
-        STUBBED();
+    i32 NewPlatInstMSitu(void *object, i32 source) {
+        TERRSET *terrain = CurTerr;
+        if (terrain == NULL || terrain->group_index_count >= terrain->max_group_indices ||
+            terrain->group_count >= terrain->max_groups || object == NULL || terrain->max_platforms <= 0)
+            return -1;
+        i32 index = 0;
+        while (terrain->platforms[index].scene_object != NULL) {
+            if (++index == terrain->max_platforms)
+                return -1;
+        }
+        if (index == -1 || source == -1)
+            return -1;
+        i16 group_index = terrain->group_count;
+        TERRAIN_GROUP &group = terrain->groups[group_index];
+        group = terrain->groups[source];
+        group.scene_index = index;
+        group.chunk_type = 1;
+        TERRAIN_PLATFORM &platform = terrain->platforms[index];
+        platform.scene_object = object;
+        platform.terrain_group_index = group_index;
+        platform.scene_object_index = source;
+        platform.flags &= ~TERRAIN_PLATFORM_FLAG_ROTATING;
+        platform.scene_transform = NULL;
+        platform.bounce_impulse = 0.0f;
+        platform.bounce_offset = 0.0f;
+        platform.bounce_velocity = 0.0f;
+        platform.bounce_damping = 0.0f;
+        platform.bounce_spring = 0.0f;
+        terrain->group_indices[terrain->group_index_count++] = group_index;
+        ++terrain->cells[TERRAIN_PLATFORM_CELL].group_count;
+        ++terrain->group_count;
+        return index;
     }
 
     i32 NewRayCastEx(NUVEC *position, NUVEC *movement, f32 radius, i32 scan_flags) {
@@ -1226,16 +1282,23 @@ extern "C" {
         info[3] = TerrainHitInfo[3];
     }
 
-    void NewTerrain(void) {
-        STUBBED();
+    void NewTerrainScaleY(NUVEC *position, NUVEC *movement, u8 *hit_flags, i32 object_index, f32 radius,
+                          f32 collision_radius, f32 object_scale, i32 embedded_retry, i32 scan_flags);
+
+    void NewTerrain(NUVEC *position, NUVEC *movement, u8 *hit_flags, i32 object_index, f32 radius,
+                    f32 collision_radius, i32 scan_flags) {
+        if (CurTerr != NULL)
+            NewTerrainScaleY(position, movement, hit_flags, object_index, radius, collision_radius, 1.0f, 0,
+                             scan_flags);
     }
 
-    void NewTerrainScaleY(void) {
-        STUBBED();
+    void NewTerrainScaleY(NUVEC *position, NUVEC *movement, u8 *hit_flags, i32 object_index, f32 radius,
+                          f32 collision_radius, f32 object_scale, i32 embedded_retry, i32 scan_flags) {
+        NewTerrainScaleYMask(position, movement, hit_flags, object_index, radius, collision_radius, object_scale,
+                             embedded_retry, scan_flags, 0);
     }
 
     void PartTerrInit(void) {
-        STUBBED();
     }
 
     void PlatInstBounce(i32 index, f32 impulse, f32 spring, f32 damping) {
@@ -1529,8 +1592,9 @@ extern "C" {
         STUBBED();
     }
 
-    void terraininit(void) {
-        STUBBED();
+    void *terraininit(i32 level_num, void *buffer, void *buffer_end, i32 options, char *path, void *scene,
+                      i32 group) {
+        return TerrainInitEx(level_num, buffer, buffer_end, options, path, scene, group, 0x1000, 0xc00, 0x100);
     }
 
     void UpdatePlatinst(i32 index, void *object) {

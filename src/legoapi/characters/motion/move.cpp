@@ -536,6 +536,8 @@ i32 AnakinGreenSabre(GameObject_s *object);
 i32 SuperWeirdo(GameObject_s *object);
 extern i16 id_IMPERIALGUARD;
 extern i16 id_GAMORREANGUARD;
+extern i16 id_BAT;
+extern i16 id_WATTO;
 BOLT_s *FindIncomingBolt(GameObject_s *, i32, i32);
 PART_s *FindIncomingPart(void *, NUVEC *, f32, u32, f32);
 i32 NoLayerKill(GameObject_s *object);
@@ -595,6 +597,10 @@ void Move_VEHICLE(GameObject_s *);
 void CableCode(GameObject_s *, i32, f32);
 void KillParts(GameObject_s *, i32, i32, i32, f32, i32, u16 *);
 extern "C" i16 id_BASKETCANNON;
+static void ForceCode(GameObject_s *, i32, i32, i32);
+static void SelfDestructCode(GameObject_s *, i32);
+void JetPackCode(GameObject_s *, i32, i32, i32);
+void ChatterSfx(GameObject_s *, i32, f32);
 void KeepWeaponIn(GameObject_s *);
 void BigJumpCode(GameObject_s *);
 void InstantKillParts(GameObject_s *, i32, f32);
@@ -983,8 +989,46 @@ void Move_WALKER(GameObject_s *object) {
     GizmoBlowupCheckProximity(WORLD, object);
 }
 
-void Move_CRITTER(GameObject_s *) {
-    STUBBED();
+static inline void CheckFallLand(GameObject_s *object) {
+    if (object->character_context == -1 && object->field_0xe31 == 0 && object->apiobj.field_0x27d != 0 &&
+        object->apiobj.field_0x27e == 0 &&
+        (object->fall_animation_timer >= 0.2f || (object->movement_runtime_flags & 4) != 0) &&
+        ((object->movement_runtime_flags & 4) != 0 || object->pad_gamepad->input_magnitude == 0.0f ||
+         (static_cast<i8>(object->apiobj.flags_low) >= 0 &&
+          object->apiobj.character_model->model_data_b[0x59] != NULL)))
+        StartFallLand(object, -1);
+    if (object->apiobj.field_0x27d != 0)
+        object->movement_runtime_flags &= ~4;
+}
+
+void Move_CRITTER(GameObject_s *object) {
+    if ((object->field_0xe20 & 0x20) != 0)
+        return;
+    if (object->character_context == 0x17) {
+        ApplyGravity(object, NULL, 0.0f, 8.0f, NULL);
+    } else if (object->id == id_SNAKE && object->apiobj.field_0x27f == 9) {
+        applygravity_extrahoveroffset = -0.15f;
+        ApplyGravity(object, NULL, 0.01f, 8.0f, NULL);
+    } else {
+        if (object->id == id_BAT && object->apiobj.field_0x27f == 3)
+            applygravity_extrahoveroffset = 0.2f;
+        ApplyGravity(object, NULL, object->apiobj.character_data->game_character->field_0x28, 8.0f, NULL);
+    }
+    FlattenCode(object);
+    if (object->id != id_BAT)
+        SlideCode(object);
+    ForcePushed_MoveCode(object);
+    ForcedBackCode(object);
+    Tube_MoveCode(object, WORLD);
+    DeactivatedCode(object);
+    CheckFallLand(object);
+    if (object->id == id_SNAKE) {
+        if (object->snake_body == NULL)
+            CreateSnakeBody(object, 11);
+        if (object->snake_body != NULL)
+            UpdateSnakeBody(object);
+    }
+    GizmoBlowupCheckProximity(WORLD, object);
 }
 
 void Move_DEFAULT(GameObject_s *object) {
@@ -1090,12 +1134,73 @@ i32 MovePlayer_POD(GameObject_s *object) {
 
 void Move_CHARACTER(GameObject_s *object);
 
-void Move_GEONOSIAN(GameObject_s *) {
-    STUBBED();
+void Move_GEONOSIAN(GameObject_s *object) {
+    u32 pressed = object->pad_gamepad->buttons_pressed;
+    u32 action_mask = GAMEPAD_ACTION;
+    u32 jump_mask = GAMEPAD_JUMP;
+    u32 special_mask = GAMEPAD_SPECIAL;
+    KeepWeaponOut(object);
+    DropInOutCode(object);
+    if ((object->field_0xe20 & 0x20) != 0)
+        return;
+    ApplyGravity(object, NULL,
+                 object->field_0xe31 == 1 ? object->apiobj.character_data->game_character->field_0x28 : 0.0f,
+                 8.0f, NULL);
+    TakeHitCode(object);
+    FloatCode(object);
+    SlideCode(object);
+    FlattenCode(object);
+    ForcePushed_MoveCode(object);
+    ForcedBackCode(object);
+    Tube_MoveCode(object, WORLD);
+    DeactivatedCode(object);
+    PushCode(object, 1);
+    TakeOverCode(object, GAMEPAD_TAG & object->pad_gamepad->buttons_pressed);
+    JetPackCode(object, pressed & jump_mask, 0, 0);
+    JumpCode(object, 0, 0, 0x80, 0, 0, -1);
+    u32 special_pressed = pressed & special_mask;
+    GizPanel_MoveCode(WORLD, object, special_pressed);
+    HatMachine_MoveCode(WORLD, object, special_pressed);
+    Lever_MoveCode(WORLD, object);
+    if ((object->apiobj.character_data->model_flags & 0x40000) != 0)
+        Teleport_MoveCode(object, special_pressed);
+    GizmoBlowupCheckProximity(WORLD, object);
+    SpecialMove_VictimCode(object);
+    if ((object->apiobj.character_data->model_flags & 0x80) != 0 &&
+        (object->apiobj.character_data->game_character->flags_094[0] & 8) == 0)
+        ShootCode(object, pressed & action_mask, special_pressed, 0, 1, 0);
+    else if (object->id == id_WATTO)
+        ZapCode(object, pressed & action_mask, 0);
+    if (static_cast<i8>(object->apiobj.character_data->game_character->flags_094[0]) < 0)
+        CommunicateCode(object, special_pressed, 0);
+    CheckFallLand(object);
+    HeadMovement(object);
+    CloakMovement(object);
+    HairMovement(object);
+    if (object->field_0xe31 == 1)
+        PlaySfx("GeonWingsLp", &object->apiobj.collision_position);
 }
 
-void Move_HOVERDROID(GameObject_s *) {
-    STUBBED();
+void Move_HOVERDROID(GameObject_s *object) {
+    DropInOutCode(object);
+    FlattenCode(object);
+    if ((object->field_0xe20 & 0x20) != 0)
+        return;
+    ApplyGravity(object, NULL,
+                 object->character_context == 0x17 ? 0.0f : object->apiobj.character_data->game_character->field_0x28,
+                 8.0f, NULL);
+    Tube_MoveCode(object, WORLD);
+    DeactivatedCode(object);
+    FireCode(object, GAMEPAD_ACTION & object->pad_gamepad->buttons_pressed,
+             GAMEPAD_ACTION & object->pad_gamepad->buttons_held, 0.75f, 1);
+    if (object->pad_gamepad->input_magnitude > 0.0f && object->character_context != 0x17)
+        GameAudio_PlaySfxById(object->apiobj.character_data->game_character->sfx_engine,
+                             &object->apiobj.collision_position, 0, 0);
+    i32 special_pressed = GAMEPAD_SPECIAL & object->pad_gamepad->buttons_pressed;
+    if ((object->apiobj.character_data->model_flags & 0x10) != 0 &&
+        (object->movement_runtime_flags & 2) == 0 && Cheat_IsOn(0x20))
+        SelfDestructCode(object, special_pressed);
+    GizmoBlowupCheckProximity(WORLD, object);
 }
 
 void MovePlayerSpline(GameObject_s *) {
@@ -1719,8 +1824,29 @@ void Move_REPUBLICGUNSHIP(GameObject_s *object) {
     }
 }
 
-void Move_SUPERBATTLEDROID(GameObject_s *) {
-    STUBBED();
+void Move_SUPERBATTLEDROID(GameObject_s *object) {
+    DropInOutCode(object);
+    if ((object->field_0xe20 & 0x20) != 0)
+        return;
+    ApplyGravity(object, NULL, 0.0f, 8.0f, NULL);
+    TakeHitCode(object);
+    FlattenCode(object);
+    SlideCode(object);
+    ForcePushed_MoveCode(object);
+    ForcedBackCode(object);
+    Tube_MoveCode(object, WORLD);
+    DeactivatedCode(object);
+    WeaponOutCode(object);
+    WeaponInCode(object);
+    WeaponScalingCode(object);
+    ShootCode(object, GAMEPAD_ACTION & object->pad_gamepad->buttons_pressed,
+              GAMEPAD_SPECIAL & object->pad_gamepad->buttons_pressed, 1, 0, 0);
+    CheckFallLand(object);
+    i32 special_pressed = GAMEPAD_SPECIAL & object->pad_gamepad->buttons_pressed;
+    if ((object->apiobj.character_data->model_flags & 0x10) != 0 &&
+        (object->movement_runtime_flags & 2) == 0 && Cheat_IsOn(0x20))
+        SelfDestructCode(object, special_pressed);
+    GizmoBlowupCheckProximity(WORLD, object);
 }
 
 void MovePlayer_DIRECTIONAL(GameObject_s *object) {
@@ -3345,8 +3471,48 @@ void Move_ATAT(GameObject_s *object) {
     GizmoBlowupCheckProximity(WORLD, object);
 }
 
-void Move_JAWA(GameObject_s *) {
-    STUBBED();
+void Move_JAWA(GameObject_s *object) {
+    u32 pressed = object->pad_gamepad->buttons_pressed;
+    u32 held = object->pad_gamepad->buttons_held;
+    u32 action_mask = GAMEPAD_ACTION;
+    u32 tag_mask = GAMEPAD_TAG;
+    u32 jump_mask = GAMEPAD_JUMP;
+    u32 special_mask = GAMEPAD_SPECIAL;
+    DropInOutCode(object);
+    if ((object->field_0xe20 & 0x20) != 0)
+        return;
+    ApplyGravity(object, NULL, 0.0f, 8.0f, NULL);
+    TakeHitCode(object);
+    FlattenCode(object);
+    SlideCode(object);
+    ForcePushed_MoveCode(object);
+    ForcedBackCode(object);
+    Tube_MoveCode(object, WORLD);
+    DeactivatedCode(object);
+    PushCode(object, 1);
+    TakeOverCode(object, pressed & tag_mask);
+    if (static_cast<i8>(object->apiobj.flags_low) < 0)
+        ForceCode(object, 0, 0, 0);
+    JumpCode(object, pressed & jump_mask, held & jump_mask, 0, 0, 0, -1);
+    BuildIt_MoveCode(object);
+    u32 special_pressed = pressed & special_mask;
+    if ((object->apiobj.character_data->model_flags & 0x40000) != 0)
+        Teleport_MoveCode(object, special_pressed);
+    ZipUp_MoveCode(object, special_pressed);
+    if ((object->apiobj.character_data->model_flags & 0x100000) != 0)
+        Grapple_MoveCode(object);
+    Lever_MoveCode(WORLD, object);
+    ThermalDetonator_MoveCode(object);
+    HatMachine_MoveCode(WORLD, object, special_pressed);
+    GizPanel_MoveCode(WORLD, object, special_pressed);
+    WeaponOutCode(object);
+    WeaponInCode(object);
+    WeaponScalingCode(object);
+    ZapCode(object, pressed & action_mask, special_pressed);
+    CheckFallLand(object);
+    HeadMovement(object);
+    CloakMovement(object);
+    ChatterSfx(object, 0, 0.0f);
 }
 
 static bool JediHasAction(const GameObject_s *object, JEDI_ACTION action) {

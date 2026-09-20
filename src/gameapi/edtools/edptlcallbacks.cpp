@@ -33,6 +33,73 @@ static void cbPtlTorusMenu(eduimenu_s *, eduiitem_s *, u32);
 
 static i32 edptl_superscale = 1;
 
+extern "C" {
+    extern eduimenu_s *edpp_active_menu;
+    extern eduimenu_s *edptl_testdetail_menu;
+    extern eduimenu_s *edptl_detail_menu;
+    extern eduimenu_s *edptl_drawflag_menu;
+    extern eduimenu_s *edptl_group_menu;
+    extern eduimenu_s *edptl_switchtype_menu;
+    extern eduimenu_s *edptl_switch_menu;
+    extern eduimenu_s *dpadmodemenu;
+    extern eduimenu_s *sscalemenu;
+    extern eduimenu_s *edptl_scaleeffect_menu;
+    extern eduimenu_s *edptl_instancesettings_menu;
+    extern eduimenu_s *edptl_torus_menu;
+    extern eduimenu_s *collmenu;
+    extern eduimenu_s *edptl_damageflag_menu;
+    extern eduimenu_s *edptl_damage_menu;
+    extern eduimenu_s *edptl_soundcontrol_menu;
+    extern eduimenu_s *edptl_soundid_menu;
+    extern eduimenu_s *edptl_soundx_menu;
+    extern eduimenu_s *edptl_sounds_menu;
+    extern eduimenu_s *edptl_bounce_menu;
+    extern eduimenu_s *ptljibmenu;
+    extern eduimenu_s *ptlrotmenu;
+    extern eduimenu_s *ptlsizemenu;
+    extern eduimenu_s *edptl_ghost_menu;
+    extern eduimenu_s *ptlcutoffmenu;
+    extern eduimenu_s *emittimemenu;
+    extern eduimenu_s *etimemenu;
+    extern eduimenu_s *changegenratemenu;
+    extern eduimenu_s *ptlvaremitmenu;
+    extern eduimenu_s *ptlstartvelmenu;
+    extern eduimenu_s *ptlvarstartmenu;
+    extern eduimenu_s *ptlgravmenu;
+    extern eduimenu_s *ptlemitvelmenu;
+    extern eduimenu_s *ptlemitmenu;
+    extern eduimenu_s *textureselectmenu;
+    extern eduimenu_s *texturemenu;
+    extern eduimenu_s *ptlcolmenu;
+    extern eduimenu_s *ptlgsortmenu;
+    extern eduimenu_s *ptlreadoutmenu;
+    extern eduimenu_s *edptl_quickdel_menu;
+    extern eduimenu_s *edptl_orphanlist_menu;
+    extern eduimenu_s *ptlclipmenu;
+    extern eduimenu_s *messagemenu;
+    extern eduimenu_s *ptldatamenu;
+    extern eduimenu_s *ptltypemenu;
+    extern eduimenu_s *effectlistmenu;
+}
+
+static eduiitem_s *torus_env1_item;
+static eduiitem_s *torus_env2_item;
+static eduiitem_s *torus_env3_item;
+static eduiitem_s *coll_env_item;
+static edui_slider_s *grad_jib_x_freq_item;
+static edui_slider_s *grad_jib_x_amp_item;
+static edui_slider_s *grad_jib_y_freq_item;
+static edui_slider_s *grad_jib_y_amp_item;
+static eduiitem_s *grad_rot_item;
+static edui_slider_s *grad_rot_min_item;
+static edui_slider_s *grad_rot_max_item;
+static eduiitem_s *grad_size_w_item;
+static eduiitem_s *grad_size_h_item;
+static edui_slider_s *grad_size_min_item;
+static edui_slider_s *grad_size_max_item;
+static eduiitem_s *grad_item;
+static eduiitem_s *grad_alpha_item;
+
 // Particle-list editor UI/menu callback stubs (static, internal linkage).
 
 static void edptlcbApplyStarPoints(eduimenu_s *, eduiitem_s *, u32) {
@@ -40,11 +107,13 @@ static void edptlcbApplyStarPoints(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 static void edptlcbCancelGhostMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_ghost_menu);
+    edptl_ghost_menu = NULL;
 }
 
 static void edptlcbCancelGroupMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_group_menu);
+    edptl_group_menu = NULL;
 }
 
 static void edptlcbChangeCSDisable(eduimenu_s *, eduiitem_s *, u32) {
@@ -68,23 +137,28 @@ static void edptlcbApplyScaleFactor(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 static void edptlcbCancelBounceMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_bounce_menu);
+    edptl_bounce_menu = NULL;
 }
 
 static void edptlcbCancelDetailMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_detail_menu);
+    edptl_detail_menu = NULL;
 }
 
 static void edptlcbCancelSoundXMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_soundx_menu);
+    edptl_soundx_menu = NULL;
 }
 
 static void edptlcbCancelSoundsMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_sounds_menu);
+    edptl_sounds_menu = NULL;
 }
 
 static void edptlcbCancelSwitchMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_switch_menu);
+    edptl_switch_menu = NULL;
 }
 
 static void edptlcbSoundControlMenu(eduimenu_s *, eduiitem_s *, u32) {
@@ -100,7 +174,8 @@ static void edptlcbApplyBounceOffset(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 static void edptlcbCancelSoundIDMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_soundid_menu);
+    edptl_soundid_menu = NULL;
 }
 
 static void edptlcbSetDebrisThinning(eduimenu_s *, eduiitem_s *, u32) {
@@ -108,11 +183,13 @@ static void edptlcbSetDebrisThinning(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 static void edptlcbCancelDpadModeMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(dpadmodemenu);
+    dpadmodemenu = NULL;
 }
 
 static void edptlcbCancelDrawflagMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_drawflag_menu);
+    edptl_drawflag_menu = NULL;
 }
 
 static void edptlcbJumpToGameLocation(eduimenu_s *, eduiitem_s *, u32) {
@@ -124,27 +201,33 @@ static void edptlChangeRepeatBoxXZLock(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 static void edptlcbCancelClipboardMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptlclipmenu);
+    ptlclipmenu = NULL;
 }
 
 static void edptlcbCancelOrphanListMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_orphanlist_menu);
+    edptl_orphanlist_menu = NULL;
 }
 
 static void edptlcbCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_switchtype_menu);
+    edptl_switchtype_menu = NULL;
 }
 
 static void edptlcbCancelTestDetailMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_testdetail_menu);
+    edptl_testdetail_menu = NULL;
 }
 
 static void edptlcbCancelScaleEffectMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_scaleeffect_menu);
+    edptl_scaleeffect_menu = NULL;
 }
 
 static void edptlcbCancelSoundControlMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_soundcontrol_menu);
+    edptl_soundcontrol_menu = NULL;
 }
 
 // Particle editor UI/menu callbacks.
@@ -516,67 +599,99 @@ static void cbPtlToggleDynamicPriority(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 static void cbPtlCancel(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    edpp_active_menu = NULL;
 }
 
 static void cbPtlCancelColMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptlcolmenu);
+    ptlcolmenu = NULL;
+    grad_item = NULL;
+    grad_alpha_item = NULL;
 }
 
 static void cbPtlCancelJibMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptljibmenu);
+    ptljibmenu = NULL;
+    grad_jib_x_freq_item = NULL;
+    grad_jib_x_amp_item = NULL;
+    grad_jib_y_freq_item = NULL;
+    grad_jib_y_amp_item = NULL;
 }
 
 static void cbPtlCancelRotMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptlrotmenu);
+    ptlrotmenu = NULL;
+    grad_rot_item = NULL;
+    grad_rot_min_item = NULL;
+    grad_rot_max_item = NULL;
 }
 
 static void cbCancelMessageMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(messagemenu);
+    messagemenu = NULL;
 }
 
 static void cbPtlCancelCollMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(collmenu);
+    collmenu = NULL;
+    coll_env_item = NULL;
 }
 
 static void cbPtlCancelDataMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptldatamenu);
+    ptldatamenu = NULL;
 }
 
 static void cbPtlCancelEmitMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptlemitmenu);
+    ptlemitmenu = NULL;
 }
 
 static void cbPtlCancelGravMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptlgravmenu);
+    ptlgravmenu = NULL;
 }
 
 static void cbPtlCancelSizeMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptlsizemenu);
+    ptlsizemenu = NULL;
+    grad_size_w_item = NULL;
+    grad_size_h_item = NULL;
+    grad_size_min_item = NULL;
+    grad_size_max_item = NULL;
 }
 
 static void cbPtlCancelTypeMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptltypemenu);
+    ptltypemenu = NULL;
 }
 
 static void cbPtlCancelGSortMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptlgsortmenu);
+    ptlgsortmenu = NULL;
 }
 
 static void cbPtlCancelTorusMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_torus_menu);
+    edptl_torus_menu = NULL;
+    torus_env1_item = NULL;
+    torus_env2_item = NULL;
+    torus_env3_item = NULL;
 }
 
 static void cbPtlCancelCutOffMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptlcutoffmenu);
+    ptlcutoffmenu = NULL;
 }
 
 static void cbPtlCancelDamageMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_damage_menu);
+    edptl_damage_menu = NULL;
 }
 
 static void cbPtlCancelSScaleMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(sscalemenu);
+    sscalemenu = NULL;
 }
 
 static void cbCancelChangeNameMenu(eduimenu_s *, eduimenu_s *) {
@@ -584,53 +699,70 @@ static void cbCancelChangeNameMenu(eduimenu_s *, eduimenu_s *) {
 }
 
 static void cbCancelEffectListMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(effectlistmenu);
+    effectlistmenu = NULL;
 }
 
 static void cbPtlCancelEmitVelMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptlemitvelmenu);
+    ptlemitvelmenu = NULL;
 }
 
 static void cbPtlCancelReadoutMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptlreadoutmenu);
+    ptlreadoutmenu = NULL;
 }
 
 static void cbPtlCancelTextureMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    if (textureselectmenu) {
+        eduiMenuDestroy(textureselectmenu);
+        textureselectmenu = NULL;
+    }
+    eduiMenuDestroy(texturemenu);
+    texturemenu = NULL;
 }
 
 static void cbPtlCancelVarEmitMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptlvaremitmenu);
+    ptlvaremitmenu = NULL;
 }
 
 static void cbCancelChangeETimeMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(etimemenu);
+    etimemenu = NULL;
 }
 
 static void cbPtlCancelEmitTimeMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(emittimemenu);
+    emittimemenu = NULL;
 }
 
 static void cbPtlCancelStartVelMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptlstartvelmenu);
+    ptlstartvelmenu = NULL;
 }
 
 static void cbPtlCancelVarStartMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(ptlvarstartmenu);
+    ptlvarstartmenu = NULL;
 }
 
 static void cbCancelChangeGenRateMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(changegenratemenu);
+    changegenratemenu = NULL;
 }
 
 static void cbPtlCancelDamageFlagMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_damageflag_menu);
+    edptl_damageflag_menu = NULL;
 }
 
 static void cbPtlCancelQuickDeleteMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_quickdel_menu);
+    edptl_quickdel_menu = NULL;
 }
 
 static void cbPtlCancelInstanceSettingsMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+    eduiMenuDestroy(edptl_instancesettings_menu);
+    edptl_instancesettings_menu = NULL;
 }

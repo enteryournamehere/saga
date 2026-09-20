@@ -8,6 +8,7 @@
 #include "gameapi/edtools/edcam.h"
 #include "nu2api/nucore/nupad.h"
 #include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/nutrig.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/numath/numtx.h"
@@ -179,8 +180,78 @@ static __used__ void pathEditorDrawPath(EDAIPATH_s *, i32) {
     STUBBED();
 }
 
-static __used__ void TestPointPathCheck(nuvec_s *, EDAIPATHNODE_s *, EDAIPATHNODE_s *, f32 *, f32 *, i32 *, f32) {
-    STUBBED();
+static __used__ i32 TestPointPathCheck(nuvec_s *point, EDAIPATHNODE_s *first, EDAIPATHNODE_s *second,
+                                     f32 *fraction, f32 *width, i32 *angle, f32 tolerance) {
+    AIPATH path;
+    AIPATHCNX connection;
+    AIPATHNODE nodes[2];
+    AIPATHINFO info;
+    memset(&path, 0, sizeof(path));
+    memset(&connection, 0, sizeof(connection));
+    memset(nodes, 0, sizeof(nodes));
+    memset(&info, 0, sizeof(info));
+    nodes[0].position = first->position;
+    nodes[0].radius = first->radius + tolerance;
+    nodes[0].min_height = first->position.y + first->lower_height - tolerance;
+    nodes[0].max_height = first->position.y + first->upper_height + tolerance;
+    nodes[1].position = second->position;
+    nodes[1].radius = second->radius + tolerance;
+    nodes[1].min_height = second->position.y + second->lower_height - tolerance;
+    nodes[1].max_height = second->position.y + second->upper_height + tolerance;
+    path.nodes = nodes;
+    path.connections = &connection;
+    path.node_count = 2;
+    path.connection_count = 1;
+    connection.node_indices[0] = 1;
+    NUVEC horizontal;
+    f32 distance = NuVecXZDist(&first->position, &second->position, &horizontal);
+    connection.horizontal_distance = distance != 0.0f ? distance : 0.0001f;
+    connection.rotation = (i16)(NuAtan2(horizontal.x, horizontal.z) * 10430.378f);
+    if (!WithinConnection(nullptr, point, &path, &connection, 1, nullptr, 0xff, 0xff, &info, 0.0f, 0)) {
+        return 0;
+    }
+
+    NUVEC direction;
+    NuVecSub(&direction, &second->position, &first->position);
+    distance = NuVecMag(&direction);
+    NuVecScale(&direction, &direction, 1.0f / distance);
+    NUVEC relative;
+    NuVecSub(&relative, point, &first->position);
+    f32 along = NuVecDot(&direction, &relative);
+    *fraction = along / distance;
+    NUVEC nearest;
+    f32 radius;
+    if (*fraction <= 0.0f) {
+        nearest = first->position;
+        radius = first->radius;
+    } else if (*fraction >= 1.0f) {
+        nearest = second->position;
+        radius = second->radius;
+    } else {
+        NuVecScale(&nearest, &direction, along);
+        NuVecAdd(&nearest, &nearest, &first->position);
+        radius = second->radius * *fraction + first->radius * (1.0f - *fraction);
+    }
+    NUVEC radial;
+    f32 distance_squared = NuVecXZDistSqr(&nearest, point, &radial);
+    radius += tolerance;
+    *angle = (i32)(NuAtan2(direction.x, direction.z) * 10430.378f);
+    NuVecRotateY(&relative, &relative, -*angle);
+    if (*fraction <= 0.0f) {
+        f32 beyond = -*fraction * distance;
+        *width = distance_squared - beyond * beyond;
+        *width = NuFsqrt(*width) / radius;
+    } else if (*fraction >= 1.0f) {
+        f32 beyond = (*fraction - 1.0f) * distance;
+        *width = distance_squared - beyond * beyond;
+        *width = NuFsqrt(*width) / radius;
+    } else {
+        *width = NuFsqrt(distance_squared) / radius;
+    }
+    if (relative.x < 0.0f) {
+        *width = -*width;
+    }
+    return 1;
 }
 
 static __used__ void pathEditor_cbCreatePath(eduimenu_s *, eduiitem_s *, u32) {
@@ -624,12 +695,59 @@ extern "C" {
         return aieditor->current_path;
     }
 
-    void pathEditor_OnPathCheck(void) {
-        STUBBED();
+    void pathEditor_OnPathCheck(nuvec_s *point, EDAIPATHCHECK_s *result, EDAIPATH_s *path, f32 tolerance) {
+        u8 checked[255][32];
+        memset(checked, 0, sizeof(checked));
+        memset(result, 0, sizeof(*result));
+        if (path == nullptr) {
+            return;
+        }
+        EDAIPATHNODE_s *node = (EDAIPATHNODE_s *)NuLinkedListGetHead(&path->nodes);
+        while (node != nullptr) {
+            for (i32 index = 0; index < 8; ++index) {
+                EDAIPATHNODE_s *other = node->connections[index].node;
+                if (other != nullptr && !(checked[node->index][other->index / 8] & (1 << (other->index % 8)))) {
+                    checked[node->index][other->index / 8] |= 1 << (other->index % 8);
+                    checked[other->index][node->index / 8] |= 1 << (node->index % 8);
+                    f32 fraction;
+                    f32 width;
+                    i32 angle;
+                    if (TestPointPathCheck(point, node, other, &fraction, &width, &angle, tolerance)) {
+                        result->on_path = 1;
+                        result->path = path;
+                        result->first = node;
+                        result->second = node->connections[index].node;
+                        result->fraction = fraction;
+                        result->width = width;
+                        result->angle = angle;
+                    }
+                }
+            }
+            node = (EDAIPATHNODE_s *)NuLinkedListGetNext(&path->nodes, &node->link);
+        }
     }
 
-    void pathEditor_QuickOnPathCheck(void) {
-        STUBBED();
+    void pathEditor_QuickOnPathCheck(nuvec_s *point, EDAIPATHCHECK_s *previous, EDAIPATHCHECK_s *result) {
+        result->on_path = 0;
+        if (TestPointPathCheck(point, previous->first, previous->second, &result->fraction, &result->width,
+                              &result->angle, 0.0f)) {
+            result->on_path = 1;
+            return;
+        }
+        for (i32 index = 0; index < 8; ++index) {
+            EDAIPATHNODE_s *other = previous->first->connections[index].node;
+            if (other != nullptr && TestPointPathCheck(point, other, previous->first, &result->fraction,
+                                                       &result->width, &result->angle, 0.0f)) {
+                result->on_path = 1;
+                return;
+            }
+            other = previous->second->connections[index].node;
+            if (other != nullptr && TestPointPathCheck(point, previous->second, other, &result->fraction,
+                                                       &result->width, &result->angle, 0.0f)) {
+                result->on_path = 1;
+                return;
+            }
+        }
     }
 
     void pathEditor_UpdateNodesOnPlatforms(void) {

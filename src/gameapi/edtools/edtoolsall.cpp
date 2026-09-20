@@ -1736,10 +1736,18 @@ void EdRefPlaceable::SetMemberData(void *object, i32 type, void *data, i32, i16 
         placeable->attributes = *static_cast<i32 *>(data);
         break;
     case static_cast<i32>(0x80000003):
-        placeable->SetName(NuStrLen(static_cast<char *>(data)) > 0 ? static_cast<char *>(data) : NULL);
+        if (NuStrLen(static_cast<char *>(data)) > 0) {
+            placeable->SetName(static_cast<char *>(data));
+        } else {
+            placeable->SetName(NULL);
+        }
         break;
     case static_cast<i32>(0x80000005):
-        placeable->params.Set(NuStrLen(static_cast<char *>(data)) > 0 ? static_cast<char *>(data) : NULL);
+        if (NuStrLen(static_cast<char *>(data)) > 0) {
+            placeable->params.Set(static_cast<char *>(data));
+        } else {
+            placeable->params.Set(NULL);
+        }
         break;
     case static_cast<i32>(0x80000006):
         placeable->SetInitialTransform(static_cast<VuMtx *>(data));

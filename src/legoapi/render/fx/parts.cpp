@@ -126,7 +126,8 @@ extern "C" {
     void DebrisParticleMomentum(i32, f32, f32, f32);
     void AddFiniteShotDebrisEffect2(i32 *, i32, NUVEC *, NUVEC *, NUVEC *, i32);
     void AddVariableShotDebrisEffectMtx3(i32, NUVEC *, NUVEC *, i32, NUMTX *, NUMTX *);
-    void AddVariableShotDebrisEffectMtx4(i32, NUVEC *, NUVEC *, i32, NUMTX *, NUMTX *, i16, u8);
+    void DebrisSetUserData(i32, void *);
+    i32 CreateScaledPARTEffect(i32, f32);
     extern i32 debris_suspended;
     extern f32 debris_thinning_level;
     extern i32 forced_debris_thinning;
@@ -179,7 +180,7 @@ extern "C" {
     i32 NuCameraClipTestExtentsAxisAligned(NUVEC *, NUVEC *, f32);
     void NuVecAddScale(NUVEC *, NUVEC *, NUVEC *, f32);
     void AddVariableShotDebrisEffectTimed3(i32, NUVEC *, NUVEC *, i32, f32, NUMTX *, NUMTX *);
-    void AddVariableShotDebrisEffectTimed5(i32, NUVEC *, NUVEC *, NUVEC *, i32, f32, NUMTX *, NUMTX *, i16, u8);
+    void AddVariableShotDebrisEffectTimed1(i32, NUVEC *, i32, f32, i16, i16, NUMTX *);
 }
 
 void AddDebrisEffectToStack(debkeydatatype_s *);
@@ -788,8 +789,9 @@ extern "C" {
         }
     }
 
-    void AddFiniteShotDebrisEffectUserData(void) {
-        STUBBED();
+    void AddFiniteShotDebrisEffectUserData(i32 *handle, i32 effect, NUVEC *position, i32 count, void *user_data) {
+        AddFiniteShotDebrisEffect(handle, effect, position, count);
+        DebrisSetUserData(*handle, user_data);
     }
 
     i32 AddFiniteShotPART(i32 effect, NUVEC *position, i32 count) {
@@ -986,8 +988,9 @@ extern "C" {
         return part;
     }
 
-    void AddRotatedDebrisEffect(void) {
-        STUBBED();
+    void AddRotatedDebrisEffect(i32 *handle, i32 effect, f32 x, f32 y, f32 z, i16 rotation_x, i16 rotation_y) {
+        AddDebrisEffect(handle, effect, x, y, z);
+        DebrisEmitterOrientation(*handle, rotation_x, rotation_y, 0);
     }
 
     void AddScaledFiniteShotDebrisEffect(i32 *key, i32 effect, NUVEC *position, NUVEC *orientation, NUVEC *momentum,
@@ -998,12 +1001,19 @@ extern "C" {
         }
     }
 
-    void AddScaledFiniteShotPART(void) {
-        STUBBED();
+    i32 AddScaledFiniteShotPART(i32 effect, NUVEC *position, i32 count, f32 scale) {
+        i32 scaled = CreateScaledPARTEffect(effect, scale);
+        if (scaled != -1)
+            AddFiniteShotPART(scaled, position, count);
+        return scaled;
     }
 
-    void AddScaledVariableShotDebrisEffect(void) {
-        STUBBED();
+    i32 AddScaledVariableShotDebrisEffect(i32 effect, NUVEC *position, i32 count, f32 time, i16 z_rotation,
+                                         i16 y_rotation, f32 scale) {
+        i32 scaled = CreateScaledEffect(effect, scale);
+        if (scaled != -1)
+            AddVariableShotDebrisEffectTimed1(scaled, position, count, time, z_rotation, y_rotation, NULL);
+        return scaled;
     }
 
     void AddVariableShotDebrisEffectTimed1(i32, NUVEC *, i32, f32, i16, i16, NUMTX *);
@@ -1027,20 +1037,40 @@ extern "C" {
         return scaled_effect;
     }
 
-    void AddScaledVariableShotDebrisEffect3(void) {
-        STUBBED();
+    i32 AddScaledVariableShotDebrisEffect3(i32 effect, NUVEC *position, NUVEC *momentum, i32 count, f32 time,
+                                          NUMTX *emitter_orientation, NUMTX *particle_orientation, f32 scale) {
+        i32 scaled = CreateScaledEffect(effect, scale);
+        if (scaled != -1)
+            AddVariableShotDebrisEffectTimed3(scaled, position, momentum, count, time, emitter_orientation,
+                                              particle_orientation);
+        return scaled;
     }
 
-    void AddScaledVariableShotDebrisEffect4(void) {
-        STUBBED();
+    i32 AddScaledVariableShotDebrisEffect4(i32 effect, NUVEC *position, NUVEC *momentum, i32 count, i32 time,
+                                          NUMTX *emitter_orientation, NUMTX *particle_orientation, u16 priority,
+                                          i8 flags, f32 scale) {
+        i32 scaled = CreateScaledEffect(effect, scale);
+        if (scaled != -1)
+            AddVariableShotDebrisEffectTimed5(scaled, position, momentum, NULL, count, time, emitter_orientation,
+                                              particle_orientation, priority, flags);
+        return scaled;
     }
 
-    void AddScaledVariableShotDebrisEffect5(void) {
-        STUBBED();
+    i32 AddScaledVariableShotDebrisEffect5(i32 effect, NUVEC *position, NUVEC *momentum, NUVEC *position_delta,
+                                          i32 count, f32 time, NUMTX *emitter_orientation, NUMTX *particle_orientation,
+                                          u16 priority, i8 flags, f32 scale) {
+        i32 scaled = CreateScaledEffect(effect, scale);
+        if (scaled != -1)
+            AddVariableShotDebrisEffectTimed5(scaled, position, momentum, position_delta, count, time,
+                                              emitter_orientation, particle_orientation, priority, flags);
+        return scaled;
     }
 
-    void AddScaledVariableShotPARTEffect(void) {
-        STUBBED();
+    void AddScaledVariableShotPARTEffect(i32 effect, NUVEC *position, f32 rate, f32 time, NUMTX *orientation,
+                                         f32 scale) {
+        i32 scaled = CreateScaledPARTEffect(effect, scale);
+        if (scaled != -1)
+            AddVariableShotPARTEffect(scaled, position, rate, time, orientation);
     }
 
     void AddVariableShotDebrisEffectMtx(i32, NUVEC *, i32, i16, i16, NUMTX *);
@@ -1079,8 +1109,8 @@ extern "C" {
     }
 
     void AddVariableShotDebrisEffectMtx4(i32 effect, NUVEC *position, NUVEC *momentum, i32 count,
-                                         NUMTX *emitter_orientation, NUMTX *particle_orientation, i16 priority,
-                                         u8 flags) {
+                                         NUMTX *emitter_orientation, NUMTX *particle_orientation, u16 priority,
+                                         i8 flags) {
         AddVariableShotDebrisEffectTimed5(effect, position, momentum, NULL, count * 30, timeincrement,
                                           emitter_orientation, particle_orientation, priority, flags);
     }
@@ -1130,7 +1160,7 @@ extern "C" {
 
     void AddVariableShotDebrisEffectTimed5(i32 effect_index, NUVEC *position, NUVEC *momentum, NUVEC *position_delta,
                                            i32 count, f32 duration, NUMTX *emitter_orientation,
-                                           NUMTX *particle_orientation, i16 render_priority, u8 timed_flags) {
+                                           NUMTX *particle_orientation, u16 render_priority, i8 timed_flags) {
         if (debris_suspended != 0 || effect_index < 1 || EDPP_MAX_TYPES <= effect_index || debtab == NULL ||
             debtab[effect_index] == NULL || count < 1) {
             return;
@@ -1336,7 +1366,7 @@ extern "C" {
         key->previous_allocated_chunk_count = key->allocated_chunk_count;
     }
 
-    void AddVariableShotPARTEffect(void) {
+    void AddVariableShotPARTEffect(i32, NUVEC *, f32, f32, NUMTX *) {
         STUBBED();
     }
 
@@ -1433,7 +1463,6 @@ extern "C" {
     }
 
     void CheckPartCount(void) {
-        STUBBED();
     }
 
     void DrawParts(i32 keep_offscreen) {
@@ -1479,8 +1508,31 @@ extern "C" {
         }
     }
 
-    void FindPart(void) {
-        STUBBED();
+    PART_s *FindPart(NUVEC *position, i32 player, GameObject_s *owner) {
+        if (Part == NULL)
+            return NULL;
+        PART_s *result = NULL;
+        PART_s *part = Part;
+        if (position != NULL) {
+            f32 nearest = 1000000.0f;
+            for (i32 i = 0; i < MAXPARTS; ++i, ++part) {
+                if ((part->active & 1) != 0 && (player == -1 || part->force_player_mask == player) &&
+                    (owner == NULL || part->owner == owner)) {
+                    f32 distance = NuVecDistSqr(position, &part->position, NULL);
+                    if (distance < nearest) {
+                        nearest = distance;
+                        result = part;
+                    }
+                }
+            }
+        } else {
+            for (i32 i = 0; i < MAXPARTS; ++i, ++part) {
+                if ((part->active & 1) != 0 && (player == -1 || part->force_player_mask == player) &&
+                    (owner == NULL || part->owner == owner))
+                    return part;
+            }
+        }
+        return result;
     }
 
     void SetPartRTLSet(usize rtl_set) {
@@ -1491,12 +1543,19 @@ extern "C" {
         return 0x80;
     }
 
-    void GetPartCount(void) {
-        STUBBED();
+    i32 GetPartCount(void) {
+        i32 count = 0;
+        for (i32 i = 0; i < 40; ++i) {
+            if (part_emits[i].effect_id != -1)
+                ++count;
+        }
+        return count;
     }
 
-    void GetPartName(void) {
-        STUBBED();
+    char *GetPartName(i32 index) {
+        if (part_types[index].name[0] == 0)
+            return NULL;
+        return part_types[index].name;
     }
 
     part_type_s part_types[128];
@@ -1591,20 +1650,32 @@ extern "C" {
         part->field_124[4] = static_cast<i32>((NuRandFloatSeeded(&partseed) * 2.0f - 1.0f) * 65536.0f);
     }
 
-    void PARTEmitterOrientation(void) {
-        STUBBED();
+    void PARTEmitterOrientation(i32 index, i16 x_rotation, i16 y_rotation, i16 z_rotation) {
+        if (index != -1 && part_emits[index].effect_id != -1) {
+            part_emits[index].rotation_30 = z_rotation;
+            part_emits[index].rotation_2e = y_rotation;
+            part_emits[index].rotation_2c = x_rotation;
+        }
     }
 
-    void PARTEmitterPos(void) {
-        STUBBED();
+    void PARTEmitterPos(i32 index, f32 x, f32 y, f32 z) {
+        if (index != -1 && part_emits[index].effect_id != -1) {
+            part_emits[index].position.x = x;
+            part_emits[index].position.y = y;
+            part_emits[index].position.z = z;
+        }
     }
 
-    void PARTGetTotalOffTime(void) {
-        STUBBED();
+    f32 PARTGetTotalOffTime(i32 index) {
+        if (index < 0)
+            return 0.0f;
+        return part_types[index].emission_pause + part_types[index].emission_pause_random;
     }
 
-    void PARTGetTotalOnTime(void) {
-        STUBBED();
+    f32 PARTGetTotalOnTime(i32 index) {
+        if (index < 0)
+            return 0.0f;
+        return part_types[index].emission_period + part_types[index].emission_period_random;
     }
 
     i32 PARTLookupType(char *name) {

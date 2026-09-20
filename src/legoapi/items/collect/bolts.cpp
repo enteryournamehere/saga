@@ -1489,7 +1489,6 @@ extern "C" {
     void NewTerrHitInfo(u8 *);
     void NewRayCastGetImpactNormal(NUVEC *);
     i32 NewShadowOnPlatform();
-    void AddVariableShotDebrisEffectTimed5(i32, NUVEC *, NUVEC *, NUVEC *, i32, f32, NUMTX *, NUMTX *, i16, u8);
 }
 f32 GameShadow(GameObject_s *, NUVEC *, f32, i32);
 f32 FindReflectionNoPlatforms(NUVEC *);

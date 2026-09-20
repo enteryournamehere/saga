@@ -359,7 +359,10 @@ struct ADDGAMEMSG {
     f32 field_0x20;                     // 0x20
     u16 field_0x24;                     // 0x24
     i16 icon;                           // 0x26
-    nuvec_s *extra_position;            // 0x28
+    union {
+        nuvec_s *extra_position;
+        nuhspecial_s *special;
+    };                                 // 0x28
     u32 score;                          // 0x2c
     f32 field_0x30;                     // 0x30
     f32 field_0x34;                     // 0x34
@@ -374,6 +377,7 @@ struct ADDGAMEMSG {
     u8 field_0x4f;
 };
 DECOMP_ASSERT(sizeof(ADDGAMEMSG) == 0x50, "ADDGAMEMSG size");
+DECOMP_ASSERT(offsetof(ADDGAMEMSG, special) == 0x28, "game message special offset");
 typedef ADDGAMEMSG ADDGAMEMSG_ALIGNED16 __attribute__((aligned(16)));
 struct PARTLIGHTSOURCE_s {
     u8 reserved_00[0x78];
@@ -1344,7 +1348,9 @@ DECOMP_ASSERT(offsetof(GAMECUTSCENES_s, cutscene) == 0x1c, "GAMECUTSCENES_s acti
 struct GAMEMESSAGE_s {
     char pad_0x00[0x88];
     NUVEC target_position;
-    char pad_0x94[0xe6 - 0x94];
+    char pad_0x94[0xe2 - 0x94];
+    u16 rotation_y; // 0xe2
+    char pad_0xe4[2];
     u16 icon;   // 0xe6
     u32 color1; // 0xe8
     u32 color2; // 0xec
@@ -1361,6 +1367,7 @@ struct GAMEMESSAGE_s {
 };
 DECOMP_ASSERT(sizeof(GAMEMESSAGE_s) == 0x114, "GAMEMESSAGE_s size");
 static_assert(offsetof(GAMEMESSAGE_s, target_position) == 0x88, "game message target position offset");
+DECOMP_ASSERT(offsetof(GAMEMESSAGE_s, rotation_y) == 0xe2, "game message rotation offset");
 static_assert(offsetof(GAMEMESSAGE_s, player_index) == 0xfd, "game message player index offset");
 // Rumble state packet embedded in GAMEPAD_s (20 bytes; floats driven by
 // NuSound3UpdateRumble / UpdateRumble).

@@ -10,6 +10,9 @@
 #include "gameapi/edtools/edpart_internal.h"
 #include "gameapi/edtools/edpp_internal.h"
 #include "gameapi/edtools/edstubs.h"
+#include "gameapi/gui/apimenu.h"
+#include "legoapi/menus/core/gamemessages.h"
+#include "legoapi/menus/core/panel.h"
 #include "legoapi/render/fx.h"
 #include "legoapi/render/core/terrain.h"
 #include "legoapi/render/core/rtl.h"
@@ -17,6 +20,7 @@
 #include "legoapi/gizmos/fx/gizmopickups.h"
 #include "legoapi/gizmo/object/gizmopickup.h"
 #include "legoapi/gizmo/object/giztorpedo.h"
+#include "legoapi/gizmo/object/gizmoblowups.h"
 #include "legoapi/items/collect/torpedo.h"
 #include "legoapi/world/world.h"
 #include "legoapi/world/world_shared.h"
@@ -30,6 +34,7 @@
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/world/levels/levels.h"
 #include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nurand.h"
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/numath/nutrig.h"
@@ -515,24 +520,66 @@ static __used__ void PartExtra_PurpleCoin(PART_s *part) {
         AddVariableShotDebrisEffect(effect, &part->position, count, 0, 0);
 }
 
-static __used__ void PowerUp_DrawPart(PART_s *) {
-    STUBBED();
+void PowerUp_Particles(WORLDINFO_s *, NUVEC *);
+
+static __used__ i32 PowerUp_DrawPart(PART_s *part) {
+    i32 draw = PartDraw_Flickerer(part);
+    if (draw && WORLD->lev_objs[0xd1].active != 0) {
+        NUMTX_ALIGNED16 matrix = part->transform;
+        NuSpecialDrawAt(&WORLD->lev_objs[0xd1].special, &matrix);
+    }
+    return draw;
 }
 
-static __used__ void PowerUp_ImpactPart(PART_s *) {
-    STUBBED();
+static __used__ void PowerUp_ImpactPart(PART_s *part) {
+    f32 scale = AreaPickupScale;
+    f32 maximum = 2.5f * scale;
+    f32 speed = NuVecMag(&part->velocity);
+    f32 volume;
+    if (speed >= maximum) {
+        volume = 1.0f;
+    } else {
+        f32 minimum = 0.1f * scale;
+        if (speed < minimum)
+            return;
+        volume = (speed - minimum) / (maximum - minimum);
+    }
+    if (volume > 0.0f)
+        PlaySfxAndSetVolume("Gungan_BlueOrbBounce", &part->position, volume);
 }
 
-static __used__ void PowerUp_UpdatePart(PART_s *) {
-    STUBBED();
+static __used__ void PowerUp_UpdatePart(PART_s *part) {
+    NUVEC position = part->position;
+    part->rotation_y = NuFmod(GameTimer.time_elapsed, 4.0f) * 0.25f * 65536.0f;
+    NuMtxSetRotationY(&part->transform, part->rotation_y);
+    NuMtxTranslate(&part->transform, &position);
+    PowerUp_Particles(WorldInfo_CurrentlyActive(), &position);
+    PlaySfx("Grv_GuardWeaponLp", &position);
 }
 
-static __used__ void PowerUp_EndMsg(GAMEMESSAGE_s *) {
-    STUBBED();
+static __used__ void PowerUp_EndMsg(GAMEMESSAGE_s *message) {
+    GameAudio_PlaySfx(0x26, NULL, 0, 0);
+    if (FindGameMsgsWithID(7, 0, message->player_index, message)) {
+        NUVEC position;
+        position.x = message->player_index == 0 ? -ICONX : ICONX;
+        position.y = PowerUp_GetPanelY(message->player_index) + STATSPOSY;
+        position.z = 1.0f;
+        ADDGAMEMSG_ALIGNED16 add = AddGameMsg_Default;
+        add.icon = 0x35;
+        add.special = &WORLD->lev_objs[0x35].special;
+        add.flags = 0x20;
+        add.position = &position;
+        add.scale = 0.6f;
+        add.target_scale = 0.0f;
+        add.duration = 0.3f;
+        AddGameMsg(&add);
+    }
 }
 
-static __used__ void PowerUp_UpdateMsg(GAMEMESSAGE_s *) {
-    STUBBED();
+static __used__ void PowerUp_UpdateMsg(GAMEMESSAGE_s *message) {
+    message->rotation_y += 16384.0f * FRAMETIME;
+    if (static_cast<u8>(message->player_index) <= 1)
+        message->target_position.y = PowerUp_GetPanelY(message->player_index) + STATSPOSY;
 }
 
 static __used__ i32 SpeederPart_Draw(PART_s *) {
@@ -2794,8 +2841,17 @@ void PartUpdate_Heart(PART_s *part) {
     NuMtxTranslate(&part->transform, &position);
 }
 
-void Asteroid_PartKill(PART_s *, i32) {
-    STUBBED();
+void Asteroid_PartKill(PART_s *part, i32 reason) {
+    AddGameDebris(WORLD->debris_sys, 0x5d, &part->position);
+    AddGameDebris(WORLD->debris_sys, 0x5e, &part->position);
+    AddGameDebris(WORLD->debris_sys, 0x5f, &part->position);
+    AddPartDebris(WORLD->part_debris_sys, 4, &part->position);
+    if (part->force_player_mask == 1) {
+        if (reason == 4 || reason == 5)
+            AddMiscPickups(&part->position, reason - 4, 1000, 0);
+    } else {
+        AddMiscPickups(&part->position, -1, 0, 1);
+    }
 }
 
 void PartStop_Flickerer(PART_s *part) {
@@ -2850,12 +2906,26 @@ void PartKill_ForceThrow(PART_s *part, i32) {
     PlaySfx("Explode1", &part->position);
 }
 
-void PartImpact_Basketball(PART_s *) {
-    STUBBED();
+void PartImpact_Basketball(PART_s *part) {
+    f32 speed = NuVecMag(&part->velocity);
+    f32 volume = 0.0f;
+    if (speed >= 2.5f)
+        volume = 1.0f;
+    else if (speed >= 0.1f)
+        volume = (speed - 0.1f) / 2.4f;
+    if (volume > 0.0f)
+        PlaySfxAndSetVolume("BBounce", &part->position, volume);
 }
 
-void PartUpdate_Basketball(PART_s *) {
-    STUBBED();
+void PartUpdate_Basketball(PART_s *part) {
+    if (LevGizmo[0] != NULL) {
+        GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(LevGizmo[0]->object);
+        if ((blowup->status_flags & 0x800001) == 0 &&
+            NuVecDistSqr(&blowup->position, &part->position, NULL) < 0.01f) {
+            GizmoActivate(WORLD->gizmo_sys, LevGizmo[0], 1, 0);
+            GizmoBlowupBlowup(blowup, 1, -1, -1, NULL, 1);
+        }
+    }
 }
 
 PART_s *Part_FindFromHSpecial(nuhspecial_s *special) {

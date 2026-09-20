@@ -2,6 +2,7 @@
 #include "gameapi/edtools/edanim_internal.h"
 #include "gameapi/edtools/edgra.h"
 #include "gameapi/edtools/edui.h"
+#include "gameapi/edtools/edui_colour.h"
 #include "nu2api/nucore/numemory.h"
 #include "nu2api/nucore/numouse.h"
 #include "nu2api/nucore/nukeyboard.h"
@@ -1989,9 +1990,28 @@ extern "C" {
     i32 eduiGetUsingMenuFocus(void) {
         return bUsingMenuFocus;
     }
-    i32 eduiGradPickRead(eduiitem_s *, edui_gradient_stage_s *, i32) {
-        STUBBED();
-        return 0;
+    i32 eduiGradPickRead(eduiitem_s *item, edui_gradient_stage_s *stages, i32 capacity) {
+        edui_gradient_node_s *node = static_cast<edui_gradient_pick_s *>(item)->first_stage;
+        f32 red, green, blue;
+        i32 count = 0;
+        for (; node; node = node->next, ++count) {
+            if (count < capacity) {
+                edui_gradient_stage_s *stage = &stages[count];
+                stage->time = node->time;
+                stage->hue = node->hue;
+                stage->saturation = node->saturation;
+                stage->value = node->value;
+                eduiHSVToRGB(node->hue, node->saturation, node->value, red, green, blue);
+                stage->red = red;
+                stage->green = green;
+                stage->blue = blue;
+                stage->colour = 0x80000000u + static_cast<i32>(red * 255.0f) +
+                                (static_cast<i32>(green * 255.0f) << 8) +
+                                (static_cast<i32>(blue * 255.0f) << 16);
+                stage->metadata = node->metadata;
+            }
+        }
+        return count;
     }
     void eduiGradStageAdd(void) {
         STUBBED();

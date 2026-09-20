@@ -48,6 +48,19 @@ extern "C" void PlatInstRotate(i32 platform_index, i32 enabled);
 extern "C" i32 TerrainPlatId();
 extern "C" void NewTerrPlatformsOff(void);
 extern "C" i32 NewRayCast(nuvec_s *origin, nuvec_s *direction, f32 distance, i32 flags);
+extern "C" i32 NewRayCastEx(nuvec_s *position, nuvec_s *movement, f32 radius, i32 scan_flags);
+extern "C" i32 NewRayCastMask(nuvec_s *position, nuvec_s *movement, f32 radius, i32 terrain_mask, i32 scan_flags);
+extern "C" i32 NewRayCastScaleY(nuvec_s *position, nuvec_s *movement, f32 radius, f32 scale_y, i32 scan_flags);
+extern "C" i32 NewRayCastScaleYMask(nuvec_s *position, nuvec_s *movement, f32 radius, f32 scale_y,
+                                   i32 scan_flags, u32 terrain_mask);
+extern "C" i32 NewRayCastSet(nuvec_s *position, nuvec_s *movement, f32 radius, f32 separation_epsilon,
+                            f32 compare_epsilon, i32 scan_type, i32 scan_flags);
+extern "C" i32 NewRayCastSetMask(nuvec_s *position, nuvec_s *movement, f32 radius, f32 separation_epsilon,
+                                f32 compare_epsilon, i32 scan_type, i32 terrain_mask, i32 scan_flags);
+extern "C" i32 NewRayCastPlatForm(nuvec_s *position, nuvec_s *movement, f32 radius, f32 separation_epsilon,
+                                 i32 platform_index, i32 terrain_mask);
+extern "C" i32 NewRayCastSetHandel(nuvec_s *position, nuvec_s *movement, f32 radius, f32 separation_epsilon,
+                                  f32 compare_epsilon, i16 *handle, i32 scan_type);
 extern "C" void NewRayCastGetImpactNormal(nuvec_s *normal);
 extern "C" i32 NewRayCastGetImpactTerrainType(void);
 extern "C" f32 NewRayCastGetTOFI(void);

@@ -1205,12 +1205,12 @@ extern "C" {
         STUBBED();
     }
 
-    void NewRayCastEx(void) {
-        STUBBED();
+    i32 NewRayCastEx(NUVEC *position, NUVEC *movement, f32 radius, i32 scan_flags) {
+        return NewRayCast(position, movement, radius, scan_flags);
     }
 
-    void NewRayCastScaleY(void) {
-        STUBBED();
+    i32 NewRayCastScaleY(NUVEC *position, NUVEC *movement, f32 radius, f32 scale_y, i32 scan_flags) {
+        return NewRayCastScaleYMask(position, movement, radius, scale_y, scan_flags, 0);
     }
 
     f32 NewShadowEx(NUVEC *position, i32 handle, f32 height_above, f32 height_below, i32 terrain_mask);

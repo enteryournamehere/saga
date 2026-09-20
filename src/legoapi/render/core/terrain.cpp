@@ -24,6 +24,7 @@
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/level.h"
 #include "nu2api/nucore/numemory.h"
+#include "nu2api/nucore/numem.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/numath/nufloat.h"
@@ -3022,8 +3023,64 @@ void MakePlayPlanes(GAMECAMERA_s *camera) {
 void TerrDrawPlatCol(tertype *, i16, i32) {
     STUBBED();
 }
-extern "C" void NewRayCastPlatForm(void) {
-    STUBBED();
+static inline void ResetRayCastState() {
+    plathitid = -1;
+    TerrPolyObj = -1;
+    TerrPoly = NULL;
+    TerrWallInfo = 0;
+    castnum = -1;
+}
+
+static inline void SetRayCastUnitScale(TerrainQuery_s *query) {
+    query->object_scale = 1.0f;
+    query->object_scale_sq = 1.0f;
+    query->inverse_object_scale = 1.0f;
+    query->inverse_object_scale_sq = 1.0f;
+}
+
+static inline void ConfigureRayCast(TerrainQuery_s *query, NUVEC *position, NUVEC *movement, f32 radius,
+                                   f32 separation_epsilon, f32 compare_epsilon) {
+    query->collision_radius = radius;
+    query->inverse_collision_radius = radius == 0.0f ? 0.0f : 1.0f / radius;
+    query->collision_radius_sq = radius * radius;
+    query->start_position.x = query->position.x = position->x;
+    query->start_position.y = query->position.y = position->y;
+    query->start_position.z = query->position.z = position->z;
+    query->movement = *movement;
+    query->start_movement = query->movement;
+    query->object_index = -1;
+    query->hit_flags = NULL;
+    query->scan_result = 1;
+    query->separation_epsilon = separation_epsilon;
+    query->compare_epsilon = compare_epsilon;
+}
+
+static inline void ResolveRayCast(NUVEC *movement) {
+    DerotateMovementVector();
+    HitTerrain();
+    if (TerI->hit_type != 0) {
+        RayImpact(movement);
+        TerrainImpactNorm();
+        ShadNorm = TerI->movement_normal;
+    }
+}
+
+void ScanTerrainPlatform(i32 group_index, i32 terrain_mask);
+void ScanTerrainHandel(i32 scan_type, i16 *handle);
+
+extern "C" i32 NewRayCastPlatForm(NUVEC *position, NUVEC *movement, f32 radius, f32 separation_epsilon,
+                                 i32 platform_index, i32 terrain_mask) {
+    ResetRayCastState();
+    if (CurTerr == NULL)
+        return 0;
+    TerI = static_cast<TerrainQuery_s *>(NuScratchAlloc32(sizeof(TerrainQuery_s)));
+    TerrOverRideScan = NULL;
+    SetRayCastUnitScale(TerI);
+    ConfigureRayCast(TerI, position, movement, radius, separation_epsilon, 0.0f);
+    ScanTerrainPlatform(CurTerr->platforms[platform_index].terrain_group_index, terrain_mask);
+    ResolveRayCast(movement);
+    NuScratchRelease();
+    return TerI->hit_type;
 }
 
 extern "C" void DrawHitTerrain(void) {
@@ -5246,48 +5303,40 @@ extern "C" i32 NewRayCastHitWallSpline(void) {
 }
 
 extern "C" i32 NewRayCast(NUVEC *position, NUVEC *movement, f32 radius, i32 scan_flags) {
-    plathitid = -1;
-    TerrPolyObj = -1;
-    TerrPoly = NULL;
-    TerrWallInfo = 0;
-    castnum = -1;
+    ResetRayCastState();
     if (CurTerr == NULL)
         return 0;
-    TerI = static_cast<TerrainQuery_s *>(NuScratchAlloc32(0x948));
+    TerI = static_cast<TerrainQuery_s *>(NuScratchAlloc32(sizeof(TerrainQuery_s)));
     TerrOverRideScan = NULL;
-    TerrainQuery_s *query = TerI;
-    query->object_scale = 1.0f;
-    query->object_scale_sq = 1.0f;
-    query->inverse_object_scale = 1.0f;
-    query->inverse_object_scale_sq = 1.0f;
-    query->collision_radius = radius;
-    query->inverse_collision_radius = radius == 0.0f ? 0.0f : 1.0f / radius;
-    query->collision_radius_sq = radius * radius;
-    query->start_position.x = query->position.x = position->x;
-    query->start_position.y = query->position.y = position->y;
-    query->start_position.z = query->position.z = position->z;
-    query->movement = *movement;
-    query->start_movement = query->movement;
-    query->object_index = -1;
-    query->hit_flags = NULL;
-    query->scan_result = 1;
-    query->separation_epsilon = 0.01f;
-    query->compare_epsilon = 0.00001f;
+    SetRayCastUnitScale(TerI);
+    ConfigureRayCast(TerI, position, movement, radius, 0.01f, 0.00001f);
     ScanTerrain(1, 0, scan_flags != 0 ? 0x40 : 0);
-    DerotateMovementVector();
-    HitTerrain();
-    if (TerI->hit_type != 0) {
-        RayImpact(movement);
-        TerrainImpactNorm();
-        ShadNorm = TerI->movement_normal;
-    }
+    ResolveRayCast(movement);
     NuScratchRelease();
     return TerI->hit_type;
 }
 
-extern "C" i32 NewRayCastScaleYMask(NUVEC *, NUVEC *, f32, f32, i32, u32) {
-    STUBBED();
-    return 0;
+extern "C" i32 NewRayCastScaleYMask(NUVEC *position, NUVEC *movement, f32 radius, f32 scale_y,
+                                   i32 scan_flags, u32 terrain_mask) {
+    ResetRayCastState();
+    if (CurTerr == NULL)
+        return 0;
+    TerI = static_cast<TerrainQuery_s *>(NuScratchAlloc32(sizeof(TerrainQuery_s)));
+    TerrOverRideScan = NULL;
+    TerrainQuery_s *query = TerI;
+    query->object_scale = scale_y;
+    query->object_scale_sq = scale_y * scale_y;
+    query->inverse_object_scale = scale_y == 0.0f ? 0.0f : 1.0f / scale_y;
+    query->inverse_object_scale_sq = query->inverse_object_scale * query->inverse_object_scale;
+    ConfigureRayCast(query, position, movement, radius, 0.01f, 0.00001f);
+    ScanTerrain(1, terrain_mask, scan_flags != 0 ? 0x40 : 0);
+    TerI->position.y *= TerI->inverse_object_scale;
+    TerI->movement.y *= TerI->inverse_object_scale;
+    ResolveRayCast(movement);
+    if (TerI->hit_type != 0)
+        movement->y *= TerI->object_scale;
+    NuScratchRelease();
+    return TerI->hit_type;
 }
 
 extern "C" void TerrainPolyEdge(NUVEC *first, NUVEC *second) {
@@ -5354,16 +5403,47 @@ extern "C" void TerrainPolyEdge(NUVEC *first, NUVEC *second) {
     }
 }
 
-extern "C" void NewRayCastMask(void) {
-    STUBBED();
+extern "C" i32 NewRayCastMask(NUVEC *position, NUVEC *movement, f32 radius, i32 terrain_mask, i32 scan_flags) {
+    ResetRayCastState();
+    if (CurTerr == NULL)
+        return 0;
+    TerI = static_cast<TerrainQuery_s *>(NuScratchAlloc32(sizeof(TerrainQuery_s)));
+    TerrOverRideScan = NULL;
+    SetRayCastUnitScale(TerI);
+    ConfigureRayCast(TerI, position, movement, radius, 0.01f, 0.00001f);
+    ScanTerrain(1, terrain_mask, scan_flags != 0 ? 0x40 : 0);
+    ResolveRayCast(movement);
+    NuScratchRelease();
+    return TerI->hit_type;
 }
 
-extern "C" void NewRayCastSet(void) {
-    STUBBED();
+extern "C" i32 NewRayCastSet(NUVEC *position, NUVEC *movement, f32 radius, f32 separation_epsilon,
+                            f32 compare_epsilon, i32 scan_type, i32 scan_flags) {
+    ResetRayCastState();
+    if (CurTerr == NULL)
+        return 0;
+    TerI = static_cast<TerrainQuery_s *>(NuScratchAlloc32(sizeof(TerrainQuery_s)));
+    TerrOverRideScan = NULL;
+    SetRayCastUnitScale(TerI);
+    ConfigureRayCast(TerI, position, movement, radius, separation_epsilon, compare_epsilon);
+    ScanTerrain(scan_type, 0, scan_flags != 0 ? 0x40 : 0);
+    ResolveRayCast(movement);
+    NuScratchRelease();
+    return TerI->hit_type;
 }
 
-extern "C" void NewRayCastSetMask(void) {
-    STUBBED();
+extern "C" i32 NewRayCastSetMask(NUVEC *position, NUVEC *movement, f32 radius, f32 separation_epsilon,
+                                f32 compare_epsilon, i32 scan_type, i32 terrain_mask, i32 scan_flags) {
+    ResetRayCastState();
+    if (CurTerr == NULL)
+        return 0;
+    TerI = static_cast<TerrainQuery_s *>(NuScratchAlloc32(sizeof(TerrainQuery_s)));
+    SetRayCastUnitScale(TerI);
+    ConfigureRayCast(TerI, position, movement, radius, separation_epsilon, compare_epsilon);
+    ScanTerrain(scan_type, terrain_mask, scan_flags != 0 ? 0x40 : 0);
+    ResolveRayCast(movement);
+    NuScratchRelease();
+    return TerI->hit_type;
 }
 
 extern "C" void NewTerrAxisFreedom(TERRAIN_AXIS_FREEDOM_SHAPE *shape, NUVEC *position) {
@@ -5445,8 +5525,21 @@ extern "C" void TerrainWallSideSlide(NUVEC *movement, void *id, f32 speed, f32 u
         movement->y *= upward_scale;
 }
 
-extern "C" void NewRayCastSetHandel(void) {
-    STUBBED();
+extern "C" i32 NewRayCastSetHandel(NUVEC *position, NUVEC *movement, f32 radius, f32 separation_epsilon,
+                                  f32 compare_epsilon, i16 *handle, i32 scan_type) {
+    ResetRayCastState();
+    if (CurTerr == NULL || handle == NULL)
+        return 0;
+    TerI = static_cast<TerrainQuery_s *>(NuScratchAlloc32(sizeof(TerrainQuery_s)));
+    TerrOverRideScan = NULL;
+    SetRayCastUnitScale(TerI);
+    ConfigureRayCast(TerI, position, movement, radius, separation_epsilon, compare_epsilon);
+    ScanTerrainHandel(scan_type, handle);
+    ResolveRayCast(movement);
+    if (TerI->hit_type != 0)
+        TerrPoly = TerI->surface;
+    NuScratchRelease();
+    return TerI->hit_type;
 }
 
 extern "C" void NewShadowHandelEx(void) {

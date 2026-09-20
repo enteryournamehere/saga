@@ -25,6 +25,7 @@
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nuqfnt.h"
+#include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/android/nuobject_android.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nuvec.h"
@@ -50,6 +51,15 @@ static i32 edui_donotdraw;
 static f32 edui_font_scale_x = 0.9f;
 static f32 edui_font_scale_y = 0.9f;
 static u32 edui_cursor_colour = 0xff000000;
+static char *edpp_save_names[6];
+static i32 edptl_count;
+static NUVEC entry_position;
+
+void edppDoInput(nupad_s *pad);
+void edppDetermineNearest(f32 distance);
+void edppDrawCursor();
+void edppHighlightNearest();
+extern "C" void DebrisStatusNormal(i32 *handle);
 
 extern "C" {
     extern numtl_s *uimtls[5];
@@ -285,7 +295,7 @@ extern "C" {
     NUMTL *edpp_mtl;
     NUMTL *edpp_boxmtl;
     i32 edpp_nearest;
-    edpp_particle_s *edpp_curr;
+    i32 edpp_curr;
     i32 edpp_snap_enabled;
     u8 edpp_effect_list;
     i32 edpp_instances_used;
@@ -398,24 +408,52 @@ static void edppInit() {
 }
 
 static void edppClose() {
-    STUBBED();
+    eduiMenuDestroy(ptloptmenu);
+    eduiMenuDestroy(ptlgcodemenu);
 }
 
 static void edppEnter() {
-    STUBBED();
+    NUVEC origin = {0.0f, 0.0f, 0.0f};
+    if (edmainQueryLocVec() != NULL) {
+        entry_position = *edmainQueryLocVec();
+    } else {
+        entry_position.x = global_camera.mtx.m30;
+        entry_position.y = global_camera.mtx.m31;
+        entry_position.z = global_camera.mtx.m32;
+    }
+    if (edpp_first_time_this_level != 0) {
+        if (edmainQueryLocVec() != NULL)
+            edcamSetPosAng(edmainQueryLocVec(), 0, 0);
+        else
+            edcamSetPosAng(&origin, 0, 0);
+        edpp_first_time_this_level = 0;
+    }
+    edpp_nearest = -1;
+    edpp_create_type = -1;
 }
 
 static void edppApply() {
-    STUBBED();
 }
 
-static i32 edppProc(f32, nupad_s *) {
-    STUBBED();
-    return 0;
+static i32 edppProc(f32 delta_time, nupad_s *pad) {
+    edptl_count += 5;
+    if (edpp_active_menu != NULL) {
+        eduiMenuProcess(edpp_active_menu, delta_time, pad);
+        return 0;
+    }
+    edppDoInput(pad);
+    edppDetermineNearest(1.0f);
+    if (edpp_nearest != -1)
+        DebrisStatusNormal(&edpp_ptls[edpp_nearest].instance_id);
+    return (pad->digital_buttons_pressed >> 11) & 1;
 }
 
 static void edppRender() {
-    STUBBED();
+    edcamSet();
+    edppDrawCursor();
+    edppHighlightNearest();
+    if (edpp_active_menu != NULL)
+        eduiMenuRender(edpp_active_menu);
 }
 
 static void edbriInit() {
@@ -714,11 +752,21 @@ void edbriBridgeDestroy(i32 index) {
 void edanimDetermineNearestAnim(f32);
 void edppDetermineNearest(float);
 void edppPtlDestroy(i32);
+void edppPtlShelve(i32);
 extern "C" {
     extern debkeydatatype_s *debkeydata;
     extern i32 maxdebkeys;
     void DebFreeOrphansInstantly(debinftype *);
     void DebFreeInstantly(i32 *);
+    void AddDebrisEffect(i32 *, i32, f32, f32, f32);
+    void DebrisOrientation(i32, i16, i16);
+    void DebrisEmitterOrientation(i32, i16, i16, i16);
+    void DebrisStartOffset(i32, f32);
+    void DebrisSetTrigger(i32, i32, i32, f32);
+    void DebrisReflectionOrientation(i32, i16, i16, f32, f32);
+    void DebrisSetFacing(i32, u8, i16, i16);
+    void DebrisSetGroupID(i32, i32);
+    void DebrisSetRoomID(i32, nugscn_s *);
 }
 
 extern "C" void do_Pad_Standard_camera(edcam_s *camera, f32 delta_time, nupad_s *pad);
@@ -1753,10 +1801,13 @@ extern "C" {
         edppDetermineNearest(1.0f);
     }
     void edppDestroyAllEffects(void) {
-        STUBBED();
+        for (i32 index = 1; index < EDPP_MAX_TYPES; ++index)
+            debtab[index] = NULL;
+        edpp_types_used = 1;
     }
     void edppDestroyAllParticles(void) {
-        STUBBED();
+        for (i32 index = 0; index < 512; ++index)
+            edppPtlDestroy(index);
     }
     void edppDrawSpheres(void) {
         STUBBED();
@@ -1764,8 +1815,35 @@ extern "C" {
     void edppDrawTorus(void) {
         STUBBED();
     }
-    void edppFindAllSounds(void) {
-        STUBBED();
+    i32 edppFindAllSounds(i32 page, NUVEC *positions, i32 (*sounds)[4], i32 capacity, i32 skip) {
+        i32 count = 0;
+        for (i32 index = 0; index < 512; ++index) {
+            edpp_particle_s *particle = &edpp_ptls[index];
+            if (page != -1 && particle->page != page)
+                continue;
+            if (particle->instance_id == 99999 || particle->instance_id == -1)
+                continue;
+            debkeydatatype_s *key = &debkeydata[particle->instance_id];
+            if (key->process_collision_sound == 0)
+                continue;
+            debinftype *effect = debtab[key->effect_index];
+            i32 output_index = count - skip;
+            if (output_index >= 0 && output_index < capacity) {
+                if (positions != NULL) {
+                    positions[output_index].x = key->position.x;
+                    positions[output_index].y = key->position.y;
+                    positions[output_index].z = key->position.z;
+                }
+                if (sounds != NULL) {
+                    sounds[output_index][0] = effect->sound_data[0];
+                    sounds[output_index][1] = effect->sound_data[3];
+                    sounds[output_index][2] = effect->sound_data[6];
+                    sounds[output_index][3] = effect->sound_data[9];
+                }
+            }
+            ++count;
+        }
+        return count - skip;
     }
     // Parts-page loader (edppLoadPage @0x36c630).  The normal general (0) and
     // character (5) pages only contain effect-type records; instance records
@@ -1845,13 +1923,66 @@ extern "C" {
         edmainRegisterLocVec(position);
     }
     void edppRestartAllEffectsInLevel(void) {
-        STUBBED();
+        for (i32 index = 0; index < 512; ++index) {
+            edpp_particle_s *particle = &edpp_ptls[index];
+            if (particle->instance_id == -1)
+                continue;
+            particle->instance_id = -1;
+            particle->effect_index = LookupDebrisEffect(particle->name);
+            AddDebrisEffect(&particle->instance_id, particle->effect_index, particle->position.x,
+                            particle->position.y, particle->position.z);
+            if (particle->instance_id != -1) {
+                debkeydata[particle->instance_id].field_2f9 = 0;
+                DebrisOrientation(particle->instance_id, particle->rotation_z, particle->rotation_y);
+                DebrisEmitterOrientation(particle->instance_id, particle->emitter_rotation_z,
+                                         particle->emitter_rotation_y, particle->emitter_rotation_x);
+                DebrisStartOffset(particle->instance_id, particle->start_offset);
+                DebrisSetTrigger(particle->instance_id, particle->switch_type, particle->switch_id,
+                                  particle->switch_variable);
+                DebrisReflectionOrientation(particle->instance_id, particle->reflection_rotation_z,
+                                            particle->reflection_rotation_y, particle->reflection_offset,
+                                            particle->reflection_bounce);
+                DebrisSetFacing(particle->instance_id, particle->facing_mode, particle->facing_rotation_x,
+                                 particle->facing_rotation_y);
+                DebrisSetGroupID(particle->instance_id, particle->render_group);
+                DebrisSetRoomID(particle->instance_id, reinterpret_cast<nugscn_s *>(edpp_page_scene[particle->page]));
+            } else {
+                particle->instance_id = 99999;
+            }
+            edpp_page_on[particle->page] = 1;
+        }
+        edpp_create_type = -1;
+        edppDetermineNearest(1.0f);
     }
-    void edppSetSaveName(void) {
-        STUBBED();
+    void edppSetSaveName(u32 page, char *name) {
+        if (page < 6)
+            edpp_save_names[page] = name;
     }
-    void edppStopPage(i32) {
-        STUBBED();
+    void edppStopPage(i32 page_id) {
+        i8 page = page_id;
+        edpp_page_on[page] = 0;
+        for (i32 index = 0; index < 512; ++index) {
+            edpp_particle_s *particle = &edpp_ptls[index];
+            if (particle->instance_id == 99999 || particle->instance_id == -1)
+                continue;
+            if (particle->page == page) {
+                edppPtlShelve(index);
+            } else if (particle->effect_index > 0 && debtab[particle->effect_index] != NULL &&
+                       debtab[particle->effect_index]->page == static_cast<u8>(page)) {
+                edppPtlDestroy(index);
+            }
+        }
+        for (i32 index = 1; index < EDPP_MAX_TYPES; ++index) {
+            if (debtab[index] == NULL || debtab[index]->page != static_cast<u8>(page))
+                continue;
+            for (i32 key = 0; key < maxdebkeys; ++key) {
+                if (debkeydata[key].effect_index == index) {
+                    i32 handle = key;
+                    DebFreeInstantly(&handle);
+                }
+            }
+            DebFreeOrphansInstantly(debtab[index]);
+        }
     }
     void edqrand(void) {
         STUBBED();

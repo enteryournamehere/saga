@@ -4,6 +4,7 @@
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/nuprim_internal.h"
 
 #include <string.h>
 
@@ -98,20 +99,51 @@ void NuRndrStreamInit(i32 stream_buffer_size, VARIPTR *buffer) {
     rndrstream_free.addr = ALIGN(rndrstream[0].addr, 16);
 }
 
-void NuRndrRectUV2d(float, float, float, float, float, float, float, float, float, i32, numtl_s *) {
-    STUBBED();
+void NuRndrRectUV2d(f32 x, f32 y, f32, f32 width, f32 height, f32 u0, f32 v0, f32 u1, f32 v1,
+                    i32 colour, numtl_s *material) {
+    NuPrim2DBegin(4, 7, material);
+    NuRndrPrimTexturedColour(u0, v0, colour);
+    NuPrim2DAddXYZ(x, y, 0.0f);
+    NuRndrPrimTexturedColour(u1, v1, colour);
+    NuPrim2DAddXYZ(x + width, y + height, 0.0f);
+    NuPrim2DEnd();
 }
 
-void NuRndrRectUV2diZ(i32, i32, i32, i32, float, float, float, float, i32, numtl_s *, i32) {
-    STUBBED();
+void NuRndrRectUV2diZ(i32 x, i32 y, i32 width, i32 height, f32 u0, f32 v0, f32 u1, f32 v1,
+                      i32 colour, numtl_s *material, i32 z) {
+    const f32 sx = static_cast<f32>(x) * 0.0625f;
+    const f32 sy = static_cast<f32>(y) * 0.0625f;
+    const f32 sw = static_cast<f32>(width) * 0.0625f;
+    const f32 sh = static_cast<f32>(height) * 0.0625f;
+    const f32 sz = static_cast<f32>(z) * (1.0f / 16777215.0f);
+    NuPrim2DBegin(4, 7, material);
+    NuRndrPrimTexturedColour(u0, v0, colour);
+    NuPrim2DAddXYZ(sx, sy, sz);
+    NuRndrPrimTexturedColour(u1, v1, colour);
+    NuPrim2DAddXYZ(sx + sw, sy + sh, sz);
+    NuPrim2DEnd();
 }
 
 void NuRndrInitGeneric() {
     NuVpResetRegions();
 }
 
-void NuRndrGradRect2diZ(i32, i32, i32, i32, i32 *, numtl_s *, i32) {
-    STUBBED();
+void NuRndrGradRect2diZ(i32 x, i32 y, i32 width, i32 height, i32 *colours, numtl_s *material, i32 z) {
+    const f32 sx = static_cast<f32>(x) * 0.0625f;
+    const f32 sy = static_cast<f32>(y) * 0.0625f;
+    const f32 sw = static_cast<f32>(width) * 0.0625f;
+    const f32 sh = static_cast<f32>(height) * 0.0625f;
+    const f32 sz = static_cast<f32>(z) * (1.0f / 16777215.0f);
+    NuPrim2DBegin(1, 7, material);
+    NuRndrPrimSetColour(colours[0]);
+    NuPrim2DAddXYZ(sx, sy, sz);
+    NuRndrPrimSetColour(colours[1]);
+    NuPrim2DAddXYZ(sx + sw, sy, sz);
+    NuRndrPrimSetColour(colours[2]);
+    NuPrim2DAddXYZ(sx, sy + sh, sz);
+    NuRndrPrimSetColour(colours[3]);
+    NuPrim2DAddXYZ(sx + sw, sy + sh, sz);
+    NuPrim2DEnd();
 }
 
 void NuRndrRectUV2dNoScale(float, float, float, float, float, float, float, float, i32, numtl_s *) {

@@ -44,6 +44,15 @@ static inline void NuRndrPrimSetColour(i32 colour) {
             ((colour >> 1) & 0x007f7f7f) | (colour & 0xff000000);
 }
 
+static inline void NuRndrPrimPosition(f32 x, f32 y, f32 z) {
+    PrimVertexRaw *vertex = (PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr;
+    vertex->x = x;
+    vertex->y = y;
+    vertex->z = z;
+    g_NuPrim_StreamBufferPtr->u8_ptr += sizeof(PrimVertexRaw);
+    ++g_NuPrim_VertexCount;
+}
+
 static inline void NuRndrPrimUV(f32 u, f32 v) {
     PrimVertexRaw *vertex = (PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr;
     if (g_NuPrim_NeedsHalfUVs != 0) {

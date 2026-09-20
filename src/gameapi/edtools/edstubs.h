@@ -47,4 +47,11 @@ extern "C" {
 }
 
 struct nugspline_s *edSpline_SplineFind(NUGSCN *scene, char *name);
+
+struct VuVec;
+struct VuMtx;
+void EdDrawLineSegment(VuVec const &start, VuVec const &end, i32 colour);
+void EdDrawLineCross(VuVec const &position, float size, i32 colour);
+void EdDrawLineArrow(VuMtx const &transform, float size, i32 colour);
+void EdDrawLineCube(VuMtx const &transform, float size, i32 colour);
 #endif

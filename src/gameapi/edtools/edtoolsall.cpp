@@ -11,6 +11,8 @@
 #include "nu2api/nucore/NuDynamicLight.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nuspline.h"
+#include "nu2api/nu3d/nuprim_internal.h"
+#include "nu2api/nucore/NuDynamicLight.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nucore/nuvideo.h"
 #include "nu2api/numath/nuvec.h"
@@ -69,6 +71,10 @@ i32 edGetPadDisabled() {
 
 static NUGSPLINE *splineStore;
 static i32 numSplinesLoaded;
+NUMTL *EdDrawMtl[2];
+static i32 NewPrim;
+static i32 NewMtl;
+static const VuMtx *NewMtx;
 char *EDSPLINE_FILECHECK = const_cast<char *>("EDSPLINE v. ");
 
 extern "C" {
@@ -109,11 +115,22 @@ void EdTerrInit(void *, void *) {
 }
 
 void edDrawLine(nuvec_s *, nuvec_s *, unsigned char, unsigned char, unsigned char) {
-    STUBBED();
 }
 
-void EdDrawBegin(i32) {
-    STUBBED();
+void EdDrawBegin(i32 material) {
+    if (EdDrawMtl[0] == NULL) {
+        EdDrawMtl[0] = NuMtlCreate3D(1);
+        EdDrawMtl[0]->attribs.cull_mode = 2;
+        EdDrawMtl[0]->attribs.alpha_mode = 1;
+        NuMtlUpdate(EdDrawMtl[0]);
+        EdDrawMtl[1] = NuMtlCreate3D(1);
+        EdDrawMtl[1]->attribs.cull_mode = 2;
+        EdDrawMtl[1]->attribs.z_mode = 3;
+        EdDrawMtl[1]->attribs.alpha_mode = 1;
+        NuMtlUpdate(EdDrawMtl[1]);
+    }
+    NewPrim = 1;
+    NewMtl = material;
 }
 
 void edpartPlace(i32, nuvec_s *) {
@@ -164,8 +181,17 @@ i32 edppPtlPlace(i32 index, NUVEC *position) {
     return index;
 }
 
-void EdDrawPolyTri(VuVec const &, VuVec const &, VuVec const &, i32) {
-    STUBBED();
+void EdDrawPolyTri(VuVec const &a, VuVec const &b, VuVec const &c, i32 colour) {
+    if (NewPrim == 1) {
+        NuPrim3DBegin(0, 5, EdDrawMtl[NewMtl], NewMtx ? const_cast<NUMTX *>(&NewMtx->matrix) : NULL);
+        NewPrim = 3;
+    }
+    NuRndrPrimSetColour(colour);
+    NuRndrPrimPosition(a.x, a.y, a.z);
+    NuRndrPrimSetColour(colour);
+    NuRndrPrimPosition(b.x, b.y, b.z);
+    NuRndrPrimSetColour(colour);
+    NuRndrPrimPosition(c.x, c.y, c.z);
 }
 
 void edanimDoInput(nupad_s *) {
@@ -264,8 +290,44 @@ void edppPtlShelve(i32 index) {
     }
 }
 
-void EdDrawLineCube(VuMtx const &, float, i32) {
-    STUBBED();
+void EdDrawLineCube(VuMtx const &transform, float size, i32 colour) {
+    VuVec points[9] = {
+        VuVec(size, size, -size, 0.0f),
+        VuVec(size, size, size, 0.0f),
+        VuVec(-size, size, size, 0.0f),
+        VuVec(-size, size, -size, 0.0f),
+        VuVec(size, -size, -size, 0.0f),
+        VuVec(size, -size, size, 0.0f),
+        VuVec(-size, -size, size, 0.0f),
+        VuVec(-size, -size, -size, 0.0f),
+        VuVec(0.0f, 0.0f, size, 0.0f),
+    };
+    NUMTX *matrix = const_cast<NUMTX *>(&transform.matrix);
+    NuVecMtxTransform(&points[0].xyz, &points[0].xyz, matrix);
+    NuVecMtxTransform(&points[1].xyz, &points[1].xyz, matrix);
+    NuVecMtxTransform(&points[2].xyz, &points[2].xyz, matrix);
+    NuVecMtxTransform(&points[3].xyz, &points[3].xyz, matrix);
+    NuVecMtxTransform(&points[4].xyz, &points[4].xyz, matrix);
+    NuVecMtxTransform(&points[5].xyz, &points[5].xyz, matrix);
+    NuVecMtxTransform(&points[6].xyz, &points[6].xyz, matrix);
+    NuVecMtxTransform(&points[7].xyz, &points[7].xyz, matrix);
+    NuVecMtxTransform(&points[8].xyz, &points[8].xyz, matrix);
+    EdDrawLineSegment(points[0], points[1], colour);
+    EdDrawLineSegment(points[1], points[2], colour);
+    EdDrawLineSegment(points[2], points[3], colour);
+    EdDrawLineSegment(points[3], points[0], colour);
+    EdDrawLineSegment(points[0], points[2], colour);
+    EdDrawLineSegment(points[1], points[3], colour);
+    EdDrawLineSegment(points[4], points[5], colour);
+    EdDrawLineSegment(points[5], points[6], colour);
+    EdDrawLineSegment(points[6], points[7], colour);
+    EdDrawLineSegment(points[7], points[4], colour);
+    EdDrawLineSegment(points[0], points[4], colour);
+    EdDrawLineSegment(points[1], points[5], colour);
+    EdDrawLineSegment(points[2], points[6], colour);
+    EdDrawLineSegment(points[3], points[7], colour);
+    EdDrawLineSegment(points[5], points[8], colour);
+    EdDrawLineSegment(points[6], points[8], colour);
 }
 
 void EdDrawPolyAxis(VuMtx const &, float, i32) {
@@ -297,12 +359,42 @@ void edppPtlDestroy(i32 index) {
     }
 }
 
-void EdDrawLineArrow(VuMtx const &, float, i32) {
-    STUBBED();
+void EdDrawLineArrow(VuMtx const &transform, float size, i32 colour) {
+    VuVec points[4] = {
+        VuVec(0.0f, 0.0f, -size, 0.0f),
+        VuVec(0.0f, 0.0f, size, 0.0f),
+        VuVec(size * 0.5f, 0.0f, 0.0f, 0.0f),
+        VuVec(-size * 0.5f, 0.0f, 0.0f, 0.0f),
+    };
+    NUMTX *matrix = const_cast<NUMTX *>(&transform.matrix);
+    NuVecMtxTransform(&points[0].xyz, &points[0].xyz, matrix);
+    NuVecMtxTransform(&points[1].xyz, &points[1].xyz, matrix);
+    NuVecMtxTransform(&points[2].xyz, &points[2].xyz, matrix);
+    NuVecMtxTransform(&points[3].xyz, &points[3].xyz, matrix);
+    EdDrawLineSegment(points[0], points[1], colour);
+    EdDrawLineSegment(points[1], points[2], colour);
+    EdDrawLineSegment(points[1], points[3], colour);
+    EdDrawLineSegment(points[2], points[3], colour);
 }
 
-void EdDrawLineCross(VuVec const &, float, i32) {
-    STUBBED();
+void EdDrawLineCross(VuVec const &position, float size, i32 colour) {
+    VuVec start;
+    VuVec end;
+    start.y = end.y = position.y;
+    start.z = end.z = position.z;
+    start.x = position.x - size;
+    end.x = position.x + size;
+    EdDrawLineSegment(start, end, colour);
+
+    start.x = end.x = position.x;
+    start.y = position.y - size;
+    end.y = position.y + size;
+    EdDrawLineSegment(start, end, colour);
+
+    start.y = end.y = position.y;
+    start.z = position.z - size;
+    end.z = position.z + size;
+    EdDrawLineSegment(start, end, colour);
 }
 
 void EdDrawPolyArrow(VuVec const &, VuVec const &, i32, i32, float, float, float, float) {
@@ -436,20 +528,49 @@ void edpartDrawCursor() {
     STUBBED();
 }
 
-void EdDrawLineCircleX(VuVec const &, float, i32, i32) {
-    STUBBED();
+template <i32 Axis>
+static inline void EdDrawCircle(VuVec const &centre, float radius, i32 colour, i32 segments) {
+    VuVec base(0.0f, Axis == 2 ? radius : 0.0f, Axis == 2 ? 0.0f : radius, 0.0f);
+    VuVec point(base.x + centre.x, base.y + centre.y, base.z + centre.z, 0.0f);
+    for (i32 i = 1; i <= segments; i++) {
+        VuVec previous = point;
+        i32 angle = i * (0x10000 / segments);
+        if (Axis == 0) {
+            NuVecRotateX(&point.xyz, &base.xyz, angle);
+        } else if (Axis == 1) {
+            NuVecRotateY(&point.xyz, &base.xyz, angle);
+        } else {
+            NuVecRotateZ(&point.xyz, &base.xyz, angle);
+        }
+        point.x += centre.x;
+        point.y += centre.y;
+        point.z += centre.z;
+        point.w = 0.0f;
+        EdDrawLineSegment(previous, point, colour);
+    }
 }
 
-void EdDrawLineCircleY(VuVec const &, float, i32, i32) {
-    STUBBED();
+void EdDrawLineCircleX(VuVec const &centre, float radius, i32 colour, i32 segments) {
+    EdDrawCircle<0>(centre, radius, colour, segments);
 }
 
-void EdDrawLineCircleZ(VuVec const &, float, i32, i32) {
-    STUBBED();
+void EdDrawLineCircleY(VuVec const &centre, float radius, i32 colour, i32 segments) {
+    EdDrawCircle<1>(centre, radius, colour, segments);
 }
 
-void EdDrawLineSegment(VuVec const &, VuVec const &, i32) {
-    STUBBED();
+void EdDrawLineCircleZ(VuVec const &centre, float radius, i32 colour, i32 segments) {
+    EdDrawCircle<2>(centre, radius, colour, segments);
+}
+
+void EdDrawLineSegment(VuVec const &a, VuVec const &b, i32 colour) {
+    if (NewPrim == 1) {
+        NuPrim3DBegin(2, 5, EdDrawMtl[NewMtl], NewMtx ? const_cast<NUMTX *>(&NewMtx->matrix) : NULL);
+        NewPrim = 2;
+    }
+    NuRndrPrimSetColour(colour);
+    NuRndrPrimPosition(a.x, a.y, a.z);
+    NuRndrPrimSetColour(colour);
+    NuRndrPrimPosition(b.x, b.y, b.z);
 }
 
 void edanimParamCreate(i32) {
@@ -967,11 +1088,18 @@ void edanimDetermineNearestParticle(float) {
 }
 
 void EdDrawEnd() {
-    STUBBED();
+    if (NewPrim) {
+        if (NewPrim == 2 || NewPrim == 3) {
+            NuPrim3DEnd();
+        }
+        NewPrim = 0;
+    }
 }
 
-void EdDrawMtx(VuMtx const *) {
-    STUBBED();
+void EdDrawMtx(VuMtx const *matrix) {
+    EdDrawEnd();
+    EdDrawBegin(0);
+    NewMtx = matrix;
 }
 
 void EdTerrRay(VuVec &, VuVec &) {

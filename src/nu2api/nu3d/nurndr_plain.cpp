@@ -288,7 +288,6 @@ extern "C" i32 NuMtlSpecialSetUV(nuhspecial_s *special, f32 u, f32 v) {
 
 // Debug / visualisation geometry
 static inline void NuRndrPrimSetColour(i32 colour);
-static inline void NuRndrPrimPosition(f32 x, f32 y, f32 z);
 static inline void NuRndrPrimUV(f32 u, f32 v);
 extern "C" void NuRndr3dLine(f32 x0, f32 y0, f32 z0, f32 x1, f32 y1, f32 z1, i32 colour) {
     NuPrim3DBegin(2, 5, NULL, &numtx_identity);
@@ -328,7 +327,6 @@ extern "C" void NuRndrAxes(NUMTX *matrix, f32 length) {
     NuRndrAxisBright(matrix, length, 255);
 }
 static inline void NuRndrPrimSetColour(i32 colour);
-static inline void NuRndrPrimPosition(f32 x, f32 y, f32 z);
 extern "C" void NuRndrAxisArrowsMtx(NUMTX *matrix, f32 length, NUMTL *material) {
     f32 base = length * 0.8f;
     f32 width = length * 0.1f;
@@ -379,7 +377,6 @@ extern "C" void NuRndrAxisArrows(NUVEC *position, void *, f32 length, NUMTL *mat
 }
 
 static inline void NuRndrPrimSetColour(i32 colour);
-static inline void NuRndrPrimPosition(f32 x, f32 y, f32 z);
 extern "C" void NuRndrAxisBright(NUMTX *matrix, f32 length, i32 brightness) {
     f32 base = length * 0.8f;
     f32 width = length * 0.1f;
@@ -427,7 +424,6 @@ extern "C" void NuRndrAxisBright(NUMTX *matrix, f32 length, i32 brightness) {
 }
 
 static inline void NuRndrPrimSetColour(i32 colour);
-static inline void NuRndrPrimPosition(f32 x, f32 y, f32 z);
 
 extern "C" void NuRndrBoundingBox(NUVEC *minimum, NUVEC *maximum, NUMTX *matrix, i32 colour) {
     NuPrim3DBegin(3, 5, NULL, matrix);
@@ -1165,14 +1161,6 @@ f32 global_windscale = 1.0f;
 extern "C" void NuRndrSetWind(f32 speed, f32 scale) {
     global_windspeed = speed;
     global_windscale = scale;
-}
-static inline void NuRndrPrimPosition(f32 x, f32 y, f32 z) {
-    PrimVertexRaw *vertex = (PrimVertexRaw *)g_NuPrim_StreamBufferPtr->void_ptr;
-    vertex->x = x;
-    vertex->y = y;
-    vertex->z = z;
-    g_NuPrim_StreamBufferPtr->u8_ptr += sizeof(PrimVertexRaw);
-    ++g_NuPrim_VertexCount;
 }
 
 extern "C" void NuRndrGrid(NUVEC *centre, NUVEC *size, i32 columns, i32 rows) {

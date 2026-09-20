@@ -68,7 +68,11 @@ struct NetAddress {
 };
 struct NetListenerInterface {};
 struct NetPeer {
-    u8 reserved_00[0xc];
+    struct Vtable {
+        void *reserved_00[6];
+        i32 (*GetAvailableMessages)(NetPeer *);
+    } *vtable;
+    u8 reserved_04[8];
     u8 local;
 };
 struct ReplicatorData {
@@ -336,10 +340,14 @@ struct NetStats {
     void Update();
 };
 struct NetTransporter {
-    u8 reserved_00[0x10c34];
-    i32 replicator_data_sizes[64];
-    u8 reserved_10d34[0x110f4 - 0x10d34];
-    void AddListener(NetListenerInterface *, unsigned char, char *);
+    NetListenerBinding *first_listener;
+    NetListenerBinding *last_listener;
+    i32 listener_count;
+    virtual void Send(NetMessage, unsigned char, NetPeer &) = 0;
+    virtual void ReliableSend(NetMessage, unsigned char, NetPeer &, char const *, u32) = 0;
+    virtual void Broadcast(NetMessage, unsigned char) = 0;
+    virtual void ReliableBroadcast(NetMessage, unsigned char) = 0;
+    virtual void AddListener(NetListenerInterface *, unsigned char, char *);
     void Distribute(NetMessage const &, unsigned char, NetPeer const &) const;
     void FtpComplete(FtpFile *, i32) const;
     void FtpDownload(FtpFile *) const;
@@ -350,7 +358,8 @@ struct NetTransporter {
     void PeerJoined(NetPeer const &) const;
     void PeerLeft(NetPeer const &, ePeerLeftReason) const;
     void PeerRequest(NetPeer const &) const;
-    void RemoveListener(NetListenerInterface *, unsigned char);
+    virtual void RemoveListener(NetListenerInterface *, unsigned char);
+    virtual ~NetTransporter() {}
     void StatsReceiveMessage(NetMessage, unsigned char);
     void StatsSendMessage(NetMessage, unsigned char);
     void StatsUpdate();

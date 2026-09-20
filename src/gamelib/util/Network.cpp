@@ -10,7 +10,7 @@ i16 NetChangedReplicator::mTableInited;
 i16 NetChangedReplicator::mCrc32Table[256];
 
 extern EdRegistry theRegistry;
-extern NetTransporter theNetwork;
+extern TTNetwork theNetwork;
 extern MemoryManager theMemoryManager;
 
 void NetRotator2::PredictValue(EdClass const *, void *, NetPredictor::PredictorTime *, NetPredictor::PredictorData **,
@@ -84,7 +84,7 @@ void NetReplicator::DoPrediction(EdClass const *, void *, ReplicatorData &, i32)
 
 void NetworkObject::Destroy() {
     i32 class_id = theRegistry.GetClassId(object_class);
-    i32 data_size = theNetwork.replicator_data_sizes[class_id];
+    i32 data_size = theNetwork.network_objects.replicator_data_sizes[class_id];
     if (data_size > 0) {
         theMemoryManager.FreePool(replicator_data, static_cast<u32>(data_size));
         replicator_data = NULL;
@@ -104,7 +104,7 @@ void NetworkObject::Initialise(i32 guid, void *new_object, EdClass *new_class, N
     owner = &new_owner;
     flags |= static_cast<u16>(new_flags);
 
-    i32 data_size = theNetwork.replicator_data_sizes[theRegistry.GetClassId(new_class)];
+    i32 data_size = theNetwork.network_objects.replicator_data_sizes[theRegistry.GetClassId(new_class)];
     if (data_size > 0) {
         replicator_data = theMemoryManager.AllocPool(static_cast<u32>(data_size), 1);
     }

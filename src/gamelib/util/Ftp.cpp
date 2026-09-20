@@ -2,8 +2,9 @@
 #include <stddef.h>
 
 #include "gamelib_util_types.h"
+#include "legoapi/legoapi_types.h"
 
-extern NetTransporter theNetwork;
+extern TTNetwork theNetwork;
 
 i32 NetFtpManager::Abort(char const *, NetAddress const &, i32, i32) {
     STUBBED();

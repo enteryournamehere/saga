@@ -5482,14 +5482,16 @@ struct TMClient {
     void SendTTY(char const *, i32);
     void TestKey(i32);
 };
-struct TTNetwork {
+struct TTNetwork : NetTransporter {
   private:
-    u8 reserved_04[0x2168];
+    u8 reserved_10[0x215c];
     NetAddress my_address;
     NetAddress my_host_address;
     i32 has_my_host_address;
+    u8 reserved_2178[0x1608];
 
   public:
+    NetworkObjectManager network_objects;
     void Broadcast(NetMessage, unsigned char);
     void ClearMyHostAddress();
     void Display(ThingRenderData *);
@@ -5508,6 +5510,7 @@ struct TTNetwork {
     void Update();
     virtual ~TTNetwork();
 };
+DECOMP_ASSERT(offsetof(TTNetwork, network_objects) == 0x3780, "TTNetwork object manager offset");
 // All ThingManager methods are virtual in the original: its vtable order is
 // D2, D0, AddThing, AddThingAfterThis, RemoveTemporaryThings,
 // RemoveDependanciesThings, ResetThings, EnterLevelThings, ExitLevelThings,

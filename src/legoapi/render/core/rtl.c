@@ -16,6 +16,7 @@
 #include "nu2api/nucore/nulst.h"
 
 #include <math.h>
+#include <float.h>
 #include <string.h>
 
 struct nuqtdim_s;
@@ -645,9 +646,27 @@ static void edrtlInvalidateUndo() {
     STUBBED();
 }
 
-static __used__ i32 rtlCmp(rtl_s *, rtl_s *) {
-    STUBBED();
-    return 0;
+static __used__ i32 rtlCmp(rtl_s *first, rtl_s *second) {
+    i32 different = 0;
+    different |= memcmp(&first->position, &second->position, sizeof(NUVEC));
+    different |= memcmp(&first->direction, &second->direction, sizeof(NUVEC));
+    different |= memcmp(&first->colour, &second->colour, sizeof(NUVEC));
+    different |= memcmp(&first->secondary_colour, &second->secondary_colour, sizeof(NUVEC));
+    different |= first->inner_radius != second->inner_radius;
+    different |= first->outer_radius != second->outer_radius;
+    different |= first->parameters[0] != second->parameters[0];
+    different |= first->parameters[1] != second->parameters[1];
+    different |= first->parameters[2] != second->parameters[2];
+    different |= first->parameters[3] != second->parameters[3];
+    different |= first->type != second->type;
+    different |= first->disabled != second->disabled;
+    different |= first->pitch != second->pitch;
+    different |= first->yaw != second->yaw;
+    different |= first->field_5e != second->field_5e;
+    different |= first->field_60 != second->field_60;
+    different |= first->field_68 != second->field_68;
+    different |= first->intensity != second->intensity;
+    return different;
 }
 
 extern "C" {
@@ -1637,26 +1656,130 @@ static void edrtlLeave() {
     STUBBED();
 }
 
-static __used__ int FindNearestRTL(nuvec_s *, int) {
-    STUBBED();
-    return 0;
+static __used__ rtl_s *FindNearestRTL(nuvec_s *position, int ignore_radius) {
+    i32 nearest = -1;
+    f32 nearest_distance = FLT_MAX;
+    i32 i;
+    f32 distance;
+    if (base_rtl != NULL) {
+        i = base_rtl->field_79;
+        while (i != -1) {
+            distance = (curr_set->lights[i].position.x - position->x) *
+                           (curr_set->lights[i].position.x - position->x) +
+                       (curr_set->lights[i].position.y - position->y) *
+                           (curr_set->lights[i].position.y - position->y) +
+                       (curr_set->lights[i].position.z - position->z) *
+                           (curr_set->lights[i].position.z - position->z);
+            if ((ignore_radius || distance < curr_set->lights[i].outer_radius * curr_set->lights[i].outer_radius) &&
+                distance < nearest_distance) {
+                nearest_distance = distance;
+                nearest = i;
+            }
+            i = curr_set->lights[i].field_79;
+        }
+    } else {
+        for (i = 0; i < 128; ++i) {
+            if (hide_types[curr_set->lights[i].type])
+                continue;
+            if (curr_set->lights[i].field_7a != -1)
+                continue;
+            distance = (curr_set->lights[i].position.x - position->x) *
+                           (curr_set->lights[i].position.x - position->x) +
+                       (curr_set->lights[i].position.y - position->y) *
+                           (curr_set->lights[i].position.y - position->y) +
+                       (curr_set->lights[i].position.z - position->z) *
+                           (curr_set->lights[i].position.z - position->z);
+            if ((ignore_radius || distance < curr_set->lights[i].outer_radius * curr_set->lights[i].outer_radius) &&
+                distance < nearest_distance) {
+                nearest_distance = distance;
+                nearest = i;
+            }
+        }
+    }
+    return nearest != -1 ? &curr_set->lights[nearest] : NULL;
 }
 
 void SelectNextRTL() {
-    STUBBED();
+    rtl_s *light;
+    if (base_rtl != NULL) {
+        if (curr_rtl->field_79 != -1) {
+            curr_rtl = &curr_set->lights[curr_rtl->field_79];
+        } else {
+            light = curr_rtl;
+            while (light->field_7a != -1) {
+                curr_rtl = light;
+                light = &curr_set->lights[light->field_7a];
+            }
+        }
+    } else {
+        i32 count = 0;
+        light = curr_rtl;
+        while (count < 128) {
+            ++light;
+            if (light >= &curr_set->lights[128])
+                light = curr_set->lights;
+            if (light->type != 0 && light->field_7a == -1)
+                break;
+            ++count;
+        }
+        curr_rtl = light;
+    }
 }
 
 void SelectPrevRTL() {
-    STUBBED();
+    rtl_s *light;
+    if (base_rtl != NULL) {
+        light = &curr_set->lights[curr_rtl->field_7a];
+        if (light->field_7a != -1) {
+            curr_rtl = light;
+        } else {
+            while (curr_rtl->field_79 != -1)
+                curr_rtl = &curr_set->lights[curr_rtl->field_79];
+        }
+    } else {
+        i32 count = 0;
+        light = curr_rtl;
+        while (count < 128) {
+            if (light == curr_set->lights)
+                light = &curr_set->lights[127];
+            else
+                --light;
+            if (light->type != 0 && light->field_7a == -1)
+                break;
+            ++count;
+        }
+        curr_rtl = light;
+    }
 }
 
 static void edrtlProcRTL(float, nupad_s *) {
     STUBBED();
 }
 
-static __used__ int FindNearestFog(nuvec_s *) {
-    STUBBED();
-    return 0;
+static __used__ EDRTLFOG_s *FindNearestFog(nuvec_s *position) {
+    i32 nearest = -1;
+    f32 nearest_distance = FLT_MAX;
+    i32 i;
+    f32 distance;
+    for (i = 0; i < 32; ++i) {
+        if (hide_types[curr_set->lights[i].type])
+            continue;
+        distance = (curr_set->fog[i].position.x - position->x) *
+                       (curr_set->fog[i].position.x - position->x) +
+                   (curr_set->fog[i].position.y - position->y) *
+                       (curr_set->fog[i].position.y - position->y) +
+                   (curr_set->fog[i].position.z - position->z) *
+                       (curr_set->fog[i].position.z - position->z);
+        if (distance < curr_set->fog[i].radius * curr_set->fog[i].radius && distance < nearest_distance) {
+            nearest_distance = distance;
+            nearest = i;
+        }
+    }
+    if (nearest != -1) {
+        curFogLoc = nearest;
+        return &curr_set->fog[nearest];
+    }
+    return NULL;
 }
 
 extern "C" void edrtlGetFogSet(void) {

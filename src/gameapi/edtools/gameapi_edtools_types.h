@@ -422,6 +422,8 @@ struct EdManScale {
     void Render(ClassObjectList &);
 };
 struct EdManipulator {
+    static f32 Scale;
+
     void DrawAxis(VuVec &, VuMtx *);
     void DrawRotator(VuVec &);
     void GetAxisLocators(VuVec &, VuVec *, VuMtx *);
@@ -469,19 +471,19 @@ static_assert(sizeof(void *) != 4 || offsetof(EdRef, member_offset) == 0x14,
               "EdRef::member_offset 32-bit offset");
 static_assert(sizeof(void *) != 4 || offsetof(EdRef, attributes) == 0x1c,
               "EdRef::attributes 32-bit offset");
-struct EdRefKnot {
+struct EdRefKnot : EdRef {
     void GetMemberData(void *, i32, void *, i32);
     void SetMemberData(void *, i32, void *, i32, i16 *);
 };
-struct EdRefPlaceable {
+struct EdRefPlaceable : EdRef {
     void GetMemberData(void *, i32, void *, i32);
     void SetMemberData(void *, i32, void *, i32, i16 *);
 };
-struct EdRefSpecialObject {
+struct EdRefSpecialObject : EdRef {
     void GetMemberData(void *, i32, void *, i32);
     void SetMemberData(void *, i32, void *, i32, i16 *);
 };
-struct EdRefSpline {
+struct EdRefSpline : EdRef {
     void GetMemberData(void *, i32, void *, i32);
     void SetMemberData(void *, i32, void *, i32, i16 *);
 };
@@ -641,6 +643,10 @@ struct EditorSettings {
 };
 static_assert(sizeof(void *) != 4 || sizeof(EditorSettings) == 0xc, "EditorSettings 32-bit size");
 struct KnotHelper {
+    u8 reserved_00[0xc];
+    EdRef *in_tangent_ref;
+    EdRef *out_tangent_ref;
+
     void CreateObject(void *, i32, i32);
     void DestroyObject(void *, i32);
     void DistanceToObject(VuVec &, VuVec &, void *, EdRef **);
@@ -654,6 +660,7 @@ struct SplineHelper {
     SplineObject *first_object;
     u8 reserved_0x0c[4];
     i32 object_count;
+    i32 auto_generate_points;
 
     void AddMenuItems(eduimenu_s *);
     void ClearLevel(i32);
@@ -677,28 +684,22 @@ struct SplineHelper {
 };
 struct SplineKnot {
     SplineKnot *next;
-    u8 reserved_0x04[4];
+    SplineKnot *previous;
     VuVec position;
+    VuVec in_tangent;
+    VuVec out_tangent;
+    SplineObject *spline;
+    i16 led_file;
+    u16 reserved_3e;
 
     void Smooth();
 };
 struct SplineKnotList {
     SplineKnot *first;
+    SplineKnot *last;
+    i32 count;
 
     i32 GetPoint(i32, VuVec &);
-};
-struct SplineObject {
-    u8 reserved_0x00[4];
-    SplineObject *next;
-
-    void Clone();
-    void Draw(i32, i32, i32, float);
-    void DropPoint(VuVec &);
-    void GenBezierPoints();
-    void GenLinearPoints();
-    void GenPoints();
-    void ReverseKnots();
-    void SmoothKnots();
 };
 struct SplinePointBlock {
     SplinePointBlock *next;
@@ -713,6 +714,8 @@ struct SplinePointBlock {
 };
 struct SplinePointList {
     SplinePointBlock *first;
+    SplinePointBlock *last;
+    i32 block_count;
 
     void AddPoint(VuVec &);
     void Clear();
@@ -720,6 +723,40 @@ struct SplinePointList {
     i32 GetNumPoints();
     i32 GetPoint(i32, VuVec &);
 };
+struct SplineObject {
+    u8 reserved_0x00[4];
+    SplineObject *next;
+    SplineObject *previous;
+    char name[32];
+    SplineKnotList knots;
+    SplinePointList points;
+    i16 led_file;
+    u16 reserved_46;
+    f32 step;
+    f32 height;
+    i32 drop;
+    i32 closed;
+
+    void Clone();
+    void Draw(i32, i32, i32, float);
+    void DropPoint(VuVec &);
+    void GenBezierPoints();
+    void GenLinearPoints();
+    void GenPoints();
+    void ReverseKnots();
+    void SmoothKnots();
+};
+DECOMP_ASSERT(sizeof(SplineKnot) == 0x40, "SplineKnot size");
+DECOMP_ASSERT(offsetof(SplineKnot, in_tangent) == 0x18, "SplineKnot incoming tangent offset");
+DECOMP_ASSERT(offsetof(SplineKnot, out_tangent) == 0x28, "SplineKnot outgoing tangent offset");
+DECOMP_ASSERT(offsetof(SplineKnot, spline) == 0x38, "SplineKnot owning spline offset");
+DECOMP_ASSERT(sizeof(SplineObject) == 0x58, "SplineObject size");
+DECOMP_ASSERT(offsetof(SplineObject, points) == 0x38, "SplineObject points offset");
+DECOMP_ASSERT(offsetof(SplineObject, step) == 0x48, "SplineObject step offset");
+DECOMP_ASSERT(offsetof(SplineHelper, auto_generate_points) == 0x14, "SplineHelper automatic generation offset");
+DECOMP_ASSERT(sizeof(KnotHelper) == 0x14, "KnotHelper size");
+extern SplineHelper theSplineHelper;
+extern KnotHelper theKnotHelper;
 struct SplineTool {
     void Initialise(variptr_u &, variptr_u &, i32);
     void Process(EdInputContext &);

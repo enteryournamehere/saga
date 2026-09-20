@@ -8,6 +8,7 @@
 #include "gameapi/edtools/edstubs.h"
 #include "gameapi/edtools/edgra.h"
 #include "legoapi/legoapi_types.h"
+#include "nu2api/nucore/NuDynamicLight.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nuspline.h"
 #include "nu2api/nucore/nustring.h"
@@ -47,6 +48,10 @@ void SerialiseNuHSpecial(EdStream &, void *, i32);
 void SerialiseNuVec(EdStream &, void *, i32);
 void SerialiseNuMtx(EdStream &, void *, i32);
 
+f32 EdManipulator::Scale = 2.0f;
+SplineHelper theSplineHelper;
+KnotHelper theKnotHelper;
+extern ClassEditor theClassEditor;
 i32 pad_disabled;
 eduimenu_s *edLevelPinnedMenu;
 
@@ -1421,12 +1426,52 @@ void EdManRotate::RotateItem(EdInputContext &, ClassObjectList &, i32, i32) {
     STUBBED();
 }
 
-void EdRefSpline::GetMemberData(void *, i32, void *, i32) {
-    STUBBED();
+void EdRefSpline::GetMemberData(void *object, i32 type, void *data, i32 data_size) {
+    SplineObject *spline = static_cast<SplineObject *>(object);
+    CheckType(type);
+    switch (member_offset) {
+    case static_cast<i32>(0x80000001):
+        *static_cast<f32 *>(data) = spline->step;
+        break;
+    case static_cast<i32>(0x80000002):
+        *static_cast<f32 *>(data) = spline->height;
+        break;
+    case static_cast<i32>(0x80000003):
+        *static_cast<i32 *>(data) = spline->drop != 0;
+        break;
+    case static_cast<i32>(0x80000004):
+        *static_cast<i32 *>(data) = spline->closed;
+        break;
+    default:
+        EdRef::GetMemberData(object, type, data, data_size);
+        break;
+    }
 }
 
-void EdRefSpline::SetMemberData(void *, i32, void *, i32, i16 *) {
-    STUBBED();
+void EdRefSpline::SetMemberData(void *object, i32 type, void *data, i32 data_size, i16 *) {
+    SplineObject *spline = static_cast<SplineObject *>(object);
+    CheckType(type);
+    switch (member_offset) {
+    case static_cast<i32>(0x80000001):
+        spline->step = *static_cast<f32 *>(data);
+        break;
+    case static_cast<i32>(0x80000002):
+        spline->height = *static_cast<f32 *>(data);
+        break;
+    case static_cast<i32>(0x80000003):
+        spline->drop = *static_cast<i32 *>(data) != 0;
+        break;
+    case static_cast<i32>(0x80000004):
+        spline->closed = *static_cast<i32 *>(data);
+        break;
+    default:
+        // The original setter delegates unrecognized members to the getter.
+        EdRef::GetMemberData(object, type, data, data_size);
+        return;
+    }
+    if (theSplineHelper.auto_generate_points) {
+        spline->points.Clear();
+    }
 }
 
 void EdBitControl::AddMenuItem(eduimenu_s *, EdRef *, void *) {
@@ -1646,12 +1691,61 @@ i32 EdOutputStream::SerialiseString(char *text, i32) {
     return written + SerialiseBuffer(text, 1, length);
 }
 
-void EdRefPlaceable::GetMemberData(void *, i32, void *, i32) {
-    STUBBED();
+void EdRefPlaceable::GetMemberData(void *object, i32 type, void *data, i32 data_size) {
+    Placeable *placeable = static_cast<Placeable *>(object);
+    CheckType(type);
+    switch (member_offset) {
+    case static_cast<i32>(0x80000001):
+        *static_cast<i16 *>(data) = placeable->led_file;
+        break;
+    case static_cast<i32>(0x80000002):
+        *static_cast<i32 *>(data) = placeable->attributes;
+        break;
+    case static_cast<i32>(0x80000003): {
+        const char *object_name = placeable->GetName();
+        NuStrNCpy(static_cast<char *>(data), object_name ? object_name : "", data_size);
+        break;
+    }
+    case static_cast<i32>(0x80000005): {
+        const char *params = placeable->params.data ? placeable->params.data + 1 : NULL;
+        // The original tests the reference name before copying parameter text.
+        NuStrNCpy(static_cast<char *>(data), name ? params : "", data_size);
+        break;
+    }
+    case static_cast<i32>(0x80000006): {
+        const VuMtx *matrix = placeable->GetCurrentTransform();
+        if (matrix) {
+            *static_cast<VuMtx *>(data) = *matrix;
+        }
+        break;
+    }
+    case static_cast<i32>(0x80000007):
+        *static_cast<f32 *>(data) = placeable->GetRadius();
+        break;
+    }
 }
 
-void EdRefPlaceable::SetMemberData(void *, i32, void *, i32, i16 *) {
-    STUBBED();
+void EdRefPlaceable::SetMemberData(void *object, i32 type, void *data, i32, i16 *) {
+    Placeable *placeable = static_cast<Placeable *>(object);
+    CheckType(type);
+    switch (member_offset) {
+    case static_cast<i32>(0x80000001):
+        placeable->led_file = *static_cast<i16 *>(data);
+        break;
+    case static_cast<i32>(0x80000002):
+        placeable->attributes = *static_cast<i32 *>(data);
+        break;
+    case static_cast<i32>(0x80000003):
+        placeable->SetName(NuStrLen(static_cast<char *>(data)) > 0 ? static_cast<char *>(data) : NULL);
+        break;
+    case static_cast<i32>(0x80000005):
+        placeable->params.Set(NuStrLen(static_cast<char *>(data)) > 0 ? static_cast<char *>(data) : NULL);
+        break;
+    case static_cast<i32>(0x80000006):
+        placeable->SetInitialTransform(static_cast<VuMtx *>(data));
+        placeable->SetCurrentTransform(static_cast<VuMtx *>(data));
+        break;
+    }
 }
 
 void EdColourControl::AddMenuItem(eduimenu_s *, EdRef *, void *) {
@@ -1928,12 +2022,36 @@ i32 EdFileOutputStream::SerialiseBuffer(void *data, i32 size, i32 count) {
     return result;
 }
 
-void EdRefSpecialObject::GetMemberData(void *, i32, void *, i32) {
-    STUBBED();
+void EdRefSpecialObject::GetMemberData(void *object, i32 type, void *data, i32) {
+    SpecialObject *special_object = static_cast<SpecialObject *>(object);
+    CheckType(type);
+    switch (member_offset) {
+    case static_cast<i32>(0x80000008):
+        *static_cast<nuhspecial_s *>(data) = special_object->special;
+        break;
+    case static_cast<i32>(0x80000009):
+        *static_cast<i32 *>(data) = NuSpecialGetVisibilityFn(&special_object->special);
+        break;
+    case static_cast<i32>(0x8000000a):
+        *static_cast<i32 *>(data) = NuSpecialGetCollision(&special_object->special);
+        break;
+    }
 }
 
-void EdRefSpecialObject::SetMemberData(void *, i32, void *, i32, i16 *) {
-    STUBBED();
+void EdRefSpecialObject::SetMemberData(void *object, i32 type, void *data, i32, i16 *) {
+    SpecialObject *special_object = static_cast<SpecialObject *>(object);
+    CheckType(type);
+    switch (member_offset) {
+    case static_cast<i32>(0x80000008):
+        special_object->special = *static_cast<nuhspecial_s *>(data);
+        break;
+    case static_cast<i32>(0x80000009):
+        NuSpecialSetVisibility(&special_object->special, *static_cast<i32 *>(data));
+        break;
+    case static_cast<i32>(0x8000000a):
+        NuSpecialSetCollision(&special_object->special, *static_cast<i32 *>(data));
+        break;
+    }
 }
 
 EdSpecialObjectControl::EdSpecialObjectControl() {
@@ -2282,10 +2400,73 @@ void EdManMove::Render(ClassObjectList &) {
     STUBBED();
 }
 
-void EdRefKnot::GetMemberData(void *, i32, void *, i32) {
-    STUBBED();
+void EdRefKnot::GetMemberData(void *object, i32 type, void *data, i32 data_size) {
+    SplineKnot *knot = static_cast<SplineKnot *>(object);
+    CheckType(type);
+    switch (member_offset) {
+    case static_cast<i32>(0x80000001):
+        NuStrNCpy(static_cast<char *>(data), knot->spline->name, data_size);
+        break;
+    case static_cast<i32>(0x80000002):
+        *static_cast<f32 *>(data) = 0.25f * EdManipulator::Scale;
+        break;
+    case static_cast<i32>(0x80000003):
+        *static_cast<VuVec *>(data) = knot->position;
+        break;
+    case static_cast<i32>(0x80000004):
+        *static_cast<VuVec *>(data) = knot->in_tangent;
+        break;
+    case static_cast<i32>(0x80000005):
+        *static_cast<VuVec *>(data) = knot->out_tangent;
+        break;
+    default:
+        EdRef::GetMemberData(object, type, data, data_size);
+        break;
+    }
 }
 
-void EdRefKnot::SetMemberData(void *, i32, void *, i32, i16 *) {
-    STUBBED();
+void EdRefKnot::SetMemberData(void *object, i32 type, void *data, i32 data_size, i16 *) {
+    SplineKnot *knot = static_cast<SplineKnot *>(object);
+    CheckType(type);
+    switch (member_offset) {
+    case static_cast<i32>(0x80000001):
+    case static_cast<i32>(0x80000002):
+        return;
+    case static_cast<i32>(0x80000003): {
+        VuVec *position = static_cast<VuVec *>(data);
+        f32 dx = position->x - knot->position.x;
+        f32 dy = position->y - knot->position.y;
+        f32 dz = position->z - knot->position.z;
+        knot->position.x += dx;
+        knot->position.y += dy;
+        knot->position.z += dz;
+        knot->position.w = 1.0f;
+        if (!theClassEditor.IsSelectedObject(knot, theKnotHelper.in_tangent_ref)) {
+            knot->in_tangent.x += dx;
+            knot->in_tangent.y += dy;
+            knot->in_tangent.z += dz;
+            theClassEditor.SnapPoint(knot->in_tangent);
+        }
+        if (!theClassEditor.IsSelectedObject(knot, theKnotHelper.out_tangent_ref)) {
+            knot->out_tangent.x += dx;
+            knot->out_tangent.y += dy;
+            knot->out_tangent.z += dz;
+            theClassEditor.SnapPoint(knot->out_tangent);
+        }
+        break;
+    }
+    case static_cast<i32>(0x80000004):
+        knot->in_tangent = *static_cast<VuVec *>(data);
+        break;
+    case static_cast<i32>(0x80000005):
+        knot->out_tangent = *static_cast<VuVec *>(data);
+        break;
+    default:
+        // The original setter delegates unrecognized members to the getter.
+        EdRef::GetMemberData(object, type, data, data_size);
+        return;
+    }
+    if (theSplineHelper.auto_generate_points && knot->spline) {
+        knot->spline->points.Clear();
+    }
 }

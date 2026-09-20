@@ -25,6 +25,11 @@ extern "C" {
     void AiRndrLine3d(NURND_VERTEX3D *, numtl_s *, NUMTX *);
     void creatureEditor_PathNodeMoved(EDAIPATHNODE_s *);
     void locatorEditor_PathNodeMoved(EDAIPATHNODE_s *);
+    void creatureEditor_PathDeleted(EDAIPATH_s *);
+    void locatorEditor_PathDeleted(EDAIPATH_s *);
+    void creatureEditor_PathNodeDeleted(EDAIPATHNODE_s *);
+    void locatorEditor_PathNodeDeleted(EDAIPATHNODE_s *);
+    extern void (*AIPathDeletedFn)(EDAIPATH_s *);
     void aieditor_cbCancelMainMenu(eduimenu_s *, eduimenu_s *);
     void aieditor_cvSelectEditorMode(eduimenu_s *, eduiitem_s *, u32);
     void aieditor_cbSave(eduimenu_s *, eduiitem_s *, u32);
@@ -162,6 +167,20 @@ static u32 attr[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
 static void DestroyAIPathNode(EDAIPATHNODE_s *, EDAIPATH_s *);
 extern "C" void aieditor_ClearMainMenu(void);
 
+static inline void pathEditor_DisconnectNodes(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) {
+    for (i32 i = 0; i < 8; ++i) {
+        if (node->connections[i].node == other) {
+            for (i32 j = 0; j < 8; ++j) {
+                if (other->connections[j].node == node) {
+                    memset(&node->connections[i], 0, sizeof(EDAIPATHCNX_s));
+                    memset(&other->connections[j], 0, sizeof(EDAIPATHCNX_s));
+                    return;
+                }
+            }
+        }
+    }
+}
+
 struct EDAISHAREDPATHNODE_s;
 struct AIPATH_s;
 struct eduimenu_s;
@@ -282,8 +301,47 @@ static __used__ void pathEditor_cbCreatePath(eduimenu_s *, eduiitem_s *, u32) {
     aieditor_ClearMainMenu();
 }
 
-static __used__ void pathEditor_cbDeletePath(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static __used__ void pathEditor_cbDeletePath(eduimenu_s *parent, eduiitem_s *item, u32) {
+    if (item == nullptr) {
+        return;
+    }
+    switch (item->data) {
+    case 0: {
+        eduimenu_s *menu = eduiMenuCreate(240, 90, 240, 250, ed_fnt, nullptr, "Delete current path??");
+        if (menu != nullptr) {
+            eduiMenuAddItem(menu, eduiItemSelCreate(2, attr, 0, 0, pathEditor_cbDeletePath, "No"));
+            eduiMenuAddItem(menu, eduiItemSelCreate(1, attr, 0, 0, pathEditor_cbDeletePath, "Yes"));
+            eduiMenuAttach(parent, menu);
+        }
+        break;
+    }
+    case 1: {
+        if (aieditor->current_path == nullptr || (aieditor->current_path->flags & 1)) {
+            return;
+        }
+        creatureEditor_PathDeleted(aieditor->current_path);
+        locatorEditor_PathDeleted(aieditor->current_path);
+        if (AIPathDeletedFn != nullptr) {
+            AIPathDeletedFn(aieditor->current_path);
+        }
+        EDAIPATH_s *path = aieditor->current_path;
+        if (path != nullptr) {
+            EDAIPATHNODE_s *node;
+            while ((node = (EDAIPATHNODE_s *)NuLinkedListGetHead(&path->nodes)) != nullptr) {
+                DestroyAIPathNode(node, path);
+            }
+            NuLinkedListRemove(&aieditor->paths, &path->link);
+            memset(path, 0, sizeof(*path));
+            NuLinkedListAppend(&aieditor->free_paths, &path->link);
+        }
+        aieditor->current_path = (EDAIPATH_s *)NuLinkedListGetHead(&aieditor->paths);
+        aieditor_ClearMainMenu();
+        break;
+    }
+    case 2:
+        aieditor_ClearMainMenu();
+        break;
+    }
 }
 
 static __used__ void pathEditor_cbRenameNode(eduimenu_s *, eduiitem_s *item, u32) {
@@ -405,12 +463,62 @@ static __used__ void pathEditorCalcRouteIterator(AIPATH_s *path, f32 *distances,
     visited[current / 8] &= ~(1 << (current % 8));
 }
 
-static __used__ void pathEditor_cbCnxFlagsToggle(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static __used__ void pathEditor_cbCnxFlagsToggle(eduimenu_s *, eduiitem_s *item, u32) {
+    i32 type_index = item->data;
+    EDAIPATH_s *path = aieditor->current_path;
+    if (path == nullptr) {
+        return;
+    }
+    EDAIPATHNODE_s *other = path->other_node;
+    EDAIPATHNODE_s *node = path->current_node;
+    if (other == nullptr || node == nullptr) {
+        return;
+    }
+    for (i32 i = 0; i < 8; ++i) {
+        if (node->connections[i].node != other) {
+            continue;
+        }
+        AIPATHCNXTYPE_s *type = &aipathcnxtypes[type_index];
+        EDAIPATHCNX_s *connection = &node->connections[i];
+        u32 mask = type->connection_flag;
+        if (connection->flags & mask) {
+            connection->flags &= ~mask;
+        } else {
+            connection->flags |= mask;
+        }
+        if (type->flags != 0) {
+            for (i32 j = 0; j < 8; ++j) {
+                if (other->connections[j].node == node) {
+                    if (connection->flags & mask) {
+                        other->connections[j].flags |= mask;
+                    } else {
+                        other->connections[j].flags &= ~mask;
+                    }
+                    break;
+                }
+            }
+        }
+        break;
+    }
 }
 
-static __used__ void pathEditor_cbDeletePathNode(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static __used__ void pathEditor_cbDeletePathNode(eduimenu_s *, eduiitem_s *item, u32) {
+    if (item != nullptr && item->data != 0) {
+        EDAIPATH_s *path = aieditor->current_path;
+        EDAIPATHNODE_s *node = path->current_node;
+        if (node != nullptr && node == path->other_node) {
+            DestroyAIPathNode(node, path);
+            creatureEditor_PathNodeDeleted(node);
+            locatorEditor_PathNodeDeleted(node);
+            if (AIPathNodeDeletedFn != nullptr) {
+                AIPathNodeDeletedFn(node);
+            }
+            if (node == aieditor->current_path->current_node) {
+                aieditor->current_path->current_node = nullptr;
+            }
+        }
+    }
+    aieditor_ClearMainMenu();
 }
 
 static __used__ void pathEditor_cbRenameNodeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
@@ -530,8 +638,20 @@ static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *, eduimenu_s *men
     eduiMenuDestroy(menu);
 }
 
-static __used__ void pathEditor_cbDisconnectPathNode(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static __used__ void pathEditor_cbDisconnectPathNode(eduimenu_s *, eduiitem_s *item, u32) {
+    if (item != nullptr && item->data != 0) {
+        EDAIPATHNODE_s *node = aieditor->current_path->current_node;
+        EDAIPATHNODE_s *other = aieditor->current_path->other_node;
+        if (node != nullptr && other != nullptr && node != other) {
+            pathEditor_DisconnectNodes(node, other);
+            creatureEditor_PathNodeDeleted(aieditor->current_path->current_node);
+            locatorEditor_PathNodeDeleted(aieditor->current_path->current_node);
+            if (AIPathNodeDeletedFn != nullptr) {
+                AIPathNodeDeletedFn(aieditor->current_path->current_node);
+            }
+        }
+    }
+    aieditor_ClearMainMenu();
 }
 
 static __used__ f32 **pathEditorCalculateDistanceTable(AIPATH_s *path, i32 route_mask, variptr_u *cursor,
@@ -1063,19 +1183,8 @@ static void DestroyAIPathNode(EDAIPATHNODE_s *node, EDAIPATH_s *path) {
     for (i32 connection = 0; connection < 8; ++connection) {
         EDAIPATHNODE_s *other = node->connections[connection].node;
         if (other != NULL) {
-            for (i32 a = 0; a < 8; ++a) {
-                if (node->connections[a].node == other) {
-                    for (i32 b = 0; b < 8; ++b) {
-                        if (other->connections[b].node == node) {
-                            memset(&node->connections[a], 0, sizeof(EDAIPATHCNX_s));
-                            memset(&other->connections[b], 0, sizeof(EDAIPATHCNX_s));
-                            goto disconnected;
-                        }
-                    }
-                }
-            }
+            pathEditor_DisconnectNodes(node, other);
         }
-    disconnected:;
     }
     NuLinkedListRemove(&path->nodes, &node->link);
     --path->node_count;

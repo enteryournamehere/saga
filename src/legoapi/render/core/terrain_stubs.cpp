@@ -967,8 +967,8 @@ extern "C" {
             effect->width_keys[i].value *= scale;
             effect->height_keys[i].value *= scale;
         }
-        effect->field_148 *= scale;
-        effect->field_14c *= scale;
+        effect->min_size *= scale;
+        effect->max_size *= scale;
         effect->field_048 *= scale;
         effect->field_0a0 *= scale;
 
@@ -984,8 +984,8 @@ extern "C" {
             effect->field_058 *= scale;
             effect->field_04c *= scale;
         }
-        effect->field_0b4 *= scale;
-        effect->field_0bc *= scale;
+        effect->jib_x_amplitude *= scale;
+        effect->jib_y_amplitude *= scale;
         GenericDebinfoDmaTypeUpdate(effect);
     }
 

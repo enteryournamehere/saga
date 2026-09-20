@@ -5,6 +5,7 @@ typedef struct nunrand_s {
 } NURAND;
 
 #ifdef __cplusplus
+f32 randyfloat();
 extern "C" {
 #endif
     extern u32 fseed;

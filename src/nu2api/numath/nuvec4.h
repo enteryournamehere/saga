@@ -20,6 +20,7 @@ typedef struct nuhalfvec4_s {
 } NUHALFVEC4;
 
 #ifdef __cplusplus
+NUVEC4 *makenuvec4(f32 x, f32 y, f32 z, f32 w);
 f32 NuBez3EvaluateX(NUVEC4 *control, f32 t);
 extern "C" {
 #endif

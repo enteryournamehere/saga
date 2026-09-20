@@ -10,6 +10,11 @@
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/nu3d/nucamera.h"
 
+#include <stdlib.h>
+
+NUVEC tempvec;
+NUVEC4 tempvec4;
+
 extern "C" {
     i32 NuPlnLineVU0(NUPLANE *plane, NUVEC *start, NUVEC *end, NUVEC *out) {
         return NuPlnLine(plane, start, end, out);
@@ -174,8 +179,8 @@ extern "C" {
     }
 }
 
-void randyfloat() {
-    STUBBED();
+f32 randyfloat() {
+    return static_cast<f32>(rand()) / static_cast<f32>(RAND_MAX);
 }
 
 extern "C" {
@@ -189,12 +194,19 @@ extern "C" {
     }
 }
 
-void makenuvec(float, float, float) {
-    STUBBED();
+NUVEC *makenuvec(f32 x, f32 y, f32 z) {
+    tempvec.x = x;
+    tempvec.y = y;
+    tempvec.z = z;
+    return &tempvec;
 }
 
-void makenuvec4(float, float, float, float) {
-    STUBBED();
+NUVEC4 *makenuvec4(f32 x, f32 y, f32 z, f32 w) {
+    tempvec4.x = x;
+    tempvec4.y = y;
+    tempvec4.z = z;
+    tempvec4.w = w;
+    return &tempvec4;
 }
 
 u32 NuVecToRGBA(NUVEC *v, f32 alpha) {

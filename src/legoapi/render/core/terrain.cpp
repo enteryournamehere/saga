@@ -5727,8 +5727,183 @@ extern "C" void NewRaySetDisablePalt(i32 disabled) {
     TerrPlatDis = disabled;
 }
 
-void ScanTerrainHandel(i32, i16 *) {
-    STUBBED();
+namespace {
+    static TerrainScanBounds TerrainHandleBounds(const NUVEC &position, const NUVEC &movement, f32 radius) {
+        TerrainScanBounds bounds;
+        if (movement.x > 0.0f) {
+            bounds.min_x = position.x - 0.02f - radius;
+            bounds.max_x = movement.x + position.x + 0.02f + radius;
+        } else {
+            bounds.min_x = movement.x + position.x - 0.02f - radius;
+            bounds.max_x = position.x + 0.02f + radius;
+        }
+        if (movement.y > 0.0f) {
+            bounds.min_y = position.y - 0.02f - radius;
+            bounds.max_y = movement.y + position.y + 0.02f + radius;
+        } else {
+            bounds.min_y = movement.y + position.y - 0.02f - radius;
+            bounds.max_y = position.y + 0.02f + radius;
+        }
+        if (movement.z > 0.0f) {
+            bounds.min_z = position.z - 0.02f - radius;
+            bounds.max_z = movement.z + position.z + 0.02f + radius;
+        } else {
+            bounds.min_z = movement.z + position.z - 0.02f - radius;
+            bounds.max_z = position.z + 0.02f + radius;
+        }
+        return bounds;
+    }
+
+    static bool TerrainHandleVerticesOverlap(const TerrainScanBounds &bounds, const TERRAIN_SHAPE &shape) {
+        return (shape.vectors[0].x > bounds.min_x || shape.vectors[1].x > bounds.min_x ||
+                shape.vectors[2].x > bounds.min_x || shape.vectors[3].x > bounds.min_x) &&
+               (shape.vectors[0].x < bounds.max_x || shape.vectors[1].x < bounds.max_x ||
+                shape.vectors[2].x < bounds.max_x || shape.vectors[3].x < bounds.max_x) &&
+               (shape.vectors[0].z > bounds.min_z || shape.vectors[1].z > bounds.min_z ||
+                shape.vectors[2].z > bounds.min_z || shape.vectors[3].z > bounds.min_z) &&
+               (shape.vectors[0].z < bounds.max_z || shape.vectors[1].z < bounds.max_z ||
+                shape.vectors[2].z < bounds.max_z || shape.vectors[3].z < bounds.max_z);
+    }
+
+    static void TerrainHandleFilterShapes(TerrainScanWriter *writer, TERRAIN_SHAPE **shapes, i32 count,
+                                           const TerrainScanBounds &bounds, i32 terrain_mask, bool rotating) {
+        for (i32 i = 0; i < count; ++i) {
+            TERRAIN_SHAPE *shape = shapes[i];
+            if (!rotating && !TerrainShapeOverlaps(bounds, *shape))
+                continue;
+            if (reinterpret_cast<u8 *>(writer->cursor) >= writer->limit)
+                continue;
+            if (shape->material[1] != 0 && (shape->material[1] & terrain_mask) == 0)
+                continue;
+            if (rotating && !TerrainHandleVerticesOverlap(bounds, *shape))
+                continue;
+            *writer->cursor++ = shape;
+            ++writer->group_shape_count;
+        }
+    }
+
+    static bool TerrainHandleWallOverlap(const TerrainScanBounds &bounds, const TERRAIN_WALL_POINT *wall) {
+        return ((wall[0].position.x >= bounds.min_x && wall[1].position.x <= bounds.max_x) ||
+                (wall[1].position.x >= bounds.min_x && wall[0].position.x <= bounds.max_x)) &&
+               ((wall[0].position.z >= bounds.min_z && wall[1].position.z <= bounds.max_z) ||
+                (wall[1].position.z >= bounds.min_z && wall[0].position.z <= bounds.max_z));
+    }
+}
+
+void ScanTerrainHandel(i32 terrain_mask, i16 *handle) {
+    if (handle == NULL)
+        return;
+    platinrange = 0;
+    TerrainScanWriter writer;
+    writer.group_header = TerI->scan_list_storage;
+    writer.cursor = reinterpret_cast<TERRAIN_SHAPE **>(writer.group_header + sizeof(TERRAIN_SHAPE *));
+    writer.limit = TerI->scan_list_storage + sizeof(TerI->scan_list_storage) - 12;
+    writer.group_shape_count = 0;
+    writer.scaled_shape_count = 0;
+    TerI->scan_group_index = -1;
+    TerrainScanBounds bounds;
+    f32 scan_radius_sq;
+    if (TerI->scan_result != 1) {
+        f32 movement_sq = TerI->movement.x * TerI->movement.x + TerI->movement.y * TerI->movement.y +
+                          TerI->movement.z * TerI->movement.z;
+        f32 reach = 0.02f + TerI->collision_radius_sq + movement_sq;
+        f32 vertical_reach = TerI->object_scale * reach;
+        bounds.min_x = TerI->position.x - reach;
+        bounds.max_x = TerI->position.x + reach;
+        bounds.min_y = TerI->position.y - vertical_reach;
+        bounds.max_y = TerI->position.y + vertical_reach;
+        bounds.min_z = TerI->position.z - reach;
+        bounds.max_z = TerI->position.z + reach;
+        scan_radius_sq = reach + 1.0f;
+    } else {
+        bounds = TerrainHandleBounds(TerI->position, TerI->movement, TerI->collision_radius);
+        f32 dx = bounds.min_x - bounds.max_x;
+        f32 dy = bounds.min_y - bounds.max_y;
+        f32 dz = bounds.min_z - bounds.max_z;
+        scan_radius_sq = dx * dx + dy * dy + dz * dz + 1.02f;
+    }
+    f32 scan_radius = NuFsqrt(scan_radius_sq);
+    i32 disabled_platform = TerrPlatDis;
+    TerrainQuery_s *query = TerI;
+    while (handle[0] > 0) {
+        i32 count = handle[0];
+        i32 group_index = handle[1];
+        TERRAIN_SHAPE **shapes = reinterpret_cast<TERRAIN_SHAPE **>(handle + 2);
+        handle = reinterpret_cast<i16 *>(shapes + count);
+        TERRAIN_GROUP &group = CurTerr->groups[group_index];
+        TerrainScanBounds local = bounds;
+        TERRAIN_PLATFORM *platform = group.chunk_type == 1 ? &CurTerr->platforms[group.scene_index] : NULL;
+        NUMTX *matrix = platform != NULL ? static_cast<NUMTX *>(platform->scene_object) : NULL;
+        if (matrix == NULL) {
+            if (!TerrainBoundsOverlap(bounds, group.bounds_min, group.bounds_max))
+                continue;
+            local.min_x -= group.origin.x;
+            local.max_x -= group.origin.x;
+            local.min_y -= group.origin.y;
+            local.max_y -= group.origin.y;
+            local.min_z -= group.origin.z;
+            local.max_z -= group.origin.z;
+            TerrainHandleFilterShapes(&writer, shapes, count, local, terrain_mask, false);
+            TerrainFinishScanGroup(&writer, group_index);
+            continue;
+        }
+        if (matrix->m30 > platform->previous_matrix.m30) {
+            local.min_x = bounds.min_x - group.origin.x;
+            local.max_x = (matrix->m30 - platform->previous_matrix.m30) * 1.5f + bounds.max_x - group.origin.x;
+        } else {
+            local.min_x = (matrix->m30 - platform->previous_matrix.m30) * 1.5f + bounds.min_x - group.origin.x;
+            local.max_x = bounds.max_x - group.origin.x;
+        }
+        if (matrix->m31 > platform->previous_matrix.m31) {
+            local.min_y = bounds.min_y - group.origin.y;
+            local.max_y = (matrix->m31 - platform->previous_matrix.m31) * 1.5f + bounds.max_y - group.origin.y;
+        } else {
+            local.min_y = (matrix->m31 - platform->previous_matrix.m31) * 1.5f + bounds.min_y - group.origin.y;
+            local.max_y = bounds.max_y - group.origin.y;
+        }
+        if (matrix->m32 > platform->previous_matrix.m32) {
+            local.min_z = bounds.min_z - group.origin.z;
+            local.max_z = (matrix->m32 - platform->previous_matrix.m32) * 1.5f + bounds.max_z - group.origin.z;
+        } else {
+            local.min_z = (matrix->m32 - platform->previous_matrix.m32) * 1.5f + bounds.min_z - group.origin.z;
+            local.max_z = bounds.max_z - group.origin.z;
+        }
+        if (group.scene_index == disabled_platform)
+            continue;
+        if ((platform->flags & TERRAIN_PLATFORM_FLAG_ROTATING) == 0) {
+            if (!TerrainBoundsOverlap(local, group.bounds_min, group.bounds_max))
+                continue;
+            TerrainHandleFilterShapes(&writer, shapes, count, local, terrain_mask, false);
+            TerrainFinishScanGroup(&writer, group_index);
+            continue;
+        }
+        f32 dx = (bounds.min_x + bounds.max_x) * 0.5f - group.origin.x;
+        f32 dy = ((bounds.min_y + bounds.max_y) * 0.5f - group.origin.y) * query->inverse_object_scale;
+        f32 dz = (bounds.min_z + bounds.max_z) * 0.5f - group.origin.z;
+        f32 radius = scan_radius + group.radius;
+        if (!(radius * radius > dx * dx + dy * dy + dz * dz))
+            continue;
+        TerrainHandleFilterShapes(&writer, shapes, count, local, terrain_mask, true);
+        TerrainFinishScanGroup(&writer, group_index);
+    }
+    i16 *terminator = reinterpret_cast<i16 *>(writer.group_header);
+    terminator[0] = 0;
+    terminator[1] = 0;
+    WallSplCount = 0;
+    bounds.min_x -= 0.02f;
+    bounds.max_x += 0.02f;
+    bounds.min_z -= 0.02f;
+    bounds.max_z += 0.02f;
+    TERRAIN_WALL_POINT **walls = reinterpret_cast<TERRAIN_WALL_POINT **>(handle + 2);
+    while (*walls != NULL) {
+        TERRAIN_WALL_POINT *wall = *walls++;
+        if (TerrainHandleWallOverlap(bounds, wall) && WallSplCount < 64) {
+            WallSplList[WallSplCount] = wall[0];
+            WallSplList[WallSplCount + 1] = wall[1];
+            WallSplCount += 2;
+        }
+    }
+    TerrPlatDis = -1;
 }
 
 extern "C" void TerrainTrackFlush(void) {

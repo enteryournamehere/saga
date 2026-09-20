@@ -353,7 +353,7 @@ extern "C" {
     i32 eduiMenuProcessSelectedItem(eduimenu_s *menu, f32 delta_time, nupad_s *pad);
     i32 eduiMenuProcess(eduimenu_s *menu, f32 delta_time, nupad_s *pad);
     i32 eduiMenuProcessAux(eduimenu_s *menu, f32 delta_time, nupad_s *pad);
-    void eduiMenuProcessInput(eduimenu_s *menu, f32 delta_time, nupad_s *pad, i32 item_result);
+    i32 eduiMenuProcessInput(eduimenu_s *menu, f32 delta_time, nupad_s *pad, i32 item_result);
     i32 eduiProcessInteracts(eduimenu_s *menu, nupad_s *pad);
     void eduiFlushInteracts(void);
     i32 eduiCursorOverMenu(eduimenu_s *menu);

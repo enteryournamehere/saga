@@ -59,3 +59,37 @@ Bazel commands:
 
 `ClearGameObjects` remains at 99.923%. These are isolated symbol measurements,
 not a whole-binary regression audit. The remaining base-file stubs are unchanged.
+
+## Trench movement and cannon callbacks
+
+The next reconstruction covers `TrenchMove` at `0x212600`,
+`TrenchKilledCallback` at `0x212320`, and `KilledTrooperCannon` at `0x218520`.
+The original trench state is 0x20 bytes: three object pointers followed by a
+position at offset 0x0c. Its unused final eight bytes remain reserved. The
+canonical type replaces the previous integer array, with size and position
+assertions; the existing reset still clears the same bytes.
+
+Trench movement copies previous position and input state, follows the player's
+turn and loop transitions, approaches the shared trench position, derives
+velocity, and updates vehicle roll. The original data symbols establish the
+seek rates, roll multiplier, maximum upward adjustment, and turn/loop durations.
+The killed callback removes the first matching object from the three slots.
+
+The cannon callback searches four 0x30-byte records, deactivates the matching
+character, resets and reactivates its build-it gizmo, and sets the corresponding
+saved-progress bit at offset 0x2818. The record name at 0x0c and rebuilding flag
+at 0x2c have layout assertions. The progress mask replaces the existing reserved
+word without changing `LEVEL_PROGRESS_s` size.
+
+Compared with the wave-two baseline using the existing O2 setting and the
+captured Android x86 compiler/linker commands:
+
+| Function | Baseline | Reconstructed |
+| --- | ---: | ---: |
+| TrenchMove | 1.641% | 84.066% |
+| TrenchKilledCallback | 20.000% | 100.000% |
+| KilledTrooperCannon | 5.526% | 78.816% |
+
+`DeathStarBattleDReset` remains at 100%. The reconstructed callbacks compile and
+link; no native, browser, or WASM testing was performed. `SpecialObjectFilter`
+still awaits the canonical editor-object hierarchy.

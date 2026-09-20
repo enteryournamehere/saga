@@ -903,7 +903,14 @@ extern LEVELDATA *TEMPLEB_LDATA;
 extern LEVELDATA *TEMPLEC_LDATA;
 extern LEVELDATA *TEMPLESTATUS_LDATA;
 extern LEVELDATA *TITLES_LDATA;
-extern u32 trenchrun[8];
+struct TRENCHRUN_s {
+    GameObject_s *objects[3];
+    NUVEC position;
+    u8 reserved_0x18[8];
+};
+DECOMP_ASSERT(sizeof(TRENCHRUN_s) == 0x20, "Trench run state size");
+DECOMP_ASSERT(offsetof(TRENCHRUN_s, position) == 0x0c, "Trench run position offset");
+extern TRENCHRUN_s trenchrun;
 extern LEVELDATA *VADERA_LDATA;
 extern LEVELDATA *VADERB_LDATA;
 extern LEVELDATA *VADERC_LDATA;

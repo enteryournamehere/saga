@@ -362,7 +362,7 @@ void DeathStarBattleDInit(WORLDINFO_s *) {
 }
 
 void DeathStarBattleDReset(WORLDINFO_s *) {
-    memset(trenchrun, 0, sizeof(trenchrun));
+    memset(&trenchrun, 0, sizeof(trenchrun));
 }
 
 void DeathStarBattleDUpdate(WORLDINFO_s *) {

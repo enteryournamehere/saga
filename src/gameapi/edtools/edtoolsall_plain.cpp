@@ -3220,60 +3220,6 @@ extern "C" {
 
     // The editor UI callbacks share this translation unit with their cursor,
     // menu, and interaction state in the original binary.
-    static void eduicbItemExpanderClose(edui_expander_s *expander) {
-        for (eduiitem_s *item = expander->first_child; item; item = item->next) {
-            if (item->type == EDUI_ITEM_EXPANDER)
-                eduicbItemExpanderClose(static_cast<edui_expander_s *>(item));
-            if (item == expander->last_child)
-                break;
-        }
-        if (expander->first_child && expander->open) {
-            expander->next = expander->last_child->next;
-            if (expander->last_child->next)
-                expander->last_child->next->previous = expander;
-            expander->first_child->previous = NULL;
-            expander->open = 0;
-        }
-    }
-
-    void eduicbMenuCloseAllexpanders(eduimenu_s *menu) {
-        for (eduiitem_s *item = menu->last; item; item = item->previous) {
-            if (item->type == EDUI_ITEM_EXPANDER)
-                eduicbItemExpanderClose(static_cast<edui_expander_s *>(item));
-        }
-    }
-
-    void eduicbMenuOpenAllexpanders(eduimenu_s *menu) {
-        for (eduiitem_s *item = menu->first; item; item = item->next) {
-            if (item->type == EDUI_ITEM_EXPANDER) {
-                edui_expander_s *expander = static_cast<edui_expander_s *>(item);
-                if (expander->first_child && !expander->open) {
-                    expander->last_child->next = expander->next;
-                    if (expander->next)
-                        expander->next->previous = expander->last_child;
-                    expander->first_child->previous = expander;
-                    expander->next = expander->first_child;
-                    expander->open = 1;
-                }
-            }
-        }
-    }
-
-    void eduiMenuDestroyItems(eduimenu_s *menu) {
-        if (menu) {
-            eduicbMenuCloseAllexpanders(menu);
-            while (menu->first) {
-                eduiitem_s *next = menu->first->next;
-                menu->first->destroy(menu, menu->first);
-                menu->first = next;
-            }
-            menu->last = NULL;
-            menu->selected = NULL;
-            menu->field_0c = NULL;
-            menu->field_10 = NULL;
-        }
-    }
-
     static __used__ void cbMMRegSel(void *, void *selected) {
         ed_curr = static_cast<ed_module_s *>(static_cast<eduiitem_s *>(selected)->data_ptr);
         if (!ed_curr->reserved) {
@@ -3488,23 +3434,7 @@ extern "C" {
         return 0;
     }
     static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad) {
-        edui_expander_s *expander = static_cast<edui_expander_s *>(item);
-        if (pad->digital_buttons_pressed & EDUI_CURSOR_PRIMARY) {
-            if (expander->changed)
-                expander->changed(menu, item, 0);
-            if (expander->first_child) {
-                if (expander->open)
-                    eduicbItemExpanderClose(expander);
-                else {
-                    expander->last_child->next = expander->next;
-                    if (expander->next)
-                        expander->next->previous = expander->last_child;
-                    expander->first_child->previous = expander;
-                    expander->next = expander->first_child;
-                    expander->open = 1;
-                }
-            }
-        }
+        STUBBED();
         return 0;
     }
     static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad) {

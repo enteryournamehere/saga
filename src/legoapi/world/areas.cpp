@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include "globals.h"
+#include "legoapi/audio/audio.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/customiser.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/gizmo/base/gizmessage.h"
+#include "legoapi/gizmo/base/gizmo.h"
 #include "legoapi/gizmo/object/takeoverobjects.h"
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/items/base/collection.h"
@@ -22,9 +24,12 @@
 #include "legoapi/world/mission.h"
 #include "legogame/game.h"
 #include "legoapi/menus/screens/store.h"
+#include "legoapi/menus/core/gamemessages.h"
+#include "legoapi/menus/screens/gamestatus_lsw.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
+#include "nu2api/nu3d/nuspecial.h"
 
 i32 openlevels = 0;
 
@@ -437,30 +442,146 @@ void SuperCounters_Reset(i32 area_index) {
         SUPERCOUNTER *super_counters = area->super_counters;
         if (super_counters != NULL && area->super_counter_count != 0) {
             for (i32 i = 0; i < area->super_counter_count; ++i) {
-                super_counters[i].reset_value = 0;
+                super_counters[i].collected_count = 0;
             }
         }
     }
 }
 
-void SuperCounters_FixUpGizmos(WORLDINFO_s *) {
-    STUBBED();
+void SuperCounters_FixUpGizmos(WORLDINFO_s *world) {
+    if (world->area == NULL || world->area->super_counters == NULL) {
+        return;
+    }
+    for (i32 i = 0; i < world->area->super_counter_count; ++i) {
+        SUPERCOUNTERPICKUP *pickup = world->area->super_counters[i].pickups;
+        for (i32 j = 0; j < world->area->super_counters[i].pickup_count; ++j, ++pickup) {
+            pickup->gizmo = GizmoFindByName(world->gizmo_sys, -1, pickup->name);
+            pickup->position_gizmo = NULL;
+            pickup->position_special.scene = NULL;
+            pickup->position_special.special = NULL;
+            pickup->position_special.display_special = NULL;
+            if (pickup->position_name[0] != '\0') {
+                if (pickup->use_special != 0) {
+                    NuSpecialFind(world->current_gscn, &pickup->position_special, pickup->position_name, 1);
+                } else {
+                    pickup->position_gizmo = GizmoFindByName(world->gizmo_sys, -1, pickup->position_name);
+                }
+            }
+        }
+    }
 }
 
-void SuperCounters_FindPickup(WORLDINFO_s *, GIZMO_s *, nuvec_s *, SUPERCOUNTERPICKUP **) {
-    STUBBED();
+SUPERCOUNTER *SuperCounters_FindPickup(WORLDINFO_s *world, GIZMO_s *gizmo, nuvec_s *position,
+                                     SUPERCOUNTERPICKUP **pickup_dest) {
+    SUPERCOUNTER *nearest_counter = NULL;
+    SUPERCOUNTERPICKUP *nearest_pickup = NULL;
+    f32 nearest_distance = 1000000000.0f;
+    if (world->area != NULL && world->area->super_counters != NULL) {
+        SUPERCOUNTER *counter = world->area->super_counters;
+        for (i32 i = 0; i < world->area->super_counter_count; ++i, ++counter) {
+            SUPERCOUNTERPICKUP *pickup = counter->pickups;
+            for (i32 j = 0; j < counter->pickup_count; ++j, ++pickup) {
+                if (pickup->level_index != world->level_idx || pickup->gizmo != gizmo) {
+                    continue;
+                }
+                if (pickup->position_gizmo == NULL) {
+                    if (pickup_dest != NULL) {
+                        *pickup_dest = pickup;
+                    }
+                    return counter;
+                }
+                NUVEC *pickup_position = GizmoGetPos(world->gizmo_sys, pickup->position_gizmo);
+                if (pickup_position != NULL) {
+                    f32 distance = NuVecDistSqr(position, pickup_position, NULL);
+                    if (distance < nearest_distance) {
+                        nearest_counter = counter;
+                        nearest_pickup = pickup;
+                        nearest_distance = distance;
+                    }
+                }
+            }
+        }
+    }
+    if (pickup_dest != NULL) {
+        *pickup_dest = nearest_pickup;
+    }
+    return nearest_counter;
 }
 
-void SuperCounter_ActivateGizmoPickup(GIZMO_s *, GIZMOPICKUP_s *) {
-    STUBBED();
+void SuperCounter_ActivateGizmoPickup(GIZMO_s *gizmo, GIZMOPICKUP_s *gizmo_pickup) {
+    NUVEC position;
+    if (Players_AveragePos(&position, NULL) == 0) {
+        position = GameCam->pos;
+    }
+    SUPERCOUNTERPICKUP *pickup;
+    SUPERCOUNTER *counter = SuperCounters_FindPickup(WORLD, gizmo, &position, &pickup);
+    if (counter == NULL) {
+        return;
+    }
+    gizmo_pickup->state_flags &= ~(GIZMOPICKUP_STATE_ENABLED | GIZMOPICKUP_STATE_VISIBLE);
+    if (counter->collected_count >= counter->pickup_count) {
+        return;
+    }
+    ++counter->collected_count;
+    if (counter->collected_count == counter->pickup_count) {
+        gizmo_pickup->state_flags |= GIZMOPICKUP_STATE_ENABLED | GIZMOPICKUP_STATE_VISIBLE;
+    }
+    NUVEC *message_position;
+    if (pickup->position_gizmo != NULL) {
+        message_position = GizmoGetPos(WORLD->gizmo_sys, pickup->position_gizmo);
+    } else if (NuSpecialExistsFn(&pickup->position_special)) {
+        message_position = NuSpecialGetDrawPos(&pickup->position_special);
+    } else {
+        message_position = &gizmo_pickup->position;
+    }
+    AddGameMsgCount(message_position, counter->collected_count, counter->pickup_count,
+                    counter->red, counter->green, counter->blue, 0.75f);
+    GameAudio_PlaySfx(0x53, NULL, 0, 0);
 }
 
-void SuperCounter_FindFromNameAndLevel(char *, WORLDINFO_s *, SUPERCOUNTERPICKUP **) {
-    STUBBED();
+SUPERCOUNTER *SuperCounter_FindFromNameAndLevel(char *name, WORLDINFO_s *world,
+                                             SUPERCOUNTERPICKUP **pickup_dest) {
+    if (world->area != NULL && world->area->super_counters != NULL) {
+        SUPERCOUNTER *counter = world->area->super_counters;
+        for (i32 i = 0; i < world->area->super_counter_count; ++i, ++counter) {
+            SUPERCOUNTERPICKUP *pickup = counter->pickups;
+            for (i32 j = 0; j < counter->pickup_count; ++j, ++pickup) {
+                if (pickup->level_index == world->level_idx && NuStrICmp(pickup->name, name) == 0) {
+                    if (pickup_dest != NULL) {
+                        *pickup_dest = pickup;
+                    }
+                    return counter;
+                }
+            }
+        }
+    }
+    if (pickup_dest != NULL) {
+        *pickup_dest = NULL;
+    }
+    return NULL;
 }
 
-void SuperCounter_AnyCollected(SUPERCOUNTER *, WORLDINFO_s *) {
-    STUBBED();
+i32 SuperCounter_AnyCollected(SUPERCOUNTER *counter, WORLDINFO_s *world) {
+    SUPERCOUNTERPICKUP *pickup = counter->pickups;
+    for (i32 i = 0; i < counter->pickup_count; ++i, ++pickup) {
+        if (world->level_sub_id != -1) {
+            for (i32 j = 0; j < AreaGlobals.values.field_0x10; ++j) {
+                if (NewMiniPiece[j].level == pickup->level_index &&
+                    NuStrICmp(NewMiniPiece[j].name, pickup->name) == 0) {
+                    return 1;
+                }
+            }
+        }
+        if (Game_LevelSave != NULL) {
+            LEVELSAVE_s *save = &reinterpret_cast<LEVELSAVE_s *>(Game_LevelSave)[pickup->level_index];
+            for (i32 j = 0; j < save->minikit_count; ++j) {
+                if (NuStrICmp(save->minikit_names[j], pickup->name) == 0) {
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
 }
 
 void SuperCounters_ResetProcessed(WORLDINFO_s *world) {
@@ -480,7 +601,7 @@ void Area_Configure(i32 area, i32 param, EXTRAMODEL *models, i16 *s) {
     Area_FreePlayModelList[0] = -1;
     Area_MissionModelCount = 0;
     Area_MissionModelList[0].model_id = -1;
-    LevelLoad[0] = -1;
+    LevelLoad[0].level = -1;
     LevelLoadCount = 0;
 
     AreaMusic = -1;

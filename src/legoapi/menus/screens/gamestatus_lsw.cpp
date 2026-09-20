@@ -311,12 +311,6 @@ i32 newminikitcount;
 i32 currentminikit;
 static u32 collect_suit_bits;
 
-struct NEWMINIPIECE_s {
-    char name[8];
-    i16 level;
-    u8 pad[2];
-};
-DECOMP_ASSERT(sizeof(NEWMINIPIECE_s) == 12, "new minikit piece ABI");
 NEWMINIPIECE_s NewMiniPiece[10];
 
 void InitStatusScreen(WORLDINFO_s *world) {

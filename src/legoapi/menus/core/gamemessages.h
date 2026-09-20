@@ -8,6 +8,7 @@ struct nuvec_s;
 
 extern ADDGAMEMSG AddGameMsg_Default;
 GAMEMESSAGE_s *AddGameMsg(ADDGAMEMSG *message);
+void AddGameMsgCount(nuvec_s *position, i32 count, i32 total, u8 red, u8 green, u8 blue, f32 duration);
 void EndScoreMessage(GAMEMESSAGE_s *message);
 i32 FindGameMsgsWithID(i32 id, i32 remove, i32 player, GAMEMESSAGE_s *exclude);
 void GameMsg_DrawAdjustNewPos_CoinToTotal(GAMEMESSAGE_s *message);

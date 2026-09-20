@@ -39,6 +39,8 @@
 #include "legogame/game.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nuportal.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nucore/nutime.h"
@@ -289,8 +291,40 @@ void SaveSceneObjectAnimTFactors(NUGSCN *gscn) {
     } while (count != 0);
 }
 void CalculateWorldSize(WORLDINFO *world) {
-    STUBBED();
-    (void)world;
+    NUVEC minimum = v000;
+    NUVEC maximum = v000;
+    if (world == NULL || world->current_gscn == NULL) {
+        return;
+    }
+
+    NUGSCN *scene = world->current_gscn;
+    for (i32 i = 0; i < scene->portal_instance_count; ++i) {
+        NUPORTALBOX *box = &scene->portal_boxes[i];
+        NUVEC box_minimum = box->first;
+        NUVEC box_maximum = box->second;
+        if (scene->display_list != NULL &&
+            (scene->display_list->render_buffer & NUDL_SCENE_RENDER_FLAG_CENTER_EXTENT_BOUNDS) != 0) {
+            box_minimum.x = box->first.x - box->second.x;
+            box_minimum.y = box->first.y - box->second.y;
+            box_minimum.z = box->first.z - box->second.z;
+            box_maximum.x = box->first.x + box->second.x;
+            box_maximum.y = box->first.y + box->second.y;
+            box_maximum.z = box->first.z + box->second.z;
+        }
+        minimum.x = MIN(box_minimum.x, minimum.x);
+        minimum.y = MIN(box_minimum.y, minimum.y);
+        minimum.z = MIN(box_minimum.z, minimum.z);
+        maximum.x = MAX(box_maximum.x, maximum.x);
+        maximum.y = MAX(box_maximum.y, maximum.y);
+        maximum.z = MAX(box_maximum.z, maximum.z);
+    }
+
+    world->level_max[0] = maximum.x;
+    world->level_max[1] = maximum.y;
+    world->level_max[2] = maximum.z;
+    world->level_min[0] = minimum.x;
+    world->level_min[1] = minimum.y;
+    world->level_min[2] = minimum.z;
 }
 
 WORLDINFO WorldInfo[2];
@@ -829,7 +863,7 @@ i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
     if (new_level_from_menu != 0) {
         WORLDINFO *other = WorldInfo;
         if (world == WorldInfo) {
-            other = WorldInfo + 1;
+            other = world + 1;
         }
         if (other->loaded != 0 && other->level_idx == level_idx) {
             WorldInfo_Dump(other);
@@ -842,14 +876,15 @@ i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
 
     TouchHacks::CleanupAllMechObjectInterfaces(world);
 
-    memset(world, 0, 0x51b0);
+    memset(world, 0, sizeof(*world));
 
     // Restore the buffer cursors: 0x108, then 0x100, then 0x104 (giz_buffer).
     world->unknown_0108.void_ptr = bufEnd;
     world->buffer_start = bufStart;
     world->giz_buffer.void_ptr = bufStart;
-    if ((char *)bufEnd > (char *)bufStart) {
-        memset(bufStart, 0, (usize)((char *)bufEnd - (char *)bufStart));
+    isize buffer_size = static_cast<char *>(bufEnd) - static_cast<char *>(bufStart);
+    if (buffer_size > 0) {
+        memset(bufStart, 0, buffer_size);
     }
 
     // Set level info
@@ -876,17 +911,17 @@ i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
 
         i32 progress_index = (i8)levelData->area_level_index;
         if (progress_index <= 0xb && progress_index != -1) {
-            world->level_progress = (LEVEL_PROGRESS_s *)((char *)LevelProgressData + progress_index * 0x2e24);
+            world->level_progress = static_cast<LEVEL_PROGRESS_s *>(LevelProgressData) + progress_index;
         } else {
             world->level_progress = NULL;
         }
 
         // Build config file path
         NuStrCpy(world->name, "levels\\");
-        NuStrCat(world->name, levelData->dir);
+        NuStrCat(world->name, world->current_level->dir);
         NuStrCpy(world->config_file, world->name);
         NuStrCat(world->config_file, "\\");
-        NuStrCat(world->config_file, levelData->name);
+        NuStrCat(world->config_file, world->current_level->name);
         ResetLevSfx(world);
     }
 

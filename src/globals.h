@@ -947,7 +947,7 @@ extern void *CutStopInfo;
 extern f32 WaitingForLevelTime;
 extern f32 WaitingForCharacterTime;
 extern f32 g_BgLoadDelayHackTimer;
-extern i16 LevelLoad[48];
+extern LEVELLOAD_s LevelLoad[12];
 extern i32 LevelLoadCount;
 
 // Main game loop state (read/written by NuMain; see batman.h for the rest).

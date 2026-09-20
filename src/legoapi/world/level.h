@@ -21,6 +21,16 @@ struct TORPEDOPACKET_s;
 struct SOCKPOSITION_s;
 struct AREADATA_s;
 
+struct LEVELLOAD_s {
+    i16 level;
+    i16 first_level;
+    i16 second_level;
+    u8 flags;
+    u8 padding;
+};
+DECOMP_ASSERT(sizeof(LEVELLOAD_s) == 8, "Level streaming override size");
+DECOMP_ASSERT(offsetof(LEVELLOAD_s, flags) == 6, "Level streaming override flags offset");
+
 struct LEVELSCRIPTPROGRESS_s {
     char name[16];
     f32 params[4];

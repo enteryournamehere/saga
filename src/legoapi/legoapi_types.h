@@ -2378,14 +2378,36 @@ struct SUIT_s {
 DECOMP_ASSERT(sizeof(SUIT_s) == 0x18, "SUIT_s size");
 DECOMP_ASSERT(offsetof(SUIT_s, store_flag) == 0x0c, "SUIT_s store flag offset");
 DECOMP_ASSERT(offsetof(SUIT_s, group) == 0xe, "SUIT_s group offset");
+struct SUPERCOUNTERPICKUP {
+    GIZMO_s *gizmo;
+    GIZMO_s *position_gizmo;
+    nuhspecial_s position_special;
+    char name[8];
+    char position_name[16];
+    i16 level_index;
+    u8 use_special;
+    u8 pad_2f;
+};
+DECOMP_ASSERT(sizeof(SUPERCOUNTERPICKUP) == 0x30, "SUPERCOUNTERPICKUP size");
+DECOMP_ASSERT(offsetof(SUPERCOUNTERPICKUP, position_special) == 0x08, "Super counter pickup special offset");
+DECOMP_ASSERT(offsetof(SUPERCOUNTERPICKUP, name) == 0x14, "Super counter pickup name offset");
+DECOMP_ASSERT(offsetof(SUPERCOUNTERPICKUP, position_name) == 0x1c, "Super counter pickup position name offset");
+DECOMP_ASSERT(offsetof(SUPERCOUNTERPICKUP, level_index) == 0x2c, "Super counter pickup level offset");
+DECOMP_ASSERT(offsetof(SUPERCOUNTERPICKUP, use_special) == 0x2e, "Super counter pickup special flag offset");
 struct SUPERCOUNTER {
-    u8 pad_0x00[0x1e2];
-    u16 reset_value; // 0x1e2
-    u8 pad_0x1e4[0x1e7 - 0x1e4];
-    u8 processed_flags; // 0x1e7
+    SUPERCOUNTERPICKUP pickups[10];
+    u16 pickup_count;
+    u16 collected_count;
+    u8 red;
+    u8 green;
+    u8 blue;
+    u8 processed_flags;
 };
 DECOMP_ASSERT(sizeof(SUPERCOUNTER) == 0x1e8, "SUPERCOUNTER size");
-struct SUPERCOUNTERPICKUP {};
+DECOMP_ASSERT(offsetof(SUPERCOUNTER, pickup_count) == 0x1e0, "Super counter pickup count offset");
+DECOMP_ASSERT(offsetof(SUPERCOUNTER, collected_count) == 0x1e2, "Super counter collected count offset");
+DECOMP_ASSERT(offsetof(SUPERCOUNTER, red) == 0x1e4, "Super counter color offset");
+DECOMP_ASSERT(offsetof(SUPERCOUNTER, processed_flags) == 0x1e7, "Super counter flags offset");
 struct ShaderObjectKey;
 struct SoundTable {
     u16 bits[100];

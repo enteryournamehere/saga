@@ -680,7 +680,7 @@ void *CutStopInfo = NULL;
 f32 WaitingForLevelTime = 0;
 f32 WaitingForCharacterTime = 0;
 i32 LevelLoadCount = 0;
-i16 LevelLoad[48] = {-1};
+LEVELLOAD_s LevelLoad[12];
 i32 new_level_from_menu = 0;
 // The original .data initialises BGLOAD to 1 (background loading enabled).
 i32 BGLOAD = 1;

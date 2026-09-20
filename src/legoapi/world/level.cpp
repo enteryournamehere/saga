@@ -52,6 +52,7 @@ extern "C" {
 }
 
 static void Pictures_FixUp(WORLDINFO *world);
+static i32 Pictures_NumLevels;
 
 static void Credits_Init_Game(WORLDINFO *world) {
     static const char *const credit_music[] = {
@@ -80,10 +81,50 @@ static void Credits_Init_Game(WORLDINFO *world) {
     LevMtx.m32 = 1.0f;
 }
 static void Credits_Update_Game(WORLDINFO *) {
-    STUBBED();
+    i32 finished;
+    Credits_GetInfo(NULL, &finished, NULL);
+    LevTime[1] = finished == 0 ? 1.0f : 0.0f;
+    LevTime[0] = SeekLinearF(LevTime[0], LevTime[1], FRAMETIME + FRAMETIME);
 }
 static void Credits_Draw_Game(WORLDINFO *) {
-    STUBBED();
+    if (LevTime[0] > 0.0f) {
+        const f32 time = CreditsTime;
+        f32 duration;
+        f32 alpha;
+        Credits_GetInfo(&duration, NULL, &alpha);
+        alpha *= 0.5f * LevTime[0];
+        duration -= 1.0f;
+        const f32 interval = (duration - 1.0f) / Pictures_NumLevels;
+        const f32 picture_duration = interval + 1.0f;
+
+        for (i32 i = 0; i < Pictures_NumLevels; ++i) {
+            const f32 start = interval * i + 1.0f;
+            if (time > start) {
+                const f32 end = start + picture_duration;
+                f32 fade;
+                if (time < start + 1.0f) {
+                    fade = time - start;
+                } else if (time < start + (picture_duration - 1.0f)) {
+                    fade = 1.0f;
+                } else if (time < end) {
+                    fade = 1.0f - (time - (start + (picture_duration - 1.0f)));
+                } else {
+                    fade = 0.0f;
+                }
+
+                if (fade > 0.0f && NuSpecialExistsFn(&LevHSpecial[20 + i]) != 0) {
+                    const f32 progress = (time - start) / (end - start);
+                    NUMTX matrix = LevMtx;
+                    NUVEC scale;
+                    scale.x = scale.y = scale.z = progress * 0.2f + 0.9f;
+                    NuMtxPreScale(&matrix, &scale);
+                    NuMtxPreRotateZ(&matrix, static_cast<i32>(546.0f - 1092.0f * progress));
+                    matrix.m31 = 0.15f * progress - 0.075f;
+                    NuSpecialDrawAtAlpha(&LevHSpecial[20 + i], &matrix, fade * alpha);
+                }
+            }
+        }
+    }
 }
 
 extern void NewGame(void);
@@ -93,7 +134,6 @@ extern i16 id_DEFAULTCHARACTER[2];
 extern i32 GetMenuID(void);
 
 static NUVEC titlesstartpos;
-static i32 Pictures_NumLevels;
 
 static void Pictures_FixUp(WORLDINFO *world) {
     if (world->scene != NULL) {

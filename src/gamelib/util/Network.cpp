@@ -436,8 +436,37 @@ NetPeer const *NetworkObjectManager::Owner(i32 id) {
     return network_object->owner;
 }
 
-void NetworkObjectManager::PeerJoined(NetPeer const &) {
-    STUBBED();
+void NetworkObjectManager::PeerJoined(NetPeer const &peer) {
+    if (theSession->status == 3 || theSession->status == 4) {
+        if (!peer.local) {
+            for (i32 i = 0; i < 2; i++) {
+                if (guid_peers[i] == NULL) {
+                    guid_peers[i] = &peer;
+                    NetMessage message;
+                    message.Write8(0);
+                    message.Write32(i);
+                    theNetwork.ReliableSend(message, 3, const_cast<NetPeer &>(peer), NULL, 0);
+                    break;
+                }
+            }
+        }
+    }
+    if (peer.local) {
+        return;
+    }
+    if (active != 0) {
+        NetMessage message;
+        message.Write8(9);
+        message.Write(&context, sizeof(context));
+        theNetwork.ReliableSend(message, 3, const_cast<NetPeer &>(peer), NULL, 0);
+    }
+    for (i32 i = 0; i < 8; i++) {
+        if (peer_push[i].peer == NULL) {
+            peer_push[i].peer = &peer;
+            peer_push[i].Stop();
+            break;
+        }
+    }
 }
 
 void NetworkObjectManager::PeerLeft(NetPeer const &peer, ePeerLeftReason) {
@@ -744,8 +773,16 @@ i32 NetworkObjectManager::SendPushMessage(NetMessage *message, NetPeerPush const
     return available;
 }
 
-void NetworkObjectManager::Start(NOSContext const &) {
-    STUBBED();
+void NetworkObjectManager::Start(NOSContext const &new_context) {
+    if (active != 0) {
+        return;
+    }
+    active = 1;
+    memmove(&context, &new_context, sizeof(context));
+    NetMessage message;
+    message.Write8(9);
+    message.Write(&context, sizeof(context));
+    theNetwork.ReliableBroadcast(message, 3);
 }
 
 NetworkObjectManager::PendingObject *NetworkObjectManager::StealPendingObject() {
@@ -760,7 +797,18 @@ NetworkObjectManager::PendingObject *NetworkObjectManager::StealPendingObject() 
 }
 
 void NetworkObjectManager::Stop() {
-    STUBBED();
+    if (active == 0) {
+        return;
+    }
+    active = 0;
+    NetMessage message;
+    message.Write8(10);
+    theNetwork.ReliableBroadcast(message, 3);
+    for (i32 i = 0; i < 8; i++) {
+        if (peer_push[i].peer != NULL) {
+            peer_push[i].Stop();
+        }
+    }
 }
 
 void NetworkObjectManager::Term() {

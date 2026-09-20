@@ -201,9 +201,64 @@ struct edui_file_pick_s : eduiitem_s {
 };
 
 struct edui_prop_s : eduiitem_s {
-    u8 unknown_48[0x1c];
+    i32 (*interact)(edui_interact_s *);
+    u16 unknown_property_flags : 6;
+    u16 button_type : 3;
+    u16 remaining_property_flags : 7;
+    u8 unknown_4e[6];
+    f32 label_width;
+    u8 unknown_58[0xc];
     char *property_text;
-    u8 unknown_68[0x18];
+    u8 unknown_68[4];
+    i32 depth;
+    EdUiItemCallback selected;
+    EdUiItemCallback button;
+    EdUiItemCallback changed;
+    i32 extra_data;
+};
+
+struct edui_textpicker_s : eduiitem_s {
+    i32 (*interact)(edui_interact_s *);
+    char value[256];
+    i32 keyboard_column;
+    i32 keyboard_row;
+    i32 cursor;
+    i16 editing;
+    i16 max_length;
+    EdUiItemCallback callback;
+    char *format;
+    u32 keyboard_flags;
+};
+
+struct edui_gradient_stage_s {
+    f32 time;
+    f32 hue;
+    f32 saturation;
+    f32 value;
+    f32 red;
+    f32 green;
+    f32 blue;
+    u32 colour;
+    u32 metadata;
+};
+
+struct edui_gradient_node_s {
+    edui_gradient_node_s *next;
+    edui_gradient_node_s *previous;
+    f32 time;
+    u32 colour;
+    f32 hue;
+    f32 saturation;
+    f32 value;
+    u32 metadata;
+};
+
+struct edui_gradient_pick_s : eduiitem_s {
+    i32 (*interact)(edui_interact_s *);
+    edui_gradient_node_s *first_stage;
+    edui_gradient_node_s *selected_stage;
+    EdUiItemCallback changed;
+    u8 unknown_58[0x18];
 };
 
 struct edui_filter_s : edui_prop_s {
@@ -223,6 +278,13 @@ static_assert(sizeof(edui_expander_s) == 0x6c, "edui_expander_s ABI");
 static_assert(sizeof(edui_graph_s) == 0xc0, "edui_graph_s ABI");
 static_assert(sizeof(edui_file_pick_s) == 0x2a4, "edui_file_pick_s ABI");
 static_assert(sizeof(edui_filter_s) == 0x8c, "edui_filter_s ABI");
+static_assert(sizeof(edui_prop_s) == 0x80, "edui_prop_s ABI");
+static_assert(sizeof(edui_textpicker_s) == 0x168, "edui_textpicker_s ABI");
+static_assert(offsetof(edui_textpicker_s, value) == 0x4c, "edui_textpicker_s value ABI");
+static_assert(offsetof(edui_textpicker_s, max_length) == 0x15a, "edui_textpicker_s length ABI");
+static_assert(sizeof(edui_gradient_stage_s) == 0x24, "edui_gradient_stage_s ABI");
+static_assert(sizeof(edui_gradient_node_s) == 0x20, "edui_gradient_node_s ABI");
+static_assert(sizeof(edui_gradient_pick_s) == 0x70, "edui_gradient_pick_s ABI");
 #endif
 
 struct edui_interact_s {
@@ -318,4 +380,14 @@ extern "C" {
     void eduiMenuFitOnScreen(eduimenu_s *menu, i32 padding);
     f32 eduiGetAnalougePadValue(nupad_s *pad);
     void eduiSetGlobalSliderAccel(f32 acceleration);
+    i32 eduiGradPickRead(eduiitem_s *item, edui_gradient_stage_s *stages, i32 count);
+    void eduiItemTextPickSetFmt(edui_textpicker_s *item, char *format);
+    void eduiItemFilePickSetFmt(edui_file_pick_s *item, char *format);
+    void eduiItemGraphAddOnionSkin(edui_graph_s *item, nugraph_s *graph);
+    void eduiItemGraphSetCursor(edui_graph_s *item, f32 x, f32 y);
+    void eduiItemGraphSetLabels(edui_graph_s *item, char *x, char *y, char *title);
+    void eduiIitemExpanderSetDepth(edui_expander_s *item, i32 depth);
+    void eduiItemExpanderAddChild(edui_expander_s *item, eduiitem_s *child);
+    void eduiItemFilterAddItem(edui_filter_s *item, eduiitem_s *child);
+    void eduiItemFilterRemoveItem(edui_filter_s *item, eduiitem_s *child);
 }

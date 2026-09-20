@@ -16,6 +16,7 @@ struct SPECIALMINIKITSYS_s;
 struct TIGHTROPE_s;
 struct GUIDELINE_s;
 struct SECURITYDOOR_s;
+struct EQUIVALENTOBJECTGROUP_s;
 
 struct AREADATA_s;
 struct LEVEL_PROGRESS_s;
@@ -322,7 +323,8 @@ typedef struct WORLDINFO_s {
     GIZOBSTACLESYS_s *giz_obstacle_sys;    // 0x46a8
     GIZBUILDITSYS_s *giz_buildit_sys;      // 0x46ac
     GIZFORCESYS_s *giz_force_sys;          // 0x46b0
-    char filler7a[0x46bc - 0x46b4];        // 0x46b4 .. 0x46bc
+    EQUIVALENTOBJECTGROUP_s *equivalent_groups; // 0x46b4
+    i32 equivalent_group_count;               // 0x46b8
     GIZTURRETSYS_s *giz_turret_sys;        // 0x46bc
     pushblock_s *push_blocks;              // 0x46c0
     i32 push_block_count;                  // 0x46c4
@@ -465,6 +467,8 @@ typedef struct WORLDINFO_s {
 DECOMP_ASSERT(offsetof(WORLDINFO, field_0x5174) == 0x5174, "WORLDINFO saved level state offset");
 
 DECOMP_ASSERT(offsetof(WORLDINFO, camera_splines) == 0x2ac4, "WORLDINFO camera splines offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, equivalent_groups) == 0x46b4, "WORLDINFO equivalent-object groups offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, equivalent_group_count) == 0x46b8, "WORLDINFO equivalent-object count offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, field_50d0) == 0x50d0, "WORLDINFO reset field offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, field_5174) == 0x5174, "WORLDINFO saved reset field offset");
 

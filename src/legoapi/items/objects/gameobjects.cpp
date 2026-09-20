@@ -74,6 +74,7 @@
 #include "nu2api/numath/numtx.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nucore/nugcutscene.h"
+#include "nu2api/nucore/nuhgobj.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -1872,8 +1873,26 @@ static void GameAILoad(AISYS *, i32, NUGSCN *, VARIPTR *, VARIPTR *) {
     STUBBED();
 }
 
-static void GlobalCharacterRender(NUVEC *, i16, i32, i32, EDCREATURE_s *) {
-    STUBBED();
+static void GlobalCharacterRender(NUVEC *position, i16 angle, i32 character, i32, EDCREATURE_s *) {
+    if (character < CHARCOUNT) {
+        i16 model_id = apicharsys->playermodelids[character];
+        if (model_id != -1) {
+            CHARACTERMODEL_s *model = &apicharsys->models[model_id];
+            i16 layers[32];
+            i32 layer_count = GCDataList[model->model_id].make_layer_list(
+                model, layers, apicharsys->char_data[character].game_character->layer_mask);
+            if (layer_count > 0) {
+                angle = NuAngAdd(angle, 0x8000);
+                NUVEC scale;
+                scale.x = scale.y = scale.z = CDataList[character].model_scale;
+                NUMTX matrix;
+                NuMtxSetScale(&matrix, &scale);
+                NuMtxTranslate(&matrix, position);
+                NuMtxPreRotateY(&matrix, angle);
+                NuHGobjRndr(model->hierarchy, &matrix, layer_count, layers);
+            }
+        }
+    }
 }
 
 static f32 GetCharacterGoalSpeed(APIOBJECT *object) {
@@ -7696,8 +7715,26 @@ void DeactivateGameObject(GameObject_s *object) {
     }
 }
 
-i32 EquivalentObject_Find(WORLDINFO_s *, nuhspecial_s *) {
-    STUBBED();
+i32 EquivalentObject_Find(WORLDINFO_s *world, nuhspecial_s *special) {
+    if (special != NULL && NuSpecialExistsFn(special)) {
+        EQUIVALENTOBJECTGROUP_s *group = world->equivalent_groups;
+        if (group != NULL) {
+            for (i32 group_index = 0; group_index < world->equivalent_group_count; ++group_index) {
+                for (i32 i = 0; i < group->object_count; ++i) {
+                    if (NuSpecialCompare(special, &group->objects[i])) {
+                        for (i32 j = 0; j < group->object_count; ++j) {
+                            if (NuSpecialGetVisibilityFn(&group->objects[j])) {
+                                *special = group->objects[j];
+                                return 1;
+                            }
+                        }
+                        return 0;
+                    }
+                }
+                group = reinterpret_cast<EQUIVALENTOBJECTGROUP_s *>(reinterpret_cast<u8 *>(group) + group->byte_size);
+            }
+        }
+    }
     return 0;
 }
 

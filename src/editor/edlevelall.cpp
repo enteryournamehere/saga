@@ -2,25 +2,51 @@
 #include "gameapi/edtools/gameapi_edtools_types.h"
 #include "gameapi/edtools/edui.h"
 #include "legoapi/legoapi_types.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/nufile/nufile.h"
+#include <string.h>
 
-void BaseEditor::ReadBuffer(void **, void *, i32) {
-    STUBBED();
+i32 BaseEditor::blockDepth;
+i32 BaseEditor::blockStart[8];
+eduimenu_s *edLevelActiveMenu;
+extern eduimenu_s *edLevelPinnedMenu;
+i32 edLevelDestroyActiveMenu;
+
+extern "C" void eduiSetCameraEnabled(i32);
+
+void BaseEditor::ReadBuffer(void **destination, void *source, i32 size) {
+    if (field_0x0c != 0) {
+        memcpy(*destination, source, size);
+    } else {
+        *destination = source;
+    }
 }
 
-void BaseEditor::WriteBeginBlock(i32, i32) {
-    STUBBED();
+void BaseEditor::WriteBeginBlock(i32 file, i32 type) {
+    blockStart[blockDepth++] = NuFilePos(file);
+    NuFileWriteInt(file, type);
+    NuFileWriteInt(file, 0);
+    NuFileWriteInt(file, 0);
+    NuFileWriteInt(file, 0);
 }
 
-void BaseEditor::WriteEndBlock(i32) {
-    STUBBED();
+void BaseEditor::WriteEndBlock(i32 file) {
+    --blockDepth;
+    NuFileAlign(file, 15);
+    i32 end = NuFilePos(file);
+    NuFileSeek(file, blockStart[blockDepth] + 4, NUFILE_SEEK_START);
+    NuFileWriteInt(file, end - blockStart[blockDepth]);
+    NuFileSeek(file, end, NUFILE_SEEK_START);
 }
 
-void BaseEditor::WriteMetaData(i32, i32, i32, i32) {
-    STUBBED();
+void BaseEditor::WriteMetaData(i32 file, i32 type, i32 version, i32 count) {
+    NuFileWriteInt(file, 1);
+    NuFileWriteInt(file, type);
+    NuFileWriteInt(file, version);
+    NuFileWriteInt(file, count);
 }
 
 void CursorTool::Initialise(variptr_u &, variptr_u &, i32) {
-    STUBBED();
 }
 
 void CursorTool::Process(EdInputContext &) {
@@ -323,28 +349,64 @@ void ClassObject::Set(char *) {
     STUBBED();
 }
 
-void LevelEditor::AddInfoText(char *) {
-    STUBBED();
+void LevelEditor::AddInfoText(char *text) {
+    for (i32 i = 0; i < 32; ++i) {
+        if (info_text[i] == NULL) {
+            info_text[i] = AddText(text);
+            return;
+        }
+    }
 }
 
-void LevelEditor::AddScene(char *, nugscn_s *, i32) {
-    STUBBED();
+i32 LevelEditor::AddScene(char *name, nugscn_s *scene, i32 active) {
+    for (i32 i = 0; i < reset_pending; ++i) {
+        if (NuStrICmp(scenes[i].name, name) == 0) {
+            scenes[i].scene = scene;
+            scenes[i].active = active;
+            return i;
+        }
+    }
+    if (reset_pending < 10) {
+        i32 index = reset_pending++;
+        NuStrNCpy(scenes[index].name, name, 32);
+        scenes[index].scene = scene;
+        scenes[index].active = active;
+        return index;
+    }
+    return 0;
 }
 
-void LevelEditor::AddText(char *) {
-    STUBBED();
+char *LevelEditor::AddText(char *text) {
+    i32 size = NuStrLen(text) + 1;
+    char *result = text_buffer + text_length;
+    NuStrCpy(result, text);
+    text_length += size;
+    return result;
 }
 
 void LevelEditor::BeginMultiLoad(variptr_u *, variptr_u *) {
     STUBBED();
 }
 
-void LevelEditor::ClearLevel(i32) {
-    STUBBED();
+void LevelEditor::ClearLevel(i32 index) {
+    scenes[index].active = 0;
+    scenes[index].scene = NULL;
+    for (BaseEditor *editor = first_editor; editor != NULL; editor = editor->next) {
+        editor->ClearLevel(index);
+    }
 }
 
 void LevelEditor::CloseMenu() {
-    STUBBED();
+    eduiSetCameraEnabled(1);
+    if (edLevelActiveMenu != NULL) {
+        if (edLevelActiveMenu->parent != NULL) {
+            edLevelActiveMenu->parent->child = NULL;
+        }
+        if (edLevelActiveMenu->child != NULL) {
+            edLevelActiveMenu->child->parent = NULL;
+        }
+    }
+    edLevelDestroyActiveMenu = 1;
 }
 
 void LevelEditor::CreateEditorList(eduimenu_s *, eduiitem_s *) {
@@ -368,19 +430,41 @@ void LevelEditor::EndMultiLoad(variptr_u *, variptr_u *) {
 }
 
 void LevelEditor::Enter() {
-    STUBBED();
+    edLevelActiveMenu = NULL;
+    eduiSetUsingMenuFocus(1);
+    editors_entered = 1;
+    active = 1;
+    for (BaseEditor *editor = first_editor; editor != NULL; editor = editor->next) {
+        editor->Enter();
+    }
 }
 
 void LevelEditor::Exit() {
-    STUBBED();
+    active = 0;
+    eduiSetUsingMenuFocus(0);
+    if (editors_entered != 0) {
+        for (BaseEditor *editor = first_editor; editor != NULL; editor = editor->next) {
+            editor->Exit();
+        }
+        editors_entered = 0;
+    }
 }
 
-void LevelEditor::FindSceneId(char *) {
-    STUBBED();
+i32 LevelEditor::FindSceneId(char *name) {
+    for (i32 i = 0; i < 10; ++i) {
+        if (NuStrICmp(scenes[i].name, name) == 0) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 void LevelEditor::Flush() {
-    STUBBED();
+    for (BaseEditor *editor = first_editor; editor != NULL; editor = editor->next) {
+        editor->Flush();
+    }
+    reset_pending = 0;
+    memset(scenes, 0, sizeof(scenes));
 }
 
 LevelEditorScene *LevelEditor::GetEdScene(i32 index) {
@@ -390,20 +474,36 @@ LevelEditorScene *LevelEditor::GetEdScene(i32 index) {
     return &scenes[index];
 }
 
-void LevelEditor::GetScene(char *) {
-    STUBBED();
+nugscn_s *LevelEditor::GetScene(char *name) {
+    for (i32 i = 0; i < reset_pending; ++i) {
+        if (NuStrICmp(name, scenes[i].name) == 0) {
+            return scenes[i].scene;
+        }
+    }
+    return NULL;
 }
 
 void LevelEditor::Initalise(variptr_u &, variptr_u &, i32) {
     STUBBED();
 }
 
-void LevelEditor::IsActiveScene(nugscn_s *) {
-    STUBBED();
+i32 LevelEditor::IsActiveScene(nugscn_s *scene) {
+    for (i32 i = 0; i < reset_pending; ++i) {
+        if (scenes[i].scene == scene) {
+            return scenes[i].active;
+        }
+    }
+    return 0;
 }
 
-void LevelEditor::IsEditable(i32) {
-    STUBBED();
+i32 LevelEditor::IsEditable(i32 index) {
+    if (index == -1) {
+        return 1;
+    }
+    if (static_cast<u32>(index) >= 10) {
+        return 0;
+    }
+    return scenes[index].editable != 0 || scenes[index].active == 0;
 }
 
 LevelEditor::LevelEditor() {
@@ -442,12 +542,27 @@ void LevelEditor::SaveState(variptr_u *, variptr_u *) {
     STUBBED();
 }
 
-void LevelEditor::SetPadText(i32, char *) {
-    STUBBED();
+void LevelEditor::SetPadText(i32 buttons, char *text) {
+    for (i32 i = 0; i < 32; ++i) {
+        if ((static_cast<u32>(buttons) & (1u << i)) != 0) {
+            pad_text[i] = text;
+        }
+    }
 }
 
-void LevelEditor::SetSaveFilename(char *) {
-    STUBBED();
+void LevelEditor::SetSaveFilename(char *name) {
+    if (name != NULL) {
+        NuStrCpy(save_filename, name);
+        NuStrCpy(editor_filename, save_filename);
+        char *extension = NuStrRChr(editor_filename, '.');
+        if (extension != NULL) {
+            *extension = '\0';
+        }
+        NuStrCat(editor_filename, ".led");
+    } else {
+        save_filename[0] = '\0';
+        editor_filename[0] = '\0';
+    }
 }
 
 void LevelEditor::WriteStream(EdFileOutputStream &) {
@@ -623,8 +738,21 @@ void areaEditor_Enter() {
     STUBBED();
 }
 
-void cbEdLevelDestroy(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+void cbEdLevelDestroy(eduimenu_s *menu, eduimenu_s *) {
+    if ((menu->flags & 4) != 0) {
+        return;
+    }
+    eduiMenuDetach(menu);
+    eduiMenuDestroy(menu);
+    eduiSetCameraEnabled(1);
+    if (menu == edLevelActiveMenu) {
+        edLevelActiveMenu = NULL;
+    }
+    if (menu == edLevelPinnedMenu) {
+        edLevelPinnedMenu = NULL;
+    } else if (edLevelPinnedMenu != NULL && edLevelActiveMenu == NULL) {
+        edLevelActiveMenu = edLevelPinnedMenu;
+    }
 }
 
 void cbEdLevelSetText(eduimenu_s *, eduiitem_s *, u32) {
@@ -639,8 +767,10 @@ void areaEditor_Process(nupad_s *) {
     STUBBED();
 }
 
-void cbEdLevelToggleInt(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void cbEdLevelToggleInt(eduimenu_s *, eduiitem_s *item, u32) {
+    i32 *value = static_cast<i32 *>(item->data_ptr);
+    *value ^= 1;
+    item->highlighted = *value;
 }
 
 void cbCEDeleteConfirmed(eduimenu_s *, eduiitem_s *, u32) {
@@ -651,8 +781,15 @@ void LightEverythingInEditor(void *) {
     STUBBED();
 }
 
-void cbEdLevelDestroyOnSelect(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void cbEdLevelDestroyOnSelect(eduimenu_s *menu, eduiitem_s *, u32) {
+    eduiMenuDetach(menu);
+    eduiMenuDestroy(menu);
+    if (menu == edLevelActiveMenu) {
+        edLevelActiveMenu = NULL;
+    }
+    if (menu == edLevelPinnedMenu) {
+        edLevelPinnedMenu = NULL;
+    }
 }
 
 void EdClass::SerialiseObject(EdStream &, void *) {

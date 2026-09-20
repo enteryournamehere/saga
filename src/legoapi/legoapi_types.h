@@ -3483,17 +3483,33 @@ struct terrsitu_s {};
 struct uv1deb {};
 struct uv1debdata;
 struct BaseEditor {
-    u8 reserved_0x00[4];
+    virtual ~BaseEditor() {}
+    virtual void Initialise(variptr_u &, variptr_u &, i32);
+    virtual char *GetName() { return const_cast<char *>(""); }
+    virtual void ReadBlock(DATAPTR *) {}
+    virtual void WriteBlock(i32) {}
+    virtual void Serialise(EdStream &) {}
+    virtual void ClearLevel(i32) {}
+    virtual void Flush() {}
+    virtual void Enter() {}
+    virtual void Exit() {}
+    virtual void Process(EdInputContext &) {}
+    virtual void Render() {}
+    virtual void AddMenuItems(eduimenu_s *) {}
+
     BaseEditor *next;
     BaseEditor *previous;
     i32 field_0x0c;
 
-    void Initialise(variptr_u &, variptr_u &, i32);
     void ReadBuffer(void **, void *, i32);
-    void WriteBeginBlock(i32, i32);
-    void WriteEndBlock(i32);
-    void WriteMetaData(i32, i32, i32, i32);
+    static void WriteBeginBlock(i32, i32);
+    static void WriteEndBlock(i32);
+    static void WriteMetaData(i32, i32, i32, i32);
+    static i32 blockDepth;
+    static i32 blockStart[8];
 };
+DECOMP_ASSERT(sizeof(BaseEditor) == 0x10, "BaseEditor ABI");
+DECOMP_ASSERT(offsetof(BaseEditor, next) == 0x4, "BaseEditor list offset");
 #include "legoapi/items/objects/basething.h"
 struct CantPickupBombTimerAddon : MechAddon {
     CantPickupBombTimerAddon(MechObjectInterface &, float);
@@ -4690,23 +4706,40 @@ DECOMP_ASSERT(offsetof(LEVER_s, name) == 0x5c, "LEVER name offset");
 DECOMP_ASSERT(offsetof(LEVER_s, position) == 0x6c, "LEVER position offset");
 DECOMP_ASSERT(offsetof(LEVER_s, flags) == 0x9c, "LEVER flags offset");
 struct LevelEditorScene {
-    u8 reserved_0x00[0xa0];
+    char name[0x20];
+    u8 reserved_0x20[0x80];
     nugscn_s *scene;
-    i32 field_0xa4;
+    i32 active : 1;
+    u32 editable : 1;
+    u32 reserved_flags : 30;
 };
 DECOMP_ASSERT(sizeof(LevelEditorScene) == 0xa8, "LevelEditorScene ABI");
 
 struct LevelEditor {
-    u8 pad_0x000[0x2a0];
+    u8 pad_0x000[0x299];
+    u8 destroying_objects;
+    u8 reserved_0x29a[6];
     i32 reset_pending;
     LevelEditorScene scenes[10]; // 0x2a4
     BaseEditor *first_editor;
     BaseEditor *last_editor;
     i32 editor_count;
+    BaseEditor *active_editor;
+    char save_filename[0x80];
+    char editor_filename[0x80];
+    u8 reserved_0xa44[0x18];
+    char text_buffer[0x400];
+    i32 text_length;
+    char *info_text[32];
+    u8 reserved_0xee0[0x134];
+    char *pad_text[32];
+    u8 reserved_0x1094[0xc];
+    i32 editors_entered;
+    i32 active;
 
     void AddInfoText(char *);
-    void AddScene(char *, nugscn_s *, i32);
-    void AddText(char *);
+    i32 AddScene(char *, nugscn_s *, i32);
+    char *AddText(char *);
     void BeginMultiLoad(variptr_u *, variptr_u *);
     void ClearLevel(i32);
     void CloseMenu();
@@ -4717,14 +4750,14 @@ struct LevelEditor {
     void EndMultiLoad(variptr_u *, variptr_u *);
     void Enter();
     void Exit();
-    void FindSceneId(char *);
+    i32 FindSceneId(char *);
     void Flush();
     LevelEditorScene *GetEdScene(i32);
-    void GetScene(char *);
+    nugscn_s *GetScene(char *);
     nugscn_s *GetScene(i32);
     void Initalise(variptr_u &, variptr_u &, i32);
-    void IsActiveScene(nugscn_s *);
-    void IsEditable(i32);
+    i32 IsActiveScene(nugscn_s *);
+    i32 IsEditable(i32);
     LevelEditor();
     void Load(char *, variptr_u *, variptr_u *, i32);
     void LoadState(variptr_u *, variptr_u *, variptr_u *, variptr_u *, variptr_u *, variptr_u *);
@@ -4741,7 +4774,13 @@ struct LevelEditor {
     void WriteStream(EdFileOutputStream &);
 };
 DECOMP_ASSERT(offsetof(LevelEditor, reset_pending) == 0x2a0, "LevelEditor reset_pending offset");
+DECOMP_ASSERT(offsetof(LevelEditor, destroying_objects) == 0x299, "LevelEditor destruction flag offset");
 DECOMP_ASSERT(offsetof(LevelEditor, scenes) == 0x2a4, "LevelEditor scenes offset");
+DECOMP_ASSERT(offsetof(LevelEditor, save_filename) == 0x944, "LevelEditor save filename offset");
+DECOMP_ASSERT(offsetof(LevelEditor, text_buffer) == 0xa5c, "LevelEditor text buffer offset");
+DECOMP_ASSERT(offsetof(LevelEditor, info_text) == 0xe60, "LevelEditor info text offset");
+DECOMP_ASSERT(offsetof(LevelEditor, pad_text) == 0x1014, "LevelEditor pad text offset");
+DECOMP_ASSERT(sizeof(LevelEditor) == 0x10a8, "LevelEditor ABI");
 struct MemoryManager {
     usize cursor;
     usize end;

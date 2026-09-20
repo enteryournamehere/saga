@@ -2189,7 +2189,7 @@ extern "C" {
         *buf->f32_ptr++ = 0.5f;
 
         result->glyphs = static_cast<VUFNTCHAR *>(buf->void_ptr);
-        for (i32 i = 0; i < MIN(font->glyph_count, 256); i++) {
+        for (i32 i = 0; i < (MIN(font->glyph_count, 256)); i++) {
             *buf->f32_ptr++ = font->glyphs[i].u0 * texture_width;
             *buf->f32_ptr++ = font->glyphs[i].v0 * texture_height;
             *buf->f32_ptr++ = font->glyphs[i].u1 * texture_width - font->glyphs[i].u0 * texture_width;

@@ -48,6 +48,8 @@ static i32 rtl_dynamic_cnt;
 static i16 rtl_uid = 1;
 u16 rtltimer1 = 0;
 f32 edrtl_text_scale = 1.0f;
+static f32 default_modifiers = 1.0f;
+f32 *modifiers = &default_modifiers;
 i32 modifier_cnt = 1;
 static i32 curFogLoc = -1;
 f32 rtltimer1adv = 2500.0f;

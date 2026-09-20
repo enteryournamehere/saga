@@ -37,8 +37,8 @@ struct rtl_s {
     u8 pad_70[9];
     i8 field_79;
     i8 field_7a;
-    u8 field_7b;
-    u32 field_7c;
+    i8 field_7b;
+    rtl_s *field_7c;
     u8 pad_80[0xc];
 };
 DECOMP_ASSERT(sizeof(rtl_s) == 0x8c, "RTL light size");
@@ -46,6 +46,8 @@ DECOMP_ASSERT(offsetof(rtl_s, colour) == 0x24, "RTL colour offset");
 DECOMP_ASSERT(offsetof(rtl_s, inner_radius) == 0x3c, "RTL radius offset");
 DECOMP_ASSERT(offsetof(rtl_s, type) == 0x58, "RTL type offset");
 DECOMP_ASSERT(offsetof(rtl_s, uid) == 0x6a, "RTL UID offset");
+DECOMP_ASSERT(offsetof(rtl_s, field_7b) == 0x7b, "RTL modifier index offset");
+DECOMP_ASSERT(offsetof(rtl_s, field_7c) == 0x7c, "RTL chain base offset");
 
 struct rtlfog_s {
     f32 start;

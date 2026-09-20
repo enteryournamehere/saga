@@ -1,5 +1,6 @@
 #include "decomp.h"
 #include "gamelib_util_types.h"
+#include "gamelib/util/Utilities.h"
 
 void NetSmallStats::Draw(float, float, float, float, NetSmallStats::eInfo) const {
     STUBBED();
@@ -38,5 +39,16 @@ void NetStats::Draw(float, float, float, float, NetSmallStats::eInfo) const {
 }
 
 void NetStats::Update() {
-    STUBBED();
+    if (UtilGetFrameStartTime() - sample_time > 1000) {
+        i32 next_sample = sample_index + 1;
+        if (next_sample >= 30) {
+            next_sample = 0;
+        }
+        samples[next_sample] = total;
+        samples[next_sample] -= previous;
+        maximum.Max(samples[next_sample]);
+        sample_index = next_sample;
+        previous = total;
+        sample_time = UtilGetFrameStartTime();
+    }
 }

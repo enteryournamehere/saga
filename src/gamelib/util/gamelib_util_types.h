@@ -320,6 +320,14 @@ struct NetRotator2 {
 };
 struct NetSample {
     u32 values[4];
+
+    NetSample() {
+        values[0] = 0;
+        values[1] = 0;
+        values[2] = 0;
+        values[3] = 0;
+    }
+
     void Max(NetSample const &);
     void Reset();
     void operator+=(NetSample const &);
@@ -332,13 +340,31 @@ static_assert(sizeof(void *) != 4 || sizeof(NetReplicator) == 0x18, "NetReplicat
 DECOMP_ASSERT(offsetof(NetReplicator, next) == 4, "NetReplicator next offset");
 DECOMP_ASSERT(offsetof(NetReplicator, data_size) == 0x14, "NetReplicator data size offset");
 struct NetSmallStats {
-    struct eInfo {};
-    void Draw(float, float, float, float, NetSmallStats::eInfo) const;
+    enum eInfo {};
+
+    explicit NetSmallStats(char const *stat_name) : name(stat_name) {}
+    virtual void Update() {}
+    virtual void Draw(float, float, float, float, NetSmallStats::eInfo) const;
+
+    char const *name;
+    NetSample total;
 };
-struct NetStats {
-    void Draw(float, float, float, float, NetSmallStats::eInfo) const;
-    void Update();
+struct NetStats : NetSmallStats {
+    explicit NetStats(char const *stat_name) : NetSmallStats(stat_name), sample_index(0), sample_time(0) {}
+    void Update() override;
+    void Draw(float, float, float, float, NetSmallStats::eInfo) const override;
+
+    i32 sample_index;
+    u32 sample_time;
+    NetSample maximum;
+    NetSample previous;
+    NetSample samples[30];
 };
+DECOMP_ASSERT(sizeof(NetSmallStats) == 0x18, "NetSmallStats size");
+DECOMP_ASSERT(offsetof(NetSmallStats, total) == 8, "NetSmallStats total offset");
+DECOMP_ASSERT(sizeof(NetStats) == 0x220, "NetStats size");
+DECOMP_ASSERT(offsetof(NetStats, sample_index) == 0x18, "NetStats sample index offset");
+DECOMP_ASSERT(offsetof(NetStats, samples) == 0x40, "NetStats sample history offset");
 struct NetTransporter {
     NetListenerBinding *first_listener;
     NetListenerBinding *last_listener;
@@ -491,7 +517,7 @@ struct NetworkObjectManager {
     i32 registered_call_count;
     NetPeerPush peer_push[8];
     NetPeerPush default_push;
-    NetSmallStats *class_stats[32];
+    NetStats *class_stats[32];
     u8 field_d96c;
 };
 static_assert(sizeof(void *) != 4 || offsetof(NetSession, local_peer) == 0x84, "NetSession local peer offset");

@@ -365,7 +365,12 @@ void NetworkObjectManager::Init() {
 }
 
 void NetworkObjectManager::InitClassStats() {
-    STUBBED();
+    for (i32 i = 0; i < theRegistry.class_count; i++) {
+        EdClass *object_class = theRegistry.GetClass(i);
+        if (object_class->interface != NULL) {
+            class_stats[i] = new NetStats(object_class->name);
+        }
+    }
 }
 
 i32 NetworkObjectManager::IsLocal(i32 id) {

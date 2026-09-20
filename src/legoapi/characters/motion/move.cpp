@@ -57,10 +57,13 @@ static f32 ForceBackRadius2 = 0.0f;
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/nurand.h"
 #include "nu2api/numath/nuang.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/nuvec.h"
+
+extern "C" i16 id_R2Q5;
 
 // Original action/context lookup data, with its arrays and pointers in one owner.
 static CHARACTER_CONTEXT_INFO_s _CInfoTab[] = {
@@ -1202,8 +1205,40 @@ static void SelfDestructCode(GameObject_s *object, i32 pressed) {
                         0.25f, 1.0f, 1, 0);
 }
 
-void PeriscodeCode(GameObject_s *) {
-    STUBBED();
+void PeriscodeCode(GameObject_s *object) {
+    if ((object->apiobj.character_data->model_flags & 0x40) == 0)
+        return;
+
+    f32 previous = object->communicate_blend;
+    f32 target = 0.0f;
+    if (object->apiobj.field_0x27f == 9 && object->apiobj.field_0x287 == 0 && WORLD->lev_objs[0x19].active != 0) {
+        i32 locator = object->apiobj.character_data->game_character->thingy_locator;
+        if (locator != -1 && object->apiobj.character_model->points_of_interest[locator] != NULL &&
+            object->apiobj.water_height > object->joint_matrices[locator].m31) {
+            if (object->apiobj.field_0x220 == 2000000.0f) {
+                target = 1.0f;
+            } else {
+                f32 clearance = object->apiobj.field_0x220 - object->apiobj.water_height;
+                if (!(clearance > 0.0f) || !(clearance < 0.26f))
+                    target = 1.0f;
+            }
+        }
+    }
+    object->communicate_blend = SeekLinearF(previous, target, 5.0f * FRAMETIME);
+    if (previous == 0.0f && object->communicate_blend > 0.0f)
+        PlaySfx("drd_r2_scope_up", &object->apiobj.upper_position);
+    else if (previous == 1.0f && object->communicate_blend < 1.0f)
+        PlaySfx("drd_r2_scope_down", &object->apiobj.upper_position);
+
+    if (object->field_0xdb0 > 0.0f) {
+        object->field_0xdb0 -= FRAMETIME;
+        if (!(object->field_0xdb0 <= 0.0f))
+            return;
+        if (object->apiobj.field_0x287 == 0)
+            PlaySfx(const_cast<char *>(object->id == id_R2Q5 ? "R2Q501" : "R2D201"),
+                    &object->apiobj.collision_position);
+    }
+    object->field_0xdb0 = qrand() * 1.5259022e-05f * 10.0f + 20.0f;
 }
 
 void Move_DROIDGENERIC(GameObject_s *object) {
@@ -4012,12 +4047,58 @@ static void ForceGlowCode(GameObject_s *object, i32 model) {
     object->field_0xd8c *= 1.125f;
 }
 
-void LightSabre_ColourFromObj(i32, i32 *) {
-    STUBBED();
+i32 LightSabre_ColourFromObj(i32 model, i32 *glow_model) {
+    i32 colour = -1;
+    i32 glow = -1;
+    if (model == 0x65) {
+        colour = 0;
+        glow = 0x66;
+    } else if (model == 0x67) {
+        colour = 1;
+        glow = 0x68;
+    } else if (model == 0x69) {
+        colour = 2;
+        glow = 0x6a;
+    } else if (model == 0x6b) {
+        colour = 3;
+        glow = 0x6c;
+    }
+    if (glow_model != NULL)
+        *glow_model = glow;
+    return colour;
 }
 
-void LightSabreDebris(GameObject_s *) {
-    STUBBED();
+void LightSabreDebris(GameObject_s *object) {
+    i32 hit_effect = object->blade_index == -1 ? -1 : BladeTab[object->blade_index].hit_effect;
+    i32 blade_count = object->id == id_GRIEVOUS ? 4 : object->id == id_DARTHMAUL ? 2 : 1;
+    for (i32 blade = 0; blade < blade_count; ++blade) {
+        i32 effect;
+        if (object->id == id_GRIEVOUS &&
+            !(object->apiobj.field_0x27c != -1 && Cheat_IsOn(0x19)) &&
+            !(object->apiobj.field_0x27c != -1 && Player_HasPurpleForce(object))) {
+            effect = blade == 0 || blade == 3 ? 3 : 2;
+        } else {
+            if (hit_effect == -1)
+                continue;
+            effect = hit_effect;
+        }
+        if (object->apiobj.field_0x288 == 0 || (object->field_0xe23 & 8) == 0)
+            continue;
+        GAMECHARACTERDATA *data = object->apiobj.character_data->game_character;
+        i32 first = data->streak_joints[blade][0];
+        i32 second = data->streak_joints[blade][1];
+        if (first == -1 || object->apiobj.character_model->points_of_interest[first] == NULL ||
+            second == -1 || object->apiobj.character_model->points_of_interest[second] == NULL)
+            continue;
+        NUVEC start = *NUMTX_GET_ROW_VEC(&object->joint_matrices[first], 3);
+        NUVEC end = *NUMTX_GET_ROW_VEC(&object->joint_matrices[second], 3);
+        NUVEC middle;
+        NuVecAdd(&middle, &start, &end);
+        NuVecScale(&middle, &middle, 0.5f);
+        AddGameDebris(WORLD->debris_sys, effect, &start);
+        AddGameDebris(WORLD->debris_sys, effect, &middle);
+        AddGameDebris(WORLD->debris_sys, effect, &end);
+    }
 }
 
 static void ForceCode(GameObject_s *object, i32 pressed, i32 held, i32) {
@@ -5300,12 +5381,50 @@ static __used__ void MakeWingFormation(_vuv_s *, _vuv_s *, f32, i32) {
     STUBBED();
 }
 
-static __used__ void AtatPart_Stop(PART_s *) {
-    STUBBED();
+static __used__ void AtatPart_Stop(PART_s *part) {
+    PlaySfx("EXPLODE1", &part->position);
+    PartStop_Flickerer(part);
 }
 
-static __used__ void AtatPart_Update(PART_s *) {
-    STUBBED();
+static __used__ void AtatPart_Update(PART_s *part) {
+    f32 choice = NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 100.0f + 1.0f;
+    if (part->scale_time < 1.0f) {
+        AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[118].effect, &part->position,
+                                          static_cast<i32>(part->scale_time * 20.0f), FRAMETIME, 0, 0, NULL);
+    } else if (part->scale_time < 2.0f) {
+        if (choice < 10.0f) {
+            i16 y_rotation = qrand();
+            i16 z_rotation = qrand();
+            AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[120].effect, &part->position,
+                                              static_cast<i32>(part->scale_time * 3.0f), FRAMETIME,
+                                              z_rotation, y_rotation, NULL);
+        } else if (choice > 90.0f) {
+            i16 y_rotation = qrand();
+            i16 z_rotation = qrand();
+            AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[120].effect, &part->position,
+                                              static_cast<i32>(part->scale_time * 15.0f), FRAMETIME,
+                                              z_rotation, y_rotation, NULL);
+        }
+    } else if (part->scale_time < 5.0f) {
+        if (choice < 10.0f || choice > 70.0f) {
+            i32 count = choice < 10.0f ? 15 : 30;
+            i16 y_rotation = qrand();
+            i16 z_rotation = qrand();
+            AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[120].effect, &part->position, count,
+                                              FRAMETIME, z_rotation, y_rotation, NULL);
+        }
+        i32 count = choice < 30.0f ? 1 : choice < 70.0f ? 3 : 20;
+        i16 y_rotation = qrand();
+        i16 z_rotation = qrand();
+        AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[119].effect, &part->position, count,
+                                          FRAMETIME, z_rotation, y_rotation, NULL);
+    } else if (part->scale_time < 10.0f) {
+        i32 count = choice < 30.0f ? 1 : choice < 70.0f ? 3 : 20;
+        i16 y_rotation = qrand();
+        i16 z_rotation = qrand();
+        AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[119].effect, &part->position, count,
+                                          FRAMETIME, z_rotation, y_rotation, NULL);
+    }
 }
 
 i32 show_autojump_hint;

@@ -2895,7 +2895,13 @@ struct debinftype {
     u8 momentum_adjustment_type; // 0x02d
     u8 particle_type;            // 0x02e
     u8 status;                   // 0x02f
-    u8 fields_030[8];            // 0x030
+    union {
+        u8 fields_030[8];
+        struct {
+            u8 fields_030_reserved[4];
+            f32 cut_on;
+        };
+    };
     f32 clip_extent;             // 0x038
     f32 sound_range;
     f32 sound_range_override;
@@ -2915,19 +2921,20 @@ struct debinftype {
     u8 field_0aa;
     u8 field_0ab;
     f32 field_0ac;
-    f32 field_0b0;
-    f32 field_0b4;
-    f32 field_0b8;
-    f32 field_0bc;
+    f32 jib_x_frequency;
+    f32 jib_x_amplitude;
+    f32 jib_y_frequency;
+    f32 jib_y_amplitude;
     debris_colour_key_s colour_keys[8]; // 0x0c0
     debris_float_key_s alpha_keys[8];   // 0x100
     f32 field_140;
     f32 field_144;
-    f32 field_148;
-    f32 field_14c;
+    f32 min_size;
+    f32 max_size;
     debris_float_key_s width_keys[8];  // 0x150
     debris_float_key_s height_keys[8]; // 0x190
-    u8 fields_1d0[8];
+    f32 min_rotation;
+    f32 max_rotation;
     debris_float_key_s rotation_keys[8]; // 0x1d8
     u8 fields_218[0x80];
     f32 texture_u0;          // 0x298
@@ -2936,7 +2943,10 @@ struct debinftype {
     f32 texture_v1;          // 0x2a4
     PartHeader *native_data; // 0x2a8 (target)
     f32 last_render_time;    // 0x2ac (target)
-    u8 fields_2b0[0x40];     // 0x2b0 (target)
+    union {
+        u8 fields_2b0[0x40];
+        debris_float_key_s collision_keys[8];
+    };
     u8 process_spheres;      // 0x2f0 (target)
     i8 time_group;           // 0x2f1
     u8 field_2f2;
@@ -2944,7 +2954,15 @@ struct debinftype {
     f32 thinning;             // 0x2f4
     union {
         u8 fields_2f8[0xd8];
-        NUVEC repeat_box; // 0x2f8
+        struct {
+            NUVEC repeat_box; // 0x2f8
+            f32 torus_radius1;
+            f32 torus_radius2;
+            f32 torus_lifetime;
+            debris_float_key_s torus_keys1[8];
+            debris_float_key_s torus_keys2[8];
+            debris_float_key_s torus_keys3[8];
+        };
     };
     i16 particle_keys[8]; // 0x3d0
     i32 sound_data[12];   // 0x3e0
@@ -2964,6 +2982,20 @@ struct debscale_s {
     f32 scale;
 };
 DECOMP_ASSERT(sizeof(debinftype) == 0x428, "debinftype size");
+DECOMP_ASSERT(offsetof(debinftype, cut_on) == 0x34, "debris cut-on offset");
+DECOMP_ASSERT(offsetof(debinftype, jib_x_frequency) == 0xb0, "debris jib frequency offset");
+DECOMP_ASSERT(offsetof(debinftype, jib_y_amplitude) == 0xbc, "debris jib amplitude offset");
+DECOMP_ASSERT(offsetof(debinftype, min_size) == 0x148, "debris minimum size offset");
+DECOMP_ASSERT(offsetof(debinftype, max_size) == 0x14c, "debris maximum size offset");
+DECOMP_ASSERT(offsetof(debinftype, min_rotation) == 0x1d0, "debris minimum rotation offset");
+DECOMP_ASSERT(offsetof(debinftype, max_rotation) == 0x1d4, "debris maximum rotation offset");
+DECOMP_ASSERT(offsetof(debinftype, collision_keys) == 0x2b0, "debris collision keys offset");
+DECOMP_ASSERT(offsetof(debinftype, torus_radius1) == 0x304, "debris torus radius one offset");
+DECOMP_ASSERT(offsetof(debinftype, torus_radius2) == 0x308, "debris torus radius two offset");
+DECOMP_ASSERT(offsetof(debinftype, torus_lifetime) == 0x30c, "debris torus lifetime offset");
+DECOMP_ASSERT(offsetof(debinftype, torus_keys1) == 0x310, "debris torus keys one offset");
+DECOMP_ASSERT(offsetof(debinftype, torus_keys2) == 0x350, "debris torus keys two offset");
+DECOMP_ASSERT(offsetof(debinftype, torus_keys3) == 0x390, "debris torus keys three offset");
 
 typedef uv1deb *(*DEBRISGENERATOR)(debkeydatatype_s *, debinftype *, f32);
 typedef void (*DEBRISMOMENTUMADJUSTER)(debkeydatatype_s *, debinftype *, uv1deb *);

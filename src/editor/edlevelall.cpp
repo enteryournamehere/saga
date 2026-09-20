@@ -103,8 +103,13 @@ void ClassEditor::AddMenuItems(eduimenu_s *) {
     STUBBED();
 }
 
-void ClassEditor::ClearLevel(i32) {
-    STUBBED();
+void ClassEditor::ClearLevel(i32 level) {
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->clear_level(interface, level);
+        }
+    }
 }
 
 void *ClassEditor::CreateObject() {
@@ -124,15 +129,30 @@ void ClassEditor::CreateObject(i32) {
 }
 
 void ClassEditor::Enter() {
-    STUBBED();
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->enter_editor(interface);
+        }
+    }
 }
 
 void ClassEditor::Exit() {
-    STUBBED();
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->exit_editor(interface);
+        }
+    }
 }
 
 void ClassEditor::Flush() {
-    STUBBED();
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->flush(interface);
+        }
+    }
 }
 
 void ClassEditor::Initialise(variptr_u &, variptr_u &, i32) {
@@ -218,20 +238,40 @@ void ClassEditor::MakeUniqueName(char const *, char *, i32) {
     STUBBED();
 }
 
-void ClassEditor::PostLoadInitialisation(MemoryBuffer *, MemoryBuffer *) {
-    STUBBED();
+void ClassEditor::PostLoadInitialisation(MemoryBuffer *first, MemoryBuffer *second) {
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->post_load_initialisation(interface, first, second);
+        }
+    }
 }
 
 void ClassEditor::PostSaveInitialisation() {
-    STUBBED();
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->post_save_initialisation(interface);
+        }
+    }
 }
 
-void ClassEditor::PreLoadInitialisation(MemoryBuffer *, MemoryBuffer *) {
-    STUBBED();
+void ClassEditor::PreLoadInitialisation(MemoryBuffer *first, MemoryBuffer *second) {
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->pre_load_initialisation(interface, first, second);
+        }
+    }
 }
 
 void ClassEditor::PreSaveInitialisation() {
-    STUBBED();
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->pre_save_initialisation(interface);
+        }
+    }
 }
 
 void ClassEditor::SelectLED(i32) {
@@ -282,8 +322,13 @@ void ClassEditor::UpdateClassFilter(EdInputContext &input) {
     }
 }
 
-void ClassEditor::UpdateLists(MemoryBuffer *, MemoryBuffer *) {
-    STUBBED();
+void ClassEditor::UpdateLists(MemoryBuffer *first, MemoryBuffer *second) {
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->update_lists(interface, first, second);
+        }
+    }
 }
 
 void ClassEditor::UpdateSelectedObjects(EdInputContext &) {

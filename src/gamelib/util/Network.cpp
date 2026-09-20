@@ -320,8 +320,20 @@ void NetworkObjectManager::ChangeContext(NOSContext &new_context) {
     memmove(&context, &new_context, sizeof(context));
 }
 
-void NetworkObjectManager::ConstructObject(NetworkObject *, NetworkObjectManager::NetPeerPush *) {
-    STUBBED();
+void NetworkObjectManager::ConstructObject(NetworkObject *object, NetworkObjectManager::NetPeerPush *peer_push) {
+    u8 constructor_data[256];
+    EdClassInterface *interface = object->object_class->interface;
+    i16 size = static_cast<i16>(interface->vtable->get_constructor_data(interface, object->object,
+                                                                      constructor_data, sizeof(constructor_data)));
+    i16 class_id = static_cast<i16>(theRegistry.GetClassId(object->object_class));
+    NetMessage *message = peer_push->GetReliableMessage(size + 10);
+    message->Write8(1);
+    message->Write16(object->id);
+    message->Write16(class_id);
+    message->Write16(size);
+    if (size > 0) {
+        message->Write(constructor_data, size);
+    }
 }
 
 void NetworkObjectManager::ContinuityBreak(i32, float) {

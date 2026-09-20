@@ -1,5 +1,37 @@
 #include "decomp.h"
 #include "gameapi_edtools_types.h"
+#include "gameapi/edtools/edpp_internal.h"
+#include "gameapi/edtools/edui.h"
+
+extern "C" {
+    extern debkeydatatype_s *debkeydata;
+    extern debinftype **debtab;
+    extern void *ed_fnt;
+    extern u32 edblack[4];
+    extern i32 edpp_readout;
+    extern eduimenu_s *sscalemenu;
+    extern eduimenu_s *ptlgravmenu;
+    extern eduimenu_s *ptlemitvelmenu;
+    extern eduimenu_s *ptlreadoutmenu;
+    extern eduimenu_s *edptl_damage_menu;
+    extern eduimenu_s *edptl_damageflag_menu;
+}
+
+static void cbPtlCancelSScaleMenu(eduimenu_s *, eduimenu_s *);
+static void cbPtlCancelGravMenu(eduimenu_s *, eduimenu_s *);
+static void cbPtlCancelEmitVelMenu(eduimenu_s *, eduimenu_s *);
+static void cbPtlCancelReadoutMenu(eduimenu_s *, eduimenu_s *);
+static void cbPtlCancelDamageMenu(eduimenu_s *, eduimenu_s *);
+static void cbPtlCancelDamageFlagMenu(eduimenu_s *, eduimenu_s *);
+static void cbPtlChangeGrav(eduimenu_s *, eduiitem_s *, u32);
+static void cbPtlChangeEmitVel(eduimenu_s *, eduiitem_s *, u32);
+static void cbPtlChangeSScale(eduimenu_s *, eduiitem_s *, u32);
+static void cbPtlSelReadout(eduimenu_s *, eduiitem_s *, u32);
+static void cbPtlChangeDamageFlags(eduimenu_s *, eduiitem_s *, u32);
+static void cbPtlDamageFlagMenu(eduimenu_s *, eduiitem_s *, u32);
+static void cbPtlTorusMenu(eduimenu_s *, eduiitem_s *, u32);
+
+static i32 edptl_superscale = 1;
 
 // Particle-list editor UI/menu callback stubs (static, internal linkage).
 
@@ -177,8 +209,20 @@ static void cbPtlEmitMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void cbPtlGravMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlGravMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+    if (edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    ptlgravmenu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, cbPtlCancelGravMenu, "Gravity");
+    if (ptlgravmenu != NULL) {
+        eduiMenuAddItem(ptlgravmenu, eduiItemSliderCreate(0, colours, 0, cbPtlChangeGrav,
+                            -10.0f * edptl_superscale, 20.0f * edptl_superscale, effect->field_0a0, "Gravity"));
+        eduiMenuAttach(menu, ptlgravmenu);
+        ptlgravmenu->x = menu->x + 10;
+        ptlgravmenu->y = menu->y + 40;
+    }
 }
 
 static void cbPtlSelGCode(eduimenu_s *, eduiitem_s *, u32) {
@@ -233,12 +277,31 @@ static void cbPtlCutOffMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void cbPtlDamageMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlDamageMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    if (edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    edptl_damage_menu = eduiMenuCreate(70, 70, 250, 300, ed_fnt, cbPtlCancelDamageMenu, "Particle Damage");
+    if (edptl_damage_menu != NULL) {
+        eduiMenuAddItem(edptl_damage_menu, eduiItemSelCreate(1, edblack, 0, 0, cbPtlDamageFlagMenu, "Damage Flags..."));
+        eduiMenuAddItem(edptl_damage_menu, eduiItemSelCreate(1, edblack, 0, 0, cbPtlCollMenu, "Collision Spheres..."));
+        eduiMenuAddItem(edptl_damage_menu, eduiItemSelCreate(1, edblack, 0, 0, cbPtlTorusMenu, "Collision Torus..."));
+    }
+    eduiMenuAttach(menu, edptl_damage_menu);
+    edptl_damage_menu->x = menu->x + 10;
+    edptl_damage_menu->y = menu->y + 40;
 }
 
-static void cbPtlSScaleMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlSScaleMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+    sscalemenu = eduiMenuCreate(70, 70, 180, 300, ed_fnt, cbPtlCancelSScaleMenu, "Super Scale");
+    if (sscalemenu != NULL) {
+        eduiMenuAddItem(sscalemenu, eduiItemSliderCreateInt(0, colours, 0, cbPtlChangeSScale,
+                                                        1, 99, edptl_superscale, "Super Scale"));
+        eduiMenuAttach(menu, sscalemenu);
+        sscalemenu->x = menu->x + 10;
+        sscalemenu->y = menu->y + 40;
+    }
 }
 
 static void cbPtlSelReadout(eduimenu_s *, eduiitem_s *, u32) {
@@ -265,12 +328,34 @@ static void cbPtlChangeCutOn(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void cbPtlEmitVelMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlEmitVelMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+    if (edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    ptlemitvelmenu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, cbPtlCancelEmitVelMenu, "Emitter Vel");
+    if (ptlemitvelmenu != NULL) {
+        eduiMenuAddItem(ptlemitvelmenu, eduiItemSliderCreate(0, colours, 0, cbPtlChangeEmitVel,
+                            -(10.0f * edptl_superscale), 20.0f * edptl_superscale, effect->field_048, "Emitter Vel"));
+        eduiMenuAttach(menu, ptlemitvelmenu);
+        ptlemitvelmenu->x = menu->x + 10;
+        ptlemitvelmenu->y = menu->y + 40;
+    }
 }
 
-static void cbPtlReadoutMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlReadoutMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+    ptlreadoutmenu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, cbPtlCancelReadoutMenu, "Info Box Style");
+    if (ptlreadoutmenu != NULL) {
+        eduiMenuAddItem(ptlreadoutmenu, eduiItemCheckCreate(0, colours, edpp_readout == 0, 1,
+                                                         cbPtlSelReadout, "Normal"));
+        eduiMenuAddItem(ptlreadoutmenu, eduiItemCheckCreate(1, colours, edpp_readout == 1, 1,
+                                                         cbPtlSelReadout, "Co-ordinates"));
+    }
+    eduiMenuAttach(menu, ptlreadoutmenu);
+    ptlreadoutmenu->x = menu->x + 10;
+    ptlreadoutmenu->y = menu->y + 40;
 }
 
 static void cbPtlSetXZFacing(eduimenu_s *, eduiitem_s *, u32) {
@@ -357,8 +442,21 @@ static void cbPtlChangePriority(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void cbPtlDamageFlagMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlDamageFlagMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    if (edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    edptl_damageflag_menu = eduiMenuCreate(70, 70, 200, 250, ed_fnt, cbPtlCancelDamageFlagMenu, "Damage Flags");
+    if (edptl_damageflag_menu != NULL) {
+        eduiMenuAddItem(edptl_damageflag_menu, eduiItemToggleCreate(1, edblack, effect->field_2f2 & 1, 1,
+                                                                 cbPtlChangeDamageFlags, "Good"));
+        eduiMenuAddItem(edptl_damageflag_menu, eduiItemToggleCreate(2, edblack, (effect->field_2f2 >> 1) & 1, 2,
+                                                                 cbPtlChangeDamageFlags, "Evil"));
+    }
+    eduiMenuAttach(menu, edptl_damageflag_menu);
+    edptl_damageflag_menu->x = menu->x + 10;
+    edptl_damageflag_menu->y = menu->y + 40;
 }
 
 static void cbPtlDefaultCollEnv(eduimenu_s *, eduiitem_s *, u32) {

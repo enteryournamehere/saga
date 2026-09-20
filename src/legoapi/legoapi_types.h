@@ -4955,13 +4955,6 @@ struct MINESYS_s {
     float update_timer;        // 0x744
 };
 
-struct MoveToMarker {
-    void BlowUp();
-    void FadeOut();
-    MoveToMarker(MechObjectInterface &);
-    void Process(float);
-    void Render();
-};
 struct OccluderRecord {
     NUVEC4 vertices[4];
     NUVEC4 transformed[4];

@@ -137,8 +137,9 @@ bool TouchHacks::CanTagVehicle(GameObject_s &object, GameObject_s &vehicle) {
     return !(x * x + y * y + z * z > 4.0f);
 }
 
-void TouchHacks::CanThrowBountyBomb(GameObject_s &) {
+bool TouchHacks::CanThrowBountyBomb(GameObject_s &) {
     STUBBED();
+    return false;
 }
 
 void Move_DEFAULT(GameObject_s *);

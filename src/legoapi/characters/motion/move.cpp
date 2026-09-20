@@ -5622,19 +5622,104 @@ void MovePlayer_NETWORK(GameObject_s *object) {
 }
 
 void MoveToMarker::BlowUp() {
-    STUBBED();
+    if (blowing_up) {
+        return;
+    }
+    blowing_up = true;
+    fading_out = false;
+    field_108_3 = false;
+    secondary_rotation.Start(*secondary_rotation.target, 16384.0f, 0.3f);
+    colour.from = *colour.target;
+    colour.to = VuVec(21.0f, 146.0f, 27.0f, 1.0f);
+    colour.elapsed = 0.0f;
+    colour.duration = 0.2f;
+    colour.delay = 0.0f;
+    rotation.Start(*rotation.target, 16384.0f, 0.3f);
+    scale.Start(*scale.target, 1.0f, 0.3f);
 }
 
 void MoveToMarker::FadeOut() {
-    STUBBED();
+    if (!persistent) {
+        fading_out = true;
+    }
 }
 
-MoveToMarker::MoveToMarker(MechObjectInterface &) {
-    STUBBED();
+MoveToMarker::MoveToMarker(MechObjectInterface &object) : target(&object) {
+    colour.target = &colour.value;
+    colour.elapsed = 0.0f;
+    colour.duration = -1.0f;
+    colour.delay = 0.0f;
+    rotation.Initialize();
+    scale.Initialize();
+    secondary_rotation.Initialize();
+    radius.Initialize();
+    alpha.Initialize();
+    field_5c = 0.0f;
+    field_108_0 = false;
+    field_108_1 = false;
+    fading_out = false;
+    field_108_3 = false;
+    blowing_up = false;
+    persistent = false;
+    object.GetFloorTargetPos(position, -1);
+    field_fc = 0.0f;
+    field_100 = 0.0f;
+    rotation.Start(0.0f, 21845.0f, 0.5f);
+    *rotation.target = 0.0f;
+    colour.from = VuVec(255.0f, 255.0f, 255.0f, 1.0f);
+    colour.to = VuVec(0.0f, 85.0f, 253.0f, 1.0f);
+    colour.elapsed = 0.0f;
+    colour.duration = 0.5f;
+    colour.delay = 0.0f;
+    *colour.target = colour.from;
+    scale.Start(0.0f, 1.0f, 0.5f);
+    *scale.target = 0.0f;
+    secondary_rotation.Start(0.0f, 32768.0f, 0.5f);
+    *secondary_rotation.target = 0.0f;
+    height = object.GetHeight();
+    if (object.GetObjectType() == 1) {
+        temporary_target = true;
+        radius.Start(0.0f, object.GetRadius(), 0.2f);
+        *radius.target = 0.0f;
+        alpha.Start(0.0f, 1.0f, 0.1f);
+        *alpha.target = 0.0f;
+    }
 }
 
-void MoveToMarker::Process(float) {
-    STUBBED();
+void MoveToMarker::Process(float frame_time) {
+    field_5c -= frame_time;
+    if (fading_out && !field_108_3 && field_5c < 0.0f) {
+        field_108_3 = true;
+        fading_out = false;
+        scale.Start(*scale.target, 0.0f, 0.3f);
+        alpha.Start(*alpha.target, 0.0f, 0.3f);
+        secondary_rotation.Start(*secondary_rotation.target, 0.0f, 0.3f);
+        if (target.Get() != NULL && target.Get()->GetObjectType() == 1) {
+            radius.Start(*radius.target, 0.0f, 0.7f);
+        }
+    }
+    if (target.Get() != NULL && target.Get()->GetObjectType() != 1) {
+        target.Get()->GetFloorTargetPos(position, -1);
+    }
+    rotation.Process(frame_time);
+    scale.Process(frame_time);
+    colour.Process(frame_time);
+    radius.Process(frame_time);
+    alpha.Process(frame_time);
+    secondary_rotation.Process(frame_time);
+    if (!radius.IsActive() && radius.value > 0.0f) {
+        if (target.Get() != NULL && target.Get()->GetObjectType() == 1) {
+            radius.Start(*radius.target, radius.value * 2.0f, 0.2f);
+            alpha.Start(*alpha.target, 0.0f, 0.1f);
+        }
+        if (field_108_1) {
+            FadeOut();
+        }
+    }
+    if (!rotation.IsActive()) {
+        field_100 -= static_cast<i32>(frame_time * 65536.0f);
+    }
+    field_fc += static_cast<i32>(frame_time * 65536.0f);
 }
 
 void MoveToMarker::Render() {

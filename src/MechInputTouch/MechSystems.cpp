@@ -57,8 +57,20 @@ void MechSystems::ExitLevel(WORLDINFO_s *) {
     }
 }
 
-void MechSystems::FindMoveToMarkerAtPos(VuVec const &, bool) {
-    STUBBED();
+MoveToMarker *MechSystems::FindMoveToMarkerAtPos(VuVec const &position, bool active_only) {
+    for (i32 i = 0; i < 32; ++i) {
+        MoveToMarker *marker = move_to_markers[i];
+        if (marker == NULL || (active_only && marker->field_108_0)) {
+            continue;
+        }
+        const f32 dx = marker->position.x - position.x;
+        const f32 dy = marker->position.y - position.y;
+        const f32 dz = marker->position.z - position.z;
+        if (dx * dx + dy * dy + dz * dz < 0.4f * 0.4f) {
+            return marker;
+        }
+    }
+    return NULL;
 }
 
 i32 MechInputTouchMenuController::AnyTouchesThisFrame = 0;
@@ -117,8 +129,18 @@ MechSystems::MechSystems() {
     radar_pulses[3] = NULL;
 }
 
-void MechSystems::NewMoveToMarker(MechObjectInterface &) {
-    STUBBED();
+MoveToMarker *MechSystems::NewMoveToMarker(MechObjectInterface &object) {
+    if (object.GetObjectType() == 3) {
+        return NULL;
+    }
+    for (i32 i = 0; i < 32; ++i) {
+        if (move_to_markers[i] == NULL) {
+            MoveToMarker *marker = new MoveToMarker(object);
+            move_to_markers[i] = marker;
+            return marker;
+        }
+    }
+    return NULL;
 }
 
 void MechSystems::NewRadarPulse(VuVec const &position, bool paused) {

@@ -86,7 +86,6 @@ struct nuvec_s;
 struct AIPATHCNX_s;
 struct AIPATH_s;
 struct AISYS_s;
-struct JumpTriggerPacket {};
 struct MechAutoJumpVector {
     f32 x;
     f32 y;
@@ -114,6 +113,17 @@ struct NuVec2 {
     float x;
     float y;
 };
+struct JumpTriggerPacket {
+    i32 type;
+    u32 field_4[2];
+    VuVec velocity;
+    u8 field_1c[0x10];
+    NuVec2 start;
+    NuVec2 end;
+};
+DECOMP_ASSERT(offsetof(JumpTriggerPacket, velocity) == 0xc, "Jump trigger velocity offset");
+DECOMP_ASSERT(offsetof(JumpTriggerPacket, start) == 0x2c, "Jump trigger start offset");
+DECOMP_ASSERT(offsetof(JumpTriggerPacket, end) == 0x34, "Jump trigger end offset");
 struct TouchHolder {
     u8 field_0x0[5];
     u8 is_down;
@@ -504,7 +514,8 @@ struct MechInputTouchVirtualConsoleController {
     void UpdateDPadPos();
     virtual ~MechInputTouchVirtualConsoleController();
 };
-struct MechJumpAutoPilotAddon {
+struct MechJumpAutoPilotAddon : MechAddon {
+    static HashedKey s_hashId;
     void AnalyseJumpTrajectory();
     void CalculateModifiedJumpTrajectory();
     void LookForBottomInt(VuVec const &);
@@ -513,11 +524,23 @@ struct MechJumpAutoPilotAddon {
     void LookForTerrInt(VuVec const &);
     MechJumpAutoPilotAddon(MechObjectInterface &);
     void ModifyJump();
-    void OnProcess(MechAddon::ProcessStage, float);
+    bool OnProcess(MechAddon::ProcessStage, float) override;
     void ProcJumpingToCertainDoom();
     void Recalculate();
     virtual ~MechJumpAutoPilotAddon();
+    GameObject_s *character;
+    i32 state;
+    f32 elapsed_time;
+    u8 field_24[0x74];
+    f32 speed_scale;
+    bool field_9c;
+    bool field_9d;
+    bool started;
 };
+DECOMP_ASSERT(sizeof(MechJumpAutoPilotAddon) == 0xa0, "Jump autopilot addon ABI");
+DECOMP_ASSERT(offsetof(MechJumpAutoPilotAddon, character) == 0x18, "Jump autopilot character offset");
+DECOMP_ASSERT(offsetof(MechJumpAutoPilotAddon, speed_scale) == 0x98, "Jump autopilot speed scale offset");
+DECOMP_ASSERT(offsetof(MechJumpAutoPilotAddon, started) == 0x9e, "Jump autopilot started offset");
 struct GIZOBSTACLE_s;
 struct GIZMOBLOWUP_s;
 struct GIZFORCE_s;
@@ -593,8 +616,114 @@ struct MechObjectInterface : NuMechPtr<MechObjectInterface, 4>::ManagedBase {
 DECOMP_ASSERT(sizeof(MechObjectInterface) == 8, "MechObjectInterface ABI");
 DECOMP_ASSERT(sizeof(NuMechPtr<MechObjectInterface, 4>) == 12, "Mech object reference ABI");
 
+struct MechTouchUIAnimation {
+    f32 *target;
+    f32 from;
+    f32 to;
+    f32 elapsed;
+    f32 duration;
+    f32 delay;
+    f32 value;
+
+    void Initialize() {
+        target = &value;
+        elapsed = 0.0f;
+        duration = -1.0f;
+        delay = 0.0f;
+    }
+    void Start(f32 start, f32 end, f32 time) {
+        from = start;
+        to = end;
+        elapsed = 0.0f;
+        duration = time;
+        delay = 0.0f;
+    }
+    bool IsActive() const {
+        return !(duration < 0.0f) && !(elapsed >= duration + delay);
+    }
+    void Process(f32 frame_time) {
+        if (IsActive()) {
+            elapsed += frame_time;
+            if (elapsed > duration + delay) {
+                elapsed = duration + delay;
+            }
+            if (elapsed >= delay) {
+                *target = ((elapsed - delay) / duration) * (to - from) + from;
+            }
+        }
+    }
+};
+struct MechTouchColourAnimation {
+    VuVec *target;
+    VuVec from;
+    VuVec to;
+    f32 elapsed;
+    f32 duration;
+    f32 delay;
+    VuVec value;
+    void Process(f32 frame_time) {
+        if (!(duration < 0.0f) && !(elapsed >= duration + delay)) {
+            elapsed += frame_time;
+            if (elapsed > duration + delay) {
+                elapsed = duration + delay;
+            }
+            if (elapsed >= delay) {
+                f32 fraction = (elapsed - delay) / duration;
+                *target = VuVec((to.x - from.x) * fraction + from.x, (to.y - from.y) * fraction + from.y,
+                                (to.z - from.z) * fraction + from.z, 0.0f);
+            }
+        }
+    }
+};
+struct MoveToMarker : NuMechPtr<MoveToMarker, 4>::ManagedBase {
+    void BlowUp();
+    void FadeOut();
+    MoveToMarker(MechObjectInterface &);
+    void Process(float);
+    void Render();
+    VuVec position;
+    MechTouchColourAnimation colour;
+    f32 field_58;
+    f32 field_5c;
+    f32 height;
+    MechTouchUIAnimation rotation;
+    MechTouchUIAnimation scale;
+    MechTouchUIAnimation secondary_rotation;
+    MechTouchUIAnimation radius;
+    MechTouchUIAnimation alpha;
+    NuMechPtr<MechObjectInterface, 4> target;
+    i32 field_fc;
+    i32 field_100;
+    f32 field_104;
+    union {
+        u8 flags;
+        struct {
+            u8 field_108_0 : 1;
+            u8 field_108_1 : 1;
+            u8 fading_out : 1;
+            u8 field_108_3 : 1;
+            u8 blowing_up : 1;
+            u8 temporary_target : 1;
+            u8 persistent : 1;
+            u8 field_108_7 : 1;
+        };
+    };
+};
+DECOMP_ASSERT(sizeof(MoveToMarker) == 0x10c, "Move marker ABI");
+DECOMP_ASSERT(offsetof(MoveToMarker, colour) == 0x18, "Move marker colour offset");
+DECOMP_ASSERT(offsetof(MoveToMarker, rotation) == 0x64, "Move marker rotation offset");
+DECOMP_ASSERT(offsetof(MoveToMarker, target) == 0xf0, "Move marker target offset");
+DECOMP_ASSERT(offsetof(MoveToMarker, flags) == 0x108, "Move marker flags offset");
+
 struct MechAddonCollection {
     explicit MechAddonCollection(MechObjectInterface &object) : target(&object), first(NULL) {
+    }
+    MechAddon *Find(const HashedKey &id) {
+        MechAddon *addon = first;
+        while (addon != NULL && addon->hash_id != id.value) {
+            addon = addon->next;
+        }
+        return addon;
     }
     ~MechAddonCollection() {
         MechAddon *addon = first;
@@ -679,12 +808,12 @@ struct MechSystems : BaseThing {
     void Display(ThingRenderData *) override;
     virtual void EnterLevel(WORLDINFO_s *);
     virtual void ExitLevel(WORLDINFO_s *);
-    void FindMoveToMarkerAtPos(VuVec const &, bool);
+    MoveToMarker *FindMoveToMarkerAtPos(VuVec const &, bool);
     void HookUpClickToPressStart();
     void Init();
     void LoadPerm();
     MechSystems();
-    void NewMoveToMarker(MechObjectInterface &);
+    MoveToMarker *NewMoveToMarker(MechObjectInterface &);
     void NewRadarPulse(VuVec const &, bool);
     void NewSwipeMarker(TouchHolder &, i32, SwipeDecalRenderer::Style);
     MechTouchUITagButton *NewTagButton(GameObject_s &, TouchHolder &);
@@ -837,7 +966,8 @@ struct MechTouchTask {
     }
     virtual void Render() {
     }
-    virtual void UpdateTarget(MechObjectInterface &) {
+    virtual bool UpdateTarget(MechObjectInterface &) {
+        return false;
     }
     virtual i32 IsGoToTask() {
         return 0;
@@ -851,30 +981,43 @@ struct MechTouchTask {
     GameObject_s *character;
     TouchHolder *touch_holder;
     u8 flags;
-    u8 pad_15[3];
 };
 DECOMP_ASSERT(sizeof(MechTouchTask) == 0x18, "MechTouchTask ABI");
 DECOMP_ASSERT(offsetof(MechTouchTask, character) == 0xc, "Touch task character offset");
 DECOMP_ASSERT(offsetof(MechTouchTask, touch_holder) == 0x10, "Touch task holder offset");
-struct MechTouchTaskAstroJetPack {
+struct MechTouchTaskAstroJetPack : MechTouchTask {
     static HashedKey HashId;
     MechTouchTaskAstroJetPack(MechInputTouchGestureBasedController &);
-    void Update();
+    const HashedKey &GetHashId() override {
+        return HashId;
+    }
+    bool Update() override;
+    bool started;
+    f32 start_timeout;
+    f32 grounded_time;
 };
-struct MechTouchTaskAttack {
-    static HashedKey HashId;
-    MechTouchTaskAttack(MechInputTouchGestureBasedController &, MechObjectInterface *, VuVec const &);
-    void OnStart();
-    void OnStop();
-    void Render();
-    void Update();
-};
-struct MechTouchTaskBigJump {
+DECOMP_ASSERT(sizeof(MechTouchTaskAstroJetPack) == 0x20, "Astro jetpack task ABI");
+DECOMP_ASSERT(offsetof(MechTouchTaskAstroJetPack, started) == 0x15, "Astro jetpack started offset");
+DECOMP_ASSERT(offsetof(MechTouchTaskAstroJetPack, start_timeout) == 0x18, "Astro jetpack timeout offset");
+struct MechTouchTaskBigJump : MechTouchTask {
     static HashedKey HashId;
     MechTouchTaskBigJump(MechInputTouchGestureBasedController &, MechObjectInterface &, signed char);
     MechTouchTaskBigJump(MechInputTouchGestureBasedController &, nuvec_s &, signed char);
-    void Update();
+    const HashedKey &GetHashId() override {
+        return HashId;
+    }
+    bool IsBigJumpTask() override {
+        return true;
+    }
+    bool Update() override;
+    VuVec destination;
+    bool started;
+    u8 field_29;
+    i8 animation;
 };
+DECOMP_ASSERT(sizeof(MechTouchTaskBigJump) == 0x2c, "Big jump task ABI");
+DECOMP_ASSERT(offsetof(MechTouchTaskBigJump, destination) == 0x18, "Big jump destination offset");
+DECOMP_ASSERT(offsetof(MechTouchTaskBigJump, animation) == 0x2a, "Big jump animation offset");
 struct MechTouchTaskBlock : MechTouchTask {
     static HashedKey HashId;
     MechTouchTaskBlock(MechInputTouchGestureBasedController &);
@@ -892,15 +1035,16 @@ struct MechTouchTaskGoTo : MechTouchTask {
     void OnStop() override;
     void Render() override;
     bool Update() override;
-    void UpdateStuck();
-    void UpdateTarget(MechObjectInterface &) override;
+    virtual void UpdateStuck();
+    bool UpdateTarget(MechObjectInterface &) override;
     i32 IsGoToTask() override {
         return 1;
     }
     virtual ~MechTouchTaskGoTo();
     static HashedKey HashId;
     NuMechPtr<MechObjectInterface, 4> target;
-    u8 pad_24[8];
+    f32 movement_x;
+    f32 movement_y;
     i32 room;
     f32 field_30;
     f32 field_34;
@@ -916,11 +1060,25 @@ struct MechTouchTaskGoTo : MechTouchTask {
     u8 field_50;
     u8 field_51;
     u8 pad_52[2];
-    f32 field_54;
-    f32 field_58;
-    f32 field_5c;
+    NuMechPtr<MoveToMarker, 4> move_to_marker;
 };
 DECOMP_ASSERT(sizeof(MechTouchTaskGoTo) == 0x60, "MechTouchTaskGoTo ABI");
+DECOMP_ASSERT(offsetof(MechTouchTaskGoTo, move_to_marker) == 0x54, "GoTo marker reference offset");
+struct MechTouchTaskAttack : MechTouchTaskGoTo {
+    static HashedKey HashId;
+    MechTouchTaskAttack(MechInputTouchGestureBasedController &, MechObjectInterface *, VuVec const &);
+    const HashedKey &GetHashId() override {
+        return HashId;
+    }
+    void OnStart() override;
+    void OnStop() override;
+    void Render() override;
+    bool Update() override;
+    u8 field_60;
+    u8 pad_61[3];
+};
+DECOMP_ASSERT(sizeof(MechTouchTaskAttack) == 0x64, "Attack touch task ABI");
+DECOMP_ASSERT(offsetof(MechTouchTaskAttack, field_60) == 0x60, "Attack state offset");
 struct MechTouchTaskBuildIt : MechTouchTaskGoTo {
     MechTouchTaskBuildIt(MechInputTouchGestureBasedController &, MechObjectInterface *, VuVec const &);
     const HashedKey &GetHashId() override {
@@ -929,22 +1087,48 @@ struct MechTouchTaskBuildIt : MechTouchTaskGoTo {
     bool Update() override;
     static HashedKey HashId;
 };
-struct MechTouchTaskHatMachine {
+struct MechTouchTaskHatMachine : MechTouchTaskGoTo {
     static HashedKey HashId;
     MechTouchTaskHatMachine(MechInputTouchGestureBasedController &, MechObjectInterface *, VuVec const &);
-    void Update();
+    const HashedKey &GetHashId() override {
+        return HashId;
+    }
+    bool Update() override;
+    HATMACHINE_s *machine;
 };
-struct MechTouchTaskJump {
+DECOMP_ASSERT(sizeof(MechTouchTaskHatMachine) == 0x64, "Hat machine touch task ABI");
+DECOMP_ASSERT(offsetof(MechTouchTaskHatMachine, machine) == 0x60, "Hat machine touch task object offset");
+struct MechTouchTaskJump : MechTouchTask {
     static HashedKey HashId;
     MechTouchTaskJump(MechInputTouchGestureBasedController &, JumpTriggerPacket const &, bool, bool);
-    void OnStop();
-    void Update();
+    const HashedKey &GetHashId() override {
+        return HashId;
+    }
+    void OnStop() override;
+    bool Update() override;
+    i32 frames;
+    VuVec velocity;
+    NuVec2 stick;
+    NuVec2 start;
+    NuVec2 end;
+    bool started;
+    bool landed;
+    bool descending;
+    bool disable_autopilot;
+    bool use_velocity;
 };
-struct MechTouchTaskPanel {
+DECOMP_ASSERT(sizeof(MechTouchTaskJump) == 0x4c, "Jump task ABI");
+DECOMP_ASSERT(offsetof(MechTouchTaskJump, velocity) == 0x1c, "Jump task velocity offset");
+DECOMP_ASSERT(offsetof(MechTouchTaskJump, started) == 0x44, "Jump task started offset");
+struct MechTouchTaskPanel : MechTouchTaskGoTo {
     static HashedKey HashId;
     MechTouchTaskPanel(MechInputTouchGestureBasedController &, MechObjectInterface *, VuVec const &);
-    void Update();
+    const HashedKey &GetHashId() override {
+        return HashId;
+    }
+    bool Update() override;
 };
+DECOMP_ASSERT(sizeof(MechTouchTaskPanel) == 0x60, "Panel touch task ABI");
 struct MechTouchTaskPlannedDoubleClickGoTo : MechTouchTask {
     static HashedKey HashId;
     void BackgroundProcess() override;
@@ -959,7 +1143,7 @@ struct MechTouchTaskPlannedDoubleClickGoTo : MechTouchTask {
     ~MechTouchTaskPlannedDoubleClickGoTo() override;
 
     NuMechPtr<MechObjectInterface, 4> target;
-    NuMechPtr<MechObjectInterface, 4> move_to_marker;
+    NuMechPtr<MoveToMarker, 4> move_to_marker;
     MechTempPosInterface target_position;
     u8 field_4c;
     bool finished;
@@ -979,16 +1163,28 @@ struct MechTouchTaskPlannedGoTo {
     void Update();
     virtual ~MechTouchTaskPlannedGoTo();
 };
-struct MechTouchTaskPullLever {
+struct MechTouchTaskPullLever : MechTouchTaskGoTo {
     static HashedKey HashId;
     MechTouchTaskPullLever(MechInputTouchGestureBasedController &, MechObjectInterface *, VuVec const &);
-    void Update();
+    const HashedKey &GetHashId() override {
+        return HashId;
+    }
+    bool Update() override;
+    LEVER_s *lever;
 };
-struct MechTouchTaskTag {
+DECOMP_ASSERT(sizeof(MechTouchTaskPullLever) == 0x64, "Lever touch task ABI");
+DECOMP_ASSERT(offsetof(MechTouchTaskPullLever, lever) == 0x60, "Lever touch task object offset");
+struct MechTouchTaskTag : MechTouchTask {
     static HashedKey HashId;
     MechTouchTaskTag(MechInputTouchGestureBasedController &, GameObject_s &);
-    void Update();
+    const HashedKey &GetHashId() override {
+        return HashId;
+    }
+    bool Update() override;
+    GameObject_s *target;
 };
+DECOMP_ASSERT(sizeof(MechTouchTaskTag) == 0x1c, "Tag touch task ABI");
+DECOMP_ASSERT(offsetof(MechTouchTaskTag, target) == 0x18, "Tag touch task target offset");
 struct MechTouchTaskUseForce : MechTouchTaskGoTo {
     static HashedKey HashId;
     MechTouchTaskUseForce(MechInputTouchGestureBasedController &, MechObjectInterface *, VuVec const &);
@@ -1003,11 +1199,17 @@ struct MechTouchTaskUseForce : MechTouchTaskGoTo {
 };
 DECOMP_ASSERT(sizeof(MechTouchTaskUseForce) == 0x64, "Force touch task ABI");
 DECOMP_ASSERT(offsetof(MechTouchTaskUseForce, field_60) == 0x60, "Force touch task flag offset");
-struct MechTouchTaskUseTeleport {
+struct MechTouchTaskUseTeleport : MechTouchTaskGoTo {
     static HashedKey HashId;
     MechTouchTaskUseTeleport(MechInputTouchGestureBasedController &, MechObjectInterface *, VuVec const &);
-    void Update();
+    const HashedKey &GetHashId() override {
+        return HashId;
+    }
+    bool Update() override;
+    NuMechPtr<MechObjectInterface, 4> field_60;
 };
+DECOMP_ASSERT(sizeof(MechTouchTaskUseTeleport) == 0x6c, "Teleport touch task ABI");
+DECOMP_ASSERT(offsetof(MechTouchTaskUseTeleport, field_60) == 0x60, "Teleport touch task reference offset");
 struct MechTouchTaskUseZipUp : MechTouchTask {
     static HashedKey HashId;
     MechTouchTaskUseZipUp(MechInputTouchGestureBasedController &);
@@ -1092,15 +1294,6 @@ struct MechTouchUIPlayerButton : MechTouchUIElement {
     i32 target_ids[32];
     i32 free_play_target_ids[32];
     u8 field_0x144[0x164 - 0x144];
-};
-struct MechTouchUIAnimation {
-    f32 *target;
-    f32 from;
-    f32 to;
-    f32 elapsed;
-    f32 duration;
-    f32 delay;
-    f32 value;
 };
 struct MechTouchUITagButton : MechTouchUIElement {
     void FadeOut();

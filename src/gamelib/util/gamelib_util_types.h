@@ -579,7 +579,7 @@ struct TouchHacks {
     static bool CanSlam(GameObject_s &);
     void CanTagTo(GameObject_s &, GameObject_s &);
     static bool CanTagVehicle(GameObject_s &, GameObject_s &);
-    void CanThrowBountyBomb(GameObject_s &);
+    static bool CanThrowBountyBomb(GameObject_s &);
     static bool CanToggleTo(GameObject_s &, i32);
     static bool CanUseBuildIt(GameObject_s &);
     static bool CanUseGizForce(GameObject_s &);

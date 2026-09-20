@@ -2028,7 +2028,7 @@ GIZMOBLOWUP_s *GizmoBlowUp_Target(GameObject_s *object, nuvec_s *position, nuvec
 
 GIZMOBLOWUP_s *GizmoBlowUpOpponent(GameObject_s *object, f32 range, f32 extra_radius, f32 minimum_radius, i32 mode,
                                    u32 mask, u32 value, u32 secondary_mask) {
-    if (forceNextAttackOpponent != NULL && (object->apiobj.flags_low & 0x80) != 0) {
+    if (forceNextAttackOpponent.Get() != NULL && (object->apiobj.flags_low & 0x80) != 0) {
         return forceNextAttackOpponent->GetGizBlowup();
     }
     GIZMOBLOWUP_s *nearest = NULL;

@@ -1753,6 +1753,14 @@ enum GIZSPINNER_STATE_FLAGS : u32 {
     GIZSPINNER_STATE_SHADOW_PLATFORM = 0x0800,
 };
 
+struct GIZSPINNERARM_s {
+    NUMTX matrix;
+    i16 platform_id;
+    u8 field_0x42[2];
+};
+DECOMP_ASSERT(sizeof(GIZSPINNERARM_s) == 0x44, "GIZSPINNERARM_s ABI");
+DECOMP_ASSERT(offsetof(GIZSPINNERARM_s, platform_id) == 0x40, "GIZSPINNERARM platform offset");
+
 struct GIZSPINNER_s {
     NUMTX matrix;                    // 0x000
     char name[0x10];                 // 0x040
@@ -1787,9 +1795,14 @@ struct GIZSPINNER_s {
     u8 output_count;   // 0x0a4
     u8 field_0x0a5[7];
     u8 flags; // 0x0ac, GIZSPINNER_FLAGS
-    u8 field_0x0ad[0x2d8 - 0x0ad];
+    u8 field_0x0ad;
+    i16 platform_id; // 0x0ae
+    u8 field_0x0b0[4];
+    GIZSPINNERARM_s arms[8]; // 0x0b4
+    u8 field_0x2d4[4];
     f32 field_0x2d8;
-    f32 animation_points[10]; // 0x2dc
+    f32 animation_points[9]; // 0x2dc
+    GAMEANTINODE_s *anti_node; // 0x300
 };
 DECOMP_ASSERT(sizeof(GIZSPINNER_s) == 0x304, "GIZSPINNER_s ABI");
 DECOMP_ASSERT(offsetof(GIZSPINNER_s, name) == 0x40, "GIZSPINNER name offset");
@@ -1797,7 +1810,10 @@ DECOMP_ASSERT(offsetof(GIZSPINNER_s, position) == 0x5c, "GIZSPINNER position off
 DECOMP_ASSERT(offsetof(GIZSPINNER_s, field_70) == 0x70, "GIZSPINNER trigger progress offset");
 DECOMP_ASSERT(offsetof(GIZSPINNER_s, anim_set) == 0x68, "GIZSPINNER anim-set offset");
 DECOMP_ASSERT(offsetof(GIZSPINNER_s, flags) == 0xac, "GIZSPINNER flags offset");
+DECOMP_ASSERT(offsetof(GIZSPINNER_s, platform_id) == 0xae, "GIZSPINNER platform offset");
+DECOMP_ASSERT(offsetof(GIZSPINNER_s, arms) == 0xb4, "GIZSPINNER arms offset");
 DECOMP_ASSERT(offsetof(GIZSPINNER_s, animation_points) == 0x2dc, "GIZSPINNER animation-points offset");
+DECOMP_ASSERT(offsetof(GIZSPINNER_s, anti_node) == 0x300, "GIZSPINNER antinode offset");
 struct GIZTURRETSYS_s;
 struct GRABBER_s {
     union {

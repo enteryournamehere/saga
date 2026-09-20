@@ -9,6 +9,7 @@
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nucore/nustring.h"
 #include "nu2api/numath/nuvec.h"
 
 #include <stdio.h>
@@ -106,9 +107,25 @@ static NUVEC *GizMiniCut_GetPos(GIZMO *gizmo) {
     return minicut->parts[0].resolved_position;
 }
 
-static i32 GizMiniCut_UsingSpecial(GIZMO **, void *, i32, char *) {
-    UNIMPLEMENTED();
-    return 0;
+static i32 GizMiniCut_UsingSpecial(GIZMO **results, void *world_ptr, i32 capacity, char *name) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    i32 count = 0;
+    if (world != NULL) {
+        for (i32 index = 0; index < world->minicut_count; ++index) {
+            MINICUT *minicut = &world->minicuts[index];
+            for (i32 part = 0; part < minicut->part_count; ++part) {
+                if (NuStrICmp(minicut->parts[part].name, name) == 0) {
+                    results[count++] = GizmoFindByName(world->gizmo_sys, -1, minicut->name);
+                    if (count >= capacity) {
+                        count = -1;
+                        goto done;
+                    }
+                }
+            }
+        }
+    }
+done:
+    return count;
 }
 
 void GizMiniCut_Reset(void *world_ptr, void *, void *) {

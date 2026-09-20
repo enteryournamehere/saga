@@ -1,19 +1,39 @@
 #include "legoapi/props/objects/signal.h"
 
 #include "decomp.h"
+#include "gameapi/edtools/edfile.h"
 #include "globals.h"
+#include "legoapi/actions/character/suit.h"
+#include "legoapi/items/base/apiobject.h"
+#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/render/core/terrain.h"
 #include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
+#include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nutex.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/nuvec.h"
 
 #include <string.h>
 
 extern "C" void NuTexAnimSetSignals(u32 signals);
+extern "C" void NewTerrPlatformsOff(void);
+void FindAnglesZX(NUVEC *normal, u16 *x_rotation, u16 *z_rotation);
 
-static void *Signals_ReserveBufferSpace(void *) {
-    UNIMPLEMENTED();
-    return {};
+static void Signal_SetVisibility(SIGNAL *signal, i32 visible);
+
+static void *Signals_ReserveBufferSpace(void *world_info) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    world->signals = NULL;
+    world->signal_count = 0;
+    if (world->current_level->max_signals != 0) {
+        world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
+        world->signals = static_cast<SIGNAL *>(world->giz_buffer.void_ptr);
+        world->giz_buffer.addr += world->current_level->max_signals * sizeof(SIGNAL);
+    }
+    return world->signals;
 }
 
 static void Signal_Activate(GIZMO *gizmo, i32 active) {
@@ -79,59 +99,220 @@ static void *Signals_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) 
     return GizmoBufferAlloc(buffer, buffer_end, sizeof(SIGNALPROGRESS));
 }
 
-static void Signals_Draw(void *, void *, float) {
-    UNIMPLEMENTED();
+static void Signals_Draw(void *world_info, void *, float) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    SIGNAL *signal = world->signals;
+    for (i32 i = 0; i < world->signal_count; i++, signal++) {
+        if (!signal->visible) {
+            continue;
+        }
+        NUMTX matrix = signal->matrix;
+        if (world->lev_objs[0x36].active) {
+            NuSpecialDrawAt(&world->lev_objs[0x36].special, &matrix);
+        }
+        if (signal->active) {
+            if (world->lev_objs[signal->animation_1].active) {
+                NuSpecialDrawAt(&world->lev_objs[signal->animation_1].special, &matrix);
+            }
+            if (world->lev_objs[signal->animation_2].active) {
+                f32 alpha = signal->radius;
+                NUVEC camera_offset;
+                NuVecSub(&camera_offset, &GameCam->pos, &signal->position);
+                f32 along_normal = NuVecDot(&camera_offset, &signal->normal);
+                f32 distance = NuVecMag(&camera_offset);
+                f32 distance_squared = distance * distance - along_normal * along_normal;
+                if (distance_squared < 2.25f) {
+                    f32 fade;
+                    if (distance_squared <= 0.5625f) {
+                        fade = 0.0f;
+                    } else {
+                        fade = (NuFsqrt(distance_squared) - 0.75f) / 0.75f;
+                    }
+                    if (along_normal < 0.0f || along_normal > 2.0f) {
+                        if (along_normal >= 0.0f) {
+                            along_normal -= 2.0f;
+                        } else {
+                            along_normal = -along_normal;
+                        }
+                        if (along_normal < 0.75f) {
+                            fade += (1.0f - fade) * (along_normal / 0.75f);
+                        } else {
+                            fade = 1.0f;
+                        }
+                    }
+                    alpha *= fade;
+                }
+                alpha *= signal->scale;
+                if (alpha > 0.0f) {
+                    NuSpecialDrawAtAlpha(&world->lev_objs[signal->animation_2].special, &matrix, alpha);
+                }
+            }
+        } else if (world->lev_objs[signal->animation_0].active) {
+            NuSpecialDrawAt(&world->lev_objs[signal->animation_0].special, &matrix);
+        }
+    }
 }
 
 static void Signals_Update(void *, void *, float) {
     UNIMPLEMENTED();
 }
 
-static void Signals_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
-    UNIMPLEMENTED();
+static void Signals_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_info, void *) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    for (i32 index = 0; index < world->signal_count; ++index) {
+        if (NuStrLen(world->signals[index].name) != 0) {
+            AddGizmo(gizmo_sys, type_id, NULL, &world->signals[index]);
+        }
+    }
 }
 
-static i32 Signals_Load(void *, void *) {
-    UNIMPLEMENTED();
-    return {};
+static i32 Signals_Load(void *world_info, void *) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    if (world->signal_count != 0) {
+        return 0;
+    }
+    i32 version = EdFileReadInt();
+    world->signal_count = EdFileReadInt();
+    for (i32 index = 0; index < world->signal_count; ++index) {
+        EdFileRead(world->signals[index].name, sizeof(world->signals[index].name));
+        EdFileReadNuVec(&world->signals[index].position);
+        world->signals[index].character_letter = EdFileReadChar();
+        if (version > 1) {
+            world->signals[index].suit_letter = EdFileReadChar();
+            world->signals[index].yaw = EdFileReadShort();
+        } else {
+            world->signals[index].suit_letter = 'b';
+            world->signals[index].yaw = 0;
+        }
+    }
+    return 1;
 }
 
-static void Signals_Reset(void *, void *, void *) {
-    UNIMPLEMENTED();
-}
-
-static void Signals_StoreProgress(void *, void *, void *) {
-    UNIMPLEMENTED();
-}
-
-static void Signal_SetGizmoVisibility(GIZMO *gizmo, i32 visible) {
-    if (gizmo == NULL) {
+static void Signals_Reset(void *world_info, void *, void *progress_data) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    SIGNALPROGRESS *progress = static_cast<SIGNALPROGRESS *>(progress_data);
+    if (world == NULL || world->signals == NULL) {
         return;
     }
+    SIGNAL *signal = world->signals;
+    for (i32 index = 0; index < world->signal_count; ++index, ++signal) {
+        NewTerrPlatformsOff();
+        f32 height = GameShadow(NULL, &signal->position, 5.0f, -1);
+        if (height != 2000000.0f) {
+            signal->position.y = height;
+            FindAnglesZX(&ShadNorm, &signal->terrain_pitch, &signal->terrain_roll);
+        }
+        signal->radius = 0.85f;
+        signal->scale = 1.0f;
+        NuVecRotateZ(&signal->normal, &v010, signal->terrain_roll);
+        NuVecRotateX(&signal->normal, &signal->normal, signal->terrain_pitch);
+        NuVecScale(&signal->target_position, &signal->normal, 0.6f);
+        NuVecAdd(&signal->target_position, &signal->target_position, &signal->position);
+        signal->suit = Suit_FindFromLetter(signal->suit_letter);
+        if (signal->suit == NULL) {
+            signal->suit = Suit;
+        }
+        signal->character_letter = signal->suit->group;
+        signal->suit_letter = signal->suit->letter;
+        if (signal->character_letter == 'r') {
+            signal->animation_0 = 0x3a;
+            signal->animation_1 = 0x3b;
+            signal->animation_2 = 0x3c;
+        } else {
+            signal->animation_0 = 0x37;
+            signal->animation_1 = 0x38;
+            signal->animation_2 = 0x39;
+        }
+        signal->visible = 1;
+        signal->active = 1;
+        signal->in_use = 0;
+        NuMtxSetRotationY(&signal->matrix, signal->yaw);
+        NuMtxRotateZ(&signal->matrix, signal->terrain_roll);
+        NuMtxRotateX(&signal->matrix, signal->terrain_pitch);
+        NuMtxTranslate(&signal->matrix, &signal->position);
+        if (index < 32 && progress != NULL) {
+            u32 mask = 1u << index;
+            if (progress->suit_letters[index] != 0) {
+                signal->suit = Suit_FindFromLetter(progress->suit_letters[index]);
+            }
+            Signal_SetVisibility(signal, (progress->visible_mask & mask) != 0);
+            signal->active = (progress->active_mask & mask) != 0;
+        }
+    }
+}
 
-    SIGNAL *signal = static_cast<SIGNAL *>(gizmo->object);
+static void Signals_StoreProgress(void *world_info, void *, void *progress_data) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    SIGNALPROGRESS *progress = static_cast<SIGNALPROGRESS *>(progress_data);
+    Signals_ClearProgress(world_info, progress_data);
+    if (progress == NULL || world == NULL || world->signals == NULL) {
+        return;
+    }
+    SIGNAL *signal = world->signals;
+    for (i32 index = 0; index < world->signal_count && index < 32; ++signal, ++index) {
+        u32 mask = 1u << index;
+        progress->suit_letters[index] = world->signals[index].suit->letter;
+        if (!signal->visible) {
+            progress->visible_mask &= ~mask;
+        }
+        if (!signal->active) {
+            progress->active_mask &= ~mask;
+        }
+    }
+}
+
+static void Signal_SetVisibility(SIGNAL *signal, i32 visible) {
     u8 was_visible = signal->visible;
     signal->visible = visible != 0;
 
     if (signal->visible) {
-        if (was_visible) {
-            return;
+        if (!was_visible) {
+            signal->platform_id = NewPlatPickupInst(&signal->matrix, 2);
         }
+    } else {
+        if (was_visible) {
+            DeletePlatinst(signal->platform_id);
+        }
+    }
+}
+
+static void Signal_SetGizmoVisibility(GIZMO *gizmo, i32 visible) {
+    if (gizmo != NULL) {
+        Signal_SetVisibility(static_cast<SIGNAL *>(gizmo->object), visible);
+    }
+}
+
+void Signals_InitTerrain(WORLDINFO_s *world) {
+    for (i32 index = 0; index < world->signal_count; ++index) {
+        SIGNAL *signal = &world->signals[index];
         signal->platform_id = NewPlatPickupInst(&signal->matrix, 2);
-        return;
     }
-    if (!was_visible) {
-        return;
-    }
-    DeletePlatinst(signal->platform_id);
 }
 
-void Signals_InitTerrain(WORLDINFO_s *) {
-    STUBBED();
-}
-
-void Signal_FindNearest(WORLDINFO_s *, nuvec_s *, GameObject_s *, float *) {
-    STUBBED();
+SIGNAL *Signal_FindNearest(WORLDINFO_s *world, nuvec_s *position, GameObject_s *object, float *distance) {
+    SIGNAL *nearest = NULL;
+    f32 nearest_distance = 1000000000.0f;
+    SIGNAL *signal = world->signals;
+    for (i32 index = 0; index < world->signal_count; ++index, ++signal) {
+        f32 signal_distance;
+        if (object != NULL) {
+            if (!signal->visible || !signal->active || signal->in_use ||
+                signal->suit->character_id != object->id) {
+                continue;
+            }
+            signal_distance = NuVecDistSqr(position, &signal->target_position, NULL);
+        } else {
+            signal_distance = NuVecDistSqr(position, &signal->position, NULL);
+        }
+        if (signal_distance < nearest_distance) {
+            nearest_distance = signal_distance;
+            nearest = signal;
+        }
+    }
+    if (distance != NULL) {
+        *distance = nearest_distance;
+    }
+    return nearest;
 }
 
 ADDGIZMOTYPE *Signals_RegisterGizmo(i32 type_id) {

@@ -13,6 +13,7 @@
 #include "nu2api/nucore/bgproc.h"
 #include "nu2api/nucore/nuapi.h"
 #include "nu2api/nucore/nustring.h"
+#include "nu2api/nufile/nufilepak.h"
 #include "nu2api/numath/numtx.h"
 
 #include <string.h>
@@ -22,12 +23,14 @@
 // alias, is encoded in the symbol name.
 void __attribute__((weak)) GLSLParameter::setElementsMatrix(i32 first_element, i32 count, const f32 *values) {
     NUMTX transposed[32];
+    NUMTX *destination = transposed;
+    const NUMTX *source = reinterpret_cast<const NUMTX *>(values);
     for (i32 i = 0; i < count; ++i) {
-        NuMtxTranspose(&transposed[i], const_cast<NUMTX *>(reinterpret_cast<const NUMTX *>(values) + i));
+        NuMtxTranspose(destination++, const_cast<NUMTX *>(source++));
     }
 
     i32 vector_count = count * 4;
-    const i32 vectors_remaining = (element_count_and_setter >> 2) - first_element * 4;
+    const i32 vectors_remaining = element_count - first_element * 4;
     if (vector_count > vectors_remaining) {
         vector_count = vectors_remaining;
     }
@@ -45,13 +48,16 @@ static const GLSLTypeInfo typeInfoTable[] = {
 };
 
 NUSHADERUSAGEMASK *GetUsageMask(NUSHADERUSAGEMASK *mask) {
-    for (i32 i = 0; i < g_semanticMaskCount; ++i) {
-        if (memcmp(&g_semanticMasks[i], mask, sizeof(*mask)) == 0) {
+    for (u32 i = 0; i < static_cast<u32>(g_semanticMaskCount); ++i) {
+        if (g_semanticMasks[i].semantics[0] == mask->semantics[0] &&
+            g_semanticMasks[i].semantics[1] == mask->semantics[1] &&
+            g_semanticMasks[i].semantics[2] == mask->semantics[2] &&
+            g_semanticMasks[i].semantics[3] == mask->semantics[3]) {
             return &g_semanticMasks[i];
         }
     }
     NUSHADERUSAGEMASK *result = &g_semanticMasks[g_semanticMaskCount++];
-    *result = *mask;
+    memmove(result, mask, sizeof(*mask));
     return result;
 }
 
@@ -104,13 +110,13 @@ extern "C" void NuShaderObjectSetElementsfv(NUSHADEROBJECT *shader, i32 semantic
         return;
     }
 
-    switch (parameter.type_and_flags & 0x0f) {
-        case 2:
-            glUniform4fv(parameter.location + first_element, count, values);
-            break;
+    switch (parameter.parameter_type) {
         case 1:
             g_glConstantSetterTable[parameter.element_count_and_setter & 3](parameter.location + first_element, count,
                                                                             values);
+            break;
+        case 2:
+            glUniform4fv(parameter.location + first_element, count, values);
             break;
         case 3:
             parameter.setElementsMatrix(first_element, count, values);
@@ -128,17 +134,17 @@ extern "C" void NuShaderObjectSetElementsfv_transpose(NUSHADEROBJECT *shader, i3
         return;
     }
 
-    switch (parameter.type_and_flags & 0x0f) {
-        case 2:
-            glUniform4fv(parameter.location + first_element, count, values);
-            break;
+    switch (parameter.parameter_type) {
         case 1:
             g_glConstantSetterTable[parameter.element_count_and_setter & 3](parameter.location + first_element, count,
                                                                             values);
             break;
+        case 2:
+            glUniform4fv(parameter.location + first_element, count, values);
+            break;
         case 3: {
             i32 vector_count = count * 4;
-            const i32 vectors_remaining = (parameter.element_count_and_setter >> 2) - first_element * 4;
+            const i32 vectors_remaining = parameter.element_count - first_element * 4;
             if (vector_count > vectors_remaining) {
                 vector_count = vectors_remaining;
             }
@@ -385,42 +391,42 @@ extern "C" GLSLParameter *NuShaderObjectGLSLAllocateParameter(NUSHADEROBJECT *sh
 // Original 0x30b560, retaining the complete active-uniform walk, sampler-unit
 // assignment, and parameter metadata construction.
 extern "C" void NuShaderObjectGLSLProbeSemantics(NUSHADEROBJECT *shader) {
+    static char uniformName[256];
+    NUSHADERUSAGEMASK usage_mask = {};
     if (shader->glsl.program == 0) {
         return;
     }
 
-    static const char *source_path =
+    const char *source_path =
         "i:/SagaTouch-Android_9176564/nu2api.saga/shaderbuilder/android/nushaderobject.cpp";
     BeginCriticalSectionGL(source_path, 582);
 
-    GLint uniform_count = 0;
+    GLint uniform_count;
     glGetProgramiv(shader->glsl.program, GL_ACTIVE_UNIFORMS, &uniform_count);
-    NUSHADERUSAGEMASK usage_mask = {};
     i32 sampler_count = 0;
     for (GLint i = 0; i < uniform_count; ++i) {
-        char uniform_name[256];
-        GLint array_size = 0;
-        GLenum type = 0;
-        glGetActiveUniform(shader->glsl.program, i, sizeof(uniform_name), NULL, &array_size, &type, uniform_name);
-        char *array_suffix = strchr(uniform_name, '[');
+        GLint array_size;
+        GLenum type;
+        glGetActiveUniform(shader->glsl.program, i, sizeof(uniformName), NULL, &array_size, &type, uniformName);
+        char *array_suffix = strchr(uniformName, '[');
         if (array_suffix != NULL) {
             *array_suffix = '\0';
         }
 
         nushaderuniform_e uniform;
-        const i32 semantic = NuShaderObjectGLSLGetSemanticIndex(uniform_name, uniform);
-        if (semantic < 0) {
+        const i32 semantic = NuShaderObjectGLSLGetSemanticIndex(uniformName, uniform);
+        if (semantic == -1) {
             if (type == GL_SAMPLER_2D) {
                 i32 lightmap_unit = -1;
-                if (NuStrCmp(uniform_name, "_lightmap0") == 0) {
+                if (NuStrCmp(uniformName, "_lightmap0") == 0) {
                     lightmap_unit = 0;
-                } else if (NuStrCmp(uniform_name, "_lightmap1") == 0) {
+                } else if (NuStrCmp(uniformName, "_lightmap1") == 0) {
                     lightmap_unit = 1;
-                } else if (NuStrCmp(uniform_name, "_lightmap2") == 0) {
+                } else if (NuStrCmp(uniformName, "_lightmap2") == 0) {
                     lightmap_unit = 2;
                 }
                 if (lightmap_unit >= 0) {
-                    const GLint location = glGetUniformLocation(shader->glsl.program, uniform_name);
+                    const GLint location = glGetUniformLocation(shader->glsl.program, uniformName);
                     glUseProgram(shader->glsl.program);
                     glUniform1i(location, lightmap_unit);
                     glUseProgram(0);
@@ -431,30 +437,28 @@ extern "C" void NuShaderObjectGLSLProbeSemantics(NUSHADEROBJECT *shader) {
         }
 
         GLSLParameter &parameter = *NuShaderObjectGLSLAllocateParameter(shader, semantic);
-        parameter.element_count_and_setter = (parameter.element_count_and_setter & 3) | 4;
+        parameter.element_count = 1;
         usage_mask.semantics[semantic >> 5] |= 1u << (semantic & 31);
 
         const GLSLTypeInfo *type_info = GetGLSLTypeInfo(type);
         if (type_info != NULL) {
-            parameter.type_and_flags = (parameter.type_and_flags & 0xf0) | (type_info->parameter_type & 0x0f);
-            parameter.element_count_and_setter = (type_info->setter_class & 3) | (type_info->element_count << 2);
+            parameter.parameter_type = type_info->parameter_type;
+            parameter.setter_class = type_info->setter_class;
+            parameter.element_count = type_info->element_count;
         }
 
-        if ((parameter.type_and_flags & 0x0f) == 4) {
-            const GLint location = glGetUniformLocation(shader->glsl.program, uniform_name);
-            const i32 texture_unit = sampler_count++ + 3;
+        if (parameter.parameter_type == 4) {
+            const GLint location = glGetUniformLocation(shader->glsl.program, uniformName);
             glUseProgram(shader->glsl.program);
-            glUniform1i(location, texture_unit);
+            glUniform1i(location, sampler_count + 3);
             glUseProgram(0);
             g_boundShader = 0;
-            parameter.location = static_cast<i16>(texture_unit | 0x800);
+            parameter.location = static_cast<i16>((sampler_count++ + 3) | 0x800);
         } else {
-            parameter.location = glGetUniformLocation(shader->glsl.program, uniform_name);
+            parameter.location = glGetUniformLocation(shader->glsl.program, uniformName);
         }
         parameter.array_size = array_size;
-        const u8 setter_class = parameter.element_count_and_setter & 3;
-        const u8 element_count = parameter.element_count_and_setter >> 2;
-        parameter.element_count_and_setter = setter_class | (element_count * array_size << 2);
+        parameter.element_count *= array_size;
     }
 
     shader->usage_mask = GetUsageMask(&usage_mask);
@@ -496,8 +500,10 @@ void NuShaderObject360LoadShader(nushaderobject_s *) {
     STUBBED();
 }
 
-void NuShaderObject360LoadPackFile(char *, variptr_u *, variptr_u) {
-    STUBBED();
+static void *shader_fph;
+
+void NuShaderObject360LoadPackFile(char *path, variptr_u *buffer, variptr_u buffer_end) {
+    shader_fph = NuFilePakLoad(path, buffer, buffer_end, 16);
 }
 
 void NuShaderObject360UnloadShader(nushaderobject_s *) {

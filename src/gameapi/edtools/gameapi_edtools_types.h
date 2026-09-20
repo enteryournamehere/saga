@@ -5,6 +5,7 @@
 #include "nu2api/nucore/fixed_width.h"
 #include "nu2api/nucore/nuvuvec.hpp"
 #include "nu2api/numath/nuvec.h"
+#include <string.h>
 
 struct ClassObjectList;
 struct EdBitControl;
@@ -236,6 +237,18 @@ struct MemoryBuffer {
     variptr_u *end;
     u32 used;
     u32 remaining;
+
+    void *Allocate(usize size) {
+        if (size >= end->addr - position->addr) {
+            return NULL;
+        }
+        char *allocation = (char *)ALIGN(position->addr, 16);
+        position->char_ptr = allocation + size;
+        memset(allocation, 0, size);
+        used += size;
+        remaining -= size;
+        return allocation;
+    }
 };
 struct EdStream {
     virtual ~EdStream() {}

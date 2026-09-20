@@ -9,6 +9,8 @@
 
 #include <stdio.h>
 
+extern i32 EdType_String;
+
 static inline i32 get_class_object_attribute(EdClass *ed_class, void *object, EdRef *reference,
                                             i32 attribute, i32 type, void *data, i32 size) {
     if (reference != NULL && reference->GetAttributeData(object, attribute, type, data, size)) {
@@ -267,12 +269,59 @@ i32 ClassEditor::IsSelectedObject(void *object, EdRef *reference) {
     return selected_objects.IsInList(object, reference);
 }
 
-void ClassEditor::IsUniqueName(char *) {
-    STUBBED();
+i32 ClassEditor::IsUniqueName(char *name) {
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClass *ed_class = &theRegistry.classes[i];
+        EdClassInterface *interface = ed_class->interface;
+        if (interface == NULL || !(ed_class->flags & 2)) {
+            continue;
+        }
+
+        void *object = interface->vtable->get_next_object(interface, NULL);
+        while (object != NULL) {
+            EdMember member;
+            char candidate_name[128];
+            if (ed_class->FindMember(&member, object, 2, 1)) {
+                member.reference->GetAttributeData(member.object, 2, EdType_String, candidate_name, 128);
+                if (NuStrICmp(name, candidate_name) == 0) {
+                    return 0;
+                }
+            }
+            interface = ed_class->interface;
+            object = interface->vtable->get_next_object(interface, object);
+        }
+    }
+    return 1;
 }
 
-void ClassEditor::MakeUniqueName(char const *, char *, i32) {
-    STUBBED();
+void ClassEditor::MakeUniqueName(char const *name, char *destination, i32 size) {
+    i32 prefix_length = NuStrLen(name);
+    const char *digit = name + prefix_length - 1;
+    i32 digit_count = 0;
+    while (*digit >= '0' && *digit <= '9') {
+        --digit;
+        ++digit_count;
+    }
+
+    i32 suffix;
+    if (digit_count != 0) {
+        prefix_length -= digit_count;
+        suffix = NuAToI(const_cast<char *>(name + prefix_length));
+    } else {
+        suffix = 0;
+        digit_count = 2;
+    }
+
+    if (prefix_length + digit_count >= size) {
+        prefix_length = size - digit_count - 1;
+    }
+    NuStrNCpy(destination, name, prefix_length + 1);
+    char format[16];
+    sprintf(format, "%%.%dd", digit_count);
+    do {
+        ++suffix;
+        sprintf(destination + prefix_length, format, suffix);
+    } while (!IsUniqueName(destination));
 }
 
 void ClassEditor::PostLoadInitialisation(MemoryBuffer *first, MemoryBuffer *second) {

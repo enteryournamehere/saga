@@ -3669,7 +3669,7 @@ struct ClassEditor : BaseEditor {
     i32 IsSelectedClass(EdClass *);
     i32 IsSelectedObject(ClassObject &);
     i32 IsSelectedObject(void *, EdRef *);
-    void IsUniqueName(char *);
+    i32 IsUniqueName(char *);
     void MakeUniqueName(char const *, char *, i32);
     void PostLoadInitialisation(MemoryBuffer *, MemoryBuffer *);
     void PostSaveInitialisation();

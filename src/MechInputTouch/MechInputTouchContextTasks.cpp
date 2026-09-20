@@ -3,6 +3,7 @@
 #include "legoapi/gizmos/object/gizbuildits.h"
 #include "globals.h"
 #include "legoapi/items/base/apiobject.h"
+#include "nu2api/numath/nutrig.h"
 
 extern i16 id_YODA;
 extern i16 id_YODAGHOST;
@@ -29,7 +30,7 @@ HashedKey MechTouchTaskPanel::HashId("Panel");
 HashedKey MechTouchTaskPlannedDoubleClickGoTo::HashId("DblClickGoTo");
 
 MechTouchTask::MechTouchTask(MechInputTouchGestureBasedController &owner)
-    : controller(&owner), elapsed(0.0f), flags(0) {
+    : controller(&owner), touch_holder(NULL), flags(0) {
     next = NULL;
 }
 
@@ -187,21 +188,67 @@ bool MechTouchTaskBuildIt::Update() {
     return false;
 }
 
-MechTouchTaskUseForce::MechTouchTaskUseForce(MechInputTouchGestureBasedController &, MechObjectInterface *,
-                                             VuVec const &) {
-    STUBBED();
+MechTouchTaskUseForce::MechTouchTaskUseForce(MechInputTouchGestureBasedController &owner, MechObjectInterface *object,
+                                             VuVec const &) : MechTouchTaskGoTo(owner, object) {
+    flags |= 1;
+    field_60 = 0;
 }
 
 void MechTouchTaskUseForce::OnStart() {
-    STUBBED();
+    if (player != NULL && target.Get() != NULL) {
+        player->force_glow_previous = target.Get()->GetTgtVoidPtr();
+    }
+    MechTouchTaskGoTo::OnStart();
 }
 
 void MechTouchTaskUseForce::OnStop() {
-    STUBBED();
+    if (player != NULL && target.Get() != NULL) {
+        player->force_glow_previous = NULL;
+        if (target.Get()->GetObjectType() == 5) {
+            static_cast<GizForceObjectInterface *>(target.Get())->selected_object = NULL;
+        }
+    }
+    MechTouchTaskGoTo::OnStop();
 }
 
-void MechTouchTaskUseForce::Update() {
-    STUBBED();
+bool MechTouchTaskUseForce::Update() {
+    MechObjectInterface *object = target.Get();
+    if (player == NULL || object == NULL ||
+        (object->GetGizForce() == NULL && object->GetPart() == NULL && object->GetCharacterObject() == NULL)) {
+        return false;
+    }
+    if (player->character_context == 8) {
+        field_60 = 1;
+    }
+    VuVec position;
+    target.Get()->GetPos(position, room);
+    position.x -= player->apiobj.pos_x;
+    position.z -= player->apiobj.pos_z;
+    GIZFORCE_s *force = object->GetGizForce();
+    bool within_range = false;
+    if (force != NULL) {
+        const f32 dx = position.x;
+        const f32 dz = position.z;
+        const f32 radius = force->interaction_radius;
+        if (TouchHacks::CanUseGizForce(*player, *force)) {
+            if (object->GetTgtVoidPtr() == player->force_glow_object) {
+                controller->button_was_pressed[3] = 1;
+                return true;
+            }
+            const f32 range = radius * 0.9f;
+            within_range = dx * dx + dz * dz < range * range;
+        } else {
+            return false;
+        }
+    } else if (object->GetTgtVoidPtr() == player->force_glow_object) {
+        controller->button_was_pressed[3] = 1;
+        return true;
+    }
+    if (!within_range && MechTouchTaskGoTo::Update()) {
+        return true;
+    }
+    player->apiobj.movement_facing_angle = NuAtan2D(position.x, position.z);
+    return true;
 }
 
 MechTouchTaskUseZipUp::MechTouchTaskUseZipUp(MechInputTouchGestureBasedController &owner) : MechTouchTask(owner) {

@@ -16,6 +16,7 @@ struct FtpFile;
 struct GIZFORCE_s;
 struct GIZMOBLOWUP_s;
 struct GameObject_s;
+struct MechObjectInterface;
 struct NOSContext;
 struct NOSFilter;
 struct NetAddress;
@@ -414,7 +415,7 @@ struct TouchHacks {
     void CheckForAboutToRunOffAnEdge(GameObject_s &, float);
     void CheckJumpForLandingSpot(GameObject_s &, float);
     static void CleanupAllMechObjectInterfaces(WORLDINFO_s *);
-    void FindBombTarget(GameObject_s &);
+    static MechObjectInterface *FindBombTarget(GameObject_s &);
     static nucolour3_s *GetFlashColour();
     static float GetIncomingPartRange();
     static i32 GetLoseStudsDieValue();

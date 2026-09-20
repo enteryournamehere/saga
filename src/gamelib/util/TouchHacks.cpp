@@ -272,8 +272,9 @@ void TouchHacks::CleanupAllMechObjectInterfaces(WORLDINFO_s *) {
     STUBBED();
 }
 
-void TouchHacks::FindBombTarget(GameObject_s &) {
+MechObjectInterface *TouchHacks::FindBombTarget(GameObject_s &) {
     STUBBED();
+    return NULL;
 }
 
 nucolour3_s *TouchHacks::GetFlashColour() {

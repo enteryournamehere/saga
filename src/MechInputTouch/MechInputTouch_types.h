@@ -115,11 +115,23 @@ struct NuVec2 {
     float y;
 };
 struct TouchHolder {
-    u8 field_0x0[0x0c];
+    u8 field_0x0[5];
+    u8 is_down;
+    u8 field_0x6;
+    u8 consumed;
+    u8 field_0x8[4];
     NuVec2 down_position;
-    u8 field_0x14[0x18];
+    MechObjectInterface *target_object;
+    u8 field_0x18[0x14];
     NuVec2 touch_position;
+    u8 field_0x34[0x3a4 - 0x34];
+    f32 held_time;
 };
+DECOMP_ASSERT(offsetof(TouchHolder, is_down) == 5, "Touch holder down flag offset");
+DECOMP_ASSERT(offsetof(TouchHolder, consumed) == 7, "Touch holder consumed flag offset");
+DECOMP_ASSERT(offsetof(TouchHolder, target_object) == 0x14, "Touch holder target offset");
+DECOMP_ASSERT(offsetof(TouchHolder, touch_position) == 0x2c, "Touch holder position offset");
+DECOMP_ASSERT(offsetof(TouchHolder, held_time) == 0x3a4, "Touch holder held time offset");
 struct MechInputTouchGestureTracker {
     virtual bool OnDown(GameObject_s &, TouchHolder &);
     virtual bool OnRelease(GameObject_s &, TouchHolder &);
@@ -780,8 +792,8 @@ struct MechInputTouchGestureBasedController : MechInputTouchMainController, Mech
 
     MechTempPosInterface temporary_position;
     StickMode stick_mode;
-    GameObject_s *field_90;
-    GameObject_s *field_94;
+    TouchHolder *field_90;
+    TouchHolder *field_94;
     f32 field_98;
     f32 field_9c;
     f32 field_a0;
@@ -789,7 +801,7 @@ struct MechInputTouchGestureBasedController : MechInputTouchMainController, Mech
     u8 field_a5;
     u8 field_a6;
     u8 pad_a7;
-    MechTouchTask *current_task;
+    TouchHolder *current_task;
     NuMechPtr<MechObjectInterface, 4> target;
 };
 DECOMP_ASSERT(sizeof(MechInputTouchGestureBasedController) == 0xb8, "Gesture touch controller ABI");
@@ -798,6 +810,8 @@ DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, temporary_position)
 DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, stick_mode) == 0x8c,
               "Gesture controller stick mode offset");
 DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, active) == 0xa4, "Gesture controller active flag offset");
+DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, field_90) == 0x90, "Gesture controller first touch offset");
+DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, field_94) == 0x94, "Gesture controller second touch offset");
 DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, current_task) == 0xa8,
               "Gesture controller current task offset");
 DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, target) == 0xac,
@@ -834,12 +848,14 @@ struct MechTouchTask {
     static HashedKey HashId;
     MechTouchTask *next;
     MechInputTouchGestureBasedController *controller;
-    u32 field_0xc;
-    f32 elapsed;
+    GameObject_s *character;
+    TouchHolder *touch_holder;
     u8 flags;
     u8 pad_15[3];
 };
 DECOMP_ASSERT(sizeof(MechTouchTask) == 0x18, "MechTouchTask ABI");
+DECOMP_ASSERT(offsetof(MechTouchTask, character) == 0xc, "Touch task character offset");
+DECOMP_ASSERT(offsetof(MechTouchTask, touch_holder) == 0x10, "Touch task holder offset");
 struct MechTouchTaskAstroJetPack {
     static HashedKey HashId;
     MechTouchTaskAstroJetPack(MechInputTouchGestureBasedController &);
@@ -973,13 +989,20 @@ struct MechTouchTaskTag {
     MechTouchTaskTag(MechInputTouchGestureBasedController &, GameObject_s &);
     void Update();
 };
-struct MechTouchTaskUseForce {
+struct MechTouchTaskUseForce : MechTouchTaskGoTo {
     static HashedKey HashId;
     MechTouchTaskUseForce(MechInputTouchGestureBasedController &, MechObjectInterface *, VuVec const &);
-    void OnStart();
-    void OnStop();
-    void Update();
+    const HashedKey &GetHashId() override {
+        return HashId;
+    }
+    void OnStart() override;
+    void OnStop() override;
+    bool Update() override;
+    u8 field_60;
+    u8 pad_61[3];
 };
+DECOMP_ASSERT(sizeof(MechTouchTaskUseForce) == 0x64, "Force touch task ABI");
+DECOMP_ASSERT(offsetof(MechTouchTaskUseForce, field_60) == 0x60, "Force touch task flag offset");
 struct MechTouchTaskUseTeleport {
     static HashedKey HashId;
     MechTouchTaskUseTeleport(MechInputTouchGestureBasedController &, MechObjectInterface *, VuVec const &);

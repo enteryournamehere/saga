@@ -5064,12 +5064,57 @@ struct PartObjectInterface : MechObjectInterface {
 };
 DECOMP_ASSERT(sizeof(PartObjectInterface) == 0xc, "Part interface ABI");
 struct Placeable {
-    void Reset();
-    void GetCurrentPosition() const;
-    void GetInitialPosition() const;
-    void SetCurrentPosition(VuVec const *);
-    void SetInitialPosition(VuVec const *);
+    i16 scene_id;
+    i16 led_file;
+    i32 attributes;
+    EdString name;
+    EdString params;
+    u32 reserved_14;
+
+    static i16 CurrentLedFile;
+
+    Placeable() : scene_id(0), led_file(CurrentLedFile), attributes(0), name{}, params{}, reserved_14(0) {
+    }
+    virtual ~Placeable() {
+    }
+    virtual Placeable *Clone(i32) const {
+        return NULL;
+    }
+    virtual void Reset() {
+    }
+    virtual char const *GetName() const {
+        char const *value = name.data ? name.data + 1 : NULL;
+        return value ? value : "No Name";
+    }
+    virtual void SetName(char const *value) {
+        name.Set(value);
+    }
+    virtual f32 GetRadius() const {
+        return 1.0f;
+    }
+    virtual VuMtx const *GetInitialTransform() const {
+        return NULL;
+    }
+    virtual void SetInitialTransform(VuMtx const *) {
+    }
+    virtual VuMtx const *GetCurrentTransform() const {
+        return NULL;
+    }
+    virtual void SetCurrentTransform(VuMtx const *) {
+    }
+    virtual VuVec const *GetInitialPosition() const;
+    virtual void SetInitialPosition(VuVec const *);
+    virtual VuVec const *GetCurrentPosition() const;
+    virtual void SetCurrentPosition(VuVec const *);
+    virtual void Render(VuMtx const *) const {
+    }
 };
+DECOMP_ASSERT(sizeof(Placeable) == 0x18, "Placeable size");
+DECOMP_ASSERT(offsetof(Placeable, scene_id) == 0x4, "Placeable scene ID offset");
+DECOMP_ASSERT(offsetof(Placeable, led_file) == 0x6, "Placeable LED file offset");
+DECOMP_ASSERT(offsetof(Placeable, attributes) == 0x8, "Placeable attributes offset");
+DECOMP_ASSERT(offsetof(Placeable, name) == 0xc, "Placeable name offset");
+DECOMP_ASSERT(offsetof(Placeable, params) == 0x10, "Placeable params offset");
 struct PlaceableHelper {
     i32 object_type_count;
 
@@ -5250,27 +5295,36 @@ struct SceneObjectHelper {
     void cbEdSceneObjectShowOwnedObjects(eduimenu_s *, eduiitem_s *, u32);
 };
 
-struct SpecialObject {
-    void Exists() const;
-    void GetCollision() const;
-    void GetCurrentPosition() const;
-    void GetCurrentTransform() const;
-    void GetInitialPosition() const;
-    void GetInitialTransform() const;
-    void GetMtl(i32) const;
-    void GetName() const;
-    void GetNumMtls() const;
-    void GetRadius() const;
-    void GetVisibility() const;
-    void Render(VuMtx const *) const;
-    void SetCollision(i32);
-    void SetCurrentPosition(VuVec const *);
-    void SetCurrentTransform(VuMtx const *);
-    void SetInitialPosition(VuVec const *);
-    void SetInitialTransform(VuMtx const *);
-    void SetVisibility(i32);
+struct SpecialObject : Placeable {
+    nuhspecial_s special;
+
     SpecialObject();
+    ~SpecialObject() override {
+    }
+    char const *GetName() const override;
+    f32 GetRadius() const override;
+    VuMtx const *GetInitialTransform() const override;
+    void SetInitialTransform(VuMtx const *) override;
+    VuMtx const *GetCurrentTransform() const override;
+    void SetCurrentTransform(VuMtx const *) override;
+    VuVec const *GetInitialPosition() const override;
+    void SetInitialPosition(VuVec const *) override;
+    VuVec const *GetCurrentPosition() const override;
+    void SetCurrentPosition(VuVec const *) override;
+    void Render(VuMtx const *) const override;
+    virtual nuhspecial_s *GetNuHSpecial() {
+        return &special;
+    }
+    virtual i32 Exists() const;
+    virtual i32 GetNumMtls() const;
+    virtual numtl_s *GetMtl(i32) const;
+    virtual i32 GetVisibility() const;
+    virtual void SetVisibility(i32);
+    virtual i32 GetCollision() const;
+    virtual void SetCollision(i32);
 };
+DECOMP_ASSERT(sizeof(SpecialObject) == 0x24, "SpecialObject size");
+DECOMP_ASSERT(offsetof(SpecialObject, special) == 0x18, "SpecialObject special handle offset");
 struct TELEPORT_s {
     char name[0x40];
     struct nugspline_s *path;

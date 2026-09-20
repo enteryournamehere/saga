@@ -3076,8 +3076,17 @@ void GameFog_Reset() {
     GameFogTime = 0.0f;
 }
 
-void Game_KillPart(PART_s *, i32) {
-    STUBBED();
+void Game_KillPart(PART_s *part, i32 reason) {
+    if (reason == 1 && part->force_player_mask != -1) {
+        if ((part->force_player_mask & 1) != 0 && Player[0] != NULL) {
+            NewBuzz(Player[0]->pad_gamepad->pad, 0.2f, 0);
+            NewRumble(Player[0]->pad_gamepad->pad, 0.8f, 0);
+        }
+        if ((part->force_player_mask & 2) != 0 && Player[1] != NULL) {
+            NewBuzz(Player[1]->pad_gamepad->pad, 0.2f, 0);
+            NewRumble(Player[1]->pad_gamepad->pad, 0.8f, 0);
+        }
+    }
 }
 
 void GameAISysReset(AISYS_s *system) {
@@ -3342,10 +3351,14 @@ void GameFog_Update(WORLDINFO_s *world) {
 }
 
 void *GameBufferAlloc(variptr_u *buf, variptr_u *buf_end, i32 size) {
-    // Carves `size` bytes out of the permanent buffer (original at
-    // 0x4890a0); returns the previous cursor.
-    void *ptr = (void *)(usize)buf->addr;
-    buf->addr += size;
+    void *ptr = NULL;
+    if (buf_end != NULL && buf != NULL && buf->addr + size < buf_end->addr) {
+        buf->addr = (buf->addr + 3) & ~usize(3);
+        ptr = buf->void_ptr;
+        buf->addr += size;
+    }
+    if (ptr != NULL)
+        memset(ptr, 0, size);
     return ptr;
 }
 
@@ -3470,8 +3483,17 @@ update_bounds:
     }
 }
 
-void PortalGameObject(GameObject_s *, i32, i32, i16, nugscn_s *) {
-    STUBBED();
+void PortalGameObject(GameObject_s *object, i32 enabled, i32 update_room, i16 room, nugscn_s *scene) {
+    if (enabled != 0) {
+        object->field_0xefa |= 0x40;
+        object->field_0xefa = (object->field_0xefa & 0x7f) | ((update_room & 1) << 7);
+        if (room != -1)
+            object->room_id = room;
+        else
+            object->room_id = scene != NULL ? NuPortalWhichRoom(scene, &object->apiobj.position) : -1;
+    } else {
+        object->field_0xefa &= ~0x40;
+    }
 }
 
 void SnapCreaturePos(GameObject_s *object, NUVEC *position, i32 angle, AIPATHINFO_s *path_info, i32 set_on_surface) {

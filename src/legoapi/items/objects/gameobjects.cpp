@@ -4079,9 +4079,30 @@ void GameObjectDimensions(GameObject_s *object) {
     GameObjectDimensionsExtra_LSW(object);
 }
 
-void GameAntiNodeData_Init(GAMEANTINODEDATA_s *data, nuhspecial_s *) {
+void GameAntiNodeData_Init(GAMEANTINODEDATA_s *data, nuhspecial_s *special) {
     if (data != NULL) {
         memset(data, 0, sizeof(*data));
+        if (special != NULL && NuSpecialExistsFn(special)) {
+            NUVEC minimum;
+            NUVEC maximum;
+            NuSpecialGetBounds(special, &minimum, &maximum);
+            NUMTX *matrix = NuSpecialGetMtx(special);
+            NuVecMtxTransform(&minimum, &minimum, matrix);
+            NuVecMtxTransform(&maximum, &maximum, matrix);
+            f32 x = NuFabs((maximum.x - minimum.x) * 0.5f);
+            f32 z = NuFabs((maximum.z - minimum.z) * 0.5f);
+            if (NuFabs(x - z) < 0.01f) {
+                data->radius = x;
+                data->use_largest_extent = 0;
+            } else {
+                data->radius = x > z ? x : z;
+                data->use_largest_extent = 1;
+            }
+            data->extent_x = x;
+            data->extent_z = z;
+            data->max_y = NuFabs((maximum.y - minimum.y) * 0.5f);
+            data->min_y = -data->max_y;
+        }
     }
 }
 

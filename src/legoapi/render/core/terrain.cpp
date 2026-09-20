@@ -5659,16 +5659,43 @@ extern "C" void NewScanInit(void) {
     TerrPlatDis = -1;
 }
 
-void NewScanHandelFull(nuvec_s *, nuvec_s *, f32, i32, i32) {
+i16 *NewScanHandelFull(nuvec_s *, nuvec_s *, f32, i32, i32) {
     STUBBED();
+    return NULL;
 }
 
-void NewScanHandelSubset(i16 *, nuvec_s *, nuvec_s *, f32, i32) {
+i16 *NewScanHandelSubset(i16 *, nuvec_s *, nuvec_s *, f32, i32) {
     STUBBED();
+    return NULL;
 }
 
-extern "C" void NewScanHandel(void) {
-    STUBBED();
+extern "C" i16 *NewScanHandel(nuvec_s *position, nuvec_s *movement, f32 radius, i32 scan_type, i16 *subset) {
+    if (CurTerr == NULL)
+        return NULL;
+    TerrPlatDis = -1;
+    TerI = static_cast<TerrainQuery_s *>(NuScratchAlloc32(sizeof(TerrainQuery_s)));
+    TerI->object_scale = 1.0f;
+    TerI->object_scale_sq = 1.0f;
+    TerI->inverse_object_scale = 1.0f;
+    TerI->inverse_object_scale_sq = 1.0f;
+    TerI->collision_radius = radius;
+    TerI->inverse_collision_radius = radius == 0.0f ? 0.0f : 1.0f / radius;
+    TerI->collision_radius_sq = radius * radius;
+    TerI->start_position.x = TerI->position.x = position->x;
+    TerI->start_position.y = TerI->position.y = position->y;
+    TerI->start_position.z = TerI->position.z = position->z;
+    TerI->movement = *movement;
+    TerI->start_movement = TerI->movement;
+    TerI->object_index = -1;
+    TerI->hit_flags = NULL;
+    TerI->scan_result = 1;
+    i16 *handle;
+    if (subset != NULL)
+        handle = NewScanHandelSubset(subset, position, movement, radius, 0xff);
+    else
+        handle = NewScanHandelFull(position, movement, radius, scan_type, 0xff);
+    NuScratchRelease();
+    return handle;
 }
 
 extern "C" void NewRaySetDisablePalt(i32 disabled) {

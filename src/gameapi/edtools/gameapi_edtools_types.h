@@ -420,16 +420,33 @@ struct EdMatrixControl {
     void cbSelected(eduimenu_s *, eduiitem_s *, u32);
 };
 struct EdRef {
+    virtual void *GetMemberObject(void *);
+    virtual void GetMemberData(void *, i32, void *, i32);
+    virtual void SetMemberData(void *, i32, void *, i32, i16 *);
+
+    EdRef *next;
+    EdRef *previous;
+    i32 type_id;
+    char *name;
+    i32 member_offset;
+    i32 size;
+    i32 attributes;
+    EdControl *control;
+    i32 replication_group;
+
     void CheckType(i32);
     EdRef(char *, char *, i32, i32, i32, EdControl *, i32);
-    void GetAttributeData(void *, i32, i32, void *, i32);
-    void GetMemberData(void *, i32, void *, i32);
-    void GetMemberObject(void *);
-    void GetTypeSize(i32, i32);
+    i32 GetAttributeData(void *, i32, i32, void *, i32);
+    i32 GetTypeSize(i32, i32);
     void Serialise(EdStream &, i32 *);
-    void SetAttributeData(void *, i32, i32, void *, i32);
-    void SetMemberData(void *, i32, void *, i32, i16 *);
+    i32 SetAttributeData(void *, i32, i32, void *, i32);
 };
+static_assert(sizeof(void *) != 4 || sizeof(EdRef) == 0x28, "EdRef 32-bit size");
+static_assert(sizeof(void *) != 4 || offsetof(EdRef, type_id) == 0xc, "EdRef::type_id 32-bit offset");
+static_assert(sizeof(void *) != 4 || offsetof(EdRef, member_offset) == 0x14,
+              "EdRef::member_offset 32-bit offset");
+static_assert(sizeof(void *) != 4 || offsetof(EdRef, attributes) == 0x1c,
+              "EdRef::attributes 32-bit offset");
 struct EdRefKnot {
     void GetMemberData(void *, i32, void *, i32);
     void SetMemberData(void *, i32, void *, i32, i16 *);

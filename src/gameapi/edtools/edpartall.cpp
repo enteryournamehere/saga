@@ -149,6 +149,11 @@ static void edpartSoundControlMenu(eduimenu_s *, eduiitem_s *, u32);
 static void edpartCancelSoundXMenu(eduimenu_s *, eduimenu_s *);
 static void edpartCancelSoundsMenu(eduimenu_s *, eduimenu_s *);
 static void edpartCancelSoundIDMenu(eduimenu_s *, eduimenu_s *);
+static void edpartSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32);
+static void edpartSetSwitchId(eduimenu_s *, eduiitem_s *, u32);
+static void edpartCancelSwitchMenu(eduimenu_s *, eduimenu_s *);
+static void edpartCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *);
+static void edpartCancelSoundControlMenu(eduimenu_s *, eduimenu_s *);
 
 extern "C" {
     i32 edpart_which_scene = 1;
@@ -416,8 +421,20 @@ static void edpartSoundsMenu(eduimenu_s *menu, eduiitem_s *, u32) {
         }
     }
 }
-static void edpartSwitchMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartSwitchMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    if (edpart_nearest != -1 && part_emits[edpart_nearest].instance_id != -1) {
+        edpart_switch_menu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, edpartCancelSwitchMenu, "Switch Menu");
+        if (edpart_switch_menu != NULL) {
+            eduiMenuAddItem(edpart_switch_menu,
+                           eduiItemSelCreate(1, edblack, 0, 0, edpartSwitchTypeMenu, "Switch Type..."));
+            eduiMenuAddItem(edpart_switch_menu,
+                           eduiItemSliderCreateInt(0, edblack, 0, edpartSetSwitchId, 0, 128,
+                                                   part_emits[edpart_nearest].switch_id, "Switch ID"));
+            eduiMenuAttach(menu, edpart_switch_menu);
+            edpart_switch_menu->x = menu->x + 10;
+            edpart_switch_menu->y = menu->y + 40;
+        }
+    }
 }
 static void edpartChangeTintB(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpart_nearest_type)
@@ -703,8 +720,19 @@ static void edpartImpactPartMenu(eduimenu_s *, eduiitem_s *, u32) {
 static void edpartSetScaleFactor(eduimenu_s *, eduiitem_s *item, u32) {
     edpart_scale_factor = static_cast<edui_slider_s *>(item)->value;
 }
-static void edpartSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartSwitchTypeMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    edpart_switchtype_menu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, edpartCancelSwitchTypeMenu, "Switch Type");
+    if (edpart_switchtype_menu != NULL) {
+        eduiMenuAddItem(edpart_switchtype_menu,
+                       eduiItemCheckCreate(0, edblack, part_emits[edpart_nearest].switch_type == 0, 1,
+                                           edpartSetSwitchType, "None"));
+        eduiMenuAddItem(edpart_switchtype_menu,
+                       eduiItemCheckCreate(1, edblack, part_emits[edpart_nearest].switch_type == 1, 1,
+                                           edpartSetSwitchType, "Global Switch"));
+        eduiMenuAttach(menu, edpart_switchtype_menu);
+        edpart_switchtype_menu->x = menu->x + 10;
+        edpart_switchtype_menu->y = menu->y + 40;
+    }
 }
 static void edpartChangeIvalOnRan(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpart_nearest_type)
@@ -834,8 +862,45 @@ static void edpartImpactDebrisMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void edpartSoundControlMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edpartSoundControlMenu(eduimenu_s *menu, eduiitem_s *item, u32) {
+    if (edpart_nearest_type != NULL) {
+        edpart_soundcontrol_menu = eduiMenuCreate(70, 70, 250, 250, ed_fnt, edpartCancelSoundControlMenu, "Sound Control");
+        if (edpart_soundcontrol_menu != NULL) {
+            eduiMenuAddItem(edpart_soundcontrol_menu,
+                           eduiItemCheckCreate(static_cast<u32>(item->data) << 16, edblack,
+                                               edpart_nearest_type->sound_modes[item->data] == 0, 1,
+                                               edpartSetSoundControl, "Off"));
+            if (edui_last_item->highlighted)
+                edpart_soundcontrol_menu->selected = edui_last_item;
+            eduiMenuAddItem(edpart_soundcontrol_menu,
+                           eduiItemCheckCreate((static_cast<u32>(item->data) << 16) + 1, edblack,
+                                               edpart_nearest_type->sound_modes[item->data] == 1, 1,
+                                               edpartSetSoundControl, "On Edge"));
+            if (edui_last_item->highlighted)
+                edpart_soundcontrol_menu->selected = edui_last_item;
+            eduiMenuAddItem(edpart_soundcontrol_menu,
+                           eduiItemCheckCreate((static_cast<u32>(item->data) << 16) + 2, edblack,
+                                               edpart_nearest_type->sound_modes[item->data] == 2, 1,
+                                               edpartSetSoundControl, "Off Edge"));
+            if (edui_last_item->highlighted)
+                edpart_soundcontrol_menu->selected = edui_last_item;
+            eduiMenuAddItem(edpart_soundcontrol_menu,
+                           eduiItemCheckCreate((static_cast<u32>(item->data) << 16) + 3, edblack,
+                                               edpart_nearest_type->sound_modes[item->data] == 3, 1,
+                                               edpartSetSoundControl, "Per PART"));
+            if (edui_last_item->highlighted)
+                edpart_soundcontrol_menu->selected = edui_last_item;
+            eduiMenuAddItem(edpart_soundcontrol_menu,
+                           eduiItemCheckCreate((static_cast<u32>(item->data) << 16) + 4, edblack,
+                                               edpart_nearest_type->sound_modes[item->data] == 4, 1,
+                                               edpartSetSoundControl, "Continuous"));
+            if (edui_last_item->highlighted)
+                edpart_soundcontrol_menu->selected = edui_last_item;
+            eduiMenuAttach(menu, edpart_soundcontrol_menu);
+            edpart_soundcontrol_menu->x = menu->x + 10;
+            edpart_soundcontrol_menu->y = menu->y + 40;
+        }
+    }
 }
 
 static void edpartTrail1DebrisMenu(eduimenu_s *, eduiitem_s *, u32) {

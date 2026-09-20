@@ -58,7 +58,7 @@ Bazel commands:
 | MechAutofireAddon::OnProcess | 2.472% | 99.876% |
 
 `ClearGameObjects` remains at 99.923%. These are isolated symbol measurements,
-not a whole-binary regression audit. The remaining base-file stubs are unchanged.
+not a whole-binary regression audit. Later batches extend the remaining base-file callbacks.
 
 ## Trench movement and cannon callbacks
 

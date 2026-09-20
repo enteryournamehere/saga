@@ -2,6 +2,9 @@
 #include "gameapi_edtools_types.h"
 #include "gameapi/edtools/edpp_internal.h"
 #include "gameapi/edtools/edui.h"
+#include "legoapi/render/fx/game_deb.h"
+#include "nu2api/nu3d/android/nuptl_android.h"
+#include <string.h>
 
 extern "C" {
     extern debkeydatatype_s *debkeydata;
@@ -345,19 +348,83 @@ static void cbPtlShowAll(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 static void cbPtlApplyJib(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    if (edpp_nearest == -1)
+        return;
+    i32 instance = edpp_ptls[edpp_nearest].instance_id;
+    if (instance == -1)
+        return;
+    debinftype *effect = debtab[debkeydata[instance].effect_index];
+    if (grad_jib_x_freq_item)
+        effect->jib_x_frequency = grad_jib_x_freq_item->value;
+    if (grad_jib_x_amp_item)
+        effect->jib_x_amplitude = grad_jib_x_amp_item->value;
+    if (grad_jib_y_freq_item)
+        effect->jib_y_frequency = grad_jib_y_freq_item->value;
+    if (grad_jib_y_amp_item)
+        effect->jib_y_amplitude = grad_jib_y_amp_item->value;
+    GenericDebinfoDmaTypeUpdate(effect);
 }
 
 static void cbPtlApplyRot(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    edui_gradient_stage_s stages[8];
+    if (!grad_rot_min_item || !grad_rot_max_item || !grad_rot_item)
+        return;
+    i32 count = eduiGradPickRead(grad_rot_item, stages, 8);
+    f32 minimum = grad_rot_min_item->value;
+    f32 maximum = grad_rot_max_item->value;
+    if (minimum == maximum)
+        maximum += 0.1f;
+    if (count < 2 || count > 8 || edpp_nearest == -1)
+        return;
+    i32 instance = edpp_ptls[edpp_nearest].instance_id;
+    if (instance == -1)
+        return;
+    debinftype *effect = debtab[debkeydata[instance].effect_index];
+    for (i32 i = 0; i < count; ++i) {
+        effect->rotation_keys[i].time = stages[i].time;
+        effect->rotation_keys[i].value = static_cast<i32>((stages[i].red * (maximum - minimum) + minimum) *
+                                                        (65536.0f / 360.0f));
+    }
+    effect->min_rotation = minimum;
+    effect->max_rotation = maximum;
+    GenericDebinfoDmaTypeUpdate(effect);
 }
 
 static void cbPtlCollMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void cbPtlCopySize(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlCopySize(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1)
+        return;
+    i32 instance = edpp_ptls[edpp_nearest].instance_id;
+    if (instance == -1)
+        return;
+    debinftype *effect = debtab[debkeydata[instance].effect_index];
+    edui_gradient_pick_s *gradient;
+    if (item->data == 1) {
+        memcpy(effect->height_keys, effect->width_keys, sizeof(effect->height_keys));
+        gradient = static_cast<edui_gradient_pick_s *>(grad_size_h_item);
+    } else {
+        memcpy(effect->width_keys, effect->height_keys, sizeof(effect->width_keys));
+        gradient = static_cast<edui_gradient_pick_s *>(grad_size_w_item);
+    }
+    while (gradient->first_stage)
+        eduiGradStageDelete(gradient, gradient->first_stage);
+    for (i32 i = 0; i < 8; ++i) {
+        if (item->data == 1) {
+            f32 grey = (effect->height_keys[i].value - effect->min_size) / (effect->max_size - effect->min_size);
+            eduiGradStageAddRGB(grad_size_h_item, effect->height_keys[i].time, grey, grey, grey);
+            if (effect->height_keys[i].time == 1.0f)
+                break;
+        } else {
+            f32 grey = (effect->width_keys[i].value - effect->min_size) / (effect->max_size - effect->min_size);
+            eduiGradStageAddRGB(grad_size_w_item, effect->width_keys[i].time, grey, grey, grey);
+            if (effect->width_keys[i].time == 1.0f)
+                break;
+        }
+    }
+    GenericDebinfoDmaTypeUpdate(effect);
 }
 
 static void cbPtlDataMenu(eduimenu_s *, eduiitem_s *, u32) {
@@ -405,11 +472,73 @@ static void cbPtlAddEffect(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 static void cbPtlApplyGrad(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    edui_gradient_stage_s stages[8];
+    if (grad_item) {
+        i32 count = eduiGradPickRead(grad_item, stages, 8);
+        if (count >= 2 && count <= 8 && edpp_nearest != -1) {
+            i32 instance = edpp_ptls[edpp_nearest].instance_id;
+            if (instance != -1) {
+                debinftype *effect = debtab[debkeydata[instance].effect_index];
+                for (i32 i = 0; i < count; ++i) {
+                    effect->colour_keys[i].time = stages[i].time;
+                    effect->colour_keys[i].red = static_cast<i32>(stages[i].red * 255.0f);
+                    effect->colour_keys[i].green = static_cast<i32>(stages[i].green * 255.0f);
+                    effect->colour_keys[i].blue = static_cast<i32>(stages[i].blue * 255.0f);
+                }
+                GenericDebinfoDmaTypeUpdate(effect);
+            }
+        }
+    }
+    if (grad_alpha_item) {
+        i32 count = eduiGradPickRead(grad_alpha_item, stages, 8);
+        if (count >= 2 && count <= 8 && edpp_nearest != -1) {
+            i32 instance = edpp_ptls[edpp_nearest].instance_id;
+            if (instance != -1) {
+                debinftype *effect = debtab[debkeydata[instance].effect_index];
+                for (i32 i = 0; i < count; ++i) {
+                    effect->alpha_keys[i].time = stages[i].time;
+                    effect->alpha_keys[i].value = stages[i].red * 255.0f;
+                }
+                GenericDebinfoDmaTypeUpdate(effect);
+            }
+        }
+    }
 }
 
 static void cbPtlApplySize(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    edui_gradient_stage_s stages[8];
+    if (!grad_size_min_item || !grad_size_max_item || !grad_size_h_item || !grad_size_w_item)
+        return;
+    i32 count = eduiGradPickRead(grad_size_w_item, stages, 8);
+    f32 minimum = grad_size_min_item->value;
+    f32 maximum = grad_size_max_item->value;
+    if (count >= 2 && count <= 8 && edpp_nearest != -1) {
+        i32 instance = edpp_ptls[edpp_nearest].instance_id;
+        if (instance != -1) {
+            debinftype *effect = debtab[debkeydata[instance].effect_index];
+            for (i32 i = 0; i < count; ++i) {
+                effect->width_keys[i].time = stages[i].time;
+                effect->width_keys[i].value = stages[i].red * (maximum - minimum) + minimum;
+            }
+            effect->min_size = minimum;
+            effect->max_size = maximum;
+            GenericDebinfoDmaTypeUpdate(effect);
+        }
+    }
+    count = eduiGradPickRead(grad_size_h_item, stages, 8);
+    if (count >= 2 && count <= 8 && edpp_nearest != -1) {
+        i32 instance = edpp_ptls[edpp_nearest].instance_id;
+        if (instance != -1) {
+            debinftype *effect = debtab[debkeydata[instance].effect_index];
+            for (i32 i = 0; i < count; ++i) {
+                effect->height_keys[i].time = stages[i].time;
+                effect->height_keys[i].value = stages[i].red * (maximum - minimum) + minimum;
+            }
+            effect->min_size = minimum;
+            effect->max_size = maximum;
+            GenericDebinfoDmaTypeUpdate(effect);
+        }
+    }
 }
 
 static void cbPtlGSortMenu(eduimenu_s *, eduiitem_s *, u32) {
@@ -550,7 +679,22 @@ static void cbFileLoadEffects(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 static void cbPtlApplyCollEnv(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    edui_gradient_stage_s stages[8];
+    if (!coll_env_item)
+        return;
+    i32 count = eduiGradPickRead(coll_env_item, stages, 8);
+    if (count < 2 || count > 8 || edpp_nearest == -1)
+        return;
+    i32 instance = edpp_ptls[edpp_nearest].instance_id;
+    if (instance == -1)
+        return;
+    debinftype *effect = debtab[debkeydata[instance].effect_index];
+    f32 minimum = effect->min_size / 10000.0f;
+    f32 maximum = effect->max_size / 10000.0f;
+    for (i32 i = 0; i < count; ++i) {
+        effect->collision_keys[i].time = stages[i].time;
+        effect->collision_keys[i].value = stages[i].red * (maximum - minimum) + minimum;
+    }
 }
 
 static void cbPtlChangeCutOff(eduimenu_s *, eduiitem_s *, u32) {
@@ -586,15 +730,54 @@ static void cbChangeGenRateMenu(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 static void cbPtlApplyTorusEnv1(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    edui_gradient_stage_s stages[8];
+    if (!torus_env1_item)
+        return;
+    i32 count = eduiGradPickRead(torus_env1_item, stages, 8);
+    if (count < 2 || count > 8 || edpp_nearest == -1)
+        return;
+    i32 instance = edpp_ptls[edpp_nearest].instance_id;
+    if (instance == -1)
+        return;
+    debinftype *effect = debtab[debkeydata[instance].effect_index];
+    for (i32 i = 0; i < count; ++i) {
+        effect->torus_keys1[i].time = stages[i].time;
+        effect->torus_keys1[i].value = stages[i].red;
+    }
 }
 
 static void cbPtlApplyTorusEnv2(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    edui_gradient_stage_s stages[8];
+    if (!torus_env2_item)
+        return;
+    i32 count = eduiGradPickRead(torus_env2_item, stages, 8);
+    if (count < 2 || count > 8 || edpp_nearest == -1)
+        return;
+    i32 instance = edpp_ptls[edpp_nearest].instance_id;
+    if (instance == -1)
+        return;
+    debinftype *effect = debtab[debkeydata[instance].effect_index];
+    for (i32 i = 0; i < count; ++i) {
+        effect->torus_keys2[i].time = stages[i].time;
+        effect->torus_keys2[i].value = stages[i].red;
+    }
 }
 
 static void cbPtlApplyTorusEnv3(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    edui_gradient_stage_s stages[8];
+    if (!torus_env3_item)
+        return;
+    i32 count = eduiGradPickRead(torus_env3_item, stages, 8);
+    if (count < 2 || count > 8 || edpp_nearest == -1)
+        return;
+    i32 instance = edpp_ptls[edpp_nearest].instance_id;
+    if (instance == -1)
+        return;
+    debinftype *effect = debtab[debkeydata[instance].effect_index];
+    for (i32 i = 0; i < count; ++i) {
+        effect->torus_keys3[i].time = stages[i].time;
+        effect->torus_keys3[i].value = stages[i].red;
+    }
 }
 
 static void cbPtlChangePriority(eduimenu_s *, eduiitem_s *, u32) {
@@ -618,8 +801,22 @@ static void cbPtlDamageFlagMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     edptl_damageflag_menu->y = menu->y + 40;
 }
 
-static void cbPtlDefaultCollEnv(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlDefaultCollEnv(eduimenu_s *menu, eduiitem_s *, u32) {
+    if (edpp_nearest != -1) {
+        i32 instance = edpp_ptls[edpp_nearest].instance_id;
+        if (instance != -1) {
+            debinftype *effect = debtab[debkeydata[instance].effect_index];
+            for (i32 i = 0; i < 8; ++i) {
+                effect->collision_keys[i].time = effect->width_keys[i].time;
+                effect->collision_keys[i].value = effect->width_keys[i].value / 10000.0f;
+            }
+        }
+    }
+    eduimenu_s *parent = menu->parent;
+    if (parent)
+        eduiMenuDetach(menu);
+    if (menu->callback)
+        menu->callback(menu, parent);
 }
 
 static void cbPtlSelTextureType(eduimenu_s *, eduiitem_s *, u32) {

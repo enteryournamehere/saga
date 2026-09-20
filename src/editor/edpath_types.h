@@ -9,7 +9,8 @@ struct EDAIPATHNODE_s;
 struct EDAIPATHCNX_s {
     EDAIPATHNODE_s *node;
     u32 flags;
-    f32 distance;
+    u16 route_mask;
+    u16 unknown_0a;
 };
 struct EDAISHAREDPATHNODE_s {
     NULISTLNK link;
@@ -18,7 +19,8 @@ struct EDAISHAREDPATHNODE_s {
 struct EDAIPATHROUTE_s {
     char name[0x10];
     u64 user_mask;
-    u8 unknown_18[4];
+    u8 flags;
+    u8 unknown_19[3];
 };
 struct EDAIPATH_s {
     NULISTLNK link;
@@ -67,7 +69,8 @@ struct EDAIPATHNODE_s {
     };
     i16 index;
     u8 flags;
-    u8 unknown_093[0x98 - 0x93];
+    u8 unknown_093[0x96 - 0x93];
+    u16 route_mask;
     union {
         nuhspecial_s special;
         nuhspecial_s platform;
@@ -80,6 +83,10 @@ struct EDAIPATHNODE_s {
 };
 
 DECOMP_ASSERT(offsetof(EDAIPATH_s, nodes) == 0x18, "editor path node list offset");
+DECOMP_ASSERT(offsetof(EDAIPATHCNX_s, route_mask) == 0x08, "editor connection route mask offset");
+DECOMP_ASSERT(sizeof(EDAIPATHCNX_s) == 0x0c, "editor connection stride");
+DECOMP_ASSERT(offsetof(EDAIPATHROUTE_s, flags) == 0x18, "editor route flags offset");
+DECOMP_ASSERT(offsetof(EDAIPATHNODE_s, route_mask) == 0x96, "editor node route mask offset");
 DECOMP_ASSERT(offsetof(EDAISHAREDPATHNODE_s, reference_count) == 0x08, "editor shared node reference count offset");
 DECOMP_ASSERT(offsetof(EDAIPATH_s, current_node) == 0x20, "editor current node offset");
 DECOMP_ASSERT(offsetof(EDAIPATH_s, current_route) == 0x28, "editor current route offset");

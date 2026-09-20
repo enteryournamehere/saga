@@ -936,6 +936,8 @@ static f32 game_farclip;
 static i32 rtl_zoff;
 static i32 ctl_ix = 1;
 static rtl_s menu_undo;
+static NUVEC pcpos;
+i32 delete_menu_active;
 
 extern NUQFNT *system_qfont;
 extern "C" {
@@ -1039,8 +1041,14 @@ static void cbCancelMenu(eduimenu_s *, eduimenu_s *) {
 static void cbCancelDeleteMenu(eduimenu_s *, eduimenu_s *) {
     STUBBED();
 }
-static void cbDeleteYes(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbDeleteYes(eduimenu_s *, eduiitem_s *item, u32) {
+    if (curr_rtl) {
+        edrtlSaveUndo();
+        rtlFree(curr_rtl);
+        rtl_locked = NULL;
+    }
+    delete_menu_active = 0;
+    item->highlighted = 0;
 }
 static void cbDeleteNo(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
@@ -1276,7 +1284,26 @@ static void cbPasteIntoLight(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 static void cbCopyToGroup(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    i32 save_undo = 1;
+    if (curr_rtl && curr_rtl->group_id) {
+        for (i32 i = 0; i < 128; ++i) {
+            if (&curr_set->lights[i] == curr_rtl)
+                continue;
+            if (curr_set->lights[i].type && curr_set->lights[i].group_id == curr_rtl->group_id) {
+                if (save_undo) {
+                    edrtlSaveUndo();
+                    save_undo = 0;
+                }
+                NUVEC position = curr_set->lights[i].position;
+                i32 uid = static_cast<u16>(curr_set->lights[i].uid);
+                i32 user_id = curr_set->lights[i].field_68;
+                curr_set->lights[i] = *curr_rtl;
+                curr_set->lights[i].position = position;
+                curr_set->lights[i].uid = uid;
+                curr_set->lights[i].field_68 = user_id;
+            }
+        }
+    }
 }
 static void cbUndoLight(eduimenu_s *, eduiitem_s *, u32) {
     edrtlUndo();
@@ -1289,10 +1316,24 @@ static void cbCopyFog(eduimenu_s *, eduiitem_s *, u32) {
         clipboard_fog = *curr_fog;
 }
 static void cbPasteFog(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    if (clipboard_fog.type) {
+        curr_fog = fogAlloc();
+        if (curr_fog) {
+            *curr_fog = clipboard_fog;
+            curr_fog->position = pcpos;
+        }
+    }
 }
-static void cbPasteIntoFog(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPasteIntoFog(eduimenu_s *menu, eduiitem_s *item, u32 flags) {
+    if (clipboard_fog.type) {
+        if (curr_fog) {
+            NUVEC position = curr_fog->position;
+            *curr_fog = clipboard_fog;
+            curr_fog->position = position;
+        } else {
+            cbPasteFog(menu, item, flags);
+        }
+    }
 }
 static void cbHideType(eduimenu_s *, eduiitem_s *item, u32) {
     hide_types[item->data] = item->highlighted;
@@ -1551,7 +1592,6 @@ static __used__ void InitUI() {
 // Burnset persistence and editing state from the same original RTL editor run.
 
 burnset_s *edrtl_edit_burnset;
-static NUVEC pcpos;
 
 i32 edrtlBurnoutSave(char *filename, burnset_s *set) {
     i32 i;

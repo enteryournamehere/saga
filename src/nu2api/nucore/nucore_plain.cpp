@@ -2149,8 +2149,86 @@ extern "C" {
     // Quick-font platform rendering (the generic font run lives in nuqfnt.cpp)
     // ---------------------------------------------------------------------------
 
-    void NuQFntCreate(void) {
-        STUBBED();
+    VUFNT *NuQFntCreate(NUFNT *font, i32 flags, i32 render_options, VARIPTR *buf, VARIPTR *) {
+        DECOMP_ASSERT(offsetof(NUFNT, height) == 0x0c, "NUFNT height offset");
+        DECOMP_ASSERT(offsetof(NUFNT, baseline) == 0x14, "NUFNT baseline offset");
+        DECOMP_ASSERT(offsetof(NUFNT, ic_gap) == 0x16, "NUFNT inter-character gap offset");
+        DECOMP_ASSERT(offsetof(NUFNT, mtl) == 0x18, "NUFNT material offset");
+        DECOMP_ASSERT(offsetof(NUFNT, glyph_count) == 0x1c, "NUFNT glyph count offset");
+        DECOMP_ASSERT(offsetof(NUFNT, character_map) == 0x20, "NUFNT character map offset");
+        DECOMP_ASSERT(offsetof(NUFNT, glyphs) == 0x120, "NUFNT glyphs offset");
+        DECOMP_ASSERT(sizeof(NUFNTCHAR) == 0x14, "NUFNTCHAR stride");
+        DECOMP_ASSERT(sizeof(VUFNTHDR) == 0x20, "VUFNTHDR size");
+        DECOMP_ASSERT(offsetof(VUFNT, legacy_font) == 0x28, "VUFNT legacy font offset");
+
+        f32 texture_width = NuTexWidth(font->mtl->tex_id);
+        f32 texture_height = NuTexHeight(font->mtl->tex_id);
+        VUFNT *result = reinterpret_cast<VUFNT *>(ALIGN(buf->addr, 16));
+        buf->addr = reinterpret_cast<usize>(result) + sizeof(VUFNT) + sizeof(VUFNT_ANDROID);
+        memset(result, 0, sizeof(VUFNT) + sizeof(VUFNT_ANDROID));
+        result->platform_data = reinterpret_cast<VUFNT_ANDROID *>(result + 1);
+        result->glyph_count = font->glyph_count;
+        result->height = font->height;
+        result->baseline = font->baseline;
+        result->ic_gap = font->ic_gap;
+        result->legacy_font = font;
+        result->space_width = font->glyphs[0].u1 * texture_width - font->glyphs[0].u0 * texture_width;
+
+        result->hdr = static_cast<VUFNTHDR *>(buf->void_ptr);
+        *buf->f32_ptr++ = result->ic_gap;
+        *buf->f32_ptr++ = result->height;
+        *buf->f32_ptr++ = 1.0f / texture_width;
+        *buf->f32_ptr++ = 1.0f / texture_height;
+        *buf->f32_ptr++ = 0.0f;
+        *buf->f32_ptr++ = 0.0f;
+        *buf->f32_ptr++ = result->space_width;
+        *buf->f32_ptr++ = 0.0f;
+        result->x_scale = buf->f32_ptr;
+        *buf->f32_ptr++ = 1.0f;
+        result->y_scale = buf->f32_ptr;
+        *buf->f32_ptr++ = 0.5f;
+
+        result->glyphs = static_cast<VUFNTCHAR *>(buf->void_ptr);
+        for (i32 i = 0; i < MIN(font->glyph_count, 256); i++) {
+            *buf->f32_ptr++ = font->glyphs[i].u0 * texture_width;
+            *buf->f32_ptr++ = font->glyphs[i].v0 * texture_height;
+            *buf->f32_ptr++ = font->glyphs[i].u1 * texture_width - font->glyphs[i].u0 * texture_width;
+        }
+        result->character_map = buf->u8_ptr;
+        for (i32 i = 0; i < 256; i++) {
+            i32 index = font->character_map[i];
+            if (index == 0xff)
+                index = 0;
+            if (i == ' ')
+                index = font->glyph_count;
+            *buf->u8_ptr++ = index;
+        }
+
+        result->mtl = reinterpret_cast<NUMTL *>(ALIGN(buf->addr, 16));
+        buf->addr = ALIGN(buf->addr, 16) + sizeof(NUMTL);
+        memcpy(result->mtl, font->mtl, sizeof(NUMTL));
+        NUMTL *material = result->mtl;
+        material->attribs.uv_mode = (flags & 8) == 0;
+        material->attribs.unknown_2_1_2 = 2;
+        material->attribs.alpha_mode = (flags & 2) == 0;
+        if ((flags & 0x40) != 0)
+            material->attribs.z_mode = 0;
+        else if ((flags & 0x20) != 0)
+            material->attribs.z_mode = 1;
+        else
+            material->attribs.z_mode = 3;
+        if ((flags & 4) != 0)
+            material->attribs.filter_mode = 1;
+        else if ((flags & 0x10) != 0)
+            material->attribs.filter_mode = 2;
+        else
+            material->attribs.filter_mode = 0;
+        material->sort_pri = static_cast<i16>(render_options >> 16);
+        NuMtlUpdate(material);
+        result->platform_data->x = 0.0f;
+        result->platform_data->y = 0.0f;
+        result->platform_data->z = 0.0f;
+        return result;
     }
     void NuQFntDestroy(VUFNT *font) {
         if (font != NULL) {

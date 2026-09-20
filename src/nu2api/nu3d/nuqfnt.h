@@ -36,6 +36,37 @@ typedef struct vufntchar_s {
     f32 width;
 } VUFNTCHAR;
 
+typedef struct nufntchar_s {
+    f32 u0;
+    f32 v0;
+    f32 u1;
+    f32 v1;
+    u32 unknown_10;
+} NUFNTCHAR;
+
+typedef struct nufnt_s {
+    u8 unknown_00[0x0c];
+    i16 height;
+    u8 unknown_0e[6];
+    i16 baseline;
+    i16 ic_gap;
+    NUMTL *mtl;
+    i32 glyph_count;
+    u8 character_map[256];
+    NUFNTCHAR glyphs[256];
+} NUFNT;
+
+typedef struct vufnthdr_s {
+    f32 ic_gap;
+    f32 height;
+    f32 inverse_texture_width;
+    f32 inverse_texture_height;
+    f32 unknown_10;
+    f32 unknown_14;
+    f32 space_width;
+    f32 unknown_1c;
+} VUFNTHDR;
+
 typedef struct vufnt_s {
     u8 filler0[6];
     u16 flags;
@@ -52,16 +83,19 @@ typedef struct vufnt_s {
 
     f32 ic_gap; // 0x24
 
-    char filler2[0x4]; // 0x28-0x2B
+    NUFNT *legacy_font;
 
     f32 *x_scale;
     f32 *y_scale;
 
     VUFNTCHAR *glyphs; // 0x34
 
-    VUCHARIDX *unicode_map; // 0x38
+    union {
+        VUCHARIDX *unicode_map;
+        u8 *character_map;
+    };
 
-    VARIPTR *hdr; // 0x3c
+    VUFNTHDR *hdr;
 
     NUMTL *mtl; // 0x40
 
@@ -102,6 +136,7 @@ extern "C" {
     extern NUQFNT *system_qfont;
 
     void NuQFntInit(VARIPTR *buf, VARIPTR buf_end);
+    VUFNT *NuQFntCreate(NUFNT *font, i32 flags, i32 render_options, VARIPTR *buf, VARIPTR *buf_end);
 
     NUQFNT *NuQFntRead(char *filename, VARIPTR *buf, VARIPTR buf_end);
     NUQFNT *NuQFntReadBuffer(VARIPTR *font, VARIPTR *buf, VARIPTR buf_end);

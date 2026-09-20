@@ -3791,13 +3791,32 @@ struct part_emit_s {
     u8 field_33;
     i32 shots_remaining;
     f32 time_38;
-    u8 field_3c, field_3d, field_3e, field_3f;
+    union {
+        u8 field_3c;
+        u8 sounds_active;
+    };
+    union {
+        u8 field_3d;
+        u8 switch_state;
+    };
+    u8 field_3e, field_3f;
     f32 camera_distance;
-    i16 field_44, field_46;
+    union {
+        i16 field_44;
+        i16 switch_type;
+    };
+    union {
+        i16 field_46;
+        i16 switch_id;
+    };
     i32 instance_id; // 0x48
     i32 trailing_state_words[8];
 };
 DECOMP_ASSERT(sizeof(part_emit_s) == 0x6c, "part_emit_s size");
+DECOMP_ASSERT(offsetof(part_emit_s, sounds_active) == 0x3c, "Particle emitter sounds offset");
+DECOMP_ASSERT(offsetof(part_emit_s, switch_state) == 0x3d, "Particle emitter switch state offset");
+DECOMP_ASSERT(offsetof(part_emit_s, switch_type) == 0x44, "Particle emitter switch type offset");
+DECOMP_ASSERT(offsetof(part_emit_s, switch_id) == 0x46, "Particle emitter switch id offset");
 
 struct part_typedesc_s {
     char name[16];

@@ -18,6 +18,7 @@ extern "C" {
     extern eduimenu_s *ptlreadoutmenu;
     extern eduimenu_s *edptl_damage_menu;
     extern eduimenu_s *edptl_damageflag_menu;
+    extern eduimenu_s *namemenu;
 }
 
 static void cbPtlCancelSScaleMenu(eduimenu_s *, eduimenu_s *);
@@ -34,6 +35,8 @@ static void cbPtlChangeDamageFlags(eduimenu_s *, eduiitem_s *, u32);
 static void cbPtlDamageFlagMenu(eduimenu_s *, eduiitem_s *, u32);
 static void cbPtlTorusMenu(eduimenu_s *, eduiitem_s *, u32);
 static void edptlcbCancelSoundControlMenu(eduimenu_s *, eduimenu_s *);
+static void cbCancelChangeNameMenu(eduimenu_s *, eduimenu_s *);
+static void cbCancelMessageMenu(eduimenu_s *, eduimenu_s *);
 
 static i32 edptl_superscale = 1;
 
@@ -352,8 +355,10 @@ static void edptlcbCancelSoundControlMenu(eduimenu_s *, eduimenu_s *) {
 
 // Particle editor UI/menu callbacks.
 
-static void cbChangeName(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbChangeName(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edpp_create_type != -1 && debtab[edpp_create_type] != NULL) {
+        strcpy(debtab[edpp_create_type]->name, static_cast<edui_textpicker_s *>(item)->value);
+    }
 }
 
 static void cbPtlChangeX(eduimenu_s *menu, eduiitem_s *item, u32) {
@@ -746,8 +751,21 @@ static void cbSelEffectList(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void cbChangeNameMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbChangeNameMenu(eduimenu_s *menu, eduiitem_s *, u32) {
+    u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+    if (edpp_create_type == -1) {
+        return;
+    }
+    debinftype *effect = debtab[edpp_create_type];
+    namemenu = eduiMenuCreate(70, 70, 250, 250, ed_fnt, cbCancelChangeNameMenu, "Type Name");
+    if (namemenu != NULL) {
+        eduiMenuAddItem(namemenu, eduiItemTextPickCreate(0, colours, cbChangeName, "Type Name"));
+        strcpy(static_cast<edui_textpicker_s *>(edui_last_item)->value, effect->name);
+        static_cast<edui_textpicker_s *>(edui_last_item)->max_length = 15;
+        eduiMenuAttach(menu, namemenu);
+        namemenu->x = menu->x + 10;
+        namemenu->y = menu->y + 40;
+    }
 }
 
 static void cbEffectListMenu(eduimenu_s *, eduiitem_s *, u32) {
@@ -1101,8 +1119,24 @@ static void cbPtlChangeCameraCutOff(eduimenu_s *, eduiitem_s *item, u32) {
     effect->field_044 = static_cast<edui_slider_s *>(item)->value;
 }
 
-static void cbPtlChangeTextureSelect(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPtlChangeTextureSelect(eduimenu_s *menu, eduiitem_s *item, u32) {
+    if (edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1) {
+        return;
+    }
+    debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
+    edui_texture_pick_s *texture = static_cast<edui_texture_pick_s *>(item);
+    eduimenu_s *parent = menu->parent;
+    effect->texture_u0 = texture->uv_x[0] * 256.0f + 524288.0f;
+    effect->texture_v0 = texture->uv_y[0] * 256.0f + 524288.0f;
+    effect->texture_u1 = texture->uv_x[1] * 256.0f + 524288.0f;
+    effect->texture_v1 = texture->uv_y[1] * 256.0f + 524288.0f;
+    if (parent != NULL) {
+        eduiMenuDetach(menu);
+    }
+    if (menu->callback != NULL) {
+        menu->callback(menu, parent);
+    }
+    GenericDebinfoDmaTypeUpdate(effect);
 }
 
 static void cbPtlInstanceSettingsMenu(eduimenu_s *, eduiitem_s *, u32) {
@@ -1211,8 +1245,23 @@ static void cbPtlCancelSScaleMenu(eduimenu_s *, eduimenu_s *) {
     sscalemenu = NULL;
 }
 
-static void cbCancelChangeNameMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+static void cbCancelChangeNameMenu(eduimenu_s *menu, eduimenu_s *) {
+    if (edpp_create_type == -1 || debtab[edpp_create_type] == NULL) {
+        return;
+    }
+    if (debtab[edpp_create_type]->name[0] != '\0') {
+        eduiMenuDestroy(namemenu);
+        namemenu = NULL;
+        return;
+    }
+    u32 colours[4] = {0x800000c0, 0x80ff0000, 0x80808080, 0x80404040};
+    messagemenu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, cbCancelMessageMenu, "Message");
+    if (messagemenu != NULL) {
+        eduiMenuAddItem(messagemenu, eduiItemSelCreate(1, colours, 0, 0, NULL, "Name Duplicate"));
+        eduiMenuAttach(menu, messagemenu);
+        messagemenu->x = menu->x + 10;
+        messagemenu->y = menu->y + 40;
+    }
 }
 
 static void cbCancelEffectListMenu(eduimenu_s *, eduimenu_s *) {

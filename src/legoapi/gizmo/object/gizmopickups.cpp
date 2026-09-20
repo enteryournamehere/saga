@@ -1,11 +1,19 @@
 #include "decomp.h"
+#include "batman.h"
+#include "legoapi/audio/sfx.h"
 #include "legoapi/core/input/qrand.h"
+#include "legoapi/core/config/cheat.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/ai/core/gameai.h"
+#include "legoapi/gizmo/object/gizmopickup.h"
 #include "nu2api/nu3d/nutex.h"
 #include "globals.h"
 #include "gamelib/util/gamelib_util_types.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/gizmos/fx/gizmopickups.h"
+#include "legoapi/menus/core/gamemessages.h"
+#include "legoapi/menus/core/panel.h"
+#include "legoapi/menus/screens/arcade.h"
 #include "legoapi/world/world.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/mission.h"
@@ -17,50 +25,99 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
-u8 CoinTab[4] = {0, 1, 2, 3};
-
-void Pup_CollectCoin(WORLDINFO_s *, GIZMOPICKUP_s *, i32, GameObject_s *, i32);
-
-GIZMO_PICKUP_TYPE GizmoPickupType[10] = {
-    {"Silver Coin", NULL, NULL, 's', 4, GIZMOPICKUP_TYPE_FLAG_40, 0, 0x00b7, 10, 0.045f, 0.045f, 10.0f, 0.0f, NULL,
-     Pup_CollectCoin, -1, -1, 0.0f, 0.0f},
-    {"Gold Coin", NULL, NULL, 'g', 4, GIZMOPICKUP_TYPE_FLAG_40, 0, 0x00bf, 100, 0.045f, 0.045f, 10.0f, 0.0f, NULL,
-     Pup_CollectCoin, -1, -1, 0.0f, 0.0f},
-    {"Blue Coin", "PickupCoinB", NULL, 'b', 4, GIZMOPICKUP_TYPE_FLAG_40, 0, 0x00c7, 1000, 0.045f, 0.045f, 6.0f, 0.0f,
-     NULL, Pup_CollectCoin, 8, -1, 0.0f, 0.0f},
-    {"Purple Coin", "PickupCoinB", NULL, 'p', 4, GIZMOPICKUP_TYPE_FLAG_40, 0, 0x00d5, 10000, 0.045f, 0.045f, 6.0f, 0.0f,
-     NULL, Pup_CollectCoin, 8, -1, 0.0f, 0.0f},
-    {"Minikit", "MK-Appear", NULL, 'm', 0,
-     GIZMOPICKUP_TYPE_DRAW_TUMBLING | GIZMOPICKUP_TYPE_MINIKIT_DETECTOR | GIZMOPICKUP_TYPE_FLAG_40, 0, 0x00ce, 0,
-     0.125f, 0.15f, 2.0f, 0.05f, NULL, NULL, 20, -1, 0.0f, 0.0f},
-    {"Heart", NULL, NULL, 'h', 0, GIZMOPICKUP_TYPE_DRAW_Y_ROTATION, 0, 0x00cb, 0, 0.1f, 0.08f, 4.0f, 0.0f, NULL, NULL,
-     -1, -1, 0.0f, 0.0f},
-    {"Red Brick", "MK-Appear", NULL, 'r', 0,
-     GIZMOPICKUP_TYPE_DRAW_TUMBLING | GIZMOPICKUP_TYPE_RED_BRICK_DETECTOR | GIZMOPICKUP_TYPE_FLAG_40, 0, 0x00d2, 0,
-     0.12f, 0.06f, 2.0f, 0.1f, NULL, NULL, 99, -1, 0.0f, 0.0f},
-    {"Charkit", "MK-Appear", "MK-Pickup", 'c', 0,
-     GIZMOPICKUP_TYPE_DRAW_TUMBLING | GIZMOPICKUP_TYPE_CHALLENGE_MODE_FILTER, 0, 0x00cf, 0, 0.125f, 0.15f, 2.0f, 0.05f,
-     NULL, NULL, 20, -1, 0.0f, 0.0f},
-    {"Torpedo", NULL, NULL, 't', 0, GIZMOPICKUP_TYPE_DRAW_Y_ROTATION, 0, 0x0079, 0, 0.1f, 0.1f, 5.0f, 0.0f, NULL, NULL,
-     -1, -1, 0.0f, 0.0f},
-    {"Power Up", "MK-Appear", NULL, 'u', 0, GIZMOPICKUP_TYPE_DRAW_TUMBLING, 0, 0x00d0, 0, 0.125f, 0.125f, 2.0f, 0.05f,
-     NULL, NULL, -1, 0x00d1, 0.0f, 0.0f},
-};
-
-GIZMOPICKUPSYS_s GizmoPickupSys_Game = {
-    GizmoPickupType, CoinTab, 10, 4, 4, 2, 0, 0,
-};
-
 WORLDINFO_s *WorldInfo_CurrentlyActive();
-i32 Arcade_GetMode(u32 *);
-extern f32 COINMSGTIME;
-extern "C" void PlaySfx(char *, NUVEC *);
 void MakePartVector(NUVEC *, NUVEC *, f32);
 void AddCoinsAsParts(i32, NUVEC *, NUVEC *, f32, f32);
 void AddHeartAsPart(GameObject_s *, NUVEC *, NUVEC *, f32, f32);
 void AddTorpedoAsPart(NUVEC *, NUVEC *, f32, f32);
 void PowerUp_AddPart(NUVEC *, NUVEC *, f32, f32);
-void AddCoinsToPanel(i32, NUVEC *, i32, f32, GameObject_s *, i32);
+i32 GetRandomCoinType() {
+    i32 random_value = qrand();
+    if (random_value < 0) {
+        random_value += 0x3fff;
+    }
+    return CoinTab[random_value >> 14];
+}
+
+void AddCoinsToPanel(i32 coins, nuvec_s *position, i32 player, float, GameObject_s *, i32 random_types) {
+    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+    if (coins == 0)
+        return;
+    if (ChallengeMode || Mission_Active(NULL) != NULL)
+        coins = 0;
+    u8 counts[10] = {};
+    i32 remainder = coins % 10;
+    if (remainder > 0)
+        coins -= remainder;
+    if (coins > 512000)
+        coins = 512000;
+    if (coins > 0)
+        PlaySfx("CoinsLand", position);
+    if (random_types) {
+        while (coins > 0) {
+            i32 type = GetRandomCoinType();
+            i32 remaining = coins - GizmoPickupType[type].score;
+            if (remaining >= 0) {
+                ++counts[type];
+                coins = remaining;
+            }
+        }
+    } else if (coins > 0) {
+        for (i32 i = 3; coins > 0; --i) {
+            i32 type = CoinTab[i];
+            while (coins - GizmoPickupType[type].score >= 0) {
+                coins -= GizmoPickupType[type].score;
+                ++counts[type];
+            }
+        }
+    }
+    if (static_cast<u32>(player) > 1)
+        player = -1;
+    NUVEC target;
+    target.x = player == 1 ? PANEL_COINX : -PANEL_COINX;
+    bool main_total = CoinsGoToMainTotal() != 0;
+    f32 target_scale;
+    if (main_total) {
+        target.y = STATSPOSY;
+        target_scale = COINTOTAL_COINSIZE;
+    } else {
+        target.y = STATSPOSY + PANEL_COINY;
+        target_scale = PANEL_COINSCALE_END;
+    }
+    target.z = 1.0f;
+    DrawBuildUpTime = COINMSGTIME + 1.0f;
+    for (i32 i = 0; i < 4; ++i) {
+        GIZMO_PICKUP_TYPE *type = &GizmoPickupType[CoinTab[i]];
+        i32 base_model = static_cast<i16>(type->first_model_id);
+        for (i32 j = 0; j < counts[CoinTab[i]]; ++j) {
+            i32 model = base_model;
+            if (type->random_model_count != 0)
+                model += qrand() / (65535 / type->random_model_count + 1);
+            if (world->lev_objs[model].active == 0 || player == -1)
+                continue;
+            ADDGAMEMSG_ALIGNED16 message = AddGameMsg_Default;
+            message.position = position;
+            message.target_position = &target;
+            message.target_scale = target_scale;
+            message.icon = model;
+            message.extra_position = reinterpret_cast<NUVEC *>(&world->lev_objs[message.icon]);
+            message.score = type->score;
+            message.end_fn = EndScoreMessage;
+            message.player_index = player;
+            message.field_0x4d = 1;
+            message.field_0x20 = AddCoinDelay[player];
+            message.flags = 0x12d;
+            message.scale = 1.0f;
+            message.duration = COINMSGTIME;
+            if (main_total) {
+                message.update_fn = GameMsg_DrawAdjustNewPos_CoinToTotal;
+                message.field_0x4e = 1;
+            }
+            AddGameMsg(&message);
+            AddCoinDelay[player] += 0.1f;
+        }
+    }
+}
 
 void AddPickups(i32 coins, i32 hearts, i32 torpedoes, i32 powerups, nuvec_s *position, nuvec_s *direction, float,
                 i32 player_id, float speed, float lifetime, GameObject_s *owner, i32, i32 panel, bool consolidate) {
@@ -207,6 +264,10 @@ void AddPickups(i32 coins, i32 hearts, i32 torpedoes, i32 powerups, nuvec_s *pos
     }
 }
 
+void AddMiscPickups(nuvec_s *, i32, i32, i32) {
+    STUBBED();
+}
+
 i32 IsACoinType(i32 type) {
     for (i32 i = 0; i < 4; ++i) {
         if (CoinTab[i] == type) {
@@ -216,28 +277,59 @@ i32 IsACoinType(i32 type) {
     return 0;
 }
 
-void AddMiscPickups(nuvec_s *, i32, i32, i32) {
-}
-
-i32 GetRandomCoinType() {
-    i32 random_value = qrand();
-    if (random_value < 0) {
-        random_value += 0x3fff;
-    }
-    return CoinTab[random_value >> 14];
-}
-
-i32 OutSideSplineArea(NUVEC *, nugspline_s *, NUVEC *, NUVEC *, i32);
-
-i32 InDoubleScoreZone(GameObject_s *object) {
-    if (Mission_Active(NULL) != NULL)
+i32 LoseCoins(GameObject_s *object, i32 cause) {
+    if (Player_HasInvincibility(object) != 0 ||
+        (object->apiobj.character_data->game_character->flags_090 & 0x8000) != 0 || object->coinpacket == NULL ||
+        (Arcade != 0 && (Arcade_Mode[static_cast<i8>(ArcadeItem.field_c_0xc)].field8_0x8 & 8) != 0)) {
         return 0;
-    if ((WORLD->current_level->flags & LEVEL_DOUBLE_SCORE) != 0)
-        return 1;
-    for (i32 i = 19; i < 24; ++i) {
-        nugspline_s *spline = reinterpret_cast<nugspline_s *>(WORLD->portal_places[i]);
-        if (spline != NULL && OutSideSplineArea(&object->apiobj.collision_position, spline, NULL, NULL, 0) == 0)
-            return 1;
     }
-    return 0;
+    u32 lost = 0;
+    if (cause == 1) {
+        lost = static_cast<u32>(TouchHacks::GetLoseStudsDieValue());
+    } else if (cause == 2) {
+        lost = static_cast<u32>(TouchHacks::GetLoseStudsFallValue());
+    }
+    if (lost != 0) {
+        const i32 adjustment = adtab[adaptivedifficulty[0]][0];
+        if (adjustment == 1) {
+            lost *= 2;
+        } else if (adjustment == -1) {
+            lost >>= 1;
+        }
+        if (lost > object->coinpacket->coins) {
+            lost = object->coinpacket->coins;
+            object->coinpacket->coins = 0;
+        } else if (lost != 0) {
+            object->coinpacket->coins -= lost;
+        }
+    }
+    if (Cheats_CheckFlags(0x7c) != 0 || DoubleScoreTime > 0.0f) {
+        return 0;
+    }
+    return static_cast<i32>(lost);
+}
+
+void GizmoPickups_SetOnOff() {
+    u32 arcade_flags;
+    Arcade_GetMode(&arcade_flags);
+    WORLDINFO_s *world = WORLD;
+    for (i32 index = 0; index < 10; ++index) {
+        if (ChallengeMode != 0) {
+            if (index == 7) {
+                GizmoPickupType[index].field_0x0f = 0;
+            } else {
+                GizmoPickupType[index].field_0x0f = 1;
+            }
+        } else if (index == 7) {
+            GizmoPickupType[index].field_0x0f = 1;
+        } else if (index == 6 && world->level_sub_id != -1 && Game.area_save[world->level_sub_id].field_0x5[1] != 0) {
+            GizmoPickupType[index].field_0x0f = 1;
+        } else if (index == 4 && SuperStory != 0) {
+            GizmoPickupType[index].field_0x0f = 1;
+        } else if (index == 9 && world->area != NULL && (world->area->flags & 0x100) != 0) {
+            GizmoPickupType[index].field_0x0f = 1;
+        } else {
+            GizmoPickupType[index].field_0x0f = (arcade_flags & 0x20) != 0 && index != 9 && index != 5;
+        }
+    }
 }

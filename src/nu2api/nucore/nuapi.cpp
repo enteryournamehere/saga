@@ -53,21 +53,20 @@ extern "C" i32 Nu360GetCommandLine(char **arguments, i32 capacity) {
 #include "nu2api/nu3d/nuprim.h"
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/nupostresources.h"
 #include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nufile/nufile.h"
+#include "nu2api/nucore/nuanim3.h"
 #include "nu2api/numath/nutrig.h"
 
-// nucore_plain.cpp stubs / display-list init.
+// Nucore bootstrap helpers; display-list and framebuffer initialization are
+// declared by their owning public headers.
 extern "C" {
-    void NuFramebufferInitEx(void);
     void NuPostEffectInit(u32, void *, void *);
-    void NuAnimInit(i32 max_joints, VARIPTR *buf, VARIPTR buf_end);
-    void NuDisplayListInit(VARIPTR *buf, VARIPTR *buf_end);
 }
 
 void NuRndrInitGeneric(void); // nurndr.cpp (C++ linkage)
-void NuTimeInitPS(void);      // nutime_android.cpp
 void bgProcInit(void);        // bgproc_android.cpp
 
 NUAPI nuapi;
@@ -107,6 +106,7 @@ void NuAPIInit(void) {
 }
 
 void NuCommandLine(i32 *argc, char ***argv) {
+    STUBBED();
 }
 
 void NuDisableOSMenuFreeze(void) {
@@ -212,7 +212,7 @@ i32 NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, i32 heap_size, ...) {
     NuPrimInit(buf, *buf_end);
     NuVpInit();
     NuTexInitEx(buf, 0xbb8);
-    NuDisplayListInit(buf, buf_end);
+    NuDisplayListInit(buf, *buf_end);
     NuFramebufferInitEx();
     NuPostEffectInit(flags | 1, buf, buf_end->void_ptr);
     NuMtlInitEx(buf, 512);

@@ -1,7 +1,9 @@
 #include "gameapi/edtools/edgra.h"
+#include "gameapi/edtools/edgra_internal.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nudlist.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/render/core/terrain.h"
 #include "gamelib/nuwind/nuwind.h"
 
 void edgraCalculatePage(char page, i32 calculate_vectors);
@@ -15,12 +17,6 @@ extern "C" {
     i32 edgra_page_vectors_valid[8];
     void NuWindInit(void);
     void NuFadeObjInit(void);
-    extern edgra_clump_s *GrassClumps;
-    extern i32 EDGRA_MAX_CLUMPS;
-    NUGSCN *edgra_page_scene[8];
-    void *edgra_page_terrain[8];
-    void *TerrainGetCur(void);
-    void TerrainSetCur(void *);
     NuWindGType *NuWindCreateMtx(u32 *, NUMTX *, i16, f32, f32, i32, f32, f32);
     NuFadeObjGType *NuFadeObjCreateMtx(nuhspecial_s *, NUMTX *, i16, f32, f32, i32);
 

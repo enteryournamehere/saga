@@ -6,21 +6,35 @@
 // Text system (module legoapi/menus/core, text.cpp).
 
 struct vufnt_s;
+struct numtl_s;
+
+void DrawMessageBoxRGBA(f32, f32, f32, f32, u32, u32, u32, u32, numtl_s *, i32, f32);
+void DrawMessageBox(i32, f32, f32, f32, f32);
+void MenuUpdateViewTextStrings(MENU_s *menu);
+void MenuDrawViewTextStrings(MENU_s *menu);
 
 void Text_InitLanguageList(LANGUAGEDATA *list);
+extern i16 tSTRANGER;
+extern i16 tUNKNOWN;
+extern f32 text3d_width;
+extern f32 text3d_height;
 void Text_SetLanguage(i32 lang);
 void Text_SetLanguage_Game(i32 language);
 extern void (*Text_GameSetLanguageFn)(i32 language);
 void Text_LocaliseDecimalPoint(char *text);
 i32 Text_GetMaxOverallStrings();
 void Text_MakeTime(f32 time, i32 show_hours, i32 show_minutes, i32 show_centiseconds, char *text);
+void Text_MakeScore(u32 score, char *text);
+extern i16 tDROPIN_INSERTCONTROLLER;
 void TextCrawl_Init(TEXTCRAWL_s *crawl, i32 id, i32 unk);
 void TextCrawl_Draw(f32 dt, i32 paragraphs, f32 alpha, char *text);
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+    void MessageBoxInitMtl(void);
     void SetQFont2D(void);
+    void Text3DStringEncode(char *src, u16 *dst);
     void Set3DGameFont(vufnt_s *font);
     void SetGameFont(vufnt_s *font);
     extern i32 MenuStopDraw;

@@ -2,8 +2,13 @@
 #define LEGOAPI_MENUS_CORE_GAMEHINT_H
 
 #include "decomp.h"
+#include "legoapi/legoapi_types.h"
 
 // Hint system (module legoapi/menus/core, gamehint.cpp).
+
+extern HINTSYS_s hintsys;
+f32 CurrentHintAlpha();
+void Hint_Draw(i32 viewport);
 
 HINT_s *Hint_FindHint(i32 hint_id);
 i32 Hint_CurrentId();

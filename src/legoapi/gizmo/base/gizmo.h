@@ -138,13 +138,16 @@ void GizmoSetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 visibility, i32 u
 i32 GizmoGetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo);
 char *GizmoGetName(GIZMO *gizmo);
 void GizmoActivate(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 unknown1, i32 unknown2);
+void GizmoActivateReverse(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 reverse, i32 visibility, i32 unknown);
 char *GizmoGetOutputName(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 output_index);
 i32 GizmoGetOutput(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 unknown1, i32 unknown2);
+i32 GizmoGetGizmosUsingSpecial(GIZMOSYS *gizmo_sys, void *world, GIZMO **result, i32 result_capacity, char *name);
 void GizmoSysEarlyUpdate(GIZMOSYS *gizmo_sys, void *world_info, float delta_time);
 void GizmoSysLateUpdate(GIZMOSYS *gizmo_sys, void *world_info, float delta_time);
 void GizmoSysDraw(GIZMOSYS *gizmo_sys, void *world_info, float delta_time);
 void GizmoSysPanelDraw(GIZMOSYS *gizmo_sys, void *world_info, float delta_time);
 void GizmoSysReset(GIZMOSYS *gizmo_sys, void *world_info, i32 progress_index);
+void GizmoSysStoreProgress(GIZMOSYS *gizmo_sys, void *world_info, i32 progress_index);
 i32 GizmoSys_BoltHitPlat(GIZMOSYS *gizmo_sys, void *world_info, BOLT *bolt, unsigned char *unknown);
 i32 ResetGizmoType(GIZMOSYS *gizmo_sys, i32 type_id, char *name);
 void GizmoSysClearLevelProgress(void *unknown, i32 type_id);
@@ -169,6 +172,7 @@ i32 Gizmo_FindNuSpecial(nugscn_s *scene, nuhspecial_s *special, char *name, i32 
 NUVEC *GizmoGetPos(GIZMOSYS *gizmo_sys, GIZMO *gizmo);
 void InitPaintPuzzle(WORLDINFO_s *world);
 void ResetPaintPuzzle(WORLDINFO_s *world);
+void UpdatePaintPuzzle(WORLDINFO_s *world);
 GIZAIMESSAGE_s *CheckGizAIMessage(GIZAIMESSAGESYS_s *, char const *, GIZAIMESSAGE_s *);
 GIZAIMESSAGE_s *SetGizAIMessage(GIZAIMESSAGESYS_s *, char const *, float, GIZAIMESSAGE_s *);
 char *GizAIMessage_GetName(GIZAIMESSAGE_s *);

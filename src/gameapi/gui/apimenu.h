@@ -118,6 +118,16 @@ enum LEGO_MENU_ID {
 
 DECOMP_ASSERT(sizeof(MENUFNINFO) == 0x1c, "MENUFNINFO size");
 
+extern f32 AUTOSAVEICONY;
+extern f32 AUTOSAVEICONX;
+extern f32 AUTOSAVEICONSIZE;
+extern f32 ICONX;
+extern f32 ICONSIZE;
+extern f32 DROPINALPHA;
+extern i32 shop_quit;
+extern char *apitxt_CONTROLLERREMOVED;
+extern char *apitxt_PRESSSTART;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -161,6 +171,13 @@ extern "C" {
 void APIMenuDrawMemCardSlots(MENU *menu, f32 y);
 void APIMenuDrawGameState(f32 x, f32 y, i32 highlight, i32 slot);
 i32 GetMenuID(void);
+extern i32 newgamecam;
+void MenuInitSelectMode(MENU *menu);
+void MenuUpdateSelectMode(MENU *menu);
+void MenuDrawSelectMode(MENU *menu);
+void MenuInitBonusMode(MENU *menu);
+void MenuUpdateBonusMode(MENU *menu);
+void MenuDrawBonusMode(MENU *menu);
 
 extern "C" {
 #endif

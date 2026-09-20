@@ -1,6 +1,18 @@
+#include "decomp.h"
 #include "legoapi/world/world.h"
 #include "legoapi/world/level.h"
+#include "legoapi/world/levels/levels.h"
 #include "legoapi/world/world_shared.h"
+#include "legoapi/audio/sfx.h"
+#include "legoapi/render/core/terrain.h"
+#include "legoapi/render/fx/game_deb.h"
+#include "gameapi/edtools/edpp_internal.h"
+#include "legoapi/gizmos/fx/gizmopickups.h"
+#include "legoapi/items/collect/minikits.h"
+#include "legoapi/gizmos/transport/teleport.h"
+#include "legoapi/render/fx/parts.h"
+#include "legoapi/render/light/lighting.h"
+#include "legoapi/render/light/surfaces.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -9,10 +21,17 @@
 #include "gameapi/edtools/edstubs.h"
 #include "gameapi/gui/apimenu.h"
 #include "globals.h"
+#include "legoapi/gizmo/object/gizmoblowups.h"
 #include "legoapi/world/area.h"
 #include "legoapi/characters/core/character.h"
+#include "legoapi/characters/core/charconfig.h"
 #include "legoapi/world/level.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/characters/motion/gameanim.h"
+#include "legoapi/ai/game/creature.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/gizmo/base/gizflow.h"
+#include "legoapi/items/objects/grabber.h"
 #include "legoapi/items/base/collection.h"
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/props/system/socksys.h"
@@ -26,6 +45,7 @@
 #include "nu2api/nucore/NuDeviceSpecs.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nufile/nufpar.h"
+#include "nu2api/nusound/nusound.h"
 #include "MechInputTouch/MechInputTouch_types.h"
 #include "gameapi/edtools/edgra.h"
 
@@ -79,15 +99,11 @@ GizForceLOSState_s GizForceLOSInfo[2];
 i32 DEFAULT_PLAYERHITPOINTS = 8;
 u32 LEGOOBJ_DEFAULTLASTCOIN = -1;
 
-APICHARACTERSYS *apicharsys;
 void CutScenes_Destroy(CUTSYS *system);
 void CharScenes_LevelDump(WORLDINFO *world);
 void Customiser_DumpAll(CUSTOMISER *, WORLDINFO *);
-void CharacterMiniKits_Dump(WORLDINFO *);
 void DestroyRippleMtls(WORLDINFO *);
 extern "C" {
-    void ClearLinkedCutSceneMusic(void *);
-    extern i32 edpp_page_on[8];
     extern i32 part_page_on[8];
 }
 
@@ -196,6 +212,57 @@ void StoreSceneProgress(NUGSCN *gscn, SCENEPROGRESS_s *progress, i32 param) {
             animation->fparam1 = animation->tfactor;
     }
 }
+
+void StoreLevelProgressFn(WORLDINFO_s *world, LEVEL_PROGRESS_s *progress, i32 area_progress) {
+    i32 index;
+    if (area_progress != 0) {
+        if (world == NULL || world->area == NULL)
+            return;
+        index = world->area->level_count;
+    } else {
+        if (VADER_ADATA != NULL && VADER_ADATA == WORLD->area)
+            return;
+        if (BONUS_GUNSHIP_ADATA != NULL && BONUS_GUNSHIP_ADATA == WORLD->area && bonus_gunship_store_progress_flag == 0)
+            return;
+        if (world == NULL)
+            return;
+        index = (i8)world->current_level->area_level_index;
+        if (world->area != NULL && (world->area->flags & 4) != 0)
+            goto store_flags;
+    }
+    StoreProgressAICharacter(progress);
+    Grabber_StoreProgress(world, progress);
+    GizmoSysStoreProgress(world->gizmo_sys, world, index);
+    if (progress != NULL) {
+        GizFlowStoreProgress(world->giz_flow, &progress->giz_flow_progress);
+        StoreSceneProgress(world->current_gscn, reinterpret_cast<SCENEPROGRESS_s *>(progress), 0);
+    }
+    GameAnimSys_StoreProgress(world->game_anim_sys, index);
+    for (i32 i = 0; i < world->processor_count; ++i) {
+        if (progress == NULL || NuStrLen(world->processors[i].name) == 0)
+            continue;
+        for (i32 j = 0; j < 32; ++j) {
+            if (NuStrLen(progress->scripts[j].name) == 0) {
+                NuStrCpy(world->level_progress->scripts[j].name, world->processors[i].name);
+                for (i32 k = 0; k < 4; ++k)
+                    progress->scripts[j].params[k] = world->processors[i].processor.params[k];
+                break;
+            }
+            if (NuStrICmp(progress->scripts[j].name, world->processors[i].name) == 0) {
+                memcpy(progress->scripts[j].params, world->processors[i].processor.params, 16);
+                break;
+            }
+        }
+    }
+store_flags:
+    if (progress != NULL) {
+        if (world->level_progress != progress)
+            memmove(progress->disabled_effect_names, world->level_progress->disabled_effect_names, 0xc0);
+        reinterpret_cast<u8 *>(&progress->flags)[0] =
+            (reinterpret_cast<u8 *>(&progress->flags)[0] & ~4) | ((world->field_0x5174 & 1) << 2) | 2;
+    }
+}
+
 void SaveSceneObjectAnimTFactors(NUGSCN *gscn) {
     i32 count;
     char *p;
@@ -222,6 +289,7 @@ void SaveSceneObjectAnimTFactors(NUGSCN *gscn) {
     } while (count != 0);
 }
 void CalculateWorldSize(WORLDINFO *world) {
+    STUBBED();
     (void)world;
 }
 
@@ -242,8 +310,6 @@ static WORLDINFO *LWORLD = &WorldInfo[0];
 void WorldInfo_InitOnce(void) {
     memset(WorldInfo, 0, sizeof(WorldInfo));
 }
-
-extern TERRAIN_SURFACE_s TerSurface[32];
 
 void WorldInfo_Init(WORLDINFO *world) {
     i32 local_menu_id = -1;
@@ -980,7 +1046,6 @@ void WorldInfo_ReArrangeBuffers(i32 area1, i32 area2) {
 }
 
 extern "C" {
-    i32 InModelList(APICHARACTERMODELLIST_s *, i32, i32 *);
     extern i16 id_DARTHVADER;
     extern i16 id_THEEMPEROR;
     extern i16 id_GRANDMOFFTARKIN;
@@ -989,7 +1054,6 @@ extern "C" {
 }
 
 i32 InModelListDataFlags(APICHARACTERMODELLIST_s *, u32, u32, i32, i32);
-i32 RandomIDFromFlags(u32, u32, i32, APICHARACTERMODELLIST_s *, i32);
 void MakeFreePlayModelList(i32 model1, i32 model2, i32 area, i32 level, i32 param5) {
     i32 flags = 0;
     if (WORLD != NULL && WORLD->area != NULL && WORLD->area == HUB_ADATA && bonusmodearcade != 0)

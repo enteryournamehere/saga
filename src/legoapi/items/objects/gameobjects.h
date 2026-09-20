@@ -14,6 +14,8 @@ GameObject_s *FindNearestGameObject(NUVEC *position, GameObject_s *exclude, u32 
                                     f32 extra_radius, i32 animation, i32 character_id, i32 player_index,
                                     f32 *distance_squared, i32 horizontal_only, i32 (*filter)(GameObject_s *),
                                     bool first_match);
+i32 GameObjectNearFloor(GameObject_s *object, f32 height, f32 *distance);
+void SnapCreaturePos(GameObject_s *object, NUVEC *position, i32 angle, AIPATHINFO_s *path_info, i32 set_on_surface);
 i32 NoLayerKill(GameObject_s *object);
 struct CABLE_s;
 struct AISYS_s;
@@ -44,29 +46,29 @@ extern f32 lightning_sizel[2];
 extern f32 lightning_sizew[2];
 
 void *GameBufferAlloc(VARIPTR *buf, VARIPTR *buf_end, i32 size);
-i32 Game_100PercentComplete();
 
 GameObject_s *FindGameObject(i32 id, u32 type, i32 a3, i32 a4, i32 a5);
 CABLE_s *CreateCable(GameObject_s *source, GameObject_s *target, i32 flags);
 void KillGameObject(GameObject_s *object, i32 reason, i32 flags);
+void RemoveGameObject(GameObject_s *object, i32);
+void GameObjectOrigin(GameObject_s *object);
+void TakeOverGameObject(GameObject_s *rider, GameObject_s *vehicle, i32 blend_camera, i32 immediate);
+void ReleaseTakeOver(GameObject_s *object, i32 immediate);
+void ReleaseAllTakeOvers();
 void InitSurfaceInfo(GameObject_s *object);
 i32 SetObjOnSurface(GameObject_s *object, i32 mode);
 i32 Game_IgnoreInput();
+i32 GameRayCast(NUVEC *position, NUVEC *displacement, f32 radius, i32 mask);
 GameObject_s *GetNamedGameObject(AISYS_s *aisys, char *name);
-char *GameObj_GetName(i32 model, GameObject_s *object, char *buffer);
 APIOBJECT_s *GameAPIOBJECTFromObjID(u8 object_id);
 f32 GameShadow(GameObject_s *object, NUVEC *position, f32 scale, i32 flags);
 i32 GameDrawCharacterModel(CHARACTERMODEL_s *model, ANIMPACKET_s *animation, NUMTX *matrix, NUMTX *secondary_matrix,
                            NUMTX *tertiary_matrix, NUMTX *auxiliary_matrix, GameObject_s *object, u32 flags);
-extern "C" i32 InModelList(APICHARACTERMODELLIST_s *list, i32 id, i32 *out_index);
 
 void GameAISysInit();
 void GameAISysReset(struct AISYS_s *aisys);
 void GameAnimSys_Update(GAMEANIMSYS_s *system);
 void GameAudio_SetActionMusicTimes(f32 fade_in_time, f32 fade_out_time);
 i32 GameAudio_GetPlrSfxBits(void *object);
-
-// Original returns exit status; code in NuMain checks it.
-i32 Game_Exit(i32 last_area);
 
 #endif

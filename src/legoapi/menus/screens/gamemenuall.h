@@ -12,6 +12,12 @@ struct MENUPACKET_s {
 DECOMP_ASSERT(sizeof(MENUPACKET_s) == 0x0a, "MENUPACKET_s ABI");
 
 extern MENUPACKET_s MenuPacket;
+extern i32 memcard_saveneeded;
+extern i32 memcard_loadneeded;
+
+struct MENU_s;
+void MenuEnterNewGame(MENU_s *menu);
+void MenuExitNewGame(MENU_s *menu);
 
 void MakeMenuPacket();
 
@@ -22,6 +28,9 @@ extern "C" {
     i32 MenuCurrentID(void);
     i32 MenuInMemoryCardLoad(void);
     i32 MenuInMemoryCardWarning(void);
+    i32 MenuInMemoryCard(void);
+    i32 MenuInCriticalMemoryCard(void);
+    void DrawMenu(i32 paused);
     void SetButtonScaleMode(i32 mode);
 #ifdef __cplusplus
 }

@@ -1,25 +1,14 @@
+#include "decomp.h"
 #include "gameapi_edtools_types.h"
+#include "gameapi/edtools/edpp_internal.h"
 #include "gameapi/edtools/edstubs.h"
 #include "gameapi/edtools/edui.h"
 #include "legoapi/legoapi_types.h"
 
 extern "C" {
-    extern edpp_particle_s edpp_ptls[512];
-    extern i32 edpp_nearest;
     extern debkeydatatype_s *debkeydata;
     extern debinftype **debtab;
     extern i32 debris_render_group;
-    i32 edpp_dpad_mode;
-    f32 edpp_scale_factor = 1.0f;
-    i32 edpp_create_type = -1;
-    i32 edptl_clipboard_entry = -1;
-    u8 edpp_effect_list;
-    i32 edpp_num_orphans;
-    i32 edptl_repeatboxxzlock = 1;
-    eduimenu_s *edptl_switchtype_menu;
-    eduimenu_s *edptl_page_menu;
-    eduimenu_s *edptl_star_menu;
-    eduimenu_s *edptl_soundid_menu;
     void DebFreeInstantly(i32 *handle);
     void DebReAlloc(debkeydatatype_s *key, i32 particle_count);
     void DebrisSetDetailLevels(i32 handle, i32 detail_levels);
@@ -32,6 +21,14 @@ void edppPtlDestroy(i32 index);
 
 static edui_slider_s *repeatbox_x_item;
 static edui_slider_s *repeatbox_z_item;
+
+// These callbacks and the repeat-box sliders belong to the same original TU.
+static __used__ void cbPtlCancelRepeatBoxMenu(eduimenu_s *, eduimenu_s *) {
+    STUBBED();
+}
+static __used__ void cbPtlRepeatBoxMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
+}
 
 static void UpdateTotalPtls(debinftype *effect) {
     f32 elapsed_time = 0.0f;
@@ -81,6 +78,7 @@ static void UpdateTotalPtls(debinftype *effect) {
 // Particle list editor subsystem stubs (static, internal linkage).
 
 static __used__ void edptlcbPageMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }
 static __used__ void edptlcbSetGroup(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpp_nearest == -1) {
@@ -96,6 +94,7 @@ static __used__ void edptlcbSetGroup(eduimenu_s *, eduiitem_s *item, u32) {
     debkeydata[edpp_ptls[edpp_nearest].instance_id].render_group = render_group;
 }
 static __used__ void edptlcbStarMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }
 static __used__ void edptlcbStopPage(eduimenu_s *, eduiitem_s *item, u32) {
     edppStopPage(static_cast<i8>(item->data));
@@ -104,8 +103,10 @@ static __used__ void edptlcbClearPage(eduimenu_s *, eduiitem_s *item, u32) {
     edppClearPage(static_cast<i8>(item->data));
 }
 static __used__ void edptlcbGhostMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }
 static __used__ void edptlcbGroupMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }
 static __used__ void edptlcbSetDetail(eduimenu_s *, eduiitem_s *item, u32) {
     i32 nearest = edpp_nearest;
@@ -134,8 +135,10 @@ static __used__ void edptlcbStartPage(eduimenu_s *, eduiitem_s *item, u32) {
     edppStartPage(static_cast<i8>(item->data));
 }
 static __used__ void edptlcbBounceMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }
 static __used__ void edptlcbDetailMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }
 static __used__ void edptlcbSetMaxThin(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpp_nearest == -1) {
@@ -195,10 +198,13 @@ static __used__ void edptlcbSetSoundID(eduimenu_s *menu, eduiitem_s *item, u32) 
     eduiMenuDestroy(menu);
 }
 static __used__ void edptlcbSoundXMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }
 static __used__ void edptlcbSoundsMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }
 static __used__ void edptlcbSwitchMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }
 static __used__ void edptlcbSetDpadMode(eduimenu_s *, eduiitem_s *item, u32) {
     edpp_dpad_mode = item->data;
@@ -235,6 +241,7 @@ static __used__ void edptlcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32) {
     debkeydata[edpp_ptls[edpp_nearest].instance_id].trigger_second = switch_id;
 }
 static __used__ void edptlcbSoundIDMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }
 static __used__ void edptlcbCutClipboard(eduimenu_s *menu, eduiitem_s *, u32) {
     debtab[edpp_create_type]->category = 4;
@@ -249,8 +256,10 @@ static __used__ void edptlcbCutClipboard(eduimenu_s *menu, eduiitem_s *, u32) {
     }
 }
 static __used__ void edptlcbDpadModeMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }
 static __used__ void edptlcbDrawflagMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }
 static __used__ void edptlcbSetSwitchVar(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpp_nearest == -1) {
@@ -296,6 +305,7 @@ static __used__ void edptlChangeRepeatBox(eduimenu_s *, eduiitem_s *item, u32) {
     }
 }
 static __used__ void edptlcbClipboardMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }
 static __used__ void edptlcbDeleteOrphans(eduimenu_s *menu, eduiitem_s *, u32) {
     for (i32 i = 0; i < 512; ++i) {
@@ -514,6 +524,7 @@ static __used__ void edptlcbEmptyClipboard(eduimenu_s *menu, eduiitem_s *, u32) 
     edpp_create_type = create_type;
 }
 static __used__ void edptlcbOrphanListMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }
 static __used__ void edptlcbPasteClipboard(eduimenu_s *menu, eduiitem_s *, u32) {
     debinftype *effect = debtab[edptl_clipboard_entry];
@@ -545,6 +556,8 @@ static __used__ void edptlcbSetScaleFactor(eduimenu_s *, eduiitem_s *item, u32) 
     edpp_scale_factor = static_cast<edui_slider_s *>(item)->value;
 }
 static __used__ void edptlcbSwitchTypeMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }
 static __used__ void edptlcbTestDetailMenu(eduimenu_s *, eduiitem_s *, u32) {
+    STUBBED();
 }

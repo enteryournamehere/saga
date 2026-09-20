@@ -6,6 +6,7 @@
 #include "gameframework/saveload.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/characters/motion.h"
+#include "legoapi/items/base/collection.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/level.h"
@@ -14,9 +15,13 @@
 #include "nu2api/numath/nutrig.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/menus/core/text.h"
+#include "legoapi/menus/screens/gamestatus_lsw.h"
+#include "legoapi/menus/screens/store.h"
+#include "legoapi/menus/screens/gamestructure.h"
 #include "gameapi/gui/apimenu.h"
 #include "MechInputTouch/MechInputTouch_types.h"
 #include "legoapi/render/core/render.h"
+#include "legoapi/menus/core/panel.h"
 #include "legoapi/world/levels/episode.h"
 #include "legoapi/world/mission.h"
 #include "legoapi/characters/core/players.h"
@@ -32,14 +37,10 @@ extern "C" i32 NewMode;
 extern "C" i32 reset_load;
 extern "C" i32 Paused;
 extern FadeSystem FadeSys;
-extern f32 statstime;
-extern f32 cointotaltime;
 extern i32 screendump;
-extern i32 newgamecam;
 extern STATUSPACKET_s StatusPacket;
 extern AREADATA *NEGOTIATIONS_ADATA;
 
-i32 GetMenuID();
 extern "C" i32 MenuInMemoryCard();
 void ResetRumble(RUMBLEPACKET *packet);
 void ReCalculateCompletionPoints();
@@ -59,7 +60,6 @@ void RegisterStatusScreen(STATUS_STAGE_s *, i32 *, REGISTERSTATUSPACKET_s *);
 void EndOfDemo(i32);
 static i32 gamedemo_option;
 static i32 goldbrickmsgcount;
-void AddToGoldBricks();
 
 i32 AddGoldBrickMessage(STATUSPACKET_s *packet, i16 brick) {
     if (goldbrickmsgcount < 16) {
@@ -76,37 +76,9 @@ extern i16 tCOINTOTAL;
 extern i16 tSELECT;
 extern i16 tSELECTING;
 void Text_MakeScore(u32, char *);
-void DrawPlayerIconPrompts(i32, i32, f32, i32, i32, i32, i32, i32, i32, f32, i32, i32, i32, i32);
 void Status_DrawPromptMenu(STATUSPACKET_s *, i32, f32);
 f32 getFinishedStatusAlpha(STATUSPACKET_s *);
 f32 STATUS_TITLE_Y = 0.5f;
-
-namespace {
-    enum PANEL_BLOCKING_MENU {
-        PANEL_MENU_EPISODE_I = 20,
-        PANEL_MENU_EPISODE_II = 21,
-        PANEL_MENU_EPISODE_III = 22,
-        PANEL_MENU_EPISODE_IV = 23,
-        PANEL_MENU_SAVE = 25,
-        PANEL_MENU_LOAD = 26,
-    };
-
-    bool CoinTotalCanOpen() {
-        if (FadeSys.fade != 0.0f || CUTSTOPGAME != 0) {
-            return false;
-        }
-        if (Paused == 0 && NetPaused == 0 && DrawCoinTotalTime <= 0.0f) {
-            return false;
-        }
-        if (screendump != 0 || MenuInMemoryCard() != 0) {
-            return false;
-        }
-
-        const i32 menu = GetMenuID();
-        return menu != PANEL_MENU_EPISODE_I && menu != PANEL_MENU_EPISODE_II && menu != PANEL_MENU_EPISODE_III &&
-               menu != PANEL_MENU_EPISODE_IV && menu != PANEL_MENU_SAVE && menu != PANEL_MENU_LOAD;
-    }
-} // namespace
 
 u16 hub_iconang[4] = {};
 static f32 hub_icontime[4] = {};
@@ -206,39 +178,6 @@ STATUS_STAGE_s StatusStages_LSW[] = {
     {NULL, Fade_LSW_Update, NULL, 12, 0xffff, 0, 0, 0, 0.0f, 0.0f},
     {NULL, NULL, NULL, -1, 0xffff, 0, 0, 0, 0.0f, 0.0f},
 };
-
-void NewGameMode() {
-    NewMode = 1;
-    reset_load = 1;
-}
-
-void UpdateStats() {
-    LEVELDATA *level = WORLD->current_level;
-    if ((level->flags & LEVEL_GAMEPLAY) == 0) {
-        return;
-    }
-
-    f32 stats_target = 0.0f;
-    if (FadeSys.fade == 0.0f && CUTSTOPGAME == 0 && newgamecam == 0) {
-        const bool hub_camera_hidden = HUB_ADATA != NULL && WORLD->area == HUB_ADATA && GameCam->mode == 4;
-        const i32 menu = GetMenuID();
-        if (!hub_camera_hidden && (menu < PANEL_MENU_EPISODE_I || menu > PANEL_MENU_EPISODE_IV)) {
-            stats_target = 1.0f;
-        }
-    }
-    statstime = SeekLinearF(statstime, stats_target, FRAMETIME);
-
-    if ((level->flags & LEVEL_SHOW_COIN_TOTAL) != 0) {
-        DrawCoinTotalTime = 1.0f;
-    }
-    if (DrawCoinTotalTime > 0.0f) {
-        DrawCoinTotalTime -= FRAMETIME;
-    }
-
-    const f32 coin_total_target = CoinTotalCanOpen() ? 1.0f : 0.0f;
-    cointotaltime = SeekLinearF(cointotaltime, coin_total_target, FRAMETIME);
-    CoinTotalScale = SeekLinearF(CoinTotalScale, 1.0f, 3.0f * FRAMETIME);
-}
 
 void AddStatusStage(STATUSPACKET_s *packet, i32 type, i32 gold_brick_enabled) {
     const u8 index = packet->stage_count;
@@ -363,9 +302,7 @@ extern i16 tSUPERSTORYCOMPLETE, tNEWBESTTIME, tLEVELCOMPLETE, tMISSIONCOMPLETE;
 extern i16 tCHALLENGECOMPLETE, tTRUEHERO, tMINIKIT;
 extern "C" void NuIOS_RecordFlurryEvent(char *);
 extern "C" i32 NuStrCpy(char *, const char *);
-void AddToCompletionPoints(u32);
 i32 AddToCollection(i32);
-i32 AllMiniKitsDone(AREASAVE_s *);
 i32 Mission_CurrentState(MISSIONSYS *);
 i32 newCharactersCollected(STATUSPACKET_s *);
 void StatusPacketReset(STATUSPACKET_s *);
@@ -866,6 +803,7 @@ f32 StatusIconsOnOff(f32 progress) {
 }
 
 void UpdateIconWibble() {
+    STUBBED();
 }
 
 void Prompt_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float elapsed) {
@@ -991,7 +929,6 @@ void StatusStage_Reset(STATUS_STAGE_s *stage) {
     }
 }
 
-void DrawBuildUpBar(f32, f32, i32, i32, f32, f32, f32, u16);
 extern i16 tTRUEJEDI, tSTORY, tFREEPLAY;
 extern "C" void NuStrCat(char *, const char *);
 
@@ -1078,7 +1015,59 @@ void TrueHero_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *packet) {
 }
 
 i32 UpdateAchievements(STATUSPACKET_s *) {
+    STUBBED();
     return 0;
+}
+
+void DrawStatusScreen(WORLDINFO_s *) {
+    static u8 KitPart[0x2d0];
+
+    iconalphaoverride = -1.0f;
+    memset(KitPart, 0, sizeof(KitPart));
+
+    if (GAMEDEMO != 0 || FadeSys.fade > 0.0f) {
+        return;
+    }
+
+    STATUSPACKET_s *status = &StatusPacket;
+    if (status->status_flags == 0) {
+        return;
+    }
+
+    if (status->draw_background_callback != NULL) {
+        status->draw_background_callback(status);
+    }
+
+    for (STATUS_STAGE_s *stage = StatusStages; stage->type != -1; ++stage) {
+        if (stage->draw_callback != NULL) {
+            stage->draw_callback(stage, status, stage == status->stage);
+        }
+    }
+
+    STATUS_STAGE_s *stage = status->stage;
+    f32 alpha;
+    if (stage->type == 11) {
+        return;
+    } else if (stage->type == 12) {
+        alpha = 0.0f;
+    } else if (stage->type == 10) {
+        alpha = stage->field_0x18 < 1.0f ? 1.0f - stage->field_0x18 : 0.0f;
+    } else {
+        alpha = 1.0f;
+        if (stage->type == 19 && stage->field_0x14 != 0) {
+            const f32 time = stage->field_0x18;
+            if (time < 1.0f) {
+                alpha = 1.0f - time;
+            } else {
+                const f32 fade_start = stage->field_0x1c - 1.0f;
+                alpha = time < fade_start ? 0.0f : (time - fade_start) / (stage->field_0x1c - fade_start);
+            }
+        }
+    }
+
+    if (draw_player_icons != 0) {
+        DrawStatusIcons(status, icon_y, iconalphaoverride >= 0.0f ? iconalphaoverride : alpha);
+    }
 }
 
 void UpdateStatusScreen(WORLDINFO_s *) {
@@ -1240,6 +1229,7 @@ void TrueHero_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float el
 }
 
 i32 InitStatusScreen_LSW(WORLDINFO_s *, STATUSPACKET_s *) {
+    STUBBED();
     return 0;
 }
 
@@ -1374,6 +1364,7 @@ f32 getFinishedStatusAlpha(STATUSPACKET_s *packet) {
 }
 
 void SuperStoryTime_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
+    STUBBED();
 }
 
 void SuperStoryTime_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *packet) {
@@ -1389,6 +1380,7 @@ void LSW_registerStatusScreen() {
 }
 
 void SuperStoryScore_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
+    STUBBED();
 }
 
 void SuperStoryScore_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *packet) {
@@ -1609,7 +1601,6 @@ void Coins_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float elaps
     }
 }
 extern i16 tWINNER;
-void DrawBonusScore(f32, i32, i32, f32, i32 *);
 void DrawBonusTime(STATUSPACKET_s *, f32, i32);
 
 void BonusWin_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 current) {
@@ -1642,6 +1633,7 @@ void BonusWin_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 curren
     }
 }
 void BonusWin_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
+    STUBBED();
 }
 void BonusTime_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 current) {
     if (current == 0) {
@@ -1664,10 +1656,13 @@ void BonusTime_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 curre
     }
 }
 void BonusTime_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
+    STUBBED();
 }
 void ChallangeCash_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
+    STUBBED();
 }
 void ChallangeCash_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
+    STUBBED();
 }
 void BonusWin_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float elapsed) {
     if (stage->field_0x14 == 0) {
@@ -1708,6 +1703,7 @@ void BonusTime_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float e
     }
 }
 void ChallangeCash_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
+    STUBBED();
 }
 void BonusComplete_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 current) {
     if (current == 0)

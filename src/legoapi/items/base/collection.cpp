@@ -15,10 +15,12 @@ u32 GizmoBlowups_TotalScore(void *world);
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/area.h"
+#include "legoapi/world/levels/episode.h"
 #include "legoapi/world/world.h"
 #include "legoapi/gizmos/fx/gizmopickups.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/menus/screens/store.h"
+#include "legoapi/menus/screens/gamestructure.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
 
@@ -34,12 +36,10 @@ struct starfighter_s;
 
 struct APICHARACTERMODELLIST_s;
 
-void GizmoPickup_CollectCoin(WORLDINFO_s *, nuvec_s *, i32, i32, GameObject_s *, i32);
-
 COLLECTID *TempCollectID = NULL;
 
-i32 CollectCount = 0;
-COLLECTID *CollectList = NULL;
+static i32 CollectCount;
+static COLLECTID *CollectList;
 i32 COLLECTION_COMPLETIONCOUNT = 0;
 
 i32 InCollectList_Index(i32 id, COLLECTID *list, i32 count) {
@@ -405,6 +405,15 @@ i32 Collection_GetIDList(COLLECTION_s *collection, u32 model_flag_mask, u32 requ
     return result_count;
 }
 
+void Collection_CreateMaster(char *file, i16 *idlist, COLLECTION_s *collection, i32 param4, float param5) {
+    collection->list = CollectList;
+    collection->count_x = (u16)param4;
+    collection->count_y = (u16)CollectCount;
+    collection->field_8 = idlist;
+    collection->field_c = file;
+    collection->field_10 = param5;
+}
+
 void Collection_CreateCustom(char *name, i16 *id_list, COLLECTION_s *collection, u32 required_model_flags,
                              u32 excluded_model_flags, u32 required_game_flags, i32 require_buyable, i32 columns,
                              VARIPTR *buffer, VARIPTR *, i32 use_all_characters, f32 scale) {
@@ -460,13 +469,45 @@ void Collection_CreateCustom(char *name, i16 *id_list, COLLECTION_s *collection,
     buffer->addr += static_cast<usize>(collection->count_y) * sizeof(COLLECTID);
 }
 
-void Collection_CreateMaster(char *file, i16 *idlist, COLLECTION_s *collection, i32 param4, float param5) {
-    collection->list = CollectList;
-    collection->count_x = (u16)param4;
-    collection->count_y = (u16)CollectCount;
-    collection->field_8 = idlist;
-    collection->field_c = file;
-    collection->field_10 = param5;
+COLLECTID *CollectIDUnlocked(i32 id) {
+    i32 index = InCollectList_Index(id, CollectList, CollectCount);
+    if (index == -1) {
+        return NULL;
+    }
+
+    COLLECTID *entry = &CollectList[index];
+    if (Game_CharacterSave != NULL && (Game_CharacterSave[id] & SAVE_CHARACTER_UNLOCKED) != 0) {
+        return entry;
+    }
+
+    switch (entry->type) {
+        case 0:
+            return entry;
+        case 2:
+            if (static_cast<i8>(entry->field2_0x3) == -1 || Game_AreaSave == NULL) {
+                return NULL;
+            }
+            return Game_AreaSave[entry->field2_0x3].area_complete != 0 ? entry : NULL;
+        case 3:
+            if (Episodes_Completed() != EPISODECOUNT) {
+                return NULL;
+            }
+            return Game_100PercentComplete() != 0 ? entry : NULL;
+        case 4:
+            return AllMiniKitsDone(Game_AreaSave) != 0 ? entry : NULL;
+        case 6:
+            if (Game_CompletionSave == NULL ||
+                reinterpret_cast<STATUSCOLLECT_s *>(Game_CompletionSave)->gold_bricks < entry->field6_0xa) {
+                return NULL;
+            }
+            return entry;
+        case 7:
+            return Game_100PercentComplete() != 0 ? entry : NULL;
+        case 8:
+            return Store_IsPackUnlocked(static_cast<i8>(entry->field2_0x3)) != 0 ? entry : NULL;
+        default:
+            return NULL;
+    }
 }
 
 i32 Collection_GotAnyOfType(i32 type, u32 flags) {
@@ -505,13 +546,20 @@ i32 Collection_GotAnyOfType(i32 type, u32 flags) {
     return 0;
 }
 
+void CollectAllCharacters(i32) {
+    STUBBED();
+}
+
 static __used__ void Collection_GetSelectingPlayerIDs(i16 *) {
+    STUBBED();
 }
 
 void ReleaseEat(GameObject_s *) {
+    STUBBED();
 }
 
 void ShipDropCoins(starfighter_s *) {
+    STUBBED();
 }
 
 i32 AddToCollection(i32 id) {
@@ -523,26 +571,6 @@ i32 AddToCollection(i32 id) {
     return 0;
 }
 
-void (*Game_AllGoldBricksFn)();
-void (*Game_100PercentFn)();
-
-void AddToGoldBricks() {
-    STATUSCOLLECT_s *save = reinterpret_cast<STATUSCOLLECT_s *>(Game_CompletionSave);
-    const i32 points = GOLDBRICKPOINTS;
-    if (save != NULL && save->gold_bricks < points) {
-        ++save->gold_bricks;
-        if (save->gold_bricks == points && (save->flags & SAVE_REWARD_ALL_GOLD_BRICKS) == 0) {
-            if (Game_AllGoldBricksFn != NULL)
-                Game_AllGoldBricksFn();
-            reinterpret_cast<STATUSCOLLECT_s *>(Game_CompletionSave)->flags |= SAVE_REWARD_ALL_GOLD_BRICKS;
-        }
-    }
-}
-
-void Pup_CollectCoin(WORLDINFO_s *world, GIZMOPICKUP_s *pickup, i32 type, GameObject_s *object, i32 arg) {
-    GizmoPickup_CollectCoin(world, &pickup->position, type, pickup->model_variant, object, arg);
-}
-
 void ResetCoinPacket(COINPACKET_s *packet) {
     if (packet != NULL) {
         packet->scale = 1.0f;
@@ -552,10 +580,10 @@ void ResetCoinPacket(COINPACKET_s *packet) {
 }
 
 void UpdateCoinPacket(COINPACKET_s *, i32, i32) {
+    STUBBED();
 }
 
 u32 GizmoBlowups_TotalScore(void *);
-u32 GizBuildIts_TotalScore(void *);
 u32 GizForce_TotalScore(void *);
 u32 GizObstacles_TotalScore(void *);
 u32 GizTurrets_TotalScore(void *);
@@ -596,24 +624,6 @@ u32 TotalLevelCoinTally(WORLDINFO_s *world, u32 *pickups, u32 *blowups, u32 *bui
     return total;
 }
 
-void AddToCompletionPoints(u32 points) {
-    STATUSCOLLECT_s *save = reinterpret_cast<STATUSCOLLECT_s *>(Game_CompletionSave);
-    const i32 maximum = COMPLETIONPOINTS;
-    if (save != NULL && save->completion_points < maximum) {
-        save->completion_points += points;
-        if (save->completion_points >= maximum) {
-            save->completion_points = maximum;
-            if ((save->flags & SAVE_REWARD_100_PERCENT) == 0) {
-                if (Game_100PercentFn != NULL) {
-                    Game_100PercentFn();
-                    save = reinterpret_cast<STATUSCOLLECT_s *>(Game_CompletionSave);
-                }
-                save->flags |= SAVE_REWARD_100_PERCENT;
-            }
-        }
-    }
-}
-
 COLLECTION_s *GetFreePlayCollection(i32 area) {
     const u16 area_flags = ADataList[area].flags;
     if ((area_flags & AREAFLAG_VEHICLE_AREA) == 0) {
@@ -626,40 +636,5 @@ COLLECTION_s *GetFreePlayCollection(i32 area) {
 }
 
 void ReCalculateCompletionPoints() {
-}
-
-i32 Player_HasInvincibility(GameObject_s *object);
-extern i32 adaptivedifficulty[3];
-extern i8 (*adtab)[4];
-
-i32 LoseCoins(GameObject_s *object, i32 cause) {
-    if (Player_HasInvincibility(object) != 0 ||
-        (object->apiobj.character_data->game_character->flags_090 & 0x8000) != 0 || object->coinpacket == NULL ||
-        (Arcade != 0 && (Arcade_Mode[static_cast<i8>(ArcadeItem.field_c_0xc)].field8_0x8 & 8) != 0)) {
-        return 0;
-    }
-    u32 lost = 0;
-    if (cause == 1) {
-        lost = static_cast<u32>(TouchHacks::GetLoseStudsDieValue());
-    } else if (cause == 2) {
-        lost = static_cast<u32>(TouchHacks::GetLoseStudsFallValue());
-    }
-    if (lost != 0) {
-        const i32 adjustment = adtab[adaptivedifficulty[0]][0];
-        if (adjustment == 1) {
-            lost *= 2;
-        } else if (adjustment == -1) {
-            lost >>= 1;
-        }
-        if (lost > object->coinpacket->coins) {
-            lost = object->coinpacket->coins;
-            object->coinpacket->coins = 0;
-        } else if (lost != 0) {
-            object->coinpacket->coins -= lost;
-        }
-    }
-    if (Cheats_CheckFlags(0x7c) != 0 || DoubleScoreTime > 0.0f) {
-        return 0;
-    }
-    return static_cast<i32>(lost);
+    STUBBED();
 }

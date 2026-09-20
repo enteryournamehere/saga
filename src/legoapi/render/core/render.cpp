@@ -1,187 +1,42 @@
+#include "decomp.h"
+#include "gameapi/edtools/edbri_internal.h"
 #include "legoapi/render/core/render.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "legoapi/actions/character/transform.h"
+#include "legoapi/actions/movement/carrying.h"
+#include "legoapi/actions/character/snake.h"
+#include "legoapi/core/input/gamepads.h"
+#include "legoapi/gizmos/object/gizbuildits.h"
+#include "legoapi/gizmos/fx/gizmopickups.h"
+#include "legoapi/menus/core/text.h"
+#include "legoapi/menus/core/panel.h"
+#include "legoapi/menus/core/gamemessages.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/menus/screens/gamemenuall.h"
+#include "legoapi/menus/screens/arcade.h"
+#include "legoapi/render/light/fade_material.h"
+#include "legoapi/render/fx/edsplines.h"
+#include "legoapi/world/levels/levels.h"
 #include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/android/nuportal_android.h"
+#include "nu2api/nu3d/nuvport.h"
 #include "legoapi/cutscenes/cutscenes.h"
 #include <stdio.h>
 
 void DrawSubItems();
 
-extern "C" i32 edbri_page_used[8];
-extern "C" void edbriStartPage(i32 page);
 extern "C" void edbriStartAllPages(void) {
     for (i32 page = 0; page < 8; ++page) {
         if (edbri_page_used[page])
             edbriStartPage(page);
     }
 }
+
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/numath/nutrig.h"
 
-extern "C" void NuRndrLine3dDbg(f32, f32, f32, f32, f32, f32, i32);
 extern "C" void AiRndrLine3dDbg(f32, f32, f32, f32, f32, f32, u32);
-extern "C" void NuRndrLine3d(NURND_VERTEX3D *, numtl_s *, NUMTX *);
-
-extern "C" void edbitsDrawOvalTilted(NUVEC *centre, f32 radius_x, f32 radius_z, i32 colour, i32, i32 rotation_z,
-                                     i32 rotation_y) {
-    NUVEC endpoints[2];
-    NUVEC &previous = endpoints[0];
-    NUVEC &point = endpoints[1];
-    point.x = 0.0f;
-    point.y = 0.0f;
-    point.z = radius_z;
-    if (rotation_z)
-        NuVecRotateZ(&point, &point, rotation_z);
-    if (rotation_y)
-        NuVecRotateY(&point, &point, rotation_y);
-    point.x += centre->x;
-    point.y += centre->y;
-    point.z += centre->z;
-    for (i32 i = 1; i <= 10; ++i) {
-        previous = point;
-        i32 angle = i * 65536 / 10;
-        point.x = radius_x * NU_SIN_LUT(angle);
-        point.y = 0.0f;
-        point.z = radius_z * NU_COS_LUT(angle);
-        if (rotation_z)
-            NuVecRotateZ(&point, &point, rotation_z);
-        if (rotation_y)
-            NuVecRotateY(&point, &point, rotation_y);
-        point.x += centre->x;
-        point.y += centre->y;
-        point.z += centre->z;
-        NuRndrLine3dDbg(previous.x, previous.y, previous.z, point.x, point.y, point.z, colour);
-    }
-}
-
-extern "C" void edbitsDrawCircleXY(NUVEC *, f32, i32, i32);
-
-extern "C" void edbitsDrawTorus(NUVEC *centre, f32 radius, f32 radial_extent, f32 vertical_extent, i32 colour,
-                                i32 unused) {
-    edbitsDrawCircleXY(centre, radius - radial_extent, colour, unused);
-    edbitsDrawCircleXY(centre, radius + radial_extent, colour, unused);
-    NUVEC offset = *centre;
-    offset.y -= vertical_extent;
-    edbitsDrawCircleXY(&offset, radius, colour, unused);
-    offset = *centre;
-    offset.y += vertical_extent;
-    edbitsDrawCircleXY(&offset, radius, colour, unused);
-    for (i32 i = 0; i <= 10; ++i) {
-        i32 angle = i * 65536 / 10;
-        NUVEC point;
-        point.x = centre->x;
-        point.y = centre->y;
-        point.z = centre->z;
-        point.x += radius * NU_SIN_LUT(angle);
-        point.z += radius * NU_COS_LUT(angle);
-        edbitsDrawOvalTilted(&point, vertical_extent, radial_extent, colour, unused, 0x4000, angle);
-    }
-}
-
-extern "C" void edbitsDrawCube(f32 x, f32 y, f32 z, f32 half_x, f32 half_y, f32 half_z, i32 rotation_z, i32 rotation_y,
-                               i32 rotation_x, i32 outer_z, i32 outer_y, i32 colour, numtl_s *material) {
-    NUVEC outlines[4][5] = {{{-1, -1, 1}, {1, -1, 1}, {1, 1, 1}, {-1, 1, 1}, {-1, -1, 1}},
-                            {{-1, -1, -1}, {1, -1, -1}, {1, 1, -1}, {-1, 1, -1}, {-1, -1, -1}},
-                            {{-1, -1, 1}, {-1, -1, -1}, {-1, 1, -1}, {-1, 1, 1}, {-1, -1, 1}},
-                            {{1, -1, 1}, {1, -1, -1}, {1, 1, -1}, {1, 1, 1}, {1, -1, 1}}};
-    NUVEC endpoints[2];
-    NURND_VERTEX3D vertices[2];
-    for (i32 face = 0; face < 4; ++face) {
-        for (i32 edge = 0; edge < 4; ++edge) {
-            endpoints[0].x = half_x * outlines[face][edge].x;
-            endpoints[0].y = half_y * outlines[face][edge].y;
-            endpoints[0].z = half_z * outlines[face][edge].z;
-            endpoints[1].x = half_x * outlines[face][edge + 1].x;
-            endpoints[1].y = half_y * outlines[face][edge + 1].y;
-            endpoints[1].z = half_z * outlines[face][edge + 1].z;
-            NuVecRotateZ(&endpoints[0], &endpoints[0], rotation_z);
-            NuVecRotateY(&endpoints[0], &endpoints[0], rotation_y);
-            NuVecRotateX(&endpoints[0], &endpoints[0], rotation_x);
-            NuVecRotateZ(&endpoints[0], &endpoints[0], outer_z);
-            NuVecRotateY(&endpoints[0], &endpoints[0], outer_y);
-            NuVecRotateZ(&endpoints[1], &endpoints[1], rotation_z);
-            NuVecRotateY(&endpoints[1], &endpoints[1], rotation_y);
-            NuVecRotateX(&endpoints[1], &endpoints[1], rotation_x);
-            NuVecRotateZ(&endpoints[1], &endpoints[1], outer_z);
-            NuVecRotateY(&endpoints[1], &endpoints[1], outer_y);
-            vertices[0].colour = colour;
-            vertices[1].colour = colour;
-            vertices[0].position.x = x + endpoints[0].x;
-            vertices[0].position.y = y + endpoints[0].y;
-            vertices[0].position.z = z + endpoints[0].z;
-            vertices[1].position.x = x + endpoints[1].x;
-            vertices[1].position.y = y + endpoints[1].y;
-            vertices[1].position.z = z + endpoints[1].z;
-            NuRndrLine3d(vertices, material, NULL);
-        }
-    }
-}
-
-extern "C" void edbitsDrawBasicCube(f32 x, f32 y, f32 z, f32 half_x, f32 half_y, f32 half_z, i32 rotation_x,
-                                    i32 rotation_y, i32 rotation_z, i32 colour, numtl_s *material) {
-    NUVEC outlines[4][5] = {{{-1, -1, 1}, {1, -1, 1}, {1, 1, 1}, {-1, 1, 1}, {-1, -1, 1}},
-                            {{-1, -1, -1}, {1, -1, -1}, {1, 1, -1}, {-1, 1, -1}, {-1, -1, -1}},
-                            {{-1, -1, 1}, {-1, -1, -1}, {-1, 1, -1}, {-1, 1, 1}, {-1, -1, 1}},
-                            {{1, -1, 1}, {1, -1, -1}, {1, 1, -1}, {1, 1, 1}, {1, -1, 1}}};
-    NUVEC endpoints[2];
-    NURND_VERTEX3D vertices[2];
-    for (i32 face = 0; face < 4; ++face) {
-        for (i32 edge = 0; edge < 4; ++edge) {
-            endpoints[0].x = half_x * outlines[face][edge].x;
-            endpoints[0].y = half_y * outlines[face][edge].y;
-            endpoints[0].z = half_z * outlines[face][edge].z;
-            endpoints[1].x = half_x * outlines[face][edge + 1].x;
-            endpoints[1].y = half_y * outlines[face][edge + 1].y;
-            endpoints[1].z = half_z * outlines[face][edge + 1].z;
-            NuVecRotateX(&endpoints[0], &endpoints[0], rotation_x);
-            NuVecRotateY(&endpoints[0], &endpoints[0], rotation_y);
-            NuVecRotateZ(&endpoints[0], &endpoints[0], rotation_z);
-            NuVecRotateX(&endpoints[1], &endpoints[1], rotation_x);
-            NuVecRotateY(&endpoints[1], &endpoints[1], rotation_y);
-            NuVecRotateZ(&endpoints[1], &endpoints[1], rotation_z);
-            vertices[0].colour = colour;
-            vertices[1].colour = colour;
-            vertices[0].position.x = x + endpoints[0].x;
-            vertices[0].position.y = y + endpoints[0].y;
-            vertices[0].position.z = z + endpoints[0].z;
-            vertices[1].position.x = x + endpoints[1].x;
-            vertices[1].position.y = y + endpoints[1].y;
-            vertices[1].position.z = z + endpoints[1].z;
-            NuRndrLine3d(vertices, material, NULL);
-        }
-    }
-}
-
-extern "C" void edbitsDrawCross(f32 x, f32 y, f32 z, f32 radius, i32 colour, numtl_s *material) {
-    NUVEC axes[3] = {{1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}};
-    NURND_VERTEX3D vertices[2];
-    for (i32 i = 0; i < 3; ++i) {
-        vertices[0].colour = colour;
-        vertices[1].colour = colour;
-        vertices[0].position.x = x + radius * axes[i].x;
-        vertices[0].position.y = y + radius * axes[i].y;
-        vertices[0].position.z = z + radius * axes[i].z;
-        vertices[1].position.x = x - radius * axes[i].x;
-        vertices[1].position.y = y - radius * axes[i].y;
-        vertices[1].position.z = z - radius * axes[i].z;
-        NuRndrLine3d(vertices, material, NULL);
-    }
-}
-
-extern "C" void edbitsDrawDiagonalCross(f32 x, f32 y, f32 z, f32 radius, i32 colour, numtl_s *material) {
-    NUVEC axes[4] = {{1.0f, 1.0f, 1.0f}, {-1.0f, 1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}, {-1.0f, -1.0f, 1.0f}};
-    NURND_VERTEX3D vertices[2];
-    for (i32 i = 0; i < 4; ++i) {
-        vertices[0].colour = colour;
-        vertices[1].colour = colour;
-        vertices[0].position.x = x + radius * axes[i].x;
-        vertices[0].position.y = y + radius * axes[i].y;
-        vertices[0].position.z = z + radius * axes[i].z;
-        vertices[1].position.x = x - radius * axes[i].x;
-        vertices[1].position.y = y - radius * axes[i].y;
-        vertices[1].position.z = z - radius * axes[i].z;
-        NuRndrLine3d(vertices, material, NULL);
-    }
-}
 
 extern "C" void edDrawCross(NUVEC *centre, u8 red, u8 green, u8 blue) {
     i32 colour = 0xff000000 | red | (green << 8) | (blue << 16);
@@ -349,7 +204,7 @@ struct rtlidata_s;
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nu3d/numtl.h"
-#include "nu2api/nu3d/android/nuiosdl_gl.h"
+#include "nu2api/nu3d/android/nurndr_android.h"
 #include "nu2api/nu3d/android/nugscn_android.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/bgproc.h"
@@ -368,16 +223,8 @@ struct rtlidata_s;
 
 #include <string.h>
 
-extern NuVertexFormatPS *g_nuFaceOnVertexFormat;
-extern NuVertexFormatPS *g_nuDebrisVertexFormat;
-void NuIOS_ResetVAODuplicateFinder();
 extern i32 VehicleArea;
 extern i32 GAMEDEMO;
-extern STATUSPACKET_s StatusPacket;
-extern STATUS_STAGE_s *StatusStages;
-extern f32 iconalphaoverride;
-extern f32 icon_y;
-extern i32 draw_player_icons;
 extern f32 FORCEGLOWTIME;
 extern i16 tHINTS;
 extern i16 tCHARACTERS;
@@ -397,7 +244,6 @@ void DrawGameObjectsDraw(i32 pass);
 void EnableShadowMapRendering(i32 enable);
 void ResetShadowMapRendering();
 static void DrawParaphernalia(GameObject_s *object);
-void DrawTorpedos(GameObject_s *object);
 
 struct GAMEMESSAGE_s;
 struct HINT_s;
@@ -414,18 +260,11 @@ struct VuVec;
 
 nuhspecial_s *(*GameMsg_GetExtraObjFn)(GAMEMESSAGE_s *);
 
-extern "C" void SetQFont2D(void);
-extern "C" void Text3DStringEncode(char *src, u16 *dst);
 extern "C" bool StateAnimEvaluate2(StateAnim *state, u8 *index, char *value, f32 frame);
-extern "C" void DrawMenu(i32 paused);
 extern "C" i32 NuRndrBeginScene(i32);
 extern "C" void NuRndrEndScene(void);
 extern "C" void NuRndrGradRect2di(i32, i32, i32, i32, i32 *, numtl_s *);
 extern "C" void NuRndrRect2di(i32, i32, i32, i32, i32, numtl_s *);
-extern "C" void NuRndrGradRectUV2di(i32, i32, i32, i32, f32, f32, f32, f32, u32 *, numtl_s *);
-extern "C" void NuRndrRectUV2di(i32, i32, i32, i32, f32, f32, f32, f32, i32, numtl_s *);
-extern "C" void NuRndrClear(u32, u32, f32);
-extern "C" NUVIEWPORT *NuVpGetCurrentViewport(void);
 extern char *apiGameName;
 extern char *apitxt_EMPTY;
 extern char *apitxt_PRESENT;
@@ -457,19 +296,16 @@ extern u8 MENUFLASH1B;
 extern f32 menu_pulse;
 extern f32 menu_pulsate;
 extern i32 menu_flash;
-extern "C" bool TestForController(void);
 extern f32 text3d_height;
 extern f32 text3d_width;
 extern FadeSystem FadeSys;
 extern f32 cointotaltime;
 extern f32 MainRenderTime;
-extern numtl_s *pause_rndr_mtl;
 extern i32 editor_active;
 extern i32 Paused;
 extern i32 PANELOFF;
 extern i32 noscenespecials;
 extern void RotateGameMatrix(numtx_s *matrix, i32 order, u16 x, u16 y, u16 z);
-extern NUGSCN *IconScene_FindById(i32 character_id);
 extern void SetLevelLights(void *set, f32 scale);
 extern f32 ICONX;
 extern f32 ICONSIZE;
@@ -499,17 +335,9 @@ namespace {
         u32 pad_cc;
     };
 
-    struct NuLegacySpecialLayout {
-        u8 pad_00[0x40];
-        void *instance;
-        char *name;
-        u32 flags;
-    };
 } // namespace
 
 DECOMP_ASSERT(sizeof(NuDisplaySpecialLayout) == 0xd0, "display special size");
-
-void SetAllInstancesHidden(NUGSCN *scene);
 
 // Camera zoom state
 f32 CameraZoom = 1.0f;
@@ -523,8 +351,6 @@ NUVIDEORESHEADER g_VideoResHeader;
 extern "C" {
     void RndrStateCopyGlobalState(NUGLOBALRNDRSTATE *state);
     i32 NuDisplayListRndrSpecial(nuhspecial_s *special, NUMTX *mtx, i32 skinned, void *skin_mtx, void *blend_values);
-    void Initialise_PS(NUGSCN *scene);
-    void SetAllInstancesVisible(NUGSCN *scene);
     void *NuVisiEvaluate(NUGSCN *scene, void *visibility_context);
 
     static void DisplaySceneSetClipResult(NUDLDLISTSCENE *scene, i32 clip_index, i32 clip_result) {
@@ -665,7 +491,7 @@ extern "C" {
             scene->flags |= NUDL_SCENE_FLAG_CLIPPING;
             DisplaySceneEvaluateClipFallback(scene);
         }
-        DisplayListGenerateTransforms(reinterpret_cast<nudisplayscene_s *>(scene));
+        DisplayListGenerateTransforms(scene);
 
         if ((scene->instance_visibility_enabled & NUDL_SCENE_INSTANCE_VISIBILITY_ENABLED) == 0 &&
             noscenespecials == 0 && scene->nspecials > 0) {
@@ -689,10 +515,6 @@ extern "C" {
                 }
             }
         }
-    }
-
-    void NuGScnRndr3(NUGSCN *scene) {
-        NuDisplaySceneRndr(scene->display_list);
     }
 }
 
@@ -845,119 +667,9 @@ extern "C" void NuGScnUpdate(NUGSCN *gscn, f32 frame_delta) {
     }
 }
 
-// --- NuGScn gfx-upload helpers: C++ / file-local (static) in original ---
-// NuGScnUploadGfxDataFromFilePS has C++ linkage (mangled `_Z29NuGScnUploadGfxDataFromFilePSP9variptr_uS_i`);
+// --- NuGScn graphics-data reader ---
 // NuReadGraphicsData is a C++ static function in the original (GCC clones it,
 // hence the `.isra.NNN` suffix in the ROM symbol table).
-
-extern u32 g_lastBoundVAO;
-
-static void NuIOSBindVAO(u32 vao_handle) {
-    if (vao_handle != g_lastBoundVAO) {
-        g_lastBoundVAO = vao_handle;
-    }
-}
-
-static u32 UploadDataToGLBuffer(NUFILE file, u32 size, GLenum target, usize *buffer_handle, VARIPTR *buf,
-                                VARIPTR buf_end) {
-    GLuint gl_buf = 0;
-    BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nugscn_android.c", 0x56);
-    glGenBuffers(1, &gl_buf);
-    *buffer_handle = gl_buf;
-    NuIOSBindVAO(0);
-    glBindBuffer(target, gl_buf);
-    glBufferData(target, size, 0, GL_STATIC_DRAW);
-    EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nugscn_android.c", 0x5d);
-
-    if (bgProcIsBgThread()) {
-        NuIOS_YieldThread();
-    }
-
-    u32 chunk_limit = g_loadingCharacterInHub != 0 ? 0x4000 : 0x10000;
-    u32 buf_size = buf_end.char_ptr - buf->char_ptr;
-    u32 max_chunk_size = NuMin(chunk_limit, buf_size);
-    u32 largest_chunk = 0;
-
-    for (u32 n = 0, chunk_size = 0; n < size; n += chunk_size) {
-        chunk_size = NuMin(max_chunk_size, size - n);
-        NuFileRead(file, buf->void_ptr, chunk_size);
-
-        BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nugscn_android.c", 0x73);
-        NuIOSBindVAO(0);
-        glBindBuffer(target, gl_buf);
-        if (chunk_size == size) {
-            glBufferData(target, chunk_size, buf->void_ptr, GL_STATIC_DRAW);
-        } else {
-            glBufferSubData(target, n, chunk_size, buf->void_ptr);
-        }
-        EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nugscn_android.c", 0x80);
-
-        if (bgProcIsBgThread()) {
-            NuIOS_YieldThread();
-        }
-        largest_chunk = NuMax(largest_chunk, chunk_size);
-    }
-    return largest_chunk;
-}
-
-i32 NuGScnUploadGfxDataFromFilePS(VARIPTR *buf, VARIPTR buf_end, i32 file) {
-    VARIPTR max_buf = *buf;
-    i32 section_size = 0;
-    i32 bytes_read = 0;
-
-    memset(&g_VideoResHeader, 0, sizeof(g_VideoResHeader));
-    bytes_read += NuFileRead(file, &section_size, sizeof(section_size));
-    bytes_read += NuGScnReadTexturesPS(file, buf, buf_end);
-
-    bytes_read += NuFileRead(file, &g_VideoResHeader.nvertex_buffers, sizeof(g_VideoResHeader.nvertex_buffers));
-    g_VideoResHeader.vertex_buffers = BUFFER_ALLOC_ARRAY(buf, g_VideoResHeader.nvertex_buffers, usize);
-    for (u32 i = 0; i < g_VideoResHeader.nvertex_buffers; ++i) {
-        u32 size = 0;
-        bytes_read += NuFileRead(file, &size, sizeof(size));
-        if (size == 0) {
-            g_VideoResHeader.vertex_buffers[i] = 0;
-            continue;
-        }
-
-        u32 keep_in_memory = size & 0x80000000;
-        size &= 0x7fffffff;
-        if (keep_in_memory != 0) {
-            g_VideoResHeader.vertex_buffers[i] = buf->addr;
-            buf->addr += size;
-            bytes_read += NuFileRead(file, reinterpret_cast<void *>(g_VideoResHeader.vertex_buffers[i]), size);
-        } else {
-            u32 largest =
-                UploadDataToGLBuffer(file, size, GL_ARRAY_BUFFER, &g_VideoResHeader.vertex_buffers[i], buf, buf_end);
-            bytes_read += size;
-            max_buf.addr = NuMax(max_buf.addr, buf->addr + largest);
-        }
-    }
-
-    bytes_read += NuFileRead(file, &g_VideoResHeader.nindex_buffers, sizeof(g_VideoResHeader.nindex_buffers));
-    g_VideoResHeader.index_buffers = BUFFER_ALLOC_ARRAY(buf, g_VideoResHeader.nindex_buffers, usize);
-    for (u32 i = 0; i < g_VideoResHeader.nindex_buffers; ++i) {
-        u32 size = 0;
-        bytes_read += NuFileRead(file, &size, sizeof(size));
-        if (size == 0) {
-            g_VideoResHeader.index_buffers[i] = 0;
-            continue;
-        }
-        u32 largest =
-            UploadDataToGLBuffer(file, size, GL_ELEMENT_ARRAY_BUFFER, &g_VideoResHeader.index_buffers[i], buf, buf_end);
-        bytes_read += size;
-        max_buf.addr = NuMax(max_buf.addr, buf->addr + largest);
-    }
-
-    i32 total_size = section_size + 4;
-    u8 padding;
-    while (bytes_read < total_size) {
-        bytes_read += NuFileRead(file, &padding, 1);
-    }
-    if (buf->addr < max_buf.addr) {
-        memset(buf->void_ptr, 0, max_buf.addr - buf->addr);
-    }
-    return total_size;
-}
 
 static NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path, char *, char *scene_data) {
     NUGSCN *scene = reinterpret_cast<NUGSCN *>(scene_data);
@@ -1057,42 +769,8 @@ extern "C" {
     }
 } // extern "C"
 
-i32 NuSpecialFind(NUGSCN *scene, nuhspecial_s *dest, char *name, i32 flags) {
-    (void)flags; // Present in the exported ABI; unused by the original body.
-
-    nuhspecial_s *handle = dest;
-    if (name != NULL && scene != NULL) {
-        NUDLDLISTSCENE *display_scene = reinterpret_cast<NUDLDLISTSCENE *>(scene->display_list);
-        if (display_scene != NULL) {
-            NuDisplaySpecialLayout *special = static_cast<NuDisplaySpecialLayout *>(display_scene->specials);
-            for (i32 i = 0; i < display_scene->nspecials; ++i, ++special) {
-                if (NuStrICmp(name, special->name) == 0) {
-                    handle->scene = scene;
-                    handle->special = NULL;
-                    handle->display_special = reinterpret_cast<NUDISPLAYSPECIAL_s *>(special);
-                    return 1;
-                }
-            }
-        } else {
-            NuLegacySpecialLayout *special = reinterpret_cast<NuLegacySpecialLayout *>(scene->specials);
-            for (i32 i = 0; i < scene->numspecial; ++i, ++special) {
-                if (NuStrICmp(name, special->name) == 0) {
-                    handle->scene = scene;
-                    handle->special = special;
-                    handle->display_special = NULL;
-                    return 1;
-                }
-            }
-        }
-    }
-
-    handle->scene = NULL;
-    handle->special = NULL;
-    handle->display_special = NULL;
-    return 0;
-}
-
 void DrawCables() {
+    STUBBED();
 }
 
 void DrawRipple(ripple_node_s *node) {
@@ -1118,9 +796,11 @@ void DrawRipple(ripple_node_s *node) {
 }
 
 void DrawAreaBox(nuvec_s *, nuvec_s *, i32, i32) {
+    STUBBED();
 }
 
 void DrawBox_Now(_vuv_s *, _vuv_s *, i32, i32) {
+    STUBBED();
 }
 
 extern "C" {
@@ -1160,10 +840,8 @@ void DrawLocator(nuvec_s *position, float radius, i32 rotation, i32 colour) {
     AiRndrLine3d(vertices, NULL, NULL);
 }
 
-void DrawStreaks() {
-}
-
 void Draw_LOADED() {
+    STUBBED();
 }
 
 void Draw3DObject(WORLDINFO_s *world, i32 object_index, nuvec_s *position, u16 x_rotation, u16 y_rotation,
@@ -1248,12 +926,15 @@ void DrawCharIcon(i32 character_id, float x, float y, float z, float scale, i32 
 }
 
 void DrawHint_LSW(HINT_s *, i32) {
+    STUBBED();
 }
 
 void DrawLine_Now(_vuv_s *, _vuv_s *, i32, i32) {
+    STUBBED();
 }
 
 void DrawParallax(nuhspecial_s *) {
+    STUBBED();
 }
 
 void DrawQuestion(nuvec_s *position, float scale_value, float y_push) {
@@ -1270,6 +951,7 @@ void DrawQuestion(nuvec_s *position, float scale_value, float y_push) {
 }
 
 void DrawRectRGBA(float, float, float, float, u32, numtl_s *, i32, float) {
+    STUBBED();
 }
 
 void DrawItem(nuhspecial_s *special, nuvec_s *position, float scale_value, float unused, float y_push, u16 x_rot,
@@ -1330,6 +1012,7 @@ static inline void ShopRotateZ(NUMTX *m, NUANG a) {
     m->m31 = m30 * sinx + m->m31 * cosx;
 }
 void Draw_LOADING() {
+    STUBBED();
 }
 
 #include "nu2api/nu3d/nuprim.h"
@@ -1441,6 +1124,7 @@ void DrawAlphaGrid(i32 rows, i32 cols, NuBloomParameters *parameters) {
 #undef ALPHA_GRID_VERTEX
 
 void DrawArrow_Now(_vum_s *, float, i32, i32) {
+    STUBBED();
 }
 
 extern i16 tNONEWBESTTIME, tNEWBESTTIME;
@@ -1474,6 +1158,7 @@ void DrawBonusTime(STATUSPACKET_s *packet, float position, i32 alpha) {
 }
 
 void DrawCross_Now(_vuv_s *, float, i32, i32) {
+    STUBBED();
 }
 
 void DrawGameState(float x, float y, i32 highlight, i32 slot) {
@@ -1525,6 +1210,7 @@ void DrawGameState(float x, float y, i32 highlight, i32 slot) {
 }
 
 void DrawPauseFade() {
+    STUBBED();
 }
 
 void DrawRippleSet(ripple_set_s *set) {
@@ -1565,55 +1251,26 @@ void DrawSaveSlots(MENU_s *menu, float y) {
     menu->item_height[4] = text3d_height * 2.0f;
 }
 
-void DrawSnakeBody(GameObject_s *) {
-}
-
 void DrawAlphaImage(i32, i32, numtl_s *, i32, NuBloomParameters *) {
+    STUBBED();
 }
 
 void DrawBezierLine(VuVec &, VuVec &, VuVec &, VuVec &, numtl_s *, i32) {
-}
-
-void DrawBonusScore(float, i32, i32, float, i32 *) {
+    STUBBED();
 }
 
 void DrawBoxMtx_Now(_vum_s *, _vuv_s *, i32, i32) {
-}
-
-void DrawBuildUpBar(float x, float y, i32 amount, i32 maximum, float scale, float width, float alpha, u16 angle) {
-    const f32 progress = static_cast<f32>(amount * 10) / maximum;
-    const i32 full = progress;
-    const f32 fraction = NuFmod(progress, 1.0f);
-    const f32 phase = GlobalTimer.time_elapsed_mod_seconds * 10.0f;
-    const f32 size = scale * 0.085f * width;
-    const f32 step = width * 0.02975f * NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff];
-    f32 px = x - step * 9.0f * 0.5f;
-    i32 shimmer = 0xb3 - static_cast<i32>(phase);
-    for (i32 i = 0; i < 10; ++i) {
-        i32 object;
-        if (amount == maximum) {
-            if (shimmer >= 0xb3)
-                shimmer = 0xa9;
-            object = shimmer++;
-        } else if (i < full)
-            object = 0xb2;
-        else if (i == full)
-            object = fraction * 9.0f + 169.0f;
-        else
-            object = 0xa9;
-        const f32 depth[10] = {1.009f, 1.008f, 1.007f, 1.006f, 1.005f, 1.004f, 1.003f, 1.002f, 1.001f, 1.0f};
-        DrawPanel3DObject(px, y, depth[i], size, size, size, 0, 0, 0,
-                          reinterpret_cast<nuhspecial_s *>(&WORLD->lev_objs[object]), 0, alpha);
-        px += step;
-    }
+    STUBBED();
 }
 
 void *AddGameMessage(char *, NUVEC *, f32, NUVEC *, f32, u8, u8, u8, u32, f32);
 
 void DrawCutBorders(i32) {
+    STUBBED();
 }
 
 void DrawExplosions() {
+    STUBBED();
 }
 
 void DrawItemMenu2D() {
@@ -1637,75 +1294,6 @@ void DrawItemMenu2D() {
         const f32 y = (HUB_EPISODETITLEY + HUB_EPISODESUBTITLEY) * 0.5f;
         SmartTextEx(TTab[text_id], 0.0f, y, 1.0f, 0.8f, 0.8f, 0.8f, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
                     static_cast<u32>(alpha));
-    }
-}
-
-void DrawMessageBox(i32, float, float, float, float) {
-}
-
-void DrawRopeCurved(nuvec_s *, nuvec_s *, i32, i32, numtl_s *) {
-}
-
-numtl_s *ropemtl;
-static f32 ROPELEN;
-static u32 ropedif = 0xff505050;
-void FindAnglesZX(NUVEC *, u16 *, u16 *);
-
-void DrawRopeSingle(nuvec_s *start, nuvec_s *end, float amount, numtl_s *material, float time, float grow_time,
-                    float spacing, float scale) {
-    ROPELEN = 0.04f;
-    ropedif = Cheat_IsOn(3) ? 0xff103f10 : 0xff505050;
-    if (material == NULL)
-        material = ropemtl;
-    if (end == NULL || start == NULL)
-        return;
-    amount = NuFmax(0.0f, NuFmin(1.0f, amount));
-    NUVEC direction = {end->x - start->x, end->y - start->y, end->z - start->z};
-    f32 length = NuVecMag(&direction) * amount;
-    f32 repeats = length / ROPELEN;
-    NURND_VERTEX3D vertices[10] = {
-        {{-0.01f, 0.0f, 0.01f}, {-0.7071068286895752f, 0.0f, 0.7071068286895752f}, ropedif, 0.0f, 0.0f},
-        {{-0.01f, length, 0.01f}, {-0.7071068286895752f, 0.0f, 0.7071068286895752f}, ropedif, repeats, 0.0f},
-        {{0.01f, 0.0f, 0.01f}, {0.7071068286895752f, 0.0f, 0.7071068286895752f}, ropedif, 0.0f, 1.0f},
-        {{0.01f, length, 0.01f}, {0.7071068286895752f, 0.0f, 0.7071068286895752f}, ropedif, repeats, 1.0f},
-        {{0.01f, 0.0f, -0.01f}, {0.7071068286895752f, 0.0f, -0.7071068286895752f}, ropedif, 0.0f, 2.0f},
-        {{0.01f, length, -0.01f}, {0.7071068286895752f, 0.0f, -0.7071068286895752f}, ropedif, repeats, 2.0f},
-        {{-0.01f, 0.0f, -0.01f}, {-0.7071068286895752f, 0.0f, -0.7071068286895752f}, ropedif, 0.0f, 3.0f},
-        {{-0.01f, length, -0.01f}, {-0.7071068286895752f, 0.0f, -0.7071068286895752f}, ropedif, repeats, 3.0f},
-        {{-0.01f, 0.0f, 0.01f}, {-0.7071068286895752f, 0.0f, 0.7071068286895752f}, ropedif, 0.0f, 4.0f},
-        {{-0.01f, length, 0.01f}, {-0.7071068286895752f, 0.0f, 0.7071068286895752f}, ropedif, repeats, 4.0f}};
-    u16 x_rotation, z_rotation;
-    FindAnglesZX(&direction, &x_rotation, &z_rotation);
-    NUMTX matrix;
-    NuMtxSetRotationZ(&matrix, z_rotation);
-    NuMtxRotateX(&matrix, x_rotation);
-    NuMtxTranslate(&matrix, start);
-    NuRndrTriStrip3dClip(vertices, 10, &matrix, material);
-    if (Cheat_IsOn(3) == 0 || VehicleArea != 0)
-        return;
-    NUVEC position = v000;
-    NUVEC size = v000;
-    position.y = 0.0f;
-    f32 step = spacing * ROPELEN;
-    u16 rotation = 0;
-    while (position.y < length) {
-        f32 magnitude = scale;
-        if (grow_time >= time) {
-            i32 angle = (i32)((1.0f / grow_time * time) * 16384.0f + 32768.0f + 16384.0f);
-            magnitude = (1.0f + NuTrigTable[(angle >> 1) & 0x7fff]) * scale;
-        }
-        size.x = size.y = size.z = magnitude;
-        rotation = (u16)(rotation + 0x5555);
-        NuMtxSetScale(&matrix, &size);
-        NuMtxTranslate(&matrix, &position);
-        NuMtxRotateY(&matrix, rotation);
-        NuMtxRotateZ(&matrix, z_rotation);
-        NuMtxRotateX(&matrix, x_rotation);
-        NuMtxTranslate(&matrix, start);
-        NuSpecialDrawAt(&WORLD->lev_objs[0x124].special, &matrix);
-        NuSpecialDrawAt(&WORLD->lev_objs[0x125].special, &matrix);
-        NuSpecialDrawAt(&WORLD->lev_objs[0x126].special, &matrix);
-        position.y += step;
     }
 }
 
@@ -1750,9 +1338,6 @@ void DrawStatusText(char *text, u16 angle, float x, float y, float scale, u32 co
     NuQFntSetCoordinateSystem(NUQFNT_CSMODE_NORMALISED);
 }
 
-void DrawWallSpline(float) {
-}
-
 void Draw3DObjectMtx(WORLDINFO_s *world, i32 object_index, numtx_s *mtx) {
     if (object_index == -1) {
         return;
@@ -1784,6 +1369,7 @@ void DrawGameObjects() {
 }
 
 void DrawPaintLights() {
+    STUBBED();
 }
 
 void DrawStatusIcons(STATUSPACKET_s *status, float y, float alpha) {
@@ -1796,22 +1382,6 @@ void DrawStatusIcons(STATUSPACKET_s *status, float y, float alpha) {
     icon_alpha *= alpha;
     const f32 size = ICONSIZE;
     DrawCharIcon(static_cast<i16>(status->player0_model), -ICONX, y, 0.0f, size, 0xa5, icon_alpha, icon_alpha, 1, NULL);
-}
-
-void DrawStillScreen(i32 clear) {
-    NuRndrBeginScene(-1);
-    NuVpGetCurrentViewport();
-    if (clear != 0) {
-        NuRndrClear(0x500, 0, 1.0f);
-    }
-    if (MainRenderTime >= 1.0f) {
-        NuRndrRectUV2di(0, 0, 0x2800, 0xe00, 0.0f, 1.0f, 1.0f, 0.0f, 0x80808080u, pause_rndr_mtl);
-    } else {
-        const u32 colour = (static_cast<i32>(MainRenderTime * 128.0f) << 24) | 0x00808080u;
-        u32 colours[4] = {colour, colour, colour, colour};
-        NuRndrGradRectUV2di(0, 0, 0x2800, 0xe00, 0.0f, 1.0f, 1.0f, 0.0f, colours, pause_rndr_mtl);
-    }
-    NuRndrEndScene();
 }
 
 void DrawTouchPrompt(char *prompt, char *unused_label, bool hovered, bool large) {
@@ -1874,12 +1444,15 @@ void DrawTouchPrompt(char *prompt, char *unused_label, bool hovered, bool large)
 }
 
 void Draw_LOADFAILED() {
+    STUBBED();
 }
 
 void DrawAreaCylinder(nuvec_s *, nuvec_s *, i32) {
+    STUBBED();
 }
 
 void DrawCameraTarget(nuvec_s *) {
+    STUBBED();
 }
 
 void DrawGameMessages() {
@@ -2023,9 +1596,6 @@ void DrawGameMessages() {
     }
 }
 
-void DrawMeleeTargets(i16 *, char *, float *, i32) {
-}
-
 f32 KITPOSX = -0.725f;
 f32 KITPOSY = -0.7f;
 f32 KITPOS2X = -1.275f;
@@ -2083,58 +1653,8 @@ void DrawStatusBG_LSW(STATUSPACKET_s *status) {
     }
 }
 
-void DrawStatusScreen(WORLDINFO_s *) {
-    static u8 KitPart[0x2d0];
-
-    iconalphaoverride = -1.0f;
-    memset(KitPart, 0, sizeof(KitPart));
-
-    if (GAMEDEMO != 0 || FadeSys.fade > 0.0f) {
-        return;
-    }
-
-    STATUSPACKET_s *status = &StatusPacket;
-    if (status->status_flags == 0) {
-        return;
-    }
-
-    if (status->draw_background_callback != NULL) {
-        status->draw_background_callback(status);
-    }
-
-    for (STATUS_STAGE_s *stage = StatusStages; stage->type != -1; ++stage) {
-        if (stage->draw_callback != NULL) {
-            stage->draw_callback(stage, status, stage == status->stage);
-        }
-    }
-
-    STATUS_STAGE_s *stage = status->stage;
-    f32 alpha;
-    if (stage->type == 11) {
-        return;
-    } else if (stage->type == 12) {
-        alpha = 0.0f;
-    } else if (stage->type == 10) {
-        alpha = stage->field_0x18 < 1.0f ? 1.0f - stage->field_0x18 : 0.0f;
-    } else {
-        alpha = 1.0f;
-        if (stage->type == 19 && stage->field_0x14 != 0) {
-            const f32 time = stage->field_0x18;
-            if (time < 1.0f) {
-                alpha = 1.0f - time;
-            } else {
-                const f32 fade_start = stage->field_0x1c - 1.0f;
-                alpha = time < fade_start ? 0.0f : (time - fade_start) / (stage->field_0x1c - fade_start);
-            }
-        }
-    }
-
-    if (draw_player_icons != 0) {
-        DrawStatusIcons(status, icon_y, iconalphaoverride >= 0.0f ? iconalphaoverride : alpha);
-    }
-}
-
 void Draw_LOADCORRUPT() {
+    STUBBED();
 }
 
 void Draw3DObjectAlpha(WORLDINFO_s *world, i32 object_index, nuvec_s *position, u16 x_rotation, u16 y_rotation,
@@ -2157,15 +1677,8 @@ void Draw3DObjectAlpha(WORLDINFO_s *world, i32 object_index, nuvec_s *position, 
     }
 }
 
-extern "C" {
-    GameObject_s *drawbosshitpoints = NULL;
-}
-
-void DrawBossHitPoints(GameObject_s *object) {
-    drawbosshitpoints = object;
-}
-
 void DrawCameraTarget2(nuvec_s *) {
+    STUBBED();
 }
 
 i32 DrawPanel3DObject(float x, float y, float z, float scale_x, float scale_y, float scale_z, u16 rotate_x,
@@ -2186,6 +1699,7 @@ i32 DrawPanel3DObject(float x, float y, float z, float scale_x, float scale_y, f
 }
 
 void DrawStatusMiniKit(float, float, float, float, float, i32, STATUSPACKET_s *, float) {
+    STUBBED();
 }
 
 extern i16 tUNKNOWN, tPOWERBRICK, tLOCKED, tGOLDBRICK;
@@ -2365,13 +1879,11 @@ void DrawSubItemMenu3D() {
 }
 
 void Draw_NOMEMORYCARD() {
+    STUBBED();
 }
 
 void DrawFadeScreenWipe() {
-    extern FadeSystem *pFadeInfo;
-
     NuRndrBeginScene(-1);
-    extern numtl_s *FadeMtl2;
     extern numtl_s *SolidMtl;
 
     // The original routine unconditionally dereferences the shared fade
@@ -2433,12 +1945,6 @@ void DrawFadeScreenWipe() {
         NuRndrRect2di(solid_x, solid_y, solid_width, solid_height, 0, SolidMtl);
     }
     NuRndrEndScene();
-}
-
-void DrawMessageBoxRGBA(float, float, float, float, u32, u32, u32, u32, numtl_s *, i32, float) {
-}
-
-void DrawSuperStoryTime(float, float, float, i32, i32) {
 }
 
 static inline void RotateForceGlowMatrix(NUMTX *matrix, i32 angle) {
@@ -2552,74 +2058,12 @@ void DrawGameObjectsDraw(i32) {
     ResetShadowMapRendering();
 }
 
-void DrawPauseScreenWipe() {
-    NuRndrBeginScene(-1);
-
-    const f32 fade = FadeSys.fade;
-    i32 x = 0;
-    i32 y = 0;
-    i32 width = 0x2800;
-    i32 height = 0xe00;
-    f32 u0 = 0.0f;
-    f32 v0 = 1.0f;
-    f32 u1 = 1.0f;
-    f32 v1 = 0.0f;
-    u32 colours[4];
-
-    if ((FadeSys.direction & 3) != 0) {
-        if ((FadeSys.direction & 1) == 0) {
-            width = static_cast<i32>(fade * 10240.0f);
-            colours[0] = 0x80808080u;
-            colours[1] = 0x00808080u;
-            colours[2] = 0x80808080u;
-            colours[3] = 0x00808080u;
-            NuRndrGradRectUV2di(width, 0, 0x400, 0xe00, fade, 1.0f, fade + 0.1f, 0.0f, colours, pause_rndr_mtl);
-            u1 = fade;
-        } else {
-            u0 = 1.0f - fade;
-            x = static_cast<i32>(u0 * 10240.0f);
-            width = 0x2800 - x;
-            colours[0] = 0x00808080u;
-            colours[1] = 0x80808080u;
-            colours[2] = 0x00808080u;
-            colours[3] = 0x80808080u;
-            NuRndrGradRectUV2di(x - 0x400, 0, 0x400, 0xe00, u0 - 0.1f, 1.0f, u0, 0.0f, colours, pause_rndr_mtl);
-        }
-    } else if ((FadeSys.direction & 0xc) != 0) {
-        if ((FadeSys.direction & 4) == 0) {
-            height = static_cast<i32>(fade * 3584.0f);
-            colours[0] = 0x80808080u;
-            colours[1] = 0x80808080u;
-            colours[2] = 0x00808080u;
-            colours[3] = 0x00808080u;
-            NuRndrGradRectUV2di(0, height, 0x2800, 0x166, 0.0f, 1.0f - fade, 1.0f, 1.0f - (fade + 0.1f), colours,
-                                pause_rndr_mtl);
-            v1 = 1.0f - fade;
-        } else {
-            const f32 edge = 1.0f - fade;
-            y = static_cast<i32>(edge * 3584.0f);
-            height = 0xe00 - y;
-            colours[0] = 0x00808080u;
-            colours[1] = 0x00808080u;
-            colours[2] = 0x80808080u;
-            colours[3] = 0x80808080u;
-            NuRndrGradRectUV2di(0, y - 0x166, 0x2800, 0x166, 0.0f, 1.0f - (edge - 0.1f), 1.0f, 1.0f - edge, colours,
-                                pause_rndr_mtl);
-            v0 = 1.0f - edge;
-        }
-    }
-
-    NuRndrRectUV2di(x, y, width, height, u0, v0, u1, v1, 0x80808080u, pause_rndr_mtl);
-    NuRndrEndScene();
-}
-
 void Draw_AUTOSAVECANCEL() {
-}
-
-void DrawMeleeTargetsRows(i16 *, char *, float *, i32) {
+    STUBBED();
 }
 
 void DrawMiniSnowTroopers(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void DrawPanel3DObjectMtx(nuhspecial_s *special, numtx_s *matrix, float alpha) {
@@ -2656,9 +2100,6 @@ void Draw_NODATAAVAILABLE() {
                     MENUNORMALG, MENUNORMALB, 1.5f, 3, NULL, 0, MenuA);
 }
 
-void DrawInDoubleScoreZone(float) {
-}
-
 i32 dco_locatorposonly;
 i32 dco_id = -1;
 i32 dco_reflectaxis;
@@ -2667,9 +2108,7 @@ u16 dco_prerotatez;
 f32 dco_reflectcoord = 2000000.0f;
 GAMECHARACTERDATA_s *dco_gcdata;
 CHARACTERMODEL_s *dco_cmodel;
-extern CUTSCENESYS *CutSceneSys;
 void (*DisguiseAdjustFn)(i32, i32, NUVEC *, NUVEC *);
-void QuatInterpolateRotationMatrix(NUMTX *, NUMTX *, NUMTX *, f32);
 void DrawObjectOnCharacter(WORLDINFO_s *world, GameObject_s *object, i32 object_id, nuhspecial_s *special, i32 locator,
                            i32 second_locator, NUMTX *joints, i32 reflect, u32 layers, NUMTX *rotation,
                            NUVEC *translation, f32 alpha, f32 scale) {
@@ -2771,11 +2210,7 @@ void DrawObjectOnCharacter(WORLDINFO_s *world, GameObject_s *object, i32 object_
     }
 }
 
-void DrawPlayerIconPrompts(i32, i32, float, i32, i32, i32, i32, i32, i32, float, i32, i32, i32, i32) {
-}
-
 extern f32 DropInOutScale(GameObject_s *object);
-extern f32 PodSprint_RollMul(GameObject_s *object);
 extern void ApplyExtraRotation(GameObject_s *object, NUMTX *matrix);
 extern AREADATA *DEATHSTARBATTLE2_ADATA;
 extern AREADATA *PODSPRINT_ADATA;
@@ -2953,16 +2388,12 @@ i32 DrawGameObjectsProcess() {
     return 0;
 }
 
-void DrawMeleeTargetsNumber(i16 *, unsigned char *, i32, unsigned char, nuhspecial_s *) {
-}
-
 void DrawStatusTextFraction(i32, i32, float, float, u16, float, u32, float, float) {
+    STUBBED();
 }
 
 void DrawGameMessage_Targets(GAMEMESSAGE_s *, nuvec_s *, float) {
-}
-
-void DrawTorpedoTargetSprite(void *, unsigned char, float) {
+    STUBBED();
 }
 
 i32 DrawPanel3DObjectNoAlpha(float x, float y, float z, float scale_x, float scale_y, float scale_z, u16 rotate_x,
@@ -2984,9 +2415,11 @@ i32 DrawPanel3DObjectNoAlpha(float x, float y, float z, float scale_x, float sca
 }
 
 void DrawPanel3DObjectMtxNoAlpha(nuhspecial_s *, numtx_s *) {
+    STUBBED();
 }
 
 void Draw_OK(MENU_s *) {
+    STUBBED();
 }
 
 void DrawItem(nuhspecial_s *special, nuvec_s *position, float scale_value, float, float y_push, u16 x_rot, u16 y_rot,
@@ -3011,6 +2444,7 @@ void DrawItem(nuhspecial_s *special, nuvec_s *position, float scale_value, float
 }
 
 void DrawAABox(_vuv_s *, _vuv_s *, i32) {
+    STUBBED();
 }
 
 void DrawArrow(nuhspecial_s *special, float scale_value) {
@@ -3033,623 +2467,20 @@ void DrawCross(nuvec_s *centre, float radius, numtl_s *material, i32 colour) {
     NuRndrLine3dDbg(centre->x, centre->y, centre->z - radius, centre->x, centre->y, centre->z + radius, colour);
 }
 
-static void DrawHitPoints(GameObject_s *object, float x, float y, float scale, float alpha, i32 alignment, float, i32) {
-    if (object == NULL || WORLD == NULL) {
-        return;
-    }
-
-    i32 two_rows = 0;
-    if (SuperStory != 0 && WORLD->current_level == VADERC_LDATA && object->hitpoints == 10) {
-        two_rows = 1;
-    }
-    if ((object->field_0xefb & 8) != 0) {
-        two_rows = drawbosshitpoints_2rows != 0;
-        drawbosshitpoints_2rows = 0;
-    }
-
-    const i32 heart_object = object->field_0xcc0 == NULL ? 0xcc : 0xcd;
-    LEVEL_OBJECT_RUNTIME_s &heart = WORLD->lev_objs[heart_object];
-    if (heart.active == 0) {
-        return;
-    }
-
-    i32 hitpoints;
-    i32 current_hp;
-    if (object->hitpoints == 0) {
-        hitpoints = 1;
-        current_hp = 1;
-    } else {
-        hitpoints = object->hitpoints;
-        current_hp = static_cast<i8>(object->current_hp);
-    }
-
-    if (PLAYERHITPOINTS_2HEARTSIN1 != 0 && static_cast<i8>(object->apiobj.flags_low) < 0) {
-        hitpoints = (hitpoints + 1) / 2;
-        current_hp = (current_hp + 1) / 2;
-    }
-
-    i32 transitioning = 0;
-    if (static_cast<u8>(object->apiobj.field_0x27c) <= 1 && hitpoints > 1 && object->apiobj.field_0x287 != 0 &&
-        object->field_0x101c > 0.0f && object->field_0x101c < 1.0f) {
-        current_hp = static_cast<i32>(static_cast<float>(hitpoints) * (1.0f - object->field_0x101c));
-        transitioning = 1;
-    }
-
-    float spacing = scale * 0.35f;
-    const bool widescreen = GetMenuID() == 4 ? TempOptions.field11_0xb != 0
-                                             : Game_OptionsSave != NULL && Game_OptionsSave->field11_0xb != 0;
-    if (widescreen) {
-        spacing *= 0.85f;
-    }
-    if (alignment == 8) {
-        spacing = -spacing;
-    } else if (alignment == 0) {
-        const i32 row_width = two_rows != 0 ? hitpoints / 2 : hitpoints;
-        x -= static_cast<float>(row_width - 1) * spacing * 0.5f;
-    }
-
-    float draw_x = x;
-    float draw_y = y * PANEL3DMULY;
-    const i32 split = hitpoints / 2;
-    for (i32 i = 0; i < hitpoints; ++i) {
-        if (two_rows == 1 && i >= split) {
-            two_rows = 2;
-            draw_y -= scale * 0.14f;
-            draw_x = x;
-        }
-
-        float draw_alpha = 0.5f;
-        float scale_xy = scale;
-        float z = 1.001f;
-        if (i < current_hp) {
-            draw_alpha = 1.0f;
-            if (PLAYERHITPOINTS_2HEARTSIN1 != 0 && static_cast<i8>(object->apiobj.flags_low) < 0 &&
-                i == current_hp - 1 && static_cast<i8>(object->current_hp) < (i + 1) * 2) {
-                draw_alpha = 0.75f;
-            }
-
-            if (transitioning == 0 && current_hp > 0 && i == current_hp - 1) {
-                const float pulse = i == 0 && current_hp == 1 ? 0.5f : 0.2f;
-                const float pulse_scale = 1.0f + pulse - NuFmod(GlobalTimer.time_elapsed, 0.5f) * (pulse * 2.0f);
-                scale_xy *= pulse_scale;
-                z = 0.999f;
-            }
-        }
-
-        NUVEC object_scale = {scale_xy, scale_xy, scale};
-        NUMTX matrix;
-        NuMtxSetScale(&matrix, &object_scale);
-        NUVEC translation = {draw_x * PANEL3DMULX, draw_y, z};
-        NuMtxTranslate(&matrix, &translation);
-        DrawPanel3DObjectMtx(&heart.special, &matrix, draw_alpha * alpha);
-        draw_x += spacing;
-    }
-}
-
-void TransformGameMessages(nuvec_s *, nuvec_s *, nuvec_s *);
-
-#include "nu2api/nucore/nupad.h"
-f32 Panel_GetRedBrickSlideTime();
-
-void Customiser_TransformToPanel(CUSTOMISER *);
-extern "C" i32 MenuInCriticalMemoryCard();
-i32 Arcade_GetMode(u32 *);
-char *GameObj_GetName(i32, GameObject_s *, char *);
-i32 FindGameMsgsWithID(i32, i32, i32, GAMEMESSAGE_s *);
-f32 PowerUp_GetPanelY(i32);
-u32 Cheat_MultiplyScore(u32);
-void Text_MakeScore(u32, char *);
-i32 GizmoPickup_NumberOfType(WORLDINFO_s *, i32, char);
-void Hub_DrawImportantBrick(i32, f32, f32, f32, i32, i32);
-void Arcade_DrawPanel(i32);
-GameObject_s *Mission_FindTarget(MISSIONSYS *, u64 *);
-void CutScene_DrawSubtitles();
-extern i32 DRAWBGLOAD, customiser_quit, shop_quit, ONEPLAYERPOWERUPS, PickupFlickerFrame, PickUpFlickerFrames,
-    PickUpFlickerTest;
-extern i32 arcade_placed_stud_total, Arcade_Points[2], FPSDISPLAY, ShowPlayerCoordinate, drawautosaveicon,
-    memcard_saveneeded, memcard_loadneeded;
-extern char *apitxt_CONTROLLERREMOVED, *apitxt_PRESSSTART;
-extern "C" i16 id_YODA, id_QUIGONJINN, id_MACEWINDU, id_C3PO;
-extern i16 tDROPIN_INSERTCONTROLLER;
-extern u16 PowerUp_PanelYRot;
-extern f32 POWERUPOBJSIZE, minikittime, REDBRICKPOSX, REDBRICKPOSY, REDBRICKPOS2X, REDBRICKPOS2Y, PANEL_REDBRICKSCALE,
-    goldbricktime, BOSSICONY;
-
-extern i32 screendump, save_paused, abort_load, gone_through_door_to_new_level, DoubleScore;
-extern i32 TERRAINCALLS, SHADOWCALLS, RAYCASTCALLS;
-extern "C" GAMEPAD_s GamePad[64];
-extern "C" TIMER BonusTimer;
-i32 NoPad(i32, i32);
-extern "C" i32 MenuInMemoryCard();
-extern i32 TimingBarSet;
-extern "C" void DebrisDraw(i32, i32);
-
-enum COIN_TOTAL_SOURCE { COIN_TOTAL_SAVED_GAME, COIN_TOTAL_SUPER_STORY, COIN_TOTAL_BONUS };
-static f32 DrawCoinTotalY = 2000000.0f;
-static void DrawCoinTotal(i32 source, i32 hide_super_story_target) {
-    if (FadeSys.fade != 0.0f || (WORLD->current_level->flags & LEVEL_GAMEPLAY) == 0) {
-        return;
-    }
-
-    const f32 timer = source == COIN_TOTAL_BONUS ? statstime : cointotaltime;
-    const i32 angle = static_cast<i32>(timer * static_cast<f32>(NUANG_90DEG));
-    const f32 y = NuTrigTable[(angle >> 1) & 0x7fff] * (STATSPOSY - STATSPOS2Y) + STATSPOS2Y + COINTOTAL_SCOREDY;
-
-    DrawCoinTotalY = y;
-
-    i32 total;
-    i32 red = 255;
-    i32 green = 191;
-    i32 blue = 0;
-
-    if (source == COIN_TOTAL_SUPER_STORY) {
-        DrawSuperStoryTime(-y, SuperStoryTimer[0], Game.episode_save[SuperStoryEpisode].superstory_time_limit, 0, 1);
-        total = static_cast<i32>(SuperStoryScore);
-
-        if (Game.episode_save[SuperStoryEpisode].superstory_score_target != 0) {
-            if (hide_super_story_target == 0) {
-                char target[64];
-                char text[64];
-                Text_MakeScore(static_cast<u32>(Game.episode_save[SuperStoryEpisode].superstory_score_target), target);
-                NuStrCpy(text, const_cast<char *>("("));
-                NuStrCat(text, target);
-                NuStrCat(text, const_cast<char *>(")"));
-                Text3DEx(text, 0.0f, y - 0.1f, 1.0f, 0.35f, 0.35f, 0.35f, 0, 255, 255, 255, 48);
-            }
-            if (SuperStoryScore > static_cast<u32>(Game.episode_save[SuperStoryEpisode].superstory_score_target)) {
-                red = 63;
-                green = 255;
-                blue = 31;
-            }
-        }
-    } else if (source == COIN_TOTAL_BONUS) {
-        total = BonusCoinTotal;
-    } else {
-        total = static_cast<i32>(Game.coins);
-    }
-
-    CoinTotal_Draw(total, y, CoinTotalScale, 1, 1.0f, red, green, blue);
-}
-void DrawPanel() {
-    const i32 menu = GetMenuID();
-    SetQFont2D();
-    if (CUTSTOPGAME == 0)
-        TransformGameMessages(&GameCam->pos, &GameCam->shaken_right, &GameCam->dir);
-    if (HUB_ADATA != NULL && WORLD->area == HUB_ADATA)
-        Customiser_TransformToPanel(CharacterCustomiser);
-    const i32 paused = screendump ? save_paused : Paused;
-    // The original loading shortcut reads this before initialization. Give that path a stable result.
-    i32 removed_controller = -1;
-    char text[128], auxiliary[128], loading_text[128];
-    // Original debug coordinates were never initialized by this port.
-    NUVEC coordinate_positions[8] = {};
-    f32 status_y = 0.0f;
-    if (PANELOFF && !paused && (WORLD->current_level->flags & LEVEL_GAMEPLAY))
-        return;
-    if (waiting_for_level != -1) {
-        if (DRAWBGLOAD && bgGetProcActive()) {
-            i32 red, green;
-            if (abort_load) {
-                sprintf(loading_text, "Aborting ''%s''", LDataList[waiting_for_level].name);
-                red = 255;
-                green = 0;
-            } else {
-                sprintf(loading_text, "Loading ''%s''", LDataList[waiting_for_level].name);
-                red = 0;
-                green = 255;
-            }
-            f32 y = 0.035f * NU_SIN_LUT(static_cast<u16>(NuFmod(WaitingForLevelTime, 0.430f) / 0.430f * 65536.0f)) -
-                    STATSPOSY;
-            f32 x = 0.035f * NU_SIN_LUT(static_cast<u16>(NuFmod(WaitingForLevelTime, 0.479f) / 0.479f * 65536.0f));
-            Text3D(loading_text, x, y, 1.0f, 0.3f, 0.3f, 0.3f, 0, red, green, 0);
-        }
-        if (gone_through_door_to_new_level)
-            goto draw_panel_menu;
-    }
-    {
-        f32 pulse = 0.25f * NU_SIN_LUT(static_cast<i32>(GlobalTimer.time_elapsed_mod_seconds * 65536.0f));
-        {
-            const i32 i = 0;
-            if (Player[i] != NULL && static_cast<i8>(Player[i]->apiobj.flags_low) < 0 && NoPad(i, 1) &&
-                (WORLD->current_level == NULL || !(WORLD->current_level->flags & 0xe0)) &&
-                !MenuInCriticalMemoryCard()) {
-                removed_controller = GamePad[i].pad->port;
-                sprintf(text, apitxt_CONTROLLERREMOVED, removed_controller + 1, removed_controller + 1);
-                i32 alpha = static_cast<u8>(static_cast<i32>((i == 0 ? 0.75f + pulse : 0.75f - pulse) * 128.0f));
-                SmartTextEx(text, 0.0f, i == 0 ? 0.5f : -0.5f, 1.0f, 0.4f, 0.4f, 0.4f, 0, 63, 127, 255, 1.5f, 4, 0, 0,
-                            alpha);
-            }
-        }
-        {
-            const i32 i = 1;
-            if (Player[i] != NULL && static_cast<i8>(Player[i]->apiobj.flags_low) < 0 && NoPad(i, 1) &&
-                (WORLD->current_level == NULL || !(WORLD->current_level->flags & 0xe0)) &&
-                !MenuInCriticalMemoryCard()) {
-                removed_controller = GamePad[i].pad->port;
-                sprintf(text, apitxt_CONTROLLERREMOVED, removed_controller + 1, removed_controller + 1);
-                i32 alpha = static_cast<u8>(static_cast<i32>((i == 0 ? 0.75f + pulse : 0.75f - pulse) * 128.0f));
-                SmartTextEx(text, 0.0f, i == 0 ? 0.5f : -0.5f, 1.0f, 0.4f, 0.4f, 0.4f, 0, 63, 127, 255, 1.5f, 4, 0, 0,
-                            alpha);
-            }
-        }
-    }
-    if (removed_controller == -1) {
-        LEVELDATA *level = WORLD->current_level;
-        if (level == STATUS_LDATA || (level->flags & LEVEL_STATUS)) {
-            if (level->draw_status_fn != NULL)
-                level->draw_status_fn(WORLD);
-            DrawGameMessages();
-            goto draw_panel_menu;
-        }
-        if (BonusWinner != -1)
-            goto draw_panel_menu;
-        if (!(menu >= 15 && menu <= 19) && !CUTSTOPGAME) {
-            bool player_hud =
-                menu != 8 && menu != 14 && menu != 24 && (menu != 12 || customiser_quit) && (menu != 13 || shop_quit);
-            if (player_hud && FadeSys.fade == 0.0f && (WORLD->current_level->flags & LEVEL_GAMEPLAY)) {
-                u32 arcade_flags;
-                i32 arcade_mode = Arcade_GetMode(&arcade_flags);
-                status_y = NU_SIN_LUT(static_cast<i32>(statstime * 16384.0f)) * (STATSPOSY - STATSPOS2Y) + STATSPOS2Y;
-                bool raised_hearts =
-                    (WORLD->area != NULL && (WORLD->area == HUB_ADATA || (WORLD->area->flags & 0x100))) || SuperStory ||
-                    ChallengeMode || Mission_Active(NULL) != NULL || arcade_mode == 99;
-                GetMenuID();
-                f32 pulse =
-                    NU_SIN_LUT(static_cast<u16>(NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.5f) * 2.0f * 65536.0f));
-                GameObject_s *object = Player[0];
-                if (object != NULL) {
-                    f32 base_alpha = 1.0f;
-                    if (paused && pause_i_pad != 0 && static_cast<i8>(object->apiobj.flags_low) < 0)
-                        base_alpha = 0.5f;
-                    f32 alpha = base_alpha * (static_cast<i8>(object->apiobj.flags_low) < 0 ? 1.0f : DROPINALPHA);
-                    f32 icon_x = -ICONX;
-                    drawcharicon_i_panel = 0;
-                    i32 alpha_byte = static_cast<i32>(alpha * 128.0f);
-                    f32 icon_size = ICONSIZE;
-                    if (MechSystems::Get()->PlayerButton().hovered)
-                        icon_size *= 1.2f;
-                    bool own_icon = WORLD->current_level == DAGOBAHE_LDATA && object->field_0xcc0 != NULL &&
-                                    object->field_0xcc0->id == id_YODA;
-                    f32 icon_time = object->hud_icon_timer;
-                    i32 visible = icon_time <= 0.0f || (icon_time < 2.0f && NuFmod(icon_time, 0.4f) < 0.2f);
-                    i32 id = own_icon || object->field_0xcc0 == NULL ? object->id : object->field_0xcc0->id;
-                    DrawCharIcon(id, icon_x, status_y, 0.0f, icon_size, 0xa6, alpha, alpha, visible, NULL);
-                    f32 name_x = -(ICONX + 0.075f);
-                    if (static_cast<i8>(object->apiobj.flags_low) < 0 && object->apiobj.character_data->name_id != -1) {
-                        bool draw_name = paused != 0;
-                        if (!draw_name && object->hud_icon_timer > 0.0f && object->hud_icon_timer < 2.0f)
-                            draw_name = NuFmod(object->hud_icon_timer, 0.4f) < 0.2f;
-                        if (draw_name) {
-                            f32 width = Game.options_save.widescreen ? 0.7f : 0.5f;
-                            f32 name_y = status_y - 0.125f;
-                            char *name = GameObj_GetName(-1, object, auxiliary);
-                            SmartTextEx(name, name_x, name_y, 1.0f, 0.35f, 0.35f, 0.35f, 3, 255, 255, 255, width, 2, 0,
-                                        0, static_cast<i32>(base_alpha * 128.0f));
-                        }
-                    }
-                    if (!paused && FadeSys.fade == 0.0f && static_cast<i8>(object->apiobj.flags_low) < 0 &&
-                        MechSystems::Get()->PlayerButton().panel_state == NULL) {
-                        if (ONEPLAYERPOWERUPS && object->field_0xdec > 0.0f) {
-                            if (!FindGameMsgsWithID(7, 0, object->apiobj.field_0x27c, NULL) &&
-                                (object->field_0xdec >= 3.0f ||
-                                 PickupFlickerFrame % PickUpFlickerFrames < PickUpFlickerTest)) {
-                                nuhspecial_s *special = &WORLD->lev_objs[0xd0].special;
-                                u16 angle = PowerUp_PanelYRot;
-                                f32 scale = POWERUPOBJSIZE;
-                                f32 y = PowerUp_GetPanelY(0);
-                                DrawPanel3DObject(-ICONX, y + status_y, 1.0f, scale, scale, scale, 0, angle, 0, special,
-                                                  0, 1.0f);
-                                special = &WORLD->lev_objs[0xd1].special;
-                                angle = PowerUp_PanelYRot;
-                                scale = POWERUPOBJSIZE;
-                                y = PowerUp_GetPanelY(0);
-                                DrawPanel3DObject(-ICONX, y + status_y, 1.0f, scale, scale, scale, 0, angle, 0, special,
-                                                  0, 1.0f);
-                            }
-                        } else {
-                            u32 multiplier = Cheat_MultiplyScore(1);
-                            if (DoubleScore & 1)
-                                multiplier *= 2;
-                            if (multiplier > 1) {
-                                sprintf(text, "x%i", multiplier);
-                                i32 flash_alpha = static_cast<u8>(static_cast<i32>(pulse * 16.0f + 96.0f));
-                                Text3DEx(text, -ICONX, status_y - 0.285f, 1.0f, 0.3f, 0.35f, 0.35f, 1, 255, 0, 255,
-                                         flash_alpha);
-                            }
-                        }
-                    }
-                    if (static_cast<i8>(object->apiobj.flags_low) < 0) {
-                        DrawHitPoints(object, -PANEL_HITPOINTSX, status_y + (raised_hearts ? 0.0f : PANEL_HEARTY),
-                                      0.195f, alpha, 2, 0.0f, 0);
-                    } else if (!paused && !CUTSTOPGAME) {
-                        i32 dropin_alpha = static_cast<i32>(DROPINALPHA * 128.0f);
-                        if (dropin_alpha > 0) {
-                            f32 y = status_y + (raised_hearts ? 0.0f : PANEL_HEARTY);
-                            char *prompt = NoPad(0, 0) ? TTab[tDROPIN_INSERTCONTROLLER] : apitxt_PRESSSTART;
-                            SmartTextEx(prompt, -0.685f, y, 1.0f, 0.35f, 0.35f, 0.35f, 2, 255, 255, 255, 0.3f, 2, 0, 0,
-                                        dropin_alpha);
-                        }
-                    }
-                    if (!raised_hearts) {
-                        if (arcade_flags & 2) {
-                            sprintf(text, "%i/%i", AreaGlobals.values.field_0x2c,
-                                    Arcade_Mode[static_cast<i8>(ArcadeItem.field_c_0xc)].target);
-                            f32 coin_x = -PANEL_COINX;
-                            f32 scale = object->coinpacket->scale * PANEL_SCORESCALE;
-                            f32 y = status_y + PANEL_COINY;
-                            Text3DEx(text, -PANEL_SCOREX, PANEL_COINADJUSTDY + y, 1.0f, scale, scale, scale, 2, 255,
-                                     191, 0, static_cast<u8>(alpha_byte));
-                            if (WORLD->lev_objs[0x35].active) {
-                                scale = object->coinpacket->scale * PANEL_COINSCALE_END;
-                                DrawPanel3DObject(coin_x, y, 1.0f, scale, scale, scale, 0, 0, 0,
-                                                  &WORLD->lev_objs[0x35].special, 0, alpha);
-                            }
-                        } else if (object->coinpacket != NULL) {
-                            Text_MakeScore(object->coinpacket->coins, text);
-                            f32 coin_x = -PANEL_COINX;
-                            f32 scale = object->coinpacket->scale * PANEL_SCORESCALE;
-                            f32 y = status_y + PANEL_COINY;
-                            Text3DEx(text, -PANEL_SCOREX, y + PANEL_COINADJUSTDY, 1.0f, scale, scale, scale, 2, 255,
-                                     191, 0, static_cast<u8>(alpha_byte));
-                            COINPACKET_s *packet = object->coinpacket;
-                            i32 model = static_cast<i16>(packet->lastcoin);
-                            if ((model >= 0xb7 && model <= 0xba) || (model >= 0xbf && model <= 0xc2) ||
-                                (model >= 0xc7 && model <= 0xca))
-                                model -= 4;
-                            else if (model >= 0xd5 && model <= 0xd8)
-                                model += 4;
-                            if (WORLD->lev_objs[model].active) {
-                                scale = packet->scale * PANEL_COINSCALE_END;
-                                DrawPanel3DObject(coin_x, y, 1.0f, scale, scale, scale, 0, 0, 0,
-                                                  &WORLD->lev_objs[model].special, 0, alpha);
-                            }
-                            i32 target = 0;
-                            bool draw_target = false;
-                            if (Arcade) {
-                                if (arcade_flags & 8) {
-                                    target = arcade_placed_stud_total;
-                                    draw_target = target != 0;
-                                } else if (arcade_flags & 4) {
-                                    target = Arcade_Mode[static_cast<i8>(ArcadeItem.field_c_0xc)].target;
-                                    draw_target = target != 0;
-                                }
-                            } else if (BonusArea && VehicleArea) {
-                                target = BonusCoinTarget;
-                                draw_target = true;
-                            }
-                            if (draw_target) {
-                                Text_MakeScore(target, auxiliary);
-                                sprintf(text, "(%s)", auxiliary);
-                                Text3DEx(text, 0.0f, y + PANEL_COINADJUSTDY, 1.0f, 0.35f, 0.35f, 0.35f, 0, 255, 255,
-                                         255, 48);
-                            }
-                        }
-                    }
-                }
-                if (!MenuInMemoryCard()) {
-                    if (WORLD->area != NULL) {
-                        i32 freeplay = GAMEDEMO ? 0 : FreePlay;
-                        if (!SuperStory && !ChallengeMode && Mission_Active(NULL) == NULL && !Arcade &&
-                            (WORLD->area->flags & 0x4010)) {
-                            i32 maximum = freeplay ? WORLD->area->field38_0x90 : WORLD->area->field37_0x8c;
-                            if (maximum != 0) {
-                                status_y =
-                                    NU_SIN_LUT(static_cast<i32>(builduptime * 16384.0f)) * (STATSPOSY - STATSPOS2Y) +
-                                    STATSPOS2Y;
-                                f32 y = status_y + PANEL_COINY;
-                                AREASAVE_s *save = &Game.area_save[WORLD->level_sub_id];
-                                i32 amount;
-                                if (save->story_buildup_complete || save->freeplay_buildup_complete)
-                                    maximum = amount = BuildUpTotal;
-                                else
-                                    amount = BuildUpDone ? maximum : BuildUpTotal;
-                                DrawBuildUpBar(0.0f, y, amount, maximum, 1.0f, BuildUpScale, 1.0f, 0);
-                            }
-                        }
-                        if (!SuperStory && Mission_Active(NULL) == NULL && !Arcade) {
-                            bool draw_minikits = (WORLD->area->flags & 0x10) != 0;
-                            if (!draw_minikits && (WORLD->current_level->flags & 0x200))
-                                draw_minikits = GizmoPickup_NumberOfType(WORLD, 4, 0) > 0;
-                            if (draw_minikits)
-                                DrawMiniKitCount(
-                                    minikittime, MiniKitScale,
-                                    ChallengeMode ? AreaGlobals.values.field_0x20 : AreaGlobals.values.field_0x14, 10);
-                        }
-                        if (!SuperStory && !ChallengeMode && Mission_Active(NULL) == NULL && !Arcade &&
-                            (WORLD->area->flags & 0x10) &&
-                            (AreaGlobals.values.field_0x08 == 2 ||
-                             Game.area_save[WORLD->level_sub_id].red_brick_collected) &&
-                            Panel_GetRedBrickSlideTime() > 0.0f) {
-                            f32 factor = NU_SIN_LUT(static_cast<i32>(Panel_GetRedBrickSlideTime() * 16384.0f));
-                            f32 x = (REDBRICKPOSX - REDBRICKPOS2X) * factor + REDBRICKPOS2X;
-                            status_y = (REDBRICKPOSY - REDBRICKPOS2Y) * factor + REDBRICKPOS2Y;
-                            u16 angle = static_cast<u16>(
-                                static_cast<i32>(NuFmod(GlobalTimer.time_elapsed, 4.0f) * 0.25f * 65536.0f) + 0x1555);
-                            f32 scale = PANEL_REDBRICKSCALE * RedBrickScale;
-                            u16 pitch = static_cast<u16>(1820.0f * NuTrigTable[angle & 0x7fff]);
-                            DrawPanel3DObjectNoAlpha(x, status_y, 1.0f, scale, scale, scale, pitch, angle, 0,
-                                                     &WORLD->lev_objs[0xd2].special, 2);
-                        }
-                    }
-                    if (DoubleScoreTime > 0.0f)
-                        DrawInDoubleScoreZone(DoubleScoreTime);
-                }
-                if (BonusArea && WORLD->area != NULL && (WORLD->area->flags & 0x104) == 4) {
-                    i32 *scores = Arcade ? Arcade_Points : BonusScore;
-                    i32 active2 = Player[1] != NULL && static_cast<i8>(Player[1]->apiobj.flags_low) < 0;
-                    i32 active1 = Player[0] != NULL && static_cast<i8>(Player[0]->apiobj.flags_low) < 0;
-                    DrawBonusScore(status_y, active1, active2, 1.0f, scores);
-                }
-                if (HUB_ADATA != NULL && WORLD->area == HUB_ADATA && goldbricktime > 0.0f) {
-                    f32 y =
-                        (STATSPOS2Y - STATSPOSY) * NU_SIN_LUT(static_cast<i32>(goldbricktime * 16384.0f)) - STATSPOS2Y;
-                    Hub_DrawImportantBrick(0xd3, 0.0f, y, 1.0f, Game.gold_bricks, GOLDBRICKPOINTS);
-                }
-            }
-            i32 hide_target = 0;
-            GameObject_s *boss = drawbosshitpoints;
-            if (boss != NULL && boss->apiobj.field_0x287 == 0 && static_cast<i8>(boss->apiobj.flags_low) >= 0) {
-                if (FadeSys.fade == 0.0f) {
-                    DrawCharIcon(boss->id, 0.0f, BOSSICONY, 0.0f, 0.16f, 0xa7, statstime, statstime, 1, NULL);
-                    DrawHitPoints(boss, 0.0f, 0.47f, 0.2f, statstime, 0, 0.0f, 0);
-                    hide_target = 1;
-                } else
-                    drawbosshitpoints_2rows = 0;
-            }
-            if (WORLD->area == HUB_ADATA)
-                DrawCoinTotal(0, hide_target);
-            else if (SuperStory) {
-                if (WORLD->current_level->flags & 0x2000)
-                    DrawCoinTotal(1, hide_target);
-            } else if (BonusArea) {
-                if (Arcade)
-                    Arcade_DrawPanel(Paused || NetPaused);
-                else {
-                    if (WORLD->area->flags & 0x100) {
-                        DrawCoinTotal(2, hide_target);
-                        if (DrawCoinTotalY != 2000000.0f) {
-                            Text_MakeScore(BonusCoinTarget, auxiliary);
-                            NuStrCpy(text, const_cast<char *>("("));
-                            NuStrCat(text, auxiliary);
-                            NuStrCat(text, const_cast<char *>(")"));
-                            Text3DEx(text, 0.0f, DrawCoinTotalY - 0.1f, 1.0f, 0.35f, 0.35f, 0.35f, 0, 255, 255, 255,
-                                     48);
-                        }
-                    }
-                    if (FadeSys.fade == 0.0f && (WORLD->current_level->flags & LEVEL_GAMEPLAY)) {
-                        f32 y =
-                            NU_SIN_LUT(static_cast<i32>(statstime * 16384.0f)) * (STATSPOSY - STATSPOS2Y) + STATSPOS2Y;
-                        DrawSuperStoryTime(-y, BonusTimer.time_elapsed,
-                                           Game.area_save[WORLD->level_sub_id].challenge_trial_time, 0, 1);
-                    }
-                }
-            } else if (ChallengeMode) {
-                f32 remaining =
-                    static_cast<f32>(ADataList[WORLD->level_sub_id].challenge_trial_time) - ChallengeTimer.time_elapsed;
-                if (remaining < 0.0f)
-                    remaining = 0.0f;
-                Text_MakeTime(remaining, 0, 1, 1, text);
-                f32 y = NU_SIN_LUT(static_cast<i32>(statstime * 16384.0f)) * (STATSPOSY - STATSPOS2Y) + STATSPOS2Y;
-                Text3D(text, 0.0f, y, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 191, 0);
-            } else if (Mission_Active(NULL) != NULL) {
-                status_y = NU_SIN_LUT(static_cast<i32>(statstime * 16384.0f)) * (STATSPOSY - STATSPOS2Y) + STATSPOS2Y;
-                i32 mission_index = static_cast<i8>(MissionSys->mission->count);
-                f32 remaining = static_cast<f32>(static_cast<u16>(MissionSys->missions[mission_index].time)) -
-                                MissionSys->timer.time_elapsed;
-                if (remaining < 0.0f)
-                    remaining = 0.0f;
-                Text_MakeTime(remaining, 0, 1, 1, text);
-                Text3D(text, 0.0f, status_y, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 191, 0);
-                if (!paused) {
-                    GameObject_s *target = Mission_FindTarget(MissionSys, NULL);
-                    if (target != NULL && player != NULL) {
-                        f32 alpha =
-                            0.8f + 0.2f * NU_SIN_LUT(static_cast<u16>(NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f) *
-                                                                      2.0f * 65536.0f));
-                        NUVEC target_point = v000;
-                        NUVEC *position = &target->apiobj.collision_position;
-                        bool hide_target = false;
-                        if (target->id == id_QUIGONJINN &&
-                            (player->field_0x661 == 10 || player->field_0x661 == 4 || player->field_0x661 == 11))
-                            hide_target = true;
-                        if (!hide_target) {
-                            if (target->id == id_MACEWINDU && player->field_0x661 != 1) {
-                                target_point.x = 64.7f;
-                                target_point.y = 0.9f;
-                                target_point.z = -3.7f;
-                                position = &target_point;
-                            } else if (target->id == id_C3PO && WORLD->current_level == CLOUDCITYESCAPEA_LDATA &&
-                                       player->field_0x661 != 12) {
-                                target_point.x = 7.9f;
-                                target_point.y = 0.8f;
-                                target_point.z = -33.9f;
-                                position = &target_point;
-                            }
-                            f32 distance = NuVecDistSqr(&player->apiobj.collision_position, position, NULL);
-                            if (player2 != NULL) {
-                                f32 distance2 = NuVecDistSqr(&player2->apiobj.collision_position, position, NULL);
-                                if (distance2 < distance)
-                                    distance = distance2;
-                            }
-                            distance = NuFsqrt(distance);
-                            if (distance > 10.0f)
-                                distance = 10.0f;
-                            alpha *= 1.0f - distance / 10.0f;
-                        } else
-                            alpha = 0.0f;
-                        DrawCharIcon(MissionSys->missions[static_cast<i8>(MissionSys->mission->count)].find_char, 0.0f,
-                                     0.055f - status_y, 0.0f, 0.25f, 0xa7, alpha, alpha, 1, NULL);
-                    }
-                }
-            }
-        }
-    }
-    if (FPSDISPLAY) {
-        sprintf(text, "fps: %d", static_cast<i32>(1.0f / FRAMETIME));
-        Text3D(text, 0.85f, -0.85f, 1.0f, 0.4f, 0.4f, 0.4f, 12, 255, 255, 255);
-    }
-    if (CUTSTOPGAME) {
-        CutScene_DrawSubtitles();
-        goto draw_panel_menu;
-    }
-    if (WORLD->current_level->draw_status_fn == NULL && !(WORLD->current_level->flags & LEVEL_GAMEPLAY))
-        goto draw_panel_menu;
-    for (i32 i = 0; i < 8; ++i) {
-        if (Player[i] != NULL && static_cast<i8>(Player[i]->apiobj.flags_low) < 0 && ShowPlayerCoordinate) {
-            sprintf(text, "X:%.2f Y:%.2f Z:%.2f", Player[i]->apiobj.position.x, Player[i]->apiobj.position.y,
-                    Player[i]->apiobj.position.z);
-            Text3DEx(text, coordinate_positions[i].x, coordinate_positions[i].y, 1.0f, 0.4f, 0.5f, 0.5f, 0, 255, 191, 0,
-                     48);
-        }
-    }
-    if (TimingBarSet == 2) {
-        sprintf(text, "Terrain %i", TERRAINCALLS);
-        Text3D(text, 0.9f, 0.075f, 1.0f, 0.3f, 0.3f, 0.3f, 8, 255, 255, 255);
-        sprintf(text, "Shadow %i", SHADOWCALLS);
-        Text3D(text, 0.9f, 0.0f, 1.0f, 0.3f, 0.3f, 0.3f, 8, 255, 255, 255);
-        sprintf(text, "RayCast %i", RAYCASTCALLS);
-        Text3D(text, 0.9f, -0.075f, 1.0f, 0.3f, 0.3f, 0.3f, 8, 255, 255, 255);
-    }
-    DebrisDraw(paused, 4);
-    if (removed_controller == -1 && WORLD->current_level->draw_status_fn != NULL)
-        WORLD->current_level->draw_status_fn(WORLD);
-    GizmoSysPanelDraw(WORLD->gizmo_sys, WORLD, FRAMETIME);
-    if (!paused) {
-        Hint_Draw(-1);
-        DrawGameMessages();
-    }
-draw_panel_menu:
-    if (removed_controller == -1 && !editor_active)
-        DrawMenu(paused);
-    if (drawautosaveicon && WORLD->lev_objs[0].active) {
-        f32 scale = AUTOSAVEICONSIZE *
-                    (0.9f + 0.1f * NU_SIN_LUT(static_cast<u16>(NuFmod(GlobalTimer.time_elapsed, 1.0f) * 65536.0f)));
-        DrawPanel3DObject(AUTOSAVEICONX, AUTOSAVEICONY, 1.0f, scale, scale, scale, 0, 0, 0, &WORLD->lev_objs[0].special,
-                          0, 1.0f);
-        if (memcard_autosavepredelay == 1.0f || memcard_saveneeded || memcard_loadneeded) {
-            VuVec position(AUTOSAVEICONX, AUTOSAVEICONY, 0.0f, 0.0f);
-            MechSystems::Get()->NewRadarPulse(position, true);
-        }
-    }
-    drawautosaveicon = 0;
-    if (GameCam != NULL)
-        pNuCam->mtx = GameCam->render_mtx;
-    NuCameraSet(pNuCam);
-}
-
-void DrawTimer(i32, i32, i32) {
-}
-
 void SwipeDecalRenderer::Process(float) {
+    STUBBED();
 }
 
 void SwipeDecalRenderer::Render() {
+    STUBBED();
 }
 
 SwipeDecalRenderer::SwipeDecalRenderer(TouchHolder &, i32, SwipeDecalRenderer::Style) {
+    STUBBED();
 }
 
 static __used__ void PauseRenderOff() {
+    STUBBED();
 }
 
 static __used__ i32 MatrixReflection_CanOverride() {
@@ -3664,6 +2495,7 @@ static __used__ i32 MatrixReflection_CanOverride() {
 }
 
 static __used__ void DrawStarFighter(starfighter_s *) {
+    STUBBED();
 }
 
 static void DrawWeapon_SetSabreObjects(GameObject_s *object, i32 red, i32 green, i32 blue, i32 purple, i32 *models,
@@ -3905,12 +2737,9 @@ static void DrawCharacterAttachments(GameObject_s *object, NUMTX *joint_matrices
 void CharScene_Draw(WORLDINFO_s *, i32, NUMTX *, NUMTX *);
 void CharMiniKit_Draw(i32, NUMTX *, i32, f32, f32);
 void Customiser_DrawAccessories(CUSTOMISER *, GameObject_s *, NUMTX *);
-void GizDrawBuildItPiece(GameObject_s *, i32);
 i32 Batarang_GetObjectFromCharID(i32);
-void SuperCarry_DrawObject(GameObject_s *);
 void Grapple_DrawLine(GameObject_s *);
 void Transform_DrawTarget(NUVEC *, f32, f32);
-u32 AdjustLayerBits(u32, GameObject_s *);
 extern i16 id_ANAKINJEDISCARRED, id_WEIRDO1, id_WEIRDO2, id_CATAPULT, id_CHEWBACCA, id_WOOKIEE, id_TWOFACE;
 extern i32 PickUpFlickerTest, PickUpFlickerFrames, PickupFlickerFrame;
 
@@ -4308,132 +3137,17 @@ static void DrawParaphernalia(GameObject_s *object) {
 }
 
 static __used__ void DrawFalconSpotLights(GameObject_s *) {
-}
-
-static __used__ double ApplyAntilights(rtl_s *, rtlidata_s *, float) {
-    return {};
+    STUBBED();
 }
 
 static __used__ void DisplayListMaterialClipUpdate(nudisplayscene_s *) {
-}
-
-static __used__ void PreWarmGeomsAndBakeVAOs(nudisplayscene_s *raw_scene, nunativegscene_s *) {
-    NUDLDLISTSCENE *scene = reinterpret_cast<NUDLDLISTSCENE *>(raw_scene);
-    for (i32 clip_index = 0; clip_index < scene->nclip_objects; ++clip_index) {
-        u8 *clip = reinterpret_cast<u8 *>(&scene->clip_objects[clip_index]);
-        u32 nitems = *reinterpret_cast<u32 *>(clip);
-        u32 *materials = *reinterpret_cast<u32 **>(clip + 4);
-        i32 *items = *reinterpret_cast<i32 **>(clip + 8);
-        for (u32 item_index = 0; item_index < nitems; ++item_index) {
-            NUDISPLAYLISTITEM *item = &scene->items[items[item_index]];
-            if (item->type == 0x8f) {
-                continue;
-            }
-            g_boundMaterial = scene->mtls[materials[item_index]];
-            g_LastMtl = g_boundMaterial;
-            u8 vertex_flags = reinterpret_cast<u8 *>(&g_boundMaterial->shader_desc.vtx_desc)[2];
-            if ((vertex_flags & 0x10) == 0) {
-                if ((vertex_flags & 0x20) == 0) {
-                    NuIOS_SetVertexFormat(reinterpret_cast<usize>(g_boundMaterial->vertex_decl));
-                } else {
-                    g_boundVertexFormat = reinterpret_cast<usize>(g_nuFaceOnVertexFormat);
-                }
-            } else {
-                g_boundVertexFormat = reinterpret_cast<usize>(g_nuDebrisVertexFormat);
-            }
-            NuIOSDLPreWarmGeomCallback(item->next);
-        }
-    }
-}
-
-extern "C" void NuGScnFixupPS(NUGSCN *scene) {
-    struct NativeScene {
-        u16 nvertex_buffers;
-        u16 pad_02;
-        usize *vertex_buffers;
-        u16 nindex_buffers;
-        u16 pad_0a;
-        usize *index_buffers;
-        NUDISPLAYLISTGEOM **geometries;
-        i32 ngeometries;
-        struct NativeVertexStream **vertex_streams;
-        i32 nvertex_streams;
-    };
-
-    struct NativeVertexStream {
-        u32 unknown_00;
-        u32 unknown_04;
-        usize vertex_buffer;
-    };
-
-    NativeScene *native_scene = reinterpret_cast<NativeScene *>(scene->field437_0x1d0);
-    i32 dynamic_indices[64];
-    i32 ndynamic = 0;
-    for (i32 i = 0; i < native_scene->ngeometries; ++i) {
-        NUDISPLAYLISTGEOM *geometry = native_scene->geometries[i];
-        i32 vertex_index = static_cast<i32>(geometry->index_buffer);
-        i32 index_index = static_cast<i32>(geometry->vertex_buffer);
-        geometry->index_buffer = static_cast<u32>(g_VideoResHeader.index_buffers[vertex_index]);
-        geometry->vertex_buffer = g_VideoResHeader.vertex_buffers[index_index];
-        if (geometry->vertex_buffer == 0) {
-            geometry->index_count = 0;
-            geometry->vertex_count = 0;
-        }
-        if (geometry->immediate != 0) {
-            BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nugscn_android.c", 0x25b);
-            NuIOSBindVAO(0);
-            glGenBuffers(1, reinterpret_cast<GLuint *>(&geometry->vertex_format));
-            glBindBuffer(GL_ARRAY_BUFFER, geometry->vertex_format);
-            glBufferData(GL_ARRAY_BUFFER, geometry->vertex_stride * geometry->vertex_count, NULL, GL_DYNAMIC_DRAW);
-            EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nugscn_android.c", 0x262);
-            if (bgProcIsBgThread()) {
-                NuIOS_YieldThread();
-            }
-            dynamic_indices[ndynamic++] = index_index;
-        } else {
-            geometry->vertex_format = 0;
-        }
-    }
-    if (scene != NULL && scene->display_list != NULL && scene->display_list->name != NULL &&
-        NuStrIStr(scene->display_list->name, "cloudcityescape_c") != NULL && native_scene != NULL &&
-        native_scene->ngeometries > 0 && native_scene->geometries[native_scene->ngeometries - 1] != NULL) {
-        NUDISPLAYLISTGEOM *geometry = native_scene->geometries[native_scene->ngeometries - 1];
-        geometry->index_count = 0;
-        geometry->vertex_count = 0;
-    }
-    for (i32 i = 0; i < ndynamic; ++i) {
-        g_VideoResHeader.vertex_buffers[dynamic_indices[i]] = 0;
-    }
-    for (i32 i = 0; i < native_scene->nvertex_streams; ++i) {
-        NativeVertexStream *stream = native_scene->vertex_streams[i];
-        i32 index = static_cast<i32>(stream->vertex_buffer);
-        stream->vertex_buffer = g_VideoResHeader.vertex_buffers[index];
-    }
-    native_scene->nvertex_buffers = g_VideoResHeader.nvertex_buffers;
-    native_scene->nindex_buffers = g_VideoResHeader.nindex_buffers;
-    memcpy(native_scene->vertex_buffers, g_VideoResHeader.vertex_buffers,
-           g_VideoResHeader.nvertex_buffers * sizeof(*native_scene->vertex_buffers));
-    memcpy(native_scene->index_buffers, g_VideoResHeader.index_buffers,
-           g_VideoResHeader.nindex_buffers * sizeof(*native_scene->index_buffers));
-
-    for (i32 i = 0; i < scene->nummtl; ++i) {
-        NuMtlUpdate(scene->mtls[i]);
-    }
-    NuPortalMaxDepth(scene, scene->max_portals);
-    NuThreadCriticalSectionBegin(g_vaoLifetimeMutex);
-    NuIOS_ResetVAODuplicateFinder();
-    PreWarmGeomsAndBakeVAOs(reinterpret_cast<nudisplayscene_s *>(scene->display_list), scene->field437_0x1d0);
-    NuThreadCriticalSectionEnd(g_vaoLifetimeMutex);
+    STUBBED();
 }
 
 #include "legoapi/legoapi_types.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/nu3d/nurndr.h"
 
-extern "C" {
-    void NuRndrGradClear(i32 a, i32 b, i32 c, f32 d);
-    void NuRndrClear(u32 flags, u32 colour, f32 alpha);
-}
 extern i32 qrand(void);
 
 static NUGSCN *s_backdrop_scene = nullptr;

@@ -4,15 +4,18 @@
 #include "decomp.h"
 #include "legoapi/world/level.h"
 #include "globals.h"
+#include "legoapi/menus/screens/gamestructure.h"
 #include "legoapi/ai/core/ai_sys_stubs.h"
 #include "legoapi/audio/sfx.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/cutscenes/cutscenes.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "legoapi/gizmo/object/gizmoblowups.h"
 #include "legoapi/characters/motion.h"
 #include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/menus/core/gamehint.h"
+#include "legoapi/menus/core/panel.h"
 #include "legoapi/menus/core/gamemessage.h"
 #include "legoapi/misc.h"
 #include "legoapi/render/fx.h"
@@ -238,12 +241,18 @@ static __used__ void PodRaceSnipersReset(void) {
 }
 
 // Stub for the original _ZL17CreatePodRaceMineP7nuvec_s (defined in this unit
-// at 0x1faed0). The tracked comparison copy currently lives in
-// legoapi/ai/game/misc_a_game.cpp; this one stays unused so the compiler drops
-// it exactly like today's build does.
+// at 0x1faed0). Its current tiny body is inlined into PodRaceAUpdate, so the
+// standalone LOCAL symbol remains an explicitly tracked implementation gap.
 static void *CreatePodRaceMine(nuvec_s *pos) {
+    STUBBED();
     (void)pos;
     return NULL;
+}
+
+void Mine_Kill(PART_s *part, i32 mode) {
+    STUBBED();
+    (void)part;
+    (void)mode;
 }
 
 // Original: _ZL22PodSprint_InitAISplineP11WORLDINFO_sP20PODSPRINT_AISPLINE_sPc
@@ -528,6 +537,7 @@ void RescueA_Init(WORLDINFO_s *world) {
 }
 
 void RescueB_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void RescueC_Init(WORLDINFO_s *world) {
@@ -799,6 +809,22 @@ void PodRaceADraw(WORLDINFO_s *world) {
     }
 }
 
+void Action_MushroomCollapse(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, float) {
+    STUBBED();
+}
+
+void PodSeekMushCutSound() {
+    STUBBED();
+}
+
+void PodSeekSubCutSound() {
+    STUBBED();
+}
+
+void PodSeekTuskanCutSound() {
+    STUBBED();
+}
+
 void PodRaceBUpdate(WORLDINFO_s *world) {
     if (Lap == 2) {
         GAMECAMERA_s *gamcam = GameCam;
@@ -904,6 +930,18 @@ void PodRaceCUpdate(WORLDINFO_s *world) {
         default:
             break;
     }
+}
+
+void Action_SetLapTime(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, float) {
+    STUBBED();
+}
+
+void Action_CreatePod(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, float) {
+    STUBBED();
+}
+
+void Action_Sebulba(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, float) {
+    STUBBED();
 }
 
 void PodRaceReset() {
@@ -1117,6 +1155,15 @@ float PodSprint_InStartCountdown(WORLDINFO_s *world) {
     if (world->current_level != PODSPRINTA_LDATA)
         return 0.0f;
     return podsprint.speed;
+}
+
+float PodSprint_RollMul(GameObject_s *object) {
+    i16 id = static_cast<i16>(object->id);
+    if (id == id_CLONEARC || id == id_IMPERIALSHUTTLE || id == id_NABOOSTARFIGHTER)
+        return 0.6f;
+    if (id == id_XWING || id == id_SNOWSPEEDER || id == id_MILLENNIUMFALCON || id == id_NEW_REPUBLIC_GUNSHIP)
+        return 0.8f;
+    return 1.0f;
 }
 
 void PodSprintA_Init(WORLDINFO_s *world) {
@@ -1454,6 +1501,10 @@ void PodSprint_GetIAlongVals(nugspline_s *spline, i16 *out1, i16 *out2) {
     }
 }
 
+void Action_NewSebulba(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, float) {
+    STUBBED();
+}
+
 // ===========================================================================
 // Retake the palace (D/E/G)
 // ===========================================================================
@@ -1586,6 +1637,7 @@ void RetakeG_Init(WORLDINFO_s *world) {
 }
 
 void RetakeG_Reset(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void RetakeG_Update(WORLDINFO_s *world) {
@@ -1663,6 +1715,7 @@ void MaulA_Reset(WORLDINFO_s *world) {
 }
 
 void MaulA_Update(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void MaulA_Panel(WORLDINFO_s *world) {
@@ -1687,15 +1740,19 @@ void MaulB_Init(WORLDINFO_s *world) {
 }
 
 void MaulD_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void MaulD_Update(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void MaulE_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void MaulE_Update(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void MaulF_Init(WORLDINFO_s *world) {
@@ -1711,6 +1768,7 @@ void MaulF_Reset(WORLDINFO_s *world) {
 }
 
 void MaulF_Update(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void MaulF_Panel(WORLDINFO_s *world) {
@@ -1741,6 +1799,7 @@ void AnakinsFlightB_Init(WORLDINFO_s *world) {
 }
 
 void AnakinsFlightB_Update(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void AnakinsFlightB_Draw(WORLDINFO_s *world) {

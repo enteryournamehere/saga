@@ -5,7 +5,10 @@
 #include "batman.h"
 #include "globals.h"
 #include "legogame/game.h"
+#include "legoapi/menus/screens/gamestructure.h"
+#include "legoapi/menus/core/panel.h"
 #include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/android/nutimebar_plain.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nuandroid/nuphoneos.h"
 #include "nu2api/nucore/nuapi.h"
@@ -21,14 +24,12 @@ extern "C" {
     nupad_s *Game_NuPad_Store[2];
 
     nupad_s **Game_NuPad;
-
-    void *NuTimeBarCreateSet(i32 slot_count);
 };
 
-void *app_tbgameset;
-void *app_tbplayerset;
-void *app_tbaiset;
-void *app_tbdrawset;
+i32 app_tbgameset;
+i32 app_tbplayerset;
+i32 app_tbaiset;
+i32 app_tbdrawset;
 
 static u8 s_SystemPausedTracks[2];
 

@@ -1,8 +1,11 @@
 #include "decomp.h"
+#include "legoapi/ai/game/creature.h"
 #include "gameapi/ai/aisys/aisys.h"
 #include "globals.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/items/collect/torpedo.h"
+#include "legoapi/gizmos/transport/gizportal.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/mission.h"
@@ -21,7 +24,6 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
-void FreeTorpedoPacket(TORPEDOPACKET_s **packet);
 void RemoveGameObject(GameObject_s *object, i32 immediate);
 
 void ClearAICreatures() {
@@ -30,6 +32,23 @@ void ClearAICreatures() {
         if ((object->apiobj.flags_low & 1) != 0 && (object->apiobj.field_0x1f4 & 0x400) != 0) {
             FreeTorpedoPacket(&object->torpedo);
             RemoveGameObject(object, 1);
+        }
+    }
+}
+
+void StoreProgressAICharacter(LEVEL_PROGRESS_s *progress) {
+    if (progress == NULL)
+        return;
+    progress->disabled_ai_object_mask[0] = 0;
+    progress->disabled_ai_object_mask[1] = 0;
+    GameObject_s *object = Obj;
+    i32 count = HIGHGAMEOBJECT;
+    for (i32 i = 0; i < count; ++i, ++object) {
+        if ((object->apiobj.flags_low & 1) != 0 && (object->apiobj.field_0x1f4 & 0x400) != 0 &&
+            object->ai.reset_mode == 4) {
+            u64 bit = (u64)1 << i;
+            progress->disabled_ai_object_mask[0] |= (u32)bit;
+            progress->disabled_ai_object_mask[1] |= (u32)(bit >> 32);
         }
     }
 }
@@ -60,8 +79,6 @@ void Player_ClearContext(GameObject_s *object, i32 context);
 void Player_ResetContexts(PLAYERPACKET_s *packet);
 void InitSurfaceInfo(GameObject_s *object);
 i32 SetObjOnSurface(GameObject_s *object, i32 mode);
-void PortalGameObject(GameObject_s *object, i32 enable, i32 immediate, i16 portal, nugscn_s *scene);
-
 enum AI_CREATURE_FLAGS : i32 {
     AI_CREATURE_FLAG_FORMATION_REVERSED = 0x01,
     AI_CREATURE_FLAG_SKIP_LOW_END = 0x20,
@@ -272,31 +289,6 @@ void ResetAICreature(GameObject_s *object, AISYS_s *system) {
     }
 }
 
-void SnapCreaturePos(GameObject_s *object, nuvec_s *position, i32 angle, AIPATHINFO_s *path_info, i32 set_on_surface) {
-    object->apiobj.position = *position;
-    object->apiobj.field_0x276 = angle;
-    object->apiobj.facing_angle = angle;
-    object->apiobj.movement_facing_angle = angle;
-    object->apiobj.initial_position = object->apiobj.position;
-    object->apiobj.collision_position = object->apiobj.position;
-    plr_lastpos = object->apiobj.position;
-    object->apiobj.start_position = object->apiobj.position;
-    object->apiobj.respawn_position = object->apiobj.position;
-    object->apiobj.last_safe_position = object->apiobj.position;
-    object->ai_update_position = object->apiobj.position;
-    object->reset_velocity = v000;
-    object->apiobj.velocity = v000;
-    InitSurfaceInfo(object);
-    if (set_on_surface != 0) {
-        SetObjOnSurface(object, 0);
-    }
-    if (path_info != NULL) {
-        object->ai.path_info = *path_info;
-    } else {
-        AISysGetCharacterPathPos(WORLD->ai_sys, &object->apiobj, &object->ai, 0xff, 1);
-    }
-}
-
 void ResetAICreatures(AISYS_s *system) {
     if (system == NULL || system->has_done_reset != 0) {
         return;
@@ -421,6 +413,7 @@ void SpawnCreatureFromCrate(GameObject_s *object, f32 height, f32 delay) {
 }
 
 void SpawnMeleeCreatureType(i32) {
+    STUBBED();
 }
 
 GameObject_s *alert_obj;

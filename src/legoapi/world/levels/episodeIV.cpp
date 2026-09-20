@@ -36,6 +36,7 @@ extern BLOCKADERUNNERD_LEVFLAG_s LevFlag;
 // ===========================================================================
 
 void BlockadeRunnerB_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void BlockadeRunnerC_Init(WORLDINFO_s *world) {
@@ -43,22 +44,15 @@ void BlockadeRunnerC_Init(WORLDINFO_s *world) {
 }
 
 void BlockadeRunnerB_Update(WORLDINFO_s *) {
+    STUBBED();
 }
 
-// hacks to get BlockadeRunnerD_Update to match
-// these should go away once BlockadeRunnerD_EjectCreature is implemented
-#if defined(__i386__)
-__attribute__((regparm(1)))
-#endif
-static __used__ __attribute__((noinline)) void BlockadeRunnerD_EjectCreature(int param) {
-#if defined(__i386__)
-    asm volatile("" : : "a"(param));
-#else
-    static_cast<void>(param);
-#endif
+static void BlockadeRunnerD_EjectCreature(int) {
+    STUBBED();
 }
 
-static __used__ void PartKill_EjectedCreature(PART_s *, i32) {
+static void PartKill_EjectedCreature(PART_s *, i32) {
+    STUBBED();
 }
 
 void BlockadeRunnerD_Update(WORLDINFO_s *world) {
@@ -116,9 +110,11 @@ void BlockadeRunnerD_Reset(WORLDINFO_s *world) {
 // ===========================================================================
 
 void TatooineA_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void TatooineB_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void TatooineC_Init(WORLDINFO_s *world) {
@@ -128,12 +124,15 @@ void TatooineC_Init(WORLDINFO_s *world) {
 }
 
 void TatooineD_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void TatooineA_Update(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void TatooineD_Update(WORLDINFO_s *) {
+    STUBBED();
 }
 
 // ===========================================================================
@@ -141,21 +140,27 @@ void TatooineD_Update(WORLDINFO_s *) {
 // ===========================================================================
 
 void MosEisleyA_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void MosEisleyB_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void MosEisleyD_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void MosEisleyE_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void MosEisleyB_Update(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void MosEisleyE_Update(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void MosEisleyE_Reset(WORLDINFO_s *) {
@@ -167,6 +172,7 @@ void MosEisleyD_AlwaysUpdate(WORLDINFO_s *world) {
 }
 
 void MosEisleyC_PastBarrier(GameObject_s *) {
+    STUBBED();
 }
 
 // ===========================================================================
@@ -174,18 +180,23 @@ void MosEisleyC_PastBarrier(GameObject_s *) {
 // ===========================================================================
 
 void DeathStarRescueB_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void DeathStarRescueC_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void DeathStarRescueB_Update(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void DeathStarRescueB_AlwaysUpdate(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void DeathStarRescueC_AlwaysUpdate(WORLDINFO_s *) {
+    STUBBED();
 }
 
 // ===========================================================================
@@ -193,32 +204,41 @@ void DeathStarRescueC_AlwaysUpdate(WORLDINFO_s *) {
 // ===========================================================================
 
 bool DeathStarShieldDown() {
+    STUBBED();
     // Shield-state behavior remains unreconstructed.
     return false;
 }
 
 void DeathStarEscapeA_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void DeathStarEscapeB_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void DeathStarEscapeB_Draw(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void DeathStarEscapeC_Init(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void DeathStarEscapeA_Update(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void DeathStarEscapeB_Update(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void DeathStarEscapeC_Update(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void DeathStarEscapeD_Update(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void DeathStarEscapeC_Reset(WORLDINFO_s *) {
@@ -226,9 +246,11 @@ void DeathStarEscapeC_Reset(WORLDINFO_s *) {
 }
 
 void DeathStarEscapeB_AlwaysUpdate(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void KillParts_TIEFIGHTER(ADDPART_s *, i32, i32, GameObject_s *, i32, u16, u16, nuvec_s *) {
+    STUBBED();
 }
 
 // ===========================================================================
@@ -241,9 +263,11 @@ void DeathStarBattleC_AlwaysUpdate(WORLDINFO_s *) {
 }
 
 void DeathStarBattleDDraw(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void DeathStarBattleDInit(WORLDINFO_s *) {
+    STUBBED();
 }
 
 void DeathStarBattleDReset(WORLDINFO_s *) {
@@ -251,4 +275,5 @@ void DeathStarBattleDReset(WORLDINFO_s *) {
 }
 
 void DeathStarBattleDUpdate(WORLDINFO_s *) {
+    STUBBED();
 }

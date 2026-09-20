@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "gameapi/edtools/edgra.h"
 #include "gameapi/edtools/edui.h"
 #include "nu2api/nucore/numemory.h"
@@ -6,8 +7,16 @@
 #include "gameapi/edtools/gameapi_edtools_types.h"
 #include "gameapi/edtools/edfile.h"
 #include "gameapi/edtools/edcam.h"
+#include "gameapi/edtools/edbri_internal.h"
+#include "gameapi/edtools/edrender.h"
+#include "gameapi/edtools/edgra_internal.h"
+#include "gameapi/edtools/edpp_internal.h"
 #include "gameapi/edtools/edstubs.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/render/core/terrain.h"
+#include "legoapi/render/fx.h"
+#include "legoapi/render/fx/game_deb.h"
+#include "legoapi/world/levels/levels.h"
 #include "nu2api/nucore/nutime.h"
 #include "nu2api/nucore/nuthread.h"
 #include "nu2api/nucore/nustring.h"
@@ -23,7 +32,6 @@
 #include <math.h>
 
 float edanimPlayerAnimDistance(i32 parameter_index);
-extern u8 object_switches[0x80];
 extern "C" i32 NuRndrDoingScreenGrab;
 static i32 edbits_cubecount;
 static i32 edgra_clumpthin = 1;
@@ -36,23 +44,286 @@ static i32 edui_font;
 static f32 edui_font_scale_x = 0.9f;
 static f32 edui_font_scale_y = 0.9f;
 static u32 edui_cursor_colour = 0xff000000;
+
+struct EDBITS_GAME_SOUND {
+    char name[16];
+    i32 id;
+};
+
+static void edgraInit();
+static void edgraClose();
+static void edgraEnter();
+static i32 edgraProc(f32 delta_time, nupad_s *pad);
+static void edgraRender();
+static void edppInit();
+static void edppClose();
+static void edppEnter();
+static void edppApply();
+static i32 edppProc(f32 delta_time, nupad_s *pad);
+static void edppRender();
+static void edbriInit();
+static void edbriClose();
+static void edbriEnter();
+static i32 edbriProc(f32 delta_time, nupad_s *pad);
+static void edbriRender();
+static void edanimInit();
+static void edanimClose();
+static void edanimEnter();
+static i32 edanimProc(f32 delta_time, nupad_s *pad);
+static void edanimRender();
+
 extern "C" {
     typedef void (*EDBITSPLAYSOUNDCALLBACK)(NUVEC *, i32);
     typedef i32 (*EDBITSREQUESTSOUNDCALLBACK)(char *);
 
+    // GCC 4.7 emits these file-scope objects in reverse declaration order, so
+    // each group below mirrors the original linked order in reverse.
     i32 bCameraEnabled = 1;
-    EDBITSPLAYSOUNDCALLBACK edbitsPlaySound;
-    EDBITSREQUESTSOUNDCALLBACK edbitsRequestSound;
+    ed_module_s edanimdesc = {NULL, NULL, "Animation Editor", edanimInit, edanimClose,  edanimEnter, NULL, NULL,
+                              NULL, NULL, 0x6d696e61,         edanimProc, edanimRender, NULL};
+    ed_module_s edbridesc = {NULL, NULL, "Bridge Editor", edbriInit, edbriClose,  edbriEnter, NULL, NULL,
+                             NULL, NULL, 0x64697262,      edbriProc, edbriRender, NULL};
+    ed_module_s edgradesc = {NULL, NULL, "Grass Editor", edgraInit,  edgraClose, edgraEnter,  NULL,
+                             NULL, NULL, NULL,           0x73617267, edgraProc,  edgraRender, NULL};
+    ed_module_s edptldesc = {NULL, NULL, "Particle Editor", edppInit, edppClose,  edppEnter, NULL, edppApply,
+                             NULL, NULL, 0x706c7470,        edppProc, edppRender, NULL};
+    i32 edpp_create_type = -1;
+    f32 edpp_copy_size = 0.2f;
+    f32 edpp_scale_factor = 1.0f;
+    i32 edptl_repeatboxxzlock = 1;
+    i32 edptl_clipboard_entry = -1;
+
     eduimenu_s *edui_messagemenu;
-    edgra_clump_s *GrassClumps;
-    i32 EDGRA_MAX_CLUMPS;
-    i32 EDGRA_MAX_UNITS_PER_INDIVIDUAL_CLUMP;
-    edgra_individual_s *IndGrassClumps;
-    void *edgra_free_vecbuffer;
+
+    eduimenu_s *edgra_active_menu;
+    eduimenu_s *edgra_options_menu;
+    eduimenu_s *edgra_instance_menu;
+    eduimenu_s *edgra_changeinstance_menu;
+    eduimenu_s *edgra_clumpproperties_menu;
+    eduimenu_s *edgra_clumpsizes_menu;
+    eduimenu_s *edgra_clumparea_menu;
+    eduimenu_s *edgra_clumpdist_menu;
+    eduimenu_s *edgra_clumpfade_menu;
+    eduimenu_s *edgra_clumpterrain_menu;
+    eduimenu_s *edgra_clumpmode_menu;
+    eduimenu_s *edgra_dpadmode_menu;
+    eduimenu_s *edgra_sscale_menu;
+    eduimenu_s *edgra_globals_menu;
+    i32 edgra_filter;
+    struct numtl_s *edgra_mtl;
+    f32 edgra_mtl_zoff;
+    NUVEC edgra_cam_pos;
+    f32 edgra_cam_dist;
+    i32 edgra_cam_ax;
+    i32 edgra_cam_ay;
+    f32 edgra_size;
+    i32 edgra_nearest;
+    i32 edgra_nearest_instance;
+    i32 edgra_instance_type;
+    i32 edgra_fadeunits_used;
     i32 edgra_clumps_used;
+    i32 edgra_fadeclumps_used;
+    i32 edgra_clump_size;
+    i32 edgra_pageid;
+    i32 edgra_rotz;
+    i32 edgra_roty;
+    i32 edgra_dpadmode;
+    i32 edgra_editormode;
+    void *edgra_free_vecbuffer;
+    NUMTX *edgra_mtxbuffer;
+    NUVEC *edgra_vecbuffer;
+    NUGSCN *edgra_page_scene[8];
+    void *edgra_page_terrain[8];
+    NUMTX *edgra_page_matrix_stack[8];
+    i32 EDGRA_MAX_CLUMPS;
+    i32 EDGRA_MAX_INDIVIDUAL_CLUMPS;
+    i32 EDGRA_MAX_UNITS_PER_INDIVIDUAL_CLUMP;
+    edgra_clump_s *GrassClumps;
+    edgra_individual_s *IndGrassClumps;
     i32 *IndGrassClumpsUsed;
     i32 edgra_ind_clumps_used;
+
+    i32 edpp_page_used[8];
+    i32 edpp_page_on[8];
+    usize edpp_page_scene[8];
+    i32 edpp_types_used;
+    i32 edpp_copy_source[8];
+    i32 edpp_usememcard;
+    edpp_particle_s edpp_ptls[512];
+    NUVEC edpp_cam_pos;
+    f32 edpp_cam_dist;
+    i32 edpp_cam_ax;
+    i32 edpp_cam_ay;
+    i32 edpp_first_time_this_level;
+    i32 edpp_numparticles;
+    NUMTL *edpp_mtl;
+    NUMTL *edpp_boxmtl;
+    i32 edpp_nearest;
+    edpp_particle_s *edpp_curr;
+    i32 edpp_snap_enabled;
+    u8 edpp_effect_list;
+    i32 edpp_instances_used;
+    i32 edpp_copy_mode;
+    i32 edpp_copy_enclosed;
+    i32 edpp_copy_source_count;
+    NUVEC edpp_copy_source_vec;
+    i32 edpp_num_orphans;
+    i32 edpp_showAllPlaced;
+    i32 edpp_dpad_mode;
+    eduiitem_s *edpp_readout;
+    eduimenu_s *edpp_active_menu;
+    eduimenu_s *ptltypemenu;
+    eduimenu_s *ptloptmenu;
+    eduimenu_s *ptlgsortmenu;
+    eduimenu_s *ptlgcodemenu;
+    eduimenu_s *ptlemitmenu;
+    eduimenu_s *ptlsizemenu;
+    eduimenu_s *ptlrotmenu;
+    eduimenu_s *ptljibmenu;
+    eduimenu_s *ptlcolmenu;
+    eduimenu_s *ptlemitvelmenu;
+    eduimenu_s *ptlgravmenu;
+    eduimenu_s *ptlvaremitmenu;
+    eduimenu_s *ptlvarstartmenu;
+    eduimenu_s *ptlstartvelmenu;
+    eduimenu_s *ptlcutoffmenu;
+    eduimenu_s *ptldatamenu;
+    eduimenu_s *ptlreadoutmenu;
+    eduimenu_s *memcardmenu;
+    eduimenu_s *messagemenu;
+    eduimenu_s *loadeffectsmenu;
+    eduimenu_s *mergeeffectsmenu;
+    eduimenu_s *deleteeffectsmenu;
+    eduimenu_s *filenamemenu;
+    eduimenu_s *namemenu;
+    eduimenu_s *confirmmenu;
+    eduimenu_s *changegenratemenu;
+    eduimenu_s *totalptlsmenu;
+    eduimenu_s *etimemenu;
+    eduimenu_s *emittimemenu;
+    eduimenu_s *sscalemenu;
+    eduimenu_s *texturemenu;
+    eduimenu_s *textureselectmenu;
+    eduimenu_s *collmenu;
+    eduimenu_s *effectlistmenu;
+    eduimenu_s *ptlclipmenu;
+    eduimenu_s *dpadmodemenu;
+    eduimenu_s *edptl_switch_menu;
+    eduimenu_s *edptl_switchtype_menu;
+    eduimenu_s *edptl_sounds_menu;
+    eduimenu_s *edptl_soundx_menu;
+    eduimenu_s *edptl_soundid_menu;
+    eduimenu_s *edptl_soundcontrol_menu;
+    eduimenu_s *edptl_bounce_menu;
+    eduimenu_s *edptl_group_menu;
+    eduimenu_s *edptl_ghost_menu;
+    eduimenu_s *edptl_star_menu;
+    eduimenu_s *edptl_page_menu;
+    eduimenu_s *edptl_drawflag_menu;
+    eduimenu_s *edptl_scaleeffect_menu;
+    eduimenu_s *edptl_orphanlist_menu;
+    eduimenu_s *edptl_instancesettings_menu;
+    eduimenu_s *edptl_torus_menu;
+    eduimenu_s *edptl_damage_menu;
+    eduimenu_s *edptl_damageflag_menu;
+    eduimenu_s *edptl_repeatbox_menu;
+    eduimenu_s *edptl_quickdel_menu;
+    eduimenu_s *edptl_detail_menu;
+    eduimenu_s *edptl_testdetail_menu;
+    i32 edpp_emitrotz;
+    i32 edpp_emitroty;
+    i32 edpp_emitrotx;
+    i32 edpp_rotz;
+    i32 edpp_roty;
+    i32 edpp_offset;
+    i32 edpp_refrotz;
+    i32 edpp_refroty;
+    i32 edpp_copyrotz;
+    i32 edpp_copyroty;
+    i32 edpp_facrotx;
+    i32 edpp_facroty;
+
     void edgraInitAllClumps(void);
+}
+
+static void edgraInit() {
+    STUBBED();
+}
+
+static void edgraClose() {
+    STUBBED();
+}
+
+static void edgraEnter() {
+    STUBBED();
+}
+
+static i32 edgraProc(f32, nupad_s *) {
+    STUBBED();
+    return 0;
+}
+
+static void edgraRender() {
+    STUBBED();
+}
+
+static void edppInit() {
+    STUBBED();
+}
+
+static void edppClose() {
+    STUBBED();
+}
+
+static void edppEnter() {
+    STUBBED();
+}
+
+static void edppApply() {
+    STUBBED();
+}
+
+static i32 edppProc(f32, nupad_s *) {
+    STUBBED();
+    return 0;
+}
+
+static void edppRender() {
+    STUBBED();
+}
+
+static void edbriInit() {
+    STUBBED();
+}
+
+static void edbriClose() {
+    STUBBED();
+}
+
+static i32 edbriProc(f32, nupad_s *) {
+    STUBBED();
+    return 0;
+}
+
+static void edbriRender() {
+    STUBBED();
+}
+
+static void edanimInit() {
+    STUBBED();
+}
+
+static void edanimClose() {
+    STUBBED();
+}
+
+static i32 edanimProc(f32, nupad_s *) {
+    STUBBED();
+    return 0;
+}
+
+static void edanimRender() {
+    STUBBED();
 }
 
 void edgraClumpReseed(i32 index) {
@@ -104,13 +375,6 @@ extern "C" {
     extern debinftype *effecttypes;
     extern debinftype **debtab;
     extern i32 EDPP_MAX_TYPES;
-    extern i32 edpp_types_used;
-    extern usize edpp_page_scene[8];
-    extern i32 edpp_page_used[8];
-    extern i32 edpp_page_on[8];
-    extern PartHeader **DmaDebTypes;
-    extern i32 freeDmaDebType;
-    i32 LookupDebrisEffect(char *name);
     i32 edbitsLookupSoundFX(char *name);
     void edbitsSoundPlay(NUVEC *position, i32 sound);
     void edanimSoundDestroy(i32 parameter_index, i32 sound_index);
@@ -120,7 +384,6 @@ extern "C" {
     extern i32 part_emits_used;
     extern NUGSCN *part_scene[32];
     extern i32 part_scene_pageid[32];
-    i32 FindPlatInst(i32);
     void PlatInstBounce(i32, f32, f32, f32);
     void CheckPartCount(void);
     void KillPartsByScene(NUGSCN *);
@@ -132,32 +395,114 @@ extern "C" {
     i32 part_page_used[8];
     i32 edpart_instances_used;
     edanim_param_s AnimParams[64];
-    i32 edbits_anim_page;
-    i32 edanim_particle_mode;
-    i32 edanim_sound_mode;
-    i32 edanim_next_param;
-    i32 edanim_params_used;
-    i32 edanim_page_on[8];
-    i32 edanim_page_used[8];
+    eduimenu_s *edanim_active_menu;
+    eduimenu_s *edanim_options_menu;
+    eduimenu_s *edanim_particle_menu;
+    eduimenu_s *edanim_particletype_menu;
+    eduimenu_s *edanim_localparticletype_menu;
+    eduimenu_s *edanim_localparticle_menu;
+    eduimenu_s *edanim_switch_menu;
+    eduimenu_s *edanim_switchtype_menu;
+    eduimenu_s *edanim_sound_menu;
+    eduimenu_s *edanim_soundtype_menu;
+    eduimenu_s *edanim_localsoundtype_menu;
+    eduimenu_s *edanim_localsound_menu;
+    eduimenu_s *edanim_bouncy_menu;
+    eduimenu_s *edanim_mctb_menu;
     NUGSCN *edanim_page_scene[8];
+    i32 edanim_page_used[8];
+    i32 edanim_page_on[8];
+    NUMTL *edanim_mtl;
+    f32 edanim_mtl_zoff;
+    NUVEC edanim_cam_pos;
+    f32 edanim_cam_dist;
+    i32 edanim_cam_ax;
+    i32 edanim_cam_ay;
     i32 edanim_nearest;
     i32 edanim_nearest_param_id;
     i32 edanim_nearest_particle;
     i32 edanim_nearest_sound;
+    i32 edanim_next_param;
+    i32 edanim_particle_mode;
     i32 edanim_particle_type;
+    i32 edanim_sound_mode;
     i32 edanim_sound_type;
+    i32 edanim_params_used;
+    i32 edanim_emitrotz;
+    i32 edanim_emitroty;
+}
+
+u8 object_switches[0x80];
+
+extern "C" {
+    u8 edbits_what_game;
+    char edbits_level_filename[256];
+    char edbits_general_save_directory[256];
+    char edbits_general_save_name[256];
+    char edbits_general_save_extension[256];
+    char edbits_level_save_directory[256];
+    char edbits_level_save_name[256];
+    char edbits_level_save_extension[256];
+    char edbits_datapath[256];
+    i32 edSfxAllCount;
     NUGSCN *edbits_base_scene;
-    edbridge_s edBridges[64];
+    NUGSCN *edbits_things_scene;
+    void *edbits_base_terrain;
+    i32 edbits_particle_general_page;
+    i32 edbits_anim_page;
+    i32 edbits_editmode;
+    i32 edbits_part_general_page;
+    NUCAMERA *cubemapcam;
+    i32 edbits_types_error;
+    i32 edbits_duplicates_error;
+    EDBITS_GAME_SOUND edbitsGameSound[320];
+    i32 edbits_numsounds;
+    EDBITSPLAYSOUNDCALLBACK edbitsPlaySound;
+    EDBITSREQUESTSOUNDCALLBACK edbitsRequestSound;
+    i32 edbits_override_backups;
+    eduimenu_s *edbri_active_menu;
+    eduimenu_s *edbri_options_menu;
+    eduimenu_s *edbri_dpadmode_menu;
+    eduimenu_s *edbri_plankinstance_menu;
+    eduimenu_s *edbri_postinstance_menu;
+    eduimenu_s *edbri_plankcount_menu;
+    eduimenu_s *edbri_bridgeproperties_menu;
+    eduimenu_s *edbri_ropecolour_menu;
+    NUMTL *edbri_mtl;
+    f32 edbri_mtl_zoff;
+    NUVEC edbri_cam_pos;
+    f32 edbri_cam_dist;
+    i32 edbri_cam_ax;
+    i32 edbri_cam_ay;
+    i32 edbri_nearest;
+    i32 edbri_plank_instance_type;
+    i32 edbri_post_instance_type;
     i32 edbri_bridges_used;
-    i32 edbri_page_on[8];
-    NUGSCN *edbri_page_scene[8];
     i32 edbri_page_used[8];
-    i32 edbri_rotz, edbri_roty, edbri_pageid;
-    i32 edbri_plank_instance_type, edbri_post_instance_type;
+    i32 edbri_page_on[8];
+    i32 edbri_pageid;
+    i32 edbri_rotz;
+    i32 edbri_roty;
+    i32 edbri_mode;
+    NUGSCN *edbri_page_scene[8];
+    edbridge_s edBridges[64];
     f32 edbri_length = 1.0f;
     f32 edbri_width = 0.5f;
     i32 edbri_planks = 11;
     i32 edbri_post_interval = 5;
+}
+
+static void edbriEnter() {
+    edbri_nearest = -1;
+}
+
+static void edanimEnter() {
+    edanim_nearest = -1;
+    edanim_nearest_param_id = -1;
+    edanim_nearest_particle = -1;
+    edanim_particle_mode = 0;
+    edanim_particle_type = -1;
+    edanim_sound_type = -1;
 }
 
 void FileLoadSingleEffectType(debinftype *, i32, char);
@@ -244,12 +589,9 @@ void edanimDetermineNearestAnim(f32);
 void edppDetermineNearest(float);
 void edppPtlDestroy(i32);
 extern "C" {
-    extern edpp_particle_s edpp_ptls[512];
-    extern i32 edpp_nearest;
     extern debkeydatatype_s *debkeydata;
     extern i32 maxdebkeys;
     void DebFreeOrphansInstantly(debinftype *);
-    i32 LookupDebrisEffectPageIgnore(char *, i32, i32);
     void DebFreeInstantly(i32 *);
 }
 
@@ -325,10 +667,13 @@ extern "C" {
         return ed_main_menu;
     }
     void edGraDisableTerrainSwap(void) {
+        STUBBED();
     }
     void edGraEnableTerrainSwap(void) {
+        STUBBED();
     }
     void edGraInitTerrainSwapProtection(void) {
+        STUBBED();
     }
     i32 edanimLoadPage(char *path, NUGSCN *scene) {
         i32 page;
@@ -490,6 +835,7 @@ extern "C" {
         --parameters[parameter_index].effect_count;
     }
     void edanimRegisterCubeDumpInfo(void) {
+        STUBBED();
     }
     void edanimStartPage(i32 page) {
         if (edanim_page_used[page] != 0 && edanim_page_scene[page] != NULL && edanim_page_on[page] == 0)
@@ -638,14 +984,12 @@ extern "C" {
         }
         localframecount += static_cast<i32>(elapsed);
     }
-    void edbitsDrawCube(f32, f32, f32, f32, f32, f32, i32, i32, i32, i32, i32, i32, numtl_s *);
     void edbitsDrawBBox(NUVEC *minimum, NUVEC *maximum, i32 colour, numtl_s *material) {
         edbitsDrawCube((minimum->x + maximum->x) * 0.5f, (minimum->y + maximum->y) * 0.5f,
                        (minimum->z + maximum->z) * 0.5f, (maximum->x - minimum->x) * 0.5f,
                        (maximum->y - minimum->y) * 0.5f, (maximum->z - minimum->z) * 0.5f, 0, 0, 0, 0, 0, colour,
                        material);
     }
-    void edbitsDrawOvalTilted(NUVEC *, f32, f32, i32, i32, i32, i32);
     void edbitsDrawOvalXY(NUVEC *, f32, f32, i32, i32);
     void edbitsDrawCircleTilted(NUVEC *centre, f32 radius, i32 colour, i32 unused, i32 rotation_z, i32 rotation_y) {
         edbitsDrawOvalTilted(centre, radius, radius, colour, unused, rotation_z, rotation_y);
@@ -666,6 +1010,7 @@ extern "C" {
         edbitsDrawCircleTilted(centre, radius, colour, unused, 0x4000, 0x6000);
     }
     char *edbitsGetSoundName(i32) {
+        STUBBED();
         return NULL;
     }
     i32 edbitsLookupInstance(char *name, NUGSCN *scene) {
@@ -680,13 +1025,6 @@ extern "C" {
         }
         return -1;
     }
-    struct EDBITS_GAME_SOUND {
-        char name[16];
-        i32 id;
-    };
-    i32 edbits_numsounds;
-    EDBITS_GAME_SOUND edbitsGameSound[320];
-
     i32 edbitsLookupSound(char *name) {
         for (i32 index = 0; index < edbits_numsounds; ++index) {
             if (NuStrNICmp(edbitsGameSound[index].name, name, 15) == 0) {
@@ -696,9 +1034,9 @@ extern "C" {
         return -1;
     }
     i32 edbitsLookupSoundFX(char *) {
+        STUBBED();
         return -1;
     }
-    NUCAMERA *cubemapcam;
     i32 edbitsProcessCubemapDump(void) {
         if (edbits_cubecount == 0)
             return 0;
@@ -758,11 +1096,6 @@ extern "C" {
         }
         return --edbits_cubecount;
     }
-    char edbits_datapath[256];
-    char edbits_level_filename[256];
-    u8 edbits_what_game;
-    NUGSCN *edbits_things_scene;
-
     void edbitsRegisterDataPath(char *path) {
         if (path) {
             NuStrCpy(edbits_datapath, path);
@@ -770,7 +1103,6 @@ extern "C" {
             edbits_datapath[0] = '\0';
         }
     }
-    i32 edbits_editmode;
     static i32 edbits_local_editor_enabled;
     i32 *edbits_editor_enabled = &edbits_local_editor_enabled;
 
@@ -794,13 +1126,6 @@ extern "C" {
     void edbitsRegisterRequestSound(EDBITSREQUESTSOUNDCALLBACK callback) {
         edbitsRequestSound = callback;
     }
-    char edbits_general_save_directory[256];
-    char edbits_general_save_name[256];
-    char edbits_general_save_extension[256];
-    char edbits_level_save_directory[256];
-    char edbits_level_save_name[256];
-    char edbits_level_save_extension[256];
-
     void edbitsRegisterSaveFormat(char *general_save_directory, char *general_save_name, char *general_save_extension,
                                   char *level_save_directory, char *level_save_name, char *level_save_extension) {
         if (general_save_directory) {
@@ -846,7 +1171,6 @@ extern "C" {
         edbits_things_scene = scene;
     }
     void edbitsRegisterBaseTerrain(void *terrain) {
-        extern void *edbits_base_terrain;
         edbits_base_terrain = terrain;
     }
     i32 edbitsSfxVol = 100;
@@ -1030,11 +1354,15 @@ extern "C" {
             count += GrassClumps[i].element_count;
         return count * 0x4c + 0x10;
     }
-    extern i32 edgra_page_used[8];
-    extern NUGSCN *edgra_page_scene[8];
-    extern i32 edgra_page_vectors_valid[8];
-    extern i32 edgra_page_calculate_done[8];
-    NUMTX *edgra_page_matrix_stack[8];
+    i32 edgraLoadPage(char *path, void *gscn, i32 terrain, void *buf, void *buf_end) {
+        STUBBED();
+        (void)path;
+        (void)gscn;
+        (void)terrain;
+        (void)buf;
+        (void)buf_end;
+        return -1;
+    }
     void edgraClearPage(i8 page) {
         edgraStopPage(page);
         for (i32 i = 0; i < EDGRA_MAX_CLUMPS; ++i) {
@@ -1054,8 +1382,6 @@ extern "C" {
         edgra_page_vectors_valid[page] = 0;
         edgra_page_calculate_done[page] = 0;
     }
-    i32 EDGRA_MAX_INDIVIDUAL_CLUMPS;
-    extern i32 edgra_page_on[8];
     void edgraClumpsReset(void) {
         for (i32 i = 0; i < EDGRA_MAX_CLUMPS; ++i)
             GrassClumps[i].element_count = 0;
@@ -1154,10 +1480,13 @@ extern "C" {
     void *ed_fnt;
 
     void edmainInit(void) {
+        STUBBED();
     }
     void edmainInitEx(void) {
+        STUBBED();
     }
     void edmainProcess(void) {
+        STUBBED();
     }
     NUVEC *edmainQueryLocVec(void) {
         return ed_loc;
@@ -1176,6 +1505,7 @@ extern "C" {
         ed_loc = position;
     }
     void edmainRender(void) {
+        STUBBED();
     }
     void edmainSetCamera(NUMTX *matrix) {
         edmaincam->mtx = *matrix;
@@ -1185,6 +1515,7 @@ extern "C" {
         edmain_cursor_enabled = enabled;
     }
     void edmainSetMainMenuScale(void) {
+        STUBBED();
     }
     void edmainSetReturn(i32 result) {
         editor_return = result;
@@ -1219,6 +1550,7 @@ extern "C" {
         part_page_used[page] = 0;
     }
     void edpartDestroyAllParticles(void) {
+        STUBBED();
     }
     void edpartParticleReset(void) {
         part_emit_s *emit = part_emits;
@@ -1292,14 +1624,19 @@ extern "C" {
         edppDetermineNearest(1.0f);
     }
     void edppDestroyAllEffects(void) {
+        STUBBED();
     }
     void edppDestroyAllParticles(void) {
+        STUBBED();
     }
     void edppDrawSpheres(void) {
+        STUBBED();
     }
     void edppDrawTorus(void) {
+        STUBBED();
     }
     void edppFindAllSounds(void) {
+        STUBBED();
     }
     // Parts-page loader (edppLoadPage @0x36c630).  The normal general (0) and
     // character (5) pages only contain effect-type records; instance records
@@ -1379,28 +1716,25 @@ extern "C" {
         edmainRegisterLocVec(position);
     }
     void edppRestartAllEffectsInLevel(void) {
+        STUBBED();
     }
     void edppSetSaveName(void) {
+        STUBBED();
     }
     void edppStopPage(i32) {
+        STUBBED();
     }
     void edqrand(void) {
-    }
-    void edrtlCalculateBurnout(void) {
-    }
-    void edrtlCalculateBurnoutEx(void) {
-    }
-    void edrtlDrawLight(void) {
-    }
-    void edrtlDrawLightEx(void) {
-    }
-    void edrtlGetFogSet(void) {
+        STUBBED();
     }
     void eduiAddPropTextPickEnt(void) {
+        STUBBED();
     }
     void eduiAddTextPickEnt(void) {
+        STUBBED();
     }
     void eduiAddTextPickEntEx(void) {
+        STUBBED();
     }
     i32 eduiClearActiveMenu(void) {
         eduiSetActiveMenu(NULL);
@@ -1419,12 +1753,35 @@ extern "C" {
         return result;
     }
     void eduiCreate3LineMessageMenu(void) {
+        STUBBED();
     }
     void eduiCreateMessageMenu(void) {
+        STUBBED();
     }
     i32 eduiCursorOverMenu(eduimenu_s *menu) {
         return edui_cursor_x >= menu->x && edui_cursor_y >= menu->y && edui_cursor_x < menu->x + menu->width &&
                edui_cursor_y < menu->y + menu->height;
+    }
+    void cbInteractMenuTitle(void) {
+        STUBBED();
+    }
+    i32 cbInteractMenuScrollUp(edui_interact_s *interact) {
+        eduimenu_s *menu = interact->menu;
+        if (menu->field_0c) {
+            if (menu->field_0c->previous)
+                menu->field_0c = menu->field_0c->previous;
+            menu->selected = menu->field_0c;
+        }
+        return 0;
+    }
+    i32 cbInteractMenuScrollDown(edui_interact_s *interact) {
+        eduimenu_s *menu = interact->menu;
+        if (menu->field_10) {
+            if (menu->field_10->next)
+                menu->field_10 = menu->field_10->next;
+            menu->selected = menu->field_10;
+        }
+        return 0;
     }
     void cbInteractMenuScrollTo(eduimenu_s *menu, char *text) {
         if (!text || !menu || !text[0])
@@ -1458,6 +1815,7 @@ extern "C" {
         return eduiGetTopLevelParent(active_menu);
     }
     void eduiGetAnalougePadValue(void) {
+        STUBBED();
     }
     i32 eduiGetCameraEnabled(void) {
         return bCameraEnabled;
@@ -1481,68 +1839,101 @@ extern "C" {
         return bUsingMenuFocus;
     }
     void eduiGradPickRead(void) {
+        STUBBED();
     }
     void eduiGradStageAdd(void) {
+        STUBBED();
     }
     void eduiGradStageAddRGB(void) {
+        STUBBED();
     }
     void eduiGradStageDelete(void) {
+        STUBBED();
     }
     void eduiGradStageSetHSV(void) {
+        STUBBED();
     }
     void eduiGradStageSetRGB(void) {
+        STUBBED();
     }
     void eduiIitemExpanderSetDepth(void) {
+        STUBBED();
     }
     void eduiInit(void) {
+        STUBBED();
     }
     void eduiInitMaterials(void) {
+        STUBBED();
     }
-    void eduiItemCheckCreate(void) {
+    eduiitem_s *eduiItemCheckCreate(usize, const void *, i32, i32, EdUiItemCallback, char *) {
+        STUBBED();
+        return NULL;
     }
     void eduiItemColourPickCreate(void) {
+        STUBBED();
     }
     void eduiItemColourPickSetHSV(void) {
+        STUBBED();
     }
     void eduiItemColourPickSetRGB(void) {
+        STUBBED();
     }
     void eduiItemColourSliderCreate(void) {
+        STUBBED();
     }
     void eduiItemDataGradPickCreate(void) {
+        STUBBED();
     }
     void eduiItemExpanderAddChild(void) {
+        STUBBED();
     }
     void eduiItemExpanderCreate(void) {
+        STUBBED();
     }
     void eduiItemFilePickCreate(void) {
+        STUBBED();
     }
     void eduiItemFilePickSetFmt(void) {
+        STUBBED();
     }
     void eduiItemFilterAddItem(void) {
+        STUBBED();
     }
     void eduiItemFilterCreate(void) {
+        STUBBED();
     }
     void eduiItemFilterRemoveItem(void) {
+        STUBBED();
     }
     void eduiItemGradPickCreate(void) {
+        STUBBED();
     }
     void eduiItemGraphAddOnionSkin(void) {
+        STUBBED();
     }
     void eduiItemGraphCreate(void) {
+        STUBBED();
     }
     void eduiItemGraphSetCursor(void) {
+        STUBBED();
     }
     void eduiItemGraphSetLabels(void) {
+        STUBBED();
     }
     void eduiItemGreyGradPickCreate(void) {
+        STUBBED();
     }
     void eduiItemGreyPickCreate(void) {
+        STUBBED();
     }
     void eduiItemNumberCreate(void) {
+        STUBBED();
     }
     void eduiItemPropCreate(void) {
+        STUBBED();
     }
     void eduiItemPropCreateEx(void) {
+        STUBBED();
     }
     i32 eduiItemPropSetText(edui_prop_s *item, char *text) {
         if (item->property_text && NuStrLen(item->property_text) < NuStrLen(text)) {
@@ -1560,12 +1951,17 @@ extern "C" {
         return 0;
     }
     void eduiItemRender(void) {
+        STUBBED();
     }
-    void eduiItemSelCreate(void) {
+    eduiitem_s *eduiItemSelCreate(usize, const void *, i32, i32, EdUiItemCallback, char *) {
+        STUBBED();
+        return NULL;
     }
     void eduiItemSelWithClipColourCreate(void) {
+        STUBBED();
     }
     void eduiItemSeparatorCreate(void) {
+        STUBBED();
     }
     i32 eduiItemSetText(eduiitem_s *item, char *text) {
         if (item->text && NuStrLen(item->text) < NuStrLen(text)) {
@@ -1582,9 +1978,13 @@ extern "C" {
         }
         return 0;
     }
-    void eduiItemSliderCreate(void) {
+    eduiitem_s *eduiItemSliderCreate(usize, const void *, i32, EdUiItemCallback, f32, f32, f32, char *) {
+        STUBBED();
+        return NULL;
     }
-    void eduiItemSliderCreateInt(void) {
+    eduiitem_s *eduiItemSliderCreateInt(usize, const void *, i32, EdUiItemCallback, i32, i32, i32, char *) {
+        STUBBED();
+        return NULL;
     }
     void eduiItemSliderSetFmt(edui_slider_s *item, char *format) {
         if (!item->format) {
@@ -1611,15 +2011,22 @@ extern "C" {
         if (notify && item->changed)
             item->changed(NULL, item, 0);
     }
-    void eduiItemTextPickCreate(void) {
+    eduiitem_s *eduiItemTextPickCreate(usize, const void *, EdUiItemCallback, char *) {
+        STUBBED();
+        return NULL;
     }
     void eduiItemTextPickSetFmt(void) {
+        STUBBED();
     }
     void eduiItemTextSelectorCreate(void) {
+        STUBBED();
     }
     void eduiItemTexturePickCreate(void) {
+        STUBBED();
     }
-    void eduiItemToggleCreate(void) {
+    eduiitem_s *eduiItemToggleCreate(usize, const void *, i32, i32, EdUiItemCallback, char *) {
+        STUBBED();
+        return NULL;
     }
     eduiitem_s *edui_last_item;
     eduiitem_s *eduiMenuAddItem(eduimenu_s *menu, eduiitem_s *item) {
@@ -1763,8 +2170,10 @@ extern "C" {
             menu->selected = menu->first;
     }
     void eduiMenuFitOnScreen(void) {
+        STUBBED();
     }
-    void eduiMenuFitWidth(void) {
+    void eduiMenuFitWidth(eduimenu_s *, i32) {
+        STUBBED();
     }
     void eduiMenuHighlight(eduimenu_s *menu, eduiitem_s *item) {
         if (item->selection_group) {
@@ -1856,6 +2265,7 @@ extern "C" {
         return eduiProcessInteracts(menu, pad);
     }
     void eduiMenuProcessInput(eduimenu_s *menu, f32 delta_time, nupad_s *pad, i32 item_result) {
+        STUBBED();
     }
     i32 eduiMenuProcessSelectedItem(eduimenu_s *menu, f32 delta_time, nupad_s *pad) {
         if (menu && menu->selected && !(menu->selected->flags & EDUI_ITEM_DISABLED) && menu->selected->process)
@@ -1879,17 +2289,22 @@ extern "C" {
         item->previous = NULL;
     }
     void eduiMenuRender(void) {
+        STUBBED();
     }
     void eduiMenuSelectFirstEntry(eduimenu_s *menu) {
         menu->selected = NULL;
     }
     void eduiMenuSetAttr(void) {
+        STUBBED();
     }
     void eduiMenuSetDisabled(void) {
+        STUBBED();
     }
     void eduiMenuSetTransparency(void) {
+        STUBBED();
     }
     void eduiMenuSortItemsByTxt(void) {
+        STUBBED();
     }
     void eduiProcessCursor(f32 delta_time, nupad_s *pad) {
         eduiProcessCursorDefault(delta_time, pad);
@@ -1957,8 +2372,10 @@ extern "C" {
         return result;
     }
     void eduiRenderCursor(void) {
+        STUBBED();
     }
     void eduiRenderInteracts(void) {
+        STUBBED();
     }
     void eduiSetActiveMenu(eduimenu_s *menu) {
         if (eduiGetUsingMenuFocus()) {
@@ -1996,8 +2413,10 @@ extern "C" {
         edui_font_scale_y = y;
     }
     void eduiSetGlobalSliderAccel(void) {
+        STUBBED();
     }
     void eduiSetRenderPlane(void) {
+        STUBBED();
     }
     void eduiSetUsingMenuFocus(i32 enabled) {
         bUsingMenuFocus = enabled;
@@ -2054,5 +2473,167 @@ extern "C" {
         }
         NU_FREE(prop);
         menu->field_0c = menu->first;
+    }
+
+    // The editor UI callbacks share this translation unit with their cursor,
+    // menu, and interaction state in the original binary.
+    static __used__ void cbMMRegSel(void *, void *) {
+        STUBBED();
+    }
+    static __used__ void cbMMEditorConfig(void *) {
+        STUBBED();
+    }
+
+    static __used__ void eduiRenderGraphLine(void) {
+        STUBBED();
+    }
+
+    static __used__ void eduicbDestroyDirectoryList(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbInteractColourPick(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbInteractExpander(void) {
+        STUBBED();
+    }
+    static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact) {
+        STUBBED();
+        return 0;
+    }
+    static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact) {
+        return eduicbInteractProp(interact);
+    }
+    static __used__ void eduicbInteractSel(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbItemDestroyExpander(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbItemDestroyFilter(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbItemFilePickDestroy(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbItemGradPickDestroy(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbItemSliderDestroy(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbItemTextPickDestroy(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbPickCFGCancel(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbProcessColourPick(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbProcessColourSlider(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbProcessExpander(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbProcessFilePick(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbProcessFilter(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbProcessGradPick(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbProcessGraph(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbProcessGreyPick(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbProcessProp(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbProcessSel(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbProcessSeparator(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbProcessSlider(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbProcessTextPick(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbProcessTexturePick(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbRenderCheck(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbRenderColourPick(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbRenderColourSlider(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbRenderExpander(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbRenderFilePick(void) {
+        STUBBED();
+    }
+    static __used__ i32 eduicbRenderGradPick(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y,
+                                             i32 scale) {
+        STUBBED();
+        return 0;
+    }
+    static __used__ void eduicbRenderGraph(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbRenderGreyPick(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbRenderNumber(void) {
+        STUBBED();
+    }
+    static __used__ i32 eduicbRenderProp(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale) {
+        STUBBED();
+        return 0;
+    }
+    static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale) {
+        return eduicbRenderProp(menu, item, x, y, scale);
+    }
+    static __used__ void eduicbRenderSel(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbRenderSelWithClipColour(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbRenderSeparator(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbRenderSlider(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbRenderSliderInt(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbRenderTextPick(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbRenderTextSelector(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbRenderTexturePick(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbSelectDirectoryEntry(void) {
+        STUBBED();
+    }
+    static __used__ void eduicbSelectDirectoryExit(void) {
+        STUBBED();
     }
 }

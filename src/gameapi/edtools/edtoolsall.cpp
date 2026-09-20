@@ -51,6 +51,8 @@ void SerialiseNuVec(EdStream &, void *, i32);
 void SerialiseNuMtx(EdStream &, void *, i32);
 
 f32 EdManipulator::Scale = 2.0f;
+EdManipulator theDefaultManipulator;
+DECOMP_ASSERT(sizeof(EdManipulator) == 0x6c, "EdManipulator ABI");
 SplineHelper theSplineHelper;
 KnotHelper theKnotHelper;
 extern ClassEditor theClassEditor;

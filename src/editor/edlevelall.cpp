@@ -40,6 +40,8 @@ DECOMP_ASSERT(offsetof(EdMember, reference) == 0x04, "EdMember reference offset"
 extern EdRegistry theRegistry;
 extern ClassEditor theClassEditor;
 extern LevelEditor theLevelEditor;
+ClassEditor theClassEditor;
+extern EdManipulator theDefaultManipulator;
 extern MemoryManager theMemoryManager;
 extern eduimenu_s *edLevelNextMenu;
 void eduiSetPinnedMenu(eduimenu_s *);
@@ -106,7 +108,23 @@ void CursorTool::Render() {
 }
 
 ClassEditor::ClassEditor() {
-    STUBBED();
+    next = NULL;
+    previous = NULL;
+    first_tool = NULL;
+    last_tool = NULL;
+    tool_count = 0;
+    selected_objects.first = NULL;
+    selected_objects.last = NULL;
+    selected_objects.count = 0;
+    current_object.ed_class = NULL;
+    current_object.object = NULL;
+    current_object.reference = NULL;
+    pending_object.ed_class = NULL;
+    pending_object.object = NULL;
+    pending_object.reference = NULL;
+    snap_distance = 10.0f;
+    manipulator = &theDefaultManipulator;
+    class_filter = -1;
 }
 
 void ClassEditor::AddMenuItems(eduimenu_s *) {

@@ -429,6 +429,7 @@ struct EdManScale {
     void Render(ClassObjectList &);
 };
 struct EdManipulator {
+    u8 reserved[0x6c];
     static f32 Scale;
 
     void DrawAxis(VuVec &, VuMtx *);

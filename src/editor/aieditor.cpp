@@ -11,6 +11,10 @@
 
 #include <string.h>
 
+extern "C" {
+    i32 aidata_version = 20;
+}
+
 extern "C" void aieditor_ClearMainMenu(void);
 extern "C" void aieditor_SetMode(i32 mode);
 extern "C" void AISYSRebuildFromEditorData(void);

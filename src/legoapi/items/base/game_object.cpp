@@ -71,7 +71,7 @@ f32 trench_roll_f = 5000.0f;
 f32 trench_seek_z = 0.5f;
 f32 trench_seek_y = 0.5f;
 f32 trench_seek_x = 4.0f;
-f32 TURNTIME = 1.0f;
+extern f32 TURNTIME;
 f32 LOOPTIME = 1.5f;
 
 struct TROOPERCANNON_s {

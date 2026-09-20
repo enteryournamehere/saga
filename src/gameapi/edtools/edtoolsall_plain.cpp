@@ -374,7 +374,7 @@ extern "C" {
     i32 edpp_emitrotx;
     i32 edpp_rotz;
     i32 edpp_roty;
-    i32 edpp_offset;
+    f32 edpp_offset;
     i32 edpp_refrotz;
     i32 edpp_refroty;
     i32 edpp_copyrotz;
@@ -1168,24 +1168,24 @@ extern "C" {
                        (maximum->y - minimum->y) * 0.5f, (maximum->z - minimum->z) * 0.5f, 0, 0, 0, 0, 0, colour,
                        material);
     }
-    void edbitsDrawOvalXY(NUVEC *, f32, f32, i32, i32);
-    void edbitsDrawCircleTilted(NUVEC *centre, f32 radius, i32 colour, i32 unused, i32 rotation_z, i32 rotation_y) {
-        edbitsDrawOvalTilted(centre, radius, radius, colour, unused, rotation_z, rotation_y);
+    void edbitsDrawOvalXY(NUVEC *, f32, f32, i32, NUMTL *);
+    void edbitsDrawCircleTilted(NUVEC *centre, f32 radius, i32 colour, NUMTL *material, i32 rotation_z, i32 rotation_y) {
+        edbitsDrawOvalTilted(centre, radius, radius, colour, material, rotation_z, rotation_y);
     }
-    void edbitsDrawCircleXY(NUVEC *centre, f32 radius, i32 colour, i32 unused) {
-        edbitsDrawOvalXY(centre, radius, radius, colour, unused);
+    void edbitsDrawCircleXY(NUVEC *centre, f32 radius, i32 colour, NUMTL *material) {
+        edbitsDrawOvalXY(centre, radius, radius, colour, material);
     }
-    void edbitsDrawOvalXY(NUVEC *centre, f32 radius_x, f32 radius_z, i32 colour, i32 unused) {
-        edbitsDrawOvalTilted(centre, radius_x, radius_z, colour, unused, 0, 0);
+    void edbitsDrawOvalXY(NUVEC *centre, f32 radius_x, f32 radius_z, i32 colour, NUMTL *material) {
+        edbitsDrawOvalTilted(centre, radius_x, radius_z, colour, material, 0, 0);
     }
-    void edbitsDrawSphere(NUVEC *centre, f32 radius, i32 colour, i32 unused) {
-        edbitsDrawCircleXY(centre, radius, colour, unused);
-        edbitsDrawCircleTilted(centre, radius, colour, unused, 0x2000, 0);
-        edbitsDrawCircleTilted(centre, radius, colour, unused, 0x4000, 0);
-        edbitsDrawCircleTilted(centre, radius, colour, unused, 0x6000, 0);
-        edbitsDrawCircleTilted(centre, radius, colour, unused, 0x4000, 0x2000);
-        edbitsDrawCircleTilted(centre, radius, colour, unused, 0x4000, 0x4000);
-        edbitsDrawCircleTilted(centre, radius, colour, unused, 0x4000, 0x6000);
+    void edbitsDrawSphere(NUVEC *centre, f32 radius, i32 colour, NUMTL *material) {
+        edbitsDrawCircleXY(centre, radius, colour, material);
+        edbitsDrawCircleTilted(centre, radius, colour, material, 0x2000, 0);
+        edbitsDrawCircleTilted(centre, radius, colour, material, 0x4000, 0);
+        edbitsDrawCircleTilted(centre, radius, colour, material, 0x6000, 0);
+        edbitsDrawCircleTilted(centre, radius, colour, material, 0x4000, 0x2000);
+        edbitsDrawCircleTilted(centre, radius, colour, material, 0x4000, 0x4000);
+        edbitsDrawCircleTilted(centre, radius, colour, material, 0x4000, 0x6000);
     }
     char *edbitsGetSoundName(i32) {
         STUBBED();

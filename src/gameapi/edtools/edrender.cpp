@@ -109,7 +109,7 @@ extern "C" void edbitsDrawCross(f32 x, f32 y, f32 z, f32 radius, i32 colour, num
     }
 }
 
-extern "C" void edbitsDrawOvalTilted(NUVEC *centre, f32 radius_x, f32 radius_z, i32 colour, i32, i32 rotation_z,
+extern "C" void edbitsDrawOvalTilted(NUVEC *centre, f32 radius_x, f32 radius_z, i32 colour, numtl_s *, i32 rotation_z,
                                      i32 rotation_y) {
     NUVEC endpoints[2];
     NUVEC &previous = endpoints[0];
@@ -142,15 +142,15 @@ extern "C" void edbitsDrawOvalTilted(NUVEC *centre, f32 radius_x, f32 radius_z, 
 }
 
 extern "C" void edbitsDrawTorus(NUVEC *centre, f32 radius, f32 radial_extent, f32 vertical_extent, i32 colour,
-                                i32 unused) {
-    edbitsDrawCircleXY(centre, radius - radial_extent, colour, unused);
-    edbitsDrawCircleXY(centre, radius + radial_extent, colour, unused);
+                                numtl_s *material) {
+    edbitsDrawCircleXY(centre, radius - radial_extent, colour, material);
+    edbitsDrawCircleXY(centre, radius + radial_extent, colour, material);
     NUVEC offset = *centre;
     offset.y -= vertical_extent;
-    edbitsDrawCircleXY(&offset, radius, colour, unused);
+    edbitsDrawCircleXY(&offset, radius, colour, material);
     offset = *centre;
     offset.y += vertical_extent;
-    edbitsDrawCircleXY(&offset, radius, colour, unused);
+    edbitsDrawCircleXY(&offset, radius, colour, material);
     for (i32 i = 0; i <= 10; ++i) {
         i32 angle = i * 65536 / 10;
         NUVEC point;
@@ -159,6 +159,6 @@ extern "C" void edbitsDrawTorus(NUVEC *centre, f32 radius, f32 radial_extent, f3
         point.z = centre->z;
         point.x += radius * NU_SIN_LUT(angle);
         point.z += radius * NU_COS_LUT(angle);
-        edbitsDrawOvalTilted(&point, vertical_extent, radial_extent, colour, unused, 0x4000, angle);
+        edbitsDrawOvalTilted(&point, vertical_extent, radial_extent, colour, material, 0x4000, angle);
     }
 }

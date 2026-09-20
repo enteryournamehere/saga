@@ -26,6 +26,8 @@
 #include "legoapi/gizmos/object/gizobstacles.h"
 #include "legoapi/gizmos/object/gizbuildits.h"
 #include "legoapi/gizmo/object/takeoverobjects.h"
+#include "legoapi/gizmo/object/gizmoblowups.h"
+#include "legoapi/gizmos/fx/gizmopickups.h"
 #include "legoapi/gizmos/object/newblowup.h"
 #include "legoapi/gizmos/traps/gizforce.h"
 #include "legoapi/gizmos/trigger/gizspecial.h"
@@ -57,6 +59,9 @@ extern i32 Hub_GetRandomCharType();
 extern void *perm_debrissys;
 void SetHeadTarget(GameObject_s *object, NUVEC *position, i8 priority, f32 time, f32 minimum_delay, f32 maximum_delay);
 void ResetForceBack();
+void AlertSurroundingCreatures(GameObject_s *object, NUVEC *position);
+void LetGoOfBalloon(GameObject_s *object);
+void GizmoPickup_TurnOnPickup(GIZMOPICKUP_s *pickup);
 void SetForceBack(GameObject_s *object, NUVEC *position, f32 radius, i32 type);
 void AddGameMsgCount(NUVEC *position, i32 count, i32 total, u8 red, u8 green, u8 blue, f32 duration);
 extern "C" void AISysFindRoute(AIPACKET *packet) {
@@ -4395,15 +4400,19 @@ __used__ static i32 Action_TagCharacter(AISYS *sys, AISCRIPTPROCESS *processor, 
 
 __used__ static i32 Action_TurnOnPickup(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                         i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
-    (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
-    (void)param_6;
-    return 0;
+    if (param_5 != 0 && param_4 > 0) {
+        GIZMOPICKUP_s *pickup = NULL;
+        for (i32 index = 0; index < param_4; ++index) {
+            char *value = NuStrIStr(params[index], "name=");
+            if (value != NULL) {
+                pickup = GizmoPickup_FindByName(WORLD, value + NuStrLen("name="));
+            }
+        }
+        if (pickup != NULL) {
+            GizmoPickup_TurnOnPickup(pickup);
+        }
+    }
+    return 1;
 }
 
 __used__ static i32 Action_AddPartDebris(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *, char **params,
@@ -4444,16 +4453,19 @@ __used__ static i32 Action_AddPartDebris(AISYS *sys, AISCRIPTPROCESS *processor,
 }
 
 __used__ static i32 Action_CanPullLevers(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
-                                         i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
-    (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
-    (void)param_6;
-    return 0;
+                                        i32 param_4, i32 param_5, f32 param_6) {
+    GameObject_s *object = packet != NULL && packet->owner != NULL ? packet->owner->apiobj.objptr : NULL;
+    if (object != NULL) {
+        object->field_0xefe |= 0x80;
+        if (param_4 != 0) {
+            for (i32 index = 0; index < param_4; ++index) {
+                if (NuStrICmp(params[index], "FALSE") == 0) {
+                    object->field_0xefe &= ~0x80;
+                }
+            }
+        }
+    }
+    return 1;
 }
 
 __used__ static i32 Action_CircleLocator(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
@@ -4659,15 +4671,32 @@ __used__ static i32 Action_CnxController(AISYS *sys, AISCRIPTPROCESS *processor,
 
 __used__ static i32 Action_CompleteLevel(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                          i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
-    (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
-    (void)param_6;
-    return 0;
+    if (param_5 != 0) {
+        char *cutscene = NULL;
+        LEVELDATA *level = NULL;
+        for (i32 index = 0; index < param_4; ++index) {
+            char *value = NuStrIStr(params[index], "cutscene=");
+            if (value != NULL) {
+                cutscene = value + NuStrLen("cutscene=");
+            }
+            value = NuStrIStr(params[index], "newlevel=");
+            if (value != NULL) {
+                level = Level_FindByName(value + NuStrLen("newlevel="), NULL);
+            }
+        }
+        if (FreePlay == 0 && cutscene != NULL && NewCutScene(NULL, WORLD->cutscene_sys, cutscene, 0) != NULL) {
+            return 1;
+        }
+        if (FreePlay != 0 && level != NULL && (level->flags & (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) != 0) {
+            level = Area_FindStatusLevel(WORLD->area, NULL);
+        }
+        if (level != NULL) {
+            GoToNewLevel(level->idx);
+        } else {
+            CompleteLevel(WORLD);
+        }
+    }
+    return 1;
 }
 
 __used__ static i32 Action_FaceCharacter(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
@@ -4712,15 +4741,22 @@ __used__ static i32 Action_FormationMove(AISYS *sys, AISCRIPTPROCESS *processor,
 
 __used__ static i32 Action_GizmoActivate(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                          i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
-    (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
-    (void)param_6;
-    return 0;
+    if (param_5 != 0 && param_4 > 0) {
+        GIZMO *gizmo = NULL;
+        i32 enabled = 1;
+        for (i32 index = 0; index < param_4; ++index) {
+            char *value = NuStrIStr(params[index], "name=");
+            if (value != NULL) {
+                gizmo = GizmoFindByName(WORLD->gizmo_sys, -1, value + NuStrLen("name="));
+            } else if (NuStrICmp(params[index], "FALSE") == 0) {
+                enabled = 0;
+            }
+        }
+        if (gizmo != NULL) {
+            GizmoActivate(WORLD->gizmo_sys, gizmo, enabled, 1);
+        }
+    }
+    return 1;
 }
 
 __used__ static i32 Action_GoToLevelPath(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
@@ -5136,28 +5172,36 @@ __used__ static i32 Action_SnapWeaponOut(AISYS *sys, AISCRIPTPROCESS *processor,
 
 __used__ static i32 Action_TriggerBlowUp(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                          i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
-    (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
-    (void)param_6;
-    return 0;
+    if (param_5 != 0 && param_4 > 0) {
+        GIZMOBLOWUP_s *blowup = NULL;
+        for (i32 index = 0; index < param_4; ++index) {
+            char *value = NuStrIStr(params[index], "name=");
+            if (value != NULL) {
+                GIZMO *gizmo = GizmoFindByName(WORLD->gizmo_sys, blowup_gizmotype_id, value + 5);
+                if (gizmo != NULL) {
+                    blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
+                }
+            }
+        }
+        if (blowup != NULL && (blowup->output_flags & 1) == 0) {
+            GizmoBlowupBlowup(blowup, 1, -1, 1, NULL, 1);
+        }
+    }
+    return 1;
 }
 
 __used__ static i32 Action_UpdateSockPos(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                          i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
-    (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
-    (void)param_6;
-    return 0;
+    GameObject_s *object = packet != NULL && packet->owner != NULL ? packet->owner->apiobj.objptr : NULL;
+    if (object != NULL && param_5 != 0) {
+        object->field_0xef9 |= 0x40;
+        for (i32 index = 0; index < param_4; ++index) {
+            if (NuStrICmp(params[index], "false") == 0) {
+                object->field_0xef9 &= ~0x40;
+            }
+        }
+    }
+    return 1;
 }
 
 __used__ static i32 Action_WalkBackwards(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
@@ -5201,16 +5245,20 @@ __used__ static i32 Action_AddMiscPickups(AISYS *sys, AISCRIPTPROCESS *processor
 }
 
 __used__ static i32 Action_AlertCreatures(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
-                                          i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
-    (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
-    (void)param_6;
-    return 0;
+                                         i32 param_4, i32 param_5, f32 param_6) {
+    if (param_5 != 0) {
+        GameObject_s *object = packet != NULL && packet->owner != NULL ? packet->owner->apiobj.objptr : NULL;
+        for (i32 index = 0; index < param_4; ++index) {
+            char *value = NuStrIStr(params[index], "character=");
+            if (value != NULL) {
+                object = GetNamedGameObject(sys, value + 10);
+            }
+        }
+        if (object != NULL) {
+            AlertSurroundingCreatures(object, &object->apiobj.collision_position);
+        }
+    }
+    return 1;
 }
 
 __used__ static i32 Action_AlwaysBackFlip(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
@@ -5327,16 +5375,11 @@ __used__ static i32 Action_AttackOpponent(AISYS *sys, AISCRIPTPROCESS *processor
 }
 
 __used__ static i32 Action_BreakFormation(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
-                                          i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
-    (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
-    (void)param_6;
-    return 0;
+                                         i32 param_4, i32 param_5, f32 param_6) {
+    if (packet != NULL && packet->group != NULL) {
+        packet->group->is_in_formation = 0;
+    }
+    return 1;
 }
 
 __used__ static i32 Action_ClearInterrupt(AISYS *, AISCRIPTPROCESS *processor, AIPACKET *, char **params,
@@ -5771,15 +5814,10 @@ __used__ static i32 Action_GoToNodeRandom(AISYS *sys, AISCRIPTPROCESS *processor
 
 __used__ static i32 Action_LetGoOfBalloon(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                           i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
-    (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
-    (void)param_6;
-    return 0;
+    if (packet != NULL && packet->owner != NULL) {
+        LetGoOfBalloon(packet->owner->apiobj.objptr);
+    }
+    return 1;
 }
 
 __used__ static i32 Action_PlayGizSpecial(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
@@ -5854,29 +5892,27 @@ __used__ static i32 Action_PrefersPlayers(AISYS *sys, AISCRIPTPROCESS *processor
 }
 
 __used__ static i32 Action_PressTagButton(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
-                                          i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
-    (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
-    (void)param_6;
-    return 0;
+                                         i32 param_4, i32 param_5, f32 param_6) {
+    GameObject_s *object = packet != NULL && packet->owner != NULL ? packet->owner->apiobj.objptr : NULL;
+    if (object != NULL) {
+        object->pad_gamepad->buttons_pressed |= GAMEPAD_TAG;
+    }
+    return 1;
 }
 
 __used__ static i32 Action_SetCanTakeOver(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
-                                          i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
-    (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
-    (void)param_6;
-    return 0;
+                                         i32 param_4, i32 param_5, f32 param_6) {
+    if (param_5 != 0 && packet != NULL && packet->owner != NULL && packet->owner->apiobj.objptr != NULL) {
+        GameObject_s *object = packet->owner->apiobj.objptr;
+        for (i32 index = 0; index < param_4; ++index) {
+            if (NuStrICmp("True", params[index]) == 0) {
+                object->field_0xeff |= 0x40;
+            } else if (NuStrIStr(params[index], "false") != NULL) {
+                object->field_0xeff &= ~0x40;
+            }
+        }
+    }
+    return 1;
 }
 
 __used__ static i32 Action_SetPathCnxFlag(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
@@ -7294,15 +7330,19 @@ __used__ static i32 Action_PressJumpButton(AISYS *sys, AISCRIPTPROCESS *processo
 
 __used__ static i32 Action_ReleaseTakeOver(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                            i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
-    (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
-    (void)param_6;
-    return 0;
+    if (param_5 != 0) {
+        GameObject_s *object = packet != NULL && packet->owner != NULL ? packet->owner->apiobj.objptr : NULL;
+        for (i32 index = 0; index < param_4; ++index) {
+            char *value = NuStrIStr(params[index], "character=");
+            if (value != NULL) {
+                object = GetNamedGameObject(sys, value + 10);
+            }
+        }
+        if (object != NULL && object->field_0xcc0 != NULL) {
+            ReleaseTakeOver(object, 0);
+        }
+    }
+    return 1;
 }
 
 __used__ static i32 Action_ResetGameCamera(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
@@ -7409,8 +7449,7 @@ __used__ static i32 Action_SetHearDistance(AISYS *sys, AISCRIPTPROCESS *processo
 }
 
 __used__ static i32 Action_SetHintComplete(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
-                                           i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
+                                          i32 param_4, i32 param_5, f32 param_6) {
     (void)sys;
     (void)processor;
     (void)packet;
@@ -7418,7 +7457,7 @@ __used__ static i32 Action_SetHintComplete(AISYS *sys, AISCRIPTPROCESS *processo
     (void)param_4;
     (void)param_5;
     (void)param_6;
-    return 0;
+    return 1;
 }
 
 __used__ static i32 Action_SetInvulnerable(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,

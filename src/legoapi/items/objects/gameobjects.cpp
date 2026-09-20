@@ -29,6 +29,7 @@
 #include "legoapi/render/fx.h"
 #include "legoapi/render/core/terrain.h"
 #include "legoapi/render/light/lighting.h"
+#include "legoapi/render/light/shadow.h"
 #include "legoapi/render/fx/parts.h"
 #include "legoapi/render/fx/spline_position.h"
 #include "nu2api/nucore/nupad.h"
@@ -98,6 +99,8 @@ void BobaRocket_Kill(PART_s *, i32);
 void BobaRocket_Move(PART_s *, f32);
 void BobaRocket_Deflect(PART_s *);
 void PartCollide_3D(PART_s *);
+void ConfigureComplexShadow(GameObject_s *);
+f32 DropInOutScale(GameObject_s *);
 extern f32 rocket_speed;
 extern f32 sabrerubwait;
 NUVEC *GetZapOrigin(GameObject_s *);
@@ -110,6 +113,7 @@ f32 testlaser_sizewab = 0.01f;
 f32 testlaser_sizel = 0.1f;
 f32 testlaser_sizew = 0.02f;
 extern i16 id_YODA, id_YODAGHOST, id_GAMORREANGUARD, id_JANGOFETT;
+extern i16 id_MOUSEDROID;
 extern i32 LEGO_AIPATHCNX_WALLSHUFFLE;
 extern i32 VehicleArea;
 extern i32 TERRAINMASK_NONWEAPON, TERRAINMASK_NONDROID;
@@ -4165,21 +4169,112 @@ APIOBJECT *GameAPIOBJECTFromObjID(u8 object_id) {
 
 i32 GameDrawCharacterModel(CHARACTERMODEL_s *model, ANIMPACKET_s *animation, NUMTX *matrix, NUMTX *secondary_matrix,
                            NUMTX *reflection_matrix, NUMTX *auxiliary_matrix, GameObject_s *object, u32 flags) {
-    if (model == NULL) {
-        return 0;
+    NUMTX special_matrix;
+    NUMTX scaled_matrix;
+    NUMTX scaled_reflection;
+    NUMTX output_matrices[256];
+    i32 drag_bomb = 0;
+    if (object != NULL && object->id == id_DRAGBOMB && Cheat_IsOn(5) && WORLD->lev_objs[0x135].active) {
+        ResetShadowMapRendering();
+        special_matrix = *matrix;
+        NuSpecialDrawAt(&WORLD->lev_objs[0x135].special, &special_matrix);
+        if (reflection_matrix != NULL) {
+            special_matrix = *reflection_matrix;
+            NuRndrStartReflectionRender(1);
+            NuSpecialDrawAt(&WORLD->lev_objs[0x135].special, &special_matrix);
+            NuRndrEndReflectionRender();
+        }
+        scaled_matrix = *matrix;
+        NUVEC scale = {0.5f, 0.5f, 0.5f};
+        NuMtxPreScale(&scaled_matrix, &scale);
+        matrix = &scaled_matrix;
+        if (reflection_matrix != NULL) {
+            scaled_reflection = *reflection_matrix;
+            NuMtxPreScale(&scaled_reflection, &scale);
+            reflection_matrix = &scaled_reflection;
+        }
+        drag_bomb = 1;
     }
 
+    if (TimingBarSet == 5)
+        TBOPENFN("chrs", 5);
+    i32 complex_shadow = 0;
+    if (object != NULL && (object->apiobj.character_data->model_flags & 0x10000) != 0 &&
+        (WORLD->area == NULL || WORLD->area != DOGFIGHT_ADATA)) {
+        model->hierarchy->suppress_shadow_surface_points = 0;
+        if (reflection_matrix != NULL) {
+            ConfigureComplexShadow(object);
+            complex_shadow = 1;
+        }
+    } else {
+        model->hierarchy->suppress_shadow_surface_points = 1;
+    }
     drawcharactermodel_keepmergeaction = game_keepmergeaction;
     MakeLayerList = GCDataList[model->model_id].make_layer_list;
+    i32 result = APIDrawCharacterModel(
+        model, object != NULL ? object->apiobj.character_data : NULL, animation, matrix, secondary_matrix,
+        reflection_matrix, NULL, auxiliary_matrix, object, flags,
+        object != NULL && JointRotation_On ? object->joint_modifiers : NULL,
+        object != NULL && JointRotation_On ? object->field_0x1089 : 0, Paused, FRAMETIME, output_matrices, NULL,
+        WORLD->debris_sys);
+    if (TimingBarSet == 5)
+        TBCLOSEFN("chrs", 5);
 
-    CHARACTERDATA *character_data =
-        object != NULL ? object->apiobj.character_data : &apicharsys->char_data[model->model_id];
+    i32 draw_shadow = 0;
+    if (result == 0 && object != NULL) {
+        if (auxiliary_matrix != NULL) {
+            for (i32 i = 0; i < 16; ++i) {
+                if (model->points_of_interest[i] != NULL) {
+                    auxiliary_matrix[i] = object->apiobj.field_0xb8;
+                    auxiliary_matrix[i].m30 = object->apiobj.position.x;
+                    auxiliary_matrix[i].m31 = object->apiobj.position.y;
+                    auxiliary_matrix[i].m32 = object->apiobj.position.z;
+                    auxiliary_matrix[i].m31 -=
+                        (object->character_bottom + object->character_top) * object->apiobj.field_0xa8 * 0.5f;
+                }
+            }
+        }
+    } else if (result != 0 && object != NULL && (object->field_0xeff & 4) == 0 &&
+               (object->apiobj.character_data->model_flags & 0x10000) == 0) {
+        draw_shadow = 1;
+    }
+    if (g_lowEndLevelBehaviour != 0 && object != NULL && (object->apiobj.flags_low & 0x80) == 0)
+        draw_shadow = 0;
 
-    // The original reserves a fixed 256-matrix evaluation array in this
-    // wrapper before calling APIDrawCharacterModel.
-    NUMTX output_matrices[256];
-    return APIDrawCharacterModel(model, character_data, animation, matrix, secondary_matrix, reflection_matrix, 0,
-                                 auxiliary_matrix, object, flags, NULL, 0, WORLD, FRAMETIME, output_matrices, 0, NULL);
+    if (draw_shadow && object != NULL && secondary_matrix != NULL) {
+        i32 level_alpha = static_cast<u8>(WORLD->current_level->blob_shadow_alpha);
+        if (level_alpha != 0 && object->shadow_opacity > 0.0f && object->surface_normal.y > 0.0f &&
+            (object->apiobj.water_height == -1.0f ||
+             (TerLayer[static_cast<i8>(object->apiobj.field_0x27f)].flags & 1) == 0)) {
+            if (object->id == id_MOUSEDROID && WORLD->lev_objs[0xa2].active) {
+                special_matrix = *secondary_matrix;
+                NuSpecialDrawAtAlpha(&WORLD->lev_objs[0xa2].special, &special_matrix,
+                                    object->shadow_opacity * object->surface_normal.y);
+            } else if (CHARSHADOWS_ON) {
+                PLAYERCHARACTERCONFIG_s *config = object->apiobj.character_data->player_config;
+                i32 alpha = config->blob_shadow_alpha;
+                if (alpha == 0xff)
+                    alpha = level_alpha;
+                if (alpha > 0) {
+                    f32 radius = config->shadow_radius;
+                    if (!(radius < 99.0f))
+                        radius = object->apiobj.character_data->collision_radius;
+                    if (radius > 0.0f) {
+                        f32 drop_scale = DropInOutScale(object);
+                        NuRndrAddShadow(NUMTX_GET_ROW_VEC(secondary_matrix, 3),
+                                        drop_scale * radius * object->apiobj.field_0xa8,
+                                        static_cast<i32>(alpha * object->shadow_opacity * object->surface_normal.y),
+                                        object->field_0x105e, 0, object->field_0x1060);
+                    }
+                }
+            }
+        }
+    }
+    if (complex_shadow)
+        ConfigureComplexShadow(NULL);
+    if (drag_bomb)
+        EnableShadowMapRendering(0);
+    return result;
 }
 
 extern i16 id_ANAKINJEDISCARRED;

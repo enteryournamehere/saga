@@ -670,7 +670,7 @@ void Grabber_Draw(WORLDINFO_s *world) {
         NUMTX joints[256];
         if (APIDrawCharacterModel(g->character_model, &CDataList[g->character_model->model_id], &g->animation, &matrix,
                                   NULL, ((u8)Reflections_On && g->floor_height != 2000000.0f) ? &reflection : NULL,
-                                  NULL, &g->grab_matrix, NULL, 0xffff, NULL, 0, (WORLDINFO_s *)(usize)Paused, FRAMETIME,
+                                  NULL, &g->grab_matrix, NULL, 0xffff, NULL, 0, Paused, FRAMETIME,
                                   joints, 0, WORLD->debris_sys))
             g->flags_559 |= 1;
         if (g->flags_559 & 0x10)

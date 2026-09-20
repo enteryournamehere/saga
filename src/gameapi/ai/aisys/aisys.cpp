@@ -28,6 +28,7 @@
 #include "legoapi/gizmo/object/takeoverobjects.h"
 #include "legoapi/gizmo/object/gizmoblowups.h"
 #include "legoapi/gizmos/fx/gizmopickups.h"
+#include "legoapi/gizmo/object/gizmopickup.h"
 #include "legoapi/gizmos/object/newblowup.h"
 #include "legoapi/gizmos/traps/gizforce.h"
 #include "legoapi/gizmos/trigger/gizspecial.h"
@@ -323,6 +324,7 @@ static i32 Action_GoToOriginalPath(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char 
 static i32 Action_BigJumpToLocator(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 static i32 Action_UseBigJumpToJump(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 static i32 Action_CatchUpForbidden(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
+static i32 Action_JudderGameCamera(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 static i32 Action_SetAnimSpeedMul(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 static i32 Action_ShootAtOpponent(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 static i32 Action_SetInvulnerable(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
@@ -5233,15 +5235,33 @@ __used__ static i32 Action_WalkBackwards(AISYS *sys, AISCRIPTPROCESS *processor,
 
 __used__ static i32 Action_AddMiscPickups(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                           i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
-    (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
     (void)param_6;
-    return 0;
+    if (param_5 != 0) {
+        GameObject_s *object = NULL;
+        if (packet != NULL && packet->owner != NULL) {
+            object = packet->owner->apiobj.objptr;
+        }
+        i32 value = 0;
+        i32 torpedo = 0;
+        for (i32 index = 0; index < param_4; ++index) {
+            char *parameter = NuStrIStr(params[index], "character=");
+            if (parameter != NULL) {
+                object = GetNamedGameObject(sys, parameter + 10);
+            } else if ((parameter = NuStrIStr(params[index], "value=")) != NULL) {
+                value = static_cast<i32>(AIParamToFloat(processor, parameter + 6));
+            } else if ((parameter = NuStrIStr(params[index], "torpedo=")) != NULL) {
+                torpedo = static_cast<i32>(AIParamToFloat(processor, parameter + 8));
+            }
+        }
+        if (object == NULL) {
+            return 1;
+        }
+        NUVEC *position = &object->apiobj.collision_position;
+        if (value != 0 || torpedo != 0) {
+            AddMiscPickups(position, -1, value, torpedo);
+        }
+    }
+    return 1;
 }
 
 __used__ static i32 Action_AlertCreatures(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
@@ -6177,15 +6197,33 @@ __used__ static i32 Action_SnapToPosition(AISYS *sys, AISCRIPTPROCESS *processor
 
 __used__ static i32 Action_ThrowDetonator(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                           i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
     (void)sys;
     (void)processor;
-    (void)packet;
     (void)params;
     (void)param_4;
     (void)param_5;
     (void)param_6;
-    return 0;
+    if (packet != NULL && packet->owner != NULL) {
+        GameObject_s *object = packet->owner->apiobj.objptr;
+        object->character_context = 0x2e;
+        if (object->field_0xe31 == 1) {
+            object->context_animation = 0x6f;
+        } else if ((object->field_0xe22 & 1) != 0) {
+            object->context_animation = 0x6e;
+        } else {
+            object->context_animation = 0x65;
+        }
+        if (object->apiobj.character_model->model_data_b[object->context_animation] == NULL) {
+            object->context_animation = 0x65;
+        }
+        object->context_flags &= static_cast<u8>(~0x40u);
+        if (object->apiobj.character_model->model_data_b[object->context_animation] != NULL) {
+            object->context_animation_timer = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 1);
+        } else {
+            object->context_animation_timer = 1.0f;
+        }
+    }
+    return 1;
 }
 
 __used__ static i32 Action_AddGameMsgCount(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
@@ -7096,7 +7134,7 @@ extern "C" {
         {"SetVisibility", Action_SetVisibility, 1, 0, 0},
         {"EnableSock", Action_EnableSock, 1, 0, 0},
         {"AddDebris", Action_AddDebris, 0, 0, 0},
-        {"JudderGameCamera", NULL, 0, 0, 0},
+        {"JudderGameCamera", Action_JudderGameCamera, 0, 0, 0},
         {"CameraShake", Action_CameraShake, 0, 0, 0},
         {"ResetGameCamera", NULL, 1, 0, 0},
         {"PlayCutScene", NULL, 1, 0, 0},
@@ -7880,15 +7918,26 @@ __used__ static i32 Action_BigJumpToLocator(AISYS *sys, AISCRIPTPROCESS *process
 
 __used__ static i32 Action_CatchUpForbidden(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                             i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
     (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
     (void)param_6;
-    return 0;
+    if (param_5 != 0) {
+        GameObject_s *object = packet != NULL && packet->owner != NULL ? packet->owner->apiobj.objptr : NULL;
+        i32 forbidden = 1;
+        if (param_4 != 0) {
+            for (i32 index = 0; index < param_4; ++index) {
+                char *parameter = NuStrIStr(params[index], "character=");
+                if (parameter != NULL) {
+                    object = GetNamedGameObject(sys, parameter + 10);
+                } else if (NuStrICmp(params[index], "FALSE") == 0) {
+                    forbidden = 0;
+                }
+            }
+        }
+        if (object != NULL) {
+            object->field_0xefb = static_cast<u8>((object->field_0xefb & ~2u) | ((forbidden & 1) << 1));
+        }
+    }
+    return 1;
 }
 
 __used__ static i32 Action_CheckWallSplines(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
@@ -7993,15 +8042,32 @@ __used__ static i32 Action_GoToOriginalPath(AISYS *sys, AISCRIPTPROCESS *process
 
 __used__ static i32 Action_JudderGameCamera(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                             i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
     (void)sys;
-    (void)processor;
     (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
     (void)param_6;
-    return 0;
+    if (param_5 != 0) {
+        i32 axis = 0;
+        f32 time = 0.1f;
+        for (i32 index = 0; index < param_4; ++index) {
+            if (NuStrIStr(params[index], "axis=x") != NULL) {
+                axis = 0;
+            } else if (NuStrIStr(params[index], "axis=y") != NULL) {
+                axis = 1;
+            } else if (NuStrIStr(params[index], "axis=z") != NULL) {
+                axis = 2;
+            } else {
+                char *parameter = NuStrIStr(params[index], "time");
+                if (parameter != NULL) {
+                    time = AIParamToFloat(processor, parameter + 5);
+                }
+            }
+        }
+        if (axis == 2 && qrand() < 0x8000) {
+            time = -time;
+        }
+        GameCam_Judder(GameCam, time, axis, NULL);
+    }
+    return 1;
 }
 
 static i32 Action_MoveAwayFromNode(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,

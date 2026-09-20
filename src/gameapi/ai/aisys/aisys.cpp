@@ -330,6 +330,8 @@ static i32 Action_BigJumpToLocator(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char 
 static i32 Action_UseBigJumpToJump(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 static i32 Action_CatchUpForbidden(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 static i32 Action_JudderGameCamera(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
+static i32 Action_ReleaseTakeOver(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
+static i32 Action_SetHintComplete(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 static i32 Action_SetAnimSpeedMul(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 static i32 Action_ShootAtOpponent(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 static i32 Action_SetInvulnerable(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
@@ -3229,9 +3231,9 @@ __used__ static i32 Action_CreateRider(AISYS *sys, AISCRIPTPROCESS *processor, A
             char *value = NuStrIStr(params[index], "type");
             if (value != NULL) {
                 if (LevelCharacterTypeIDFn != NULL && LevelCharacterGlobalIDFn != NULL) {
-                    const i32 level_type = static_cast<u8>(LevelCharacterTypeIDFn(value + 5));
-                    if (level_type != 0xff) {
-                        model = LevelCharacterGlobalIDFn(level_type);
+                    model = static_cast<u8>(LevelCharacterTypeIDFn(value + 5));
+                    if (model != 0xff) {
+                        model = LevelCharacterGlobalIDFn(model);
                     }
                 }
             } else if ((value = NuStrIStr(params[index], "script")) != NULL) {
@@ -7180,7 +7182,7 @@ extern "C" {
         {"Respawnable", Action_Respawnable, 0, 0, 0},
         {"SetPathCnxFlag", Action_SetPathCnxFlag, 1, 0, 0},
         {"SetHint", Action_SetHint, 0, 0, 0},
-        {"SetHintComplete", NULL, 0, 0, 0},
+        {"SetHintComplete", Action_SetHintComplete, 0, 0, 0},
         {"CancelHint", Action_CancelHint, 0, 0, 0},
         {"CycleCharacter", Action_CycleCharacter, 0, 0, 0},
         {"CnxController", Action_CnxController, 0, 0, 0},
@@ -7219,7 +7221,7 @@ extern "C" {
         {"SetLastAttacker", NULL, 0, 0, 0},
         {"LinkTurretToController", Action_LinkTurretToController, 0, 0, 0},
         {"TakeOver", Action_TakeOver, 1, 0, 0},
-        {"ReleaseTakeOver", NULL, 1, 0, 0},
+        {"ReleaseTakeOver", Action_ReleaseTakeOver, 1, 0, 0},
         {"RegisterTakeOverObject", Action_RegisterTakeOverObject, 0, 0, 0},
         {"SetTakeOverTarget", Action_SetTakeOverTarget, 0, 0, 0},
         {"ClearTakeOverTarget", Action_ClearTakeOverTarget, 0, 0, 0},

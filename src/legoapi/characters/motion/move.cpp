@@ -8313,7 +8313,6 @@ extern i16 id_WICKET;
 extern i16 id_CAPTAINTARPALS;
 extern i16 id_SKELETON;
 void StartJetPackFall(GameObject_s *, i32);
-void KillGameObject(GameObject_s *, i32, i32);
 
 void Move_CHARACTER(GameObject_s *object) {
     i32 jump = GAMEPAD_JUMP;

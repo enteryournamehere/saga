@@ -120,7 +120,7 @@ struct burnset_s {
     float field_558, field_55c;
     i32 field_560;
 };
-struct eduiiattr_s {};
+struct eduiiattr_s;
 struct eduiitem_s;
 struct eduimenu_s;
 struct nucamera_s;
@@ -249,12 +249,18 @@ struct EdColourControl {
     void cbColourSelected(eduimenu_s *, eduiitem_s *, u32);
 };
 struct EdControl {
-    void AddMenuItem(eduimenu_s *, EdRef *, void *);
-    void Process(EdInputContext &);
-    void Refresh();
-    void Render();
+    virtual ~EdControl();
+    virtual void Refresh();
+    virtual void Process(EdInputContext &);
+    virtual void Render();
+    virtual void AddMenuItem(eduimenu_s *, EdRef *, void *);
+    virtual void SetMenuItemAttr(i32, eduiitem_s *, eduiiattr_s *, eduiiattr_s *);
+
+    eduiitem_s *item;
+    EdRef *reference;
+    void *object;
+
     void SelectSubObject();
-    void SetMenuItemAttr(i32, eduiitem_s *, eduiiattr_s *, eduiiattr_s *);
     void cbSelected(eduimenu_s *, eduiitem_s *, u32);
 };
 struct EdDefunctListEntry {
@@ -265,6 +271,7 @@ struct EdDefunctListEntry {
 
     EdDefunctListEntry() : next(nullptr), previous(nullptr) {}
 };
+static_assert(sizeof(void *) != 4 || sizeof(EdControl) == 0x10, "EdControl 32-bit size");
 struct EdDefunctList {
     EdDefunctListEntry *first;
     EdDefunctListEntry *last;

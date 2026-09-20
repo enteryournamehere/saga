@@ -18,6 +18,15 @@ i32 edLevelDestroyActiveMenu;
 LevelEditor theLevelEditor;
 
 extern "C" void eduiSetCameraEnabled(i32);
+eduimenu_s *GetMenuActiveChild(eduimenu_s *);
+extern "C" void NuFntSet(i32);
+extern "C" void NuFntScale(i32, i32);
+
+PropertyTool thePropertyTool;
+PropertyMenuMetrics menu_startmetrics = {20, 5, 200, 400};
+eduiiattr_s EdLevelAttr = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+i32 EdLevelFnt;
+i32 EdLevelFntScale = 24;
 
 void BaseEditor::ReadBuffer(void **destination, void *source, i32 size) {
     if (field_0x0c != 0) {
@@ -616,8 +625,10 @@ void LevelEditor::WriteStream(EdFileOutputStream &) {
     STUBBED();
 }
 
-void PropertyMenu::AddObject(ClassObject &) {
-    STUBBED();
+void PropertyMenu::AddObject(ClassObject &object) {
+    if (object_count < 8) {
+        objects[object_count++] = object;
+    }
 }
 
 void PropertyMenu::ClearObjecs() {
@@ -634,47 +645,139 @@ bool PropertyMenu::ContainsObject(ClassObject &object) {
 }
 
 void PropertyMenu::Destroy() {
-    STUBBED();
+    eduicbMenuCloseAllexpanders(menu);
+    if (menu != NULL) {
+        for (eduiitem_s *item = menu->first; item != NULL; item = item->next) {
+            delete static_cast<EdControl *>(item->data_ptr);
+        }
+    }
+    eduiMenuDestroy(menu);
 }
 
-void PropertyMenu::SelectAttr(i32) {
-    STUBBED();
+void PropertyMenu::SelectAttr(i32 selected) {
+    for (eduiitem_s *item = menu->first; item != NULL; item = item->next) {
+        EdControl *control = static_cast<EdControl *>(item->data_ptr);
+        if (control != NULL) {
+            control->SetMenuItemAttr(selected, item, &thePropertyTool.selected_attr,
+                                     &thePropertyTool.unselected_attr);
+        }
+    }
 }
 
 void PropertyTool::AddPropertyMenuItems(eduimenu_s *, EdClass *, void *, eduiitem_s *) {
     STUBBED();
 }
 
-void PropertyTool::AutoLocateMenu(PropertyMenu *) {
-    STUBBED();
+void PropertyTool::AutoLocateMenu(PropertyMenu *property_menu) {
+    eduimenu_s *menu = property_menu->menu;
+    menu->x = 70;
+    menu->y = 30;
+    bool use_stored_metrics = true;
+    PropertyMenu *other = active_menu;
+    while (other != NULL) {
+        if (other->menu != menu) {
+            if (menu->x + menu->width >= other->menu->x &&
+                other->menu->x + other->menu->width >= menu->x) {
+                menu->x += 10;
+                if (static_cast<float>(menu->x + menu->width) > 590.0f) {
+                    menu->x = 20;
+                    menu->y = 5;
+                    return;
+                }
+                use_stored_metrics = false;
+                other = active_menu;
+                continue;
+            }
+            use_stored_metrics = false;
+        }
+        other = other->next;
+    }
+    if (use_stored_metrics) {
+        ediMenuRetrieveMetrics(menu);
+    }
+    if (static_cast<float>(menu->x + menu->width) > 590.0f) {
+        menu->x = 20;
+        menu->y = 5;
+    }
 }
 
-void PropertyTool::BringToFront(PropertyMenu *) {
-    STUBBED();
+void PropertyTool::BringToFront(PropertyMenu *menu) {
+    if (menu->next != NULL) {
+        menu->next->previous = menu->previous;
+    } else {
+        last_menu = menu->previous;
+    }
+    if (menu->previous != NULL) {
+        menu->previous->next = menu->next;
+    } else {
+        active_menu = menu->next;
+    }
+    menu->next = NULL;
+    menu->previous = NULL;
+    --menu_count;
+    menu->order = -2;
+    PropertyMenu *position = active_menu;
+    while (position != NULL && position->order < -1) {
+        position = position->next;
+    }
+    if (position != NULL) {
+        menu->next = position;
+        menu->previous = position->previous;
+        if (position->previous != NULL) {
+            position->previous->next = menu;
+        } else {
+            active_menu = menu;
+        }
+        position->previous = menu;
+    } else {
+        menu->previous = last_menu;
+        if (last_menu != NULL) {
+            last_menu->next = menu;
+        }
+        last_menu = menu;
+        if (active_menu == NULL) {
+            active_menu = menu;
+        }
+    }
+    ++menu_count;
 }
 
 void PropertyTool::CreatePropertyMenu(ClassObject &) {
     STUBBED();
 }
 
-void PropertyTool::FindItemMenu(PropertyMenu *, ClassItem *) {
-    STUBBED();
+PropertyMenu *PropertyTool::FindItemMenu(PropertyMenu *menu, ClassItem *item) {
+    for (; menu != NULL; menu = menu->next) {
+        if (menu->ContainsObject(item->object)) {
+            return menu;
+        }
+    }
+    return NULL;
 }
 
-void PropertyTool::GetActiveMenu(PropertyMenu *) {
-    STUBBED();
+PropertyMenu *PropertyTool::GetActiveMenu(PropertyMenu *menu) {
+    for (; menu != NULL; menu = menu->next) {
+        if (menu->menu == eduiGetActiveMenuParent()) {
+            return menu;
+        }
+    }
+    return NULL;
 }
 
 void PropertyTool::GetClassName(EdRef *, char *) {
     STUBBED();
 }
 
-void PropertyTool::GetNextActiveMenu() {
-    STUBBED();
+PropertyMenu *PropertyTool::GetNextActiveMenu() {
+    PropertyMenu *menu = GetActiveMenu(active_menu);
+    return menu != NULL ? menu->next : NULL;
 }
 
-void PropertyTool::GetNextDefaultActiveMenu(eduimenu_s *) {
-    STUBBED();
+eduimenu_s *PropertyTool::GetNextDefaultActiveMenu(eduimenu_s *menu) {
+    if (menu == NULL) {
+        return edLevelActiveMenu;
+    }
+    return menu == edLevelActiveMenu ? edLevelPinnedMenu : NULL;
 }
 
 void PropertyTool::GetTypeName(EdRef *, char *) {
@@ -682,31 +785,76 @@ void PropertyTool::GetTypeName(EdRef *, char *) {
 }
 
 void PropertyTool::Initialise(variptr_u &, variptr_u &, i32) {
-    STUBBED();
 }
 
-void PropertyTool::Process(EdInputContext &) {
-    STUBBED();
+i32 PropertyTool::Process(EdInputContext &input) {
+    i32 result = ProcessMenu(input);
+    ProcessControls(input);
+    return result;
 }
 
-void PropertyTool::ProcessControls(EdInputContext &) {
-    STUBBED();
+i32 PropertyTool::ProcessControls(EdInputContext &input) {
+    for (PropertyMenu *menu = active_menu; menu != NULL; menu = menu->next) {
+        if (menu->control != NULL) {
+            menu->control->Process(input);
+        }
+    }
+    return 0;
 }
 
-void PropertyTool::ProcessMenu(EdInputContext &) {
+i32 PropertyTool::ProcessMenu(EdInputContext &) {
     STUBBED();
+    return 0;
 }
 
 PropertyTool::PropertyTool() {
-    STUBBED();
+    next = NULL;
+    previous = NULL;
+    active_menu = NULL;
+    last_menu = NULL;
+    menu_count = 0;
+    show_type_names = 1;
+    menu_attr.background = 0x80000000;
+    menu_attr.text = 0x80ff0000;
+    menu_attr.highlight = 0x80804040;
+    menu_attr.disabled = 0x80404040;
+    selected_attr.background = 0x80000000;
+    selected_attr.text = 0x80ff0000;
+    selected_attr.highlight = 0x80406080;
+    selected_attr.disabled = 0x80404040;
+    unselected_attr.background = 0x80000000;
+    unselected_attr.text = 0x80ff0000;
+    unselected_attr.highlight = 0x80707080;
+    unselected_attr.disabled = 0x80808080;
 }
 
-void PropertyTool::RefreshMenuControls(PropertyMenu *) {
-    STUBBED();
+void PropertyTool::RefreshMenuControls(PropertyMenu *property_menu) {
+    eduiitem_s *item = property_menu->menu->field_0c;
+    NuFntSet(EdLevelFnt);
+    NuFntScale(EdLevelFntScale, EdLevelFntScale);
+    for (; item != NULL; item = item->next) {
+        EdControl *control = static_cast<EdControl *>(item->data_ptr);
+        if (control != NULL) {
+            control->Refresh();
+        }
+        if (item == property_menu->menu->field_10) {
+            break;
+        }
+    }
 }
 
 void PropertyTool::Render() {
-    STUBBED();
+    PropertyMenu *selected = NULL;
+    for (PropertyMenu *menu = last_menu; menu != NULL; menu = menu->previous) {
+        if (menu == GetActiveMenu(active_menu)) {
+            selected = menu;
+        } else {
+            RenderMenu(menu);
+        }
+    }
+    if (selected != NULL) {
+        RenderMenu(selected);
+    }
 }
 
 void PropertyTool::RenderMenu(PropertyMenu *) {
@@ -717,28 +865,49 @@ void PropertyTool::RetrievePropertyMenu(ClassObject *, PropertyMenuList *) {
     STUBBED();
 }
 
-void PropertyTool::SelectAttr(i32) {
-    STUBBED();
+void PropertyTool::SelectAttr(i32 selected) {
+    for (PropertyMenu *menu = active_menu; menu != NULL; menu = menu->next) {
+        menu->SelectAttr(selected);
+    }
 }
 
-void PropertyTool::SetDefaultActiveMenu(PropertyMenu *) {
-    STUBBED();
+void PropertyTool::SetDefaultActiveMenu(PropertyMenu *menu) {
+    if (menu != NULL && menu->menu != NULL) {
+        eduiSetActiveMenu(GetMenuActiveChild(menu->menu));
+    } else {
+        eduiSetActiveMenu(edLevelActiveMenu != NULL ? edLevelActiveMenu : edLevelPinnedMenu);
+    }
 }
 
 void PropertyTool::ToggleActiveMenu() {
-    STUBBED();
+    PropertyMenu *menu = GetActiveMenu(active_menu);
+    if (menu != NULL) {
+        if (menu == last_menu) {
+            eduiSetActiveMenu(NULL);
+        } else {
+            SetDefaultActiveMenu(GetNextActiveMenu());
+        }
+    } else if (GetNextDefaultActiveMenu(eduiGetActiveMenu()) == NULL) {
+        SetDefaultActiveMenu(active_menu);
+    }
 }
 
-void PropertyTool::ediGetMenuStartMetrics() {
-    STUBBED();
+PropertyMenuMetrics PropertyTool::ediGetMenuStartMetrics() {
+    return menu_startmetrics;
 }
 
-void PropertyTool::ediMenuRetrieveMetrics(eduimenu_s *) {
-    STUBBED();
+void PropertyTool::ediMenuRetrieveMetrics(eduimenu_s *menu) {
+    menu->x = menu_startmetrics.x;
+    menu->y = menu_startmetrics.y;
+    menu->width = menu_startmetrics.width;
+    menu->height = menu_startmetrics.height;
 }
 
-void PropertyTool::ediMenuStoreMetrics(eduimenu_s *) {
-    STUBBED();
+void PropertyTool::ediMenuStoreMetrics(eduimenu_s *menu) {
+    menu_startmetrics.x = menu->x > 0 ? menu->x : 20;
+    menu_startmetrics.y = menu->y > 0 ? menu->y : 5;
+    menu_startmetrics.width = menu->width;
+    menu_startmetrics.height = menu->height;
 }
 
 void ClassObjectList::GetAveragePosition(VuVec &) {

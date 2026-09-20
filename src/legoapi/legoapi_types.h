@@ -3,6 +3,7 @@
 #pragma once
 #include "gameapi/ai/aisys/aimessage_types.h"
 #include "gameapi/edtools/gameapi_edtools_types.h"
+#include "gameapi/edtools/edui.h"
 #include "gamelib/util/gamelib_util_types.h"
 
 #include "nu2api/nu3d/ShaderManagerOpenGL.h"
@@ -963,7 +964,13 @@ struct CUTSYS {
     i32 count;
     u32 *character_bits;
 };
-struct ClassItem {};
+struct ClassItem {
+    ClassItem *next;
+    ClassItem *previous;
+    EdClass *ed_class;
+    void *object;
+    EdRef *reference;
+};
 struct DETONATOR_s {
     u8 field_0x00[0xc];
     NUVEC field_0x0c;
@@ -2215,7 +2222,11 @@ DECOMP_ASSERT(offsetof(PULSESYS_s, pulse_count) == 0x4, "PULSESYS pulse count of
 DECOMP_ASSERT(offsetof(PULSESYS_s, collide_radius) == 0x10, "PULSESYS collision radius offset");
 DECOMP_ASSERT(offsetof(PULSESYS_s, radial_hit_direction) == 0x1e, "PULSESYS hit direction mode offset");
 struct PartHeader;
-struct PropertyMenuList {};
+struct PropertyMenuList {
+    PropertyMenu *first;
+    PropertyMenu *last;
+    i32 count;
+};
 struct REGISTERSTATUSPACKET_s {
     STATUSPACKET_LSW_s *lsw_packet;
     i32 (*init_callback)(WORLDINFO_s *, STATUSPACKET_s *);
@@ -5198,6 +5209,7 @@ struct PropertyMenu {
     EdControl *control;
     ClassObject objects[8];
     i32 object_count;
+    i32 order;
 
     void AddObject(ClassObject &);
     void ClearObjecs();
@@ -5206,26 +5218,40 @@ struct PropertyMenu {
     void Destroy();
     void SelectAttr(i32);
 };
-struct PropertyTool {
-    u8 reserved_0x00[0xc];
+DECOMP_ASSERT(sizeof(PropertyMenu) == 0x78, "PropertyMenu ABI");
+DECOMP_ASSERT(offsetof(PropertyMenu, object_count) == 0x70, "PropertyMenu object count offset");
+struct PropertyMenuMetrics {
+    i32 x;
+    i32 y;
+    i32 width;
+    i32 height;
+};
+struct PropertyTool : EdTool {
     PropertyMenu *active_menu;
+    PropertyMenu *last_menu;
+    i32 menu_count;
+    i32 show_type_names;
+    eduiiattr_s menu_attr;
+    eduiiattr_s selected_attr;
+    eduiiattr_s unselected_attr;
 
     void AddPropertyMenuItems(eduimenu_s *, EdClass *, void *, eduiitem_s *);
     void AutoLocateMenu(PropertyMenu *);
     void BringToFront(PropertyMenu *);
     void CreatePropertyMenu(ClassObject &);
-    void FindItemMenu(PropertyMenu *, ClassItem *);
-    void GetActiveMenu(PropertyMenu *);
+    PropertyMenu *FindItemMenu(PropertyMenu *, ClassItem *);
+    PropertyMenu *GetActiveMenu(PropertyMenu *);
     void GetClassName(EdRef *, char *);
-    void GetNextActiveMenu();
-    void GetNextDefaultActiveMenu(eduimenu_s *);
+    PropertyMenu *GetNextActiveMenu();
+    eduimenu_s *GetNextDefaultActiveMenu(eduimenu_s *);
     void GetTypeName(EdRef *, char *);
     bool HasActiveMenu();
     void Initialise(variptr_u &, variptr_u &, i32);
-    void Process(EdInputContext &);
-    void ProcessControls(EdInputContext &);
-    void ProcessMenu(EdInputContext &);
+    i32 Process(EdInputContext &);
+    i32 ProcessControls(EdInputContext &);
+    i32 ProcessMenu(EdInputContext &);
     PropertyTool();
+    const char *GetName() override { return "Property Tool"; }
     void RefreshMenuControls(PropertyMenu *);
     void Render();
     void RenderMenu(PropertyMenu *);
@@ -5234,10 +5260,13 @@ struct PropertyTool {
     void SetDefaultActiveMenu(PropertyMenu *);
     void SetMenuControl(eduimenu_s *, EdControl *);
     void ToggleActiveMenu();
-    void ediGetMenuStartMetrics();
+    PropertyMenuMetrics ediGetMenuStartMetrics();
     void ediMenuRetrieveMetrics(eduimenu_s *);
     void ediMenuStoreMetrics(eduimenu_s *);
 };
+DECOMP_ASSERT(sizeof(PropertyTool) == 0x4c, "PropertyTool ABI");
+DECOMP_ASSERT(offsetof(PropertyTool, active_menu) == 0xc, "PropertyTool menu list offset");
+DECOMP_ASSERT(offsetof(PropertyTool, selected_attr) == 0x2c, "PropertyTool selected attributes offset");
 // Retake-G network packet (retakeg_netpacket).
 struct RETAKEGNETPACKET_s {
     i16 guard_a; // 0x00

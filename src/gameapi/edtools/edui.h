@@ -6,6 +6,12 @@ struct eduimenu_s;
 struct eduiitem_s;
 struct nupad_s;
 struct edui_interact_s;
+struct eduiiattr_s {
+    u32 background;
+    u32 text;
+    u32 highlight;
+    u32 disabled;
+};
 typedef void (*EdUiMenuCallback)(eduimenu_s *menu, eduimenu_s *parent);
 typedef void (*EdUiItemCallback)(eduimenu_s *menu, eduiitem_s *item, u32 value);
 

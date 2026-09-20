@@ -294,6 +294,11 @@ extern void PlayRepeatSfx(char *name, i32 sfx_id, f32 initial_delay, char play_c
 extern void ResetAICreature(GameObject_s *object, AISYS_s *system);
 extern void DeactivateGameObject(GameObject_s *object);
 extern void Player_ClearContext(GameObject_s *object, i32 mode);
+extern void Player_ResetContexts(PLAYERPACKET_s *packet);
+extern EXPLOSION *Detonate(NUVEC *position, u16 flags);
+extern void EatVictim(GameObject_s *object);
+extern void GrabVictim(GameObject_s *object, GameObject_s *victim);
+extern void ReleaseEat(GameObject_s *object);
 extern void ReleaseTakeOver(GameObject_s *object, i32 immediate);
 extern void TakeOverGameObject(GameObject_s *rider, GameObject_s *vehicle, i32 blend_camera, i32 immediate);
 extern void FindForcePushTarget(GameObject_s *object, i32 held, i32 mode);
@@ -757,28 +762,33 @@ __used__ static i32 Action_BigJump(AISYS *sys, AISCRIPTPROCESS *processor, AIPAC
 
 __used__ static i32 Action_CanTurn(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params, i32 param_4,
                                    i32 param_5, f32 param_6) {
-    STUBBED();
     (void)sys;
     (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
     (void)param_6;
-    return 0;
+    if (packet != NULL && packet->owner != NULL && packet->owner->apiobj.objptr != NULL && param_5 != 0) {
+        GameObject_s *object = packet->owner->apiobj.objptr;
+        object->field_0xeff |= 0x20;
+        for (i32 index = 0; index < param_4; ++index) {
+            if (NuStrICmp(params[index], "FALSE") == 0) {
+                object->field_0xeff &= static_cast<u8>(~0x20u);
+            }
+        }
+    }
+    return 1;
 }
 
 __used__ static i32 Action_Explode(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params, i32 param_4,
                                    i32 param_5, f32 param_6) {
-    STUBBED();
     (void)sys;
     (void)processor;
-    (void)packet;
     (void)params;
     (void)param_4;
     (void)param_5;
     (void)param_6;
-    return 0;
+    if (packet != NULL && packet->owner != NULL) {
+        Detonate(&packet->owner->apiobj.position, 0);
+    }
+    return 1;
 }
 
 __used__ static i32 Action_PlaySfx(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params, i32 param_4,
@@ -2390,15 +2400,16 @@ __used__ static i32 Action_DontAimAt(AISYS *sys, AISCRIPTPROCESS *processor, AIP
 
 __used__ static i32 Action_EatVictim(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                      i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
     (void)sys;
     (void)processor;
-    (void)packet;
     (void)params;
     (void)param_4;
     (void)param_5;
     (void)param_6;
-    return 0;
+    if (packet != NULL && packet->owner != NULL && packet->owner->apiobj.objptr != NULL) {
+        EatVictim(packet->owner->apiobj.objptr);
+    }
+    return 1;
 }
 
 __used__ static i32 Action_ForcePush(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
@@ -2855,15 +2866,22 @@ __used__ static i32 Action_GoToOrigin(AISYS *sys, AISCRIPTPROCESS *processor, AI
 
 __used__ static i32 Action_GrabVictim(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                       i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
     (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
     (void)param_6;
-    return 0;
+    if (packet != NULL && packet->owner != NULL && packet->owner->apiobj.objptr != NULL && param_5 != 0) {
+        GameObject_s *object = packet->owner->apiobj.objptr;
+        GameObject_s *victim = object->ai.opponent_object != NULL ? object->ai.opponent_object->objptr : NULL;
+        for (i32 index = 0; index < param_4; ++index) {
+            char *value = NuStrIStr(params[index], "victim=");
+            if (value != NULL) {
+                victim = GetNamedGameObject(sys, value + 7);
+            }
+        }
+        if (victim != NULL) {
+            GrabVictim(object, victim);
+        }
+    }
+    return 1;
 }
 
 __used__ static i32 Action_NoLosCheck(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
@@ -2882,16 +2900,24 @@ __used__ static i32 Action_NoLosCheck(AISYS *sys, AISCRIPTPROCESS *processor, AI
     return 1;
 }
 
+static i32 Action_EngageOpponent(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
+
 __used__ static i32 Action_ProbeDroid(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                       i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
-    (void)processor;
-    (void)packet;
     (void)params;
     (void)param_4;
-    (void)param_5;
-    (void)param_6;
+    if (packet == NULL || packet->owner == NULL || packet->owner->apiobj.objptr == NULL) {
+        return 1;
+    }
+    GameObject_s *object = packet->owner->apiobj.objptr;
+    if (object->cable != NULL) {
+        object->cable->source = NULL;
+        object->cable = NULL;
+    }
+    AIMoveInstruction(packet, NULL, 0.0f, NULL, AIPACKET_MOVEMENT_WANDER,
+                      packet->movement_instruction_parameter);
+    char *engage_params[] = {"goalrange 10", "firerange 15", "fireinterval 1.5"};
+    Action_EngageOpponent(sys, processor, packet, engage_params, 3, param_5, param_6);
     return 0;
 }
 
@@ -4081,15 +4107,24 @@ __used__ static i32 Action_RaceOpponent(AISYS *sys, AISCRIPTPROCESS *processor, 
 
 __used__ static i32 Action_ResetContext(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                         i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
-    (void)sys;
     (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
     (void)param_6;
-    return 0;
+    if (param_5 != 0) {
+        GameObject_s *object = packet != NULL && packet->owner != NULL ? packet->owner->apiobj.objptr : NULL;
+        if (param_4 != 0) {
+            for (i32 index = 0; index < param_4; ++index) {
+                char *value = NuStrIStr(params[index], "character=");
+                if (value != NULL) {
+                    object = GetNamedGameObject(sys, value + 10);
+                }
+            }
+        }
+        if (object != NULL) {
+            Player_ClearContext(object, 1);
+            Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
+        }
+    }
+    return 1;
 }
 
 __used__ static i32 Action_SetAnimation(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
@@ -4943,15 +4978,16 @@ __used__ static i32 Action_KeepWeaponOut(AISYS *sys, AISCRIPTPROCESS *processor,
 
 __used__ static i32 Action_ReleaseVictim(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                          i32 param_4, i32 param_5, f32 param_6) {
-    STUBBED();
     (void)sys;
     (void)processor;
-    (void)packet;
     (void)params;
     (void)param_4;
     (void)param_5;
     (void)param_6;
-    return 0;
+    if (packet != NULL && packet->owner != NULL && packet->owner->apiobj.objptr != NULL) {
+        ReleaseEat(packet->owner->apiobj.objptr);
+    }
+    return 1;
 }
 
 __used__ static i32 Action_ResetToOrigin(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,

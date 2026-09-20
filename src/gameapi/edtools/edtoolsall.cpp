@@ -7,6 +7,7 @@
 #include "gameapi/edtools/edpp_internal.h"
 #include "gameapi/edtools/edstubs.h"
 #include "gameapi/edtools/edgra.h"
+#include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nuspline.h"
 #include "nu2api/nucore/nustring.h"
@@ -18,6 +19,7 @@
 #include "nu2api/numath/nurand.h"
 
 EdRegistry theRegistry;
+extern MemoryManager theMemoryManager;
 i32 pad_disabled;
 eduimenu_s *edLevelPinnedMenu;
 
@@ -1156,16 +1158,32 @@ void EdEnumControl::cbSelectItem(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-void EdInputStream::SerialiseString(char **) {
-    STUBBED();
+i32 EdInputStream::SerialiseString(char **text) {
+    i32 length;
+    SerialiseBuffer(&length, sizeof(length), 1);
+    char *allocated = (char *)memory_buffer->Allocate(length);
+    *text = allocated;
+    return SerialiseBuffer(allocated, 1, length);
 }
 
-void EdInputStream::SerialiseString(char **, i32) {
-    STUBBED();
+i32 EdInputStream::SerialiseString(char **text, i32 capacity) {
+    if (*text) {
+        return SerialiseString(*text, capacity);
+    }
+    return SerialiseString(text);
 }
 
-void EdInputStream::SerialiseString(char *, i32) {
-    STUBBED();
+i32 EdInputStream::SerialiseString(char *text, i32 capacity) {
+    i32 length;
+    char temporary[256];
+    SerialiseBuffer(&length, sizeof(length), 1);
+    if (length > capacity) {
+        SerialiseBuffer(temporary, 1, sizeof(temporary));
+        NuStrNCpy(text, temporary, capacity);
+        text[capacity - 1] = 0;
+        return capacity;
+    }
+    return SerialiseBuffer(text, 1, length);
 }
 
 void EdManipulator::DrawAxis(VuVec &, VuMtx *) {
@@ -1267,16 +1285,21 @@ void EdInputContext::Update(nucamera_s *, nupad_s *, float, bool) {
     STUBBED();
 }
 
-void EdOutputStream::SerialiseString(char **) {
-    STUBBED();
+i32 EdOutputStream::SerialiseString(char **text) {
+    return SerialiseString(*text, 0);
 }
 
-void EdOutputStream::SerialiseString(char **, i32) {
-    STUBBED();
+i32 EdOutputStream::SerialiseString(char **text, i32) {
+    return SerialiseString(*text, 0);
 }
 
-void EdOutputStream::SerialiseString(char *, i32) {
-    STUBBED();
+i32 EdOutputStream::SerialiseString(char *text, i32) {
+    if (!text) {
+        text = const_cast<char *>("(NULL)");
+    }
+    i32 length = NuStrLen(text) + 1;
+    i32 written = SerialiseBuffer(&length, sizeof(length), 1);
+    return written + SerialiseBuffer(text, 1, length);
 }
 
 void EdRefPlaceable::GetMemberData(void *, i32, void *, i32) {
@@ -1431,44 +1454,134 @@ void EdSfxNameControl::cbSelectSfx(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-void EdFileInputStream::BeginBlock(char const *) {
-    STUBBED();
+char const *EdFileInputStream::BeginBlock(char const *name) {
+    i32 position = NuFilePos(file);
+    if (block_count > 0) {
+        Block &block = blocks[block_count - 1];
+        if (position >= block.position + block.size) {
+            return NULL;
+        }
+    }
+    char *block_name;
+    if (pending) {
+        block_name = block_names + pending_block.name_offset;
+    } else {
+        pending_block.position = position;
+        pending_block.name_offset = name_length;
+        pending = 1;
+        SerialiseBuffer(&pending_block.size, sizeof(pending_block.size), 1);
+        block_name = block_names + name_length;
+        SerialiseString(block_name, sizeof(block_names) - name_length);
+        name_length += NuStrLen(block_name) + 1;
+    }
+    if (name && NuStrICmp(name, block_name)) {
+        return NULL;
+    }
+    if (block_count < 8) {
+        blocks[block_count++] = pending_block;
+    }
+    pending = 0;
+    return block_name;
 }
 
-void EdFileInputStream::Eat(i32, i32) {
-    STUBBED();
+i32 EdFileInputStream::Eat(i32 size, i32 count) {
+    return NuFileSeek(file, size * count, NUFILE_SEEK_CURRENT);
 }
 
 void EdFileInputStream::EndBlock() {
-    STUBBED();
+    Block block = blocks[--block_count];
+    i32 position = NuFilePos(file);
+    if (position != block.position + block.size) {
+        NuFileSeek(file, block.position + block.size, NUFILE_SEEK_START);
+    }
+    name_length = block.name_offset;
 }
 
-void EdFileInputStream::Open(i32, i32) {
-    STUBBED();
+void EdFileInputStream::Open(i32 handle, i32) {
+    file = handle;
+    version = 0;
+    if (BeginBlock("StreamInfo")) {
+        SerialiseBuffer(&version, sizeof(version), 1);
+        EndBlock();
+    }
 }
 
-void EdFileInputStream::SerialiseBuffer(void *, i32, i32) {
-    STUBBED();
+i32 EdFileInputStream::SerialiseBuffer(void *data, i32 size, i32 count) {
+    i32 result = NuFileRead(file, data, size * count);
+    if (swap_endianness && size > 1) {
+        u8 *cursor = (u8 *)data;
+        for (i32 i = 0; i < count; i++) {
+            if (size == 2) {
+                EdFileSwapEndianess16(cursor);
+                cursor += 2;
+            } else if (size == 4) {
+                EdFileSwapEndianess32(cursor);
+                cursor += 4;
+            }
+        }
+    }
+    return result;
 }
 
-void EdFileOutputStream::BeginBlock(char const *) {
-    STUBBED();
+char const *EdFileOutputStream::BeginBlock(char const *name) {
+    i32 position = NuFilePos(file);
+    if (block_count < 8) {
+        block_positions[block_count++] = position;
+    }
+    SerialiseBuffer(&position, sizeof(position), 1);
+    SerialiseString(const_cast<char *>(name), 0);
+    return name;
 }
 
-void EdFileOutputStream::Eat(i32, i32) {
-    STUBBED();
+i32 EdFileOutputStream::Eat(i32, i32) {
+    return 0;
 }
 
 void EdFileOutputStream::EndBlock() {
-    STUBBED();
+    i32 position = block_positions[--block_count];
+    i32 end = NuFilePos(file);
+    i32 size = end - position;
+    NuFileSeek(file, position, NUFILE_SEEK_START);
+    SerialiseBuffer(&size, sizeof(size), 1);
+    NuFileSeek(file, end, NUFILE_SEEK_START);
 }
 
-void EdFileOutputStream::Open(i32, i32) {
-    STUBBED();
+void EdFileOutputStream::Open(i32 handle, i32 stream_version) {
+    file = handle;
+    version = stream_version;
+    if (BeginBlock("StreamInfo")) {
+        SerialiseBuffer(&version, sizeof(version), 1);
+        EndBlock();
+    }
 }
 
-void EdFileOutputStream::SerialiseBuffer(void *, i32, i32) {
-    STUBBED();
+i32 EdFileOutputStream::SerialiseBuffer(void *data, i32 size, i32 count) {
+    if (swap_endianness && size > 1) {
+        u8 *cursor = (u8 *)data;
+        for (i32 i = 0; i < count; i++) {
+            if (size == 2) {
+                EdFileSwapEndianess16(cursor);
+                cursor += 2;
+            } else if (size == 4) {
+                EdFileSwapEndianess32(cursor);
+                cursor += 4;
+            }
+        }
+    }
+    i32 result = NuFileWrite(file, data, size * count);
+    if (swap_endianness && size > 1) {
+        u8 *cursor = (u8 *)data;
+        for (i32 i = 0; i < count; i++) {
+            if (size == 2) {
+                EdFileSwapEndianess16(cursor);
+                cursor += 2;
+            } else if (size == 4) {
+                EdFileSwapEndianess32(cursor);
+                cursor += 4;
+            }
+        }
+    }
+    return result;
 }
 
 void EdRefSpecialObject::GetMemberData(void *, i32, void *, i32) {
@@ -1580,22 +1693,54 @@ void EdType::Serialise(EdStream &) {
 }
 
 EdStream::EdStream() {
-    STUBBED();
+    memory_buffer = NULL;
+    secondary_buffer = NULL;
+    mode = 0;
+    swap_endianness = 0;
+    flags = 0;
 }
 
-EdStream::EdStream(MemoryBuffer *) {
-    STUBBED();
+EdStream::EdStream(MemoryBuffer *buffer) {
+    memory_buffer = buffer;
+    secondary_buffer = NULL;
+    mode = 0;
+    swap_endianness = 0;
+    flags = 0;
 }
 
-EdStream::EdStream(MemoryBuffer *, MemoryBuffer *) {
-    STUBBED();
+EdStream::EdStream(MemoryBuffer *buffer, MemoryBuffer *secondary) {
+    memory_buffer = buffer;
+    secondary_buffer = secondary;
+    mode = 0;
+    swap_endianness = 0;
+    flags = 0;
 }
 
-void EdString::Set(char const *) {
-    STUBBED();
+void EdString::Set(char const *value) {
+    if (value == NULL) {
+        if (data != NULL) {
+            theMemoryManager.FreePool(data, data[0]);
+            data = NULL;
+        }
+        return;
+    }
+
+    i32 length = NuStrLen(value);
+    if (data != NULL && length + 2 > data[0]) {
+        theMemoryManager.FreePool(data, data[0]);
+        data = NULL;
+    }
+    if (data == NULL) {
+        data = static_cast<char *>(theMemoryManager.AllocPool(length + 2, 1));
+        data[0] = ((length + 1) / 32) * 32 + 32;
+    }
+    NuStrNCpy(data + 1, value, 250);
 }
 
 EdString::~EdString() {
+    if (data != NULL) {
+        theMemoryManager.FreePool(data, data[0]);
+    }
 }
 
 void EdSystem::Initalise(variptr_u &buffer, variptr_u &buffer_end, i32 flags) {

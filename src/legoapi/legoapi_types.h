@@ -3140,9 +3140,10 @@ struct debkeydatatype_s {
     f32 emission_epoch;
     i16 render_priority;
     i16 allocation_index;
-    i32 field_32c;
+    void *user_data;
 };
 DECOMP_ASSERT(sizeof(debkeydatatype_s) == 0x330, "debkeydatatype_s size");
+DECOMP_ASSERT(offsetof(debkeydatatype_s, user_data) == 0x32c, "debris user data offset");
 DECOMP_ASSERT(offsetof(debkeydatatype_s, process_spheres) == 0x1e8, "debris sphere array offset");
 DECOMP_ASSERT(offsetof(debkeydatatype_s, sphere_skip_count) == 0x2ca, "debris sphere skip offset");
 DECOMP_ASSERT(offsetof(debkeydatatype_s, sphere_next_time) == 0x2cc, "debris sphere deadline offset");

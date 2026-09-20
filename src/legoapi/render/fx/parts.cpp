@@ -621,7 +621,7 @@ extern "C" {
         key.process_collision_sound = 0;
         key.last_update_time = now;
         key.field_2f9 = 1;
-        key.field_32c = 0;
+        key.user_data = NULL;
         key.field_2fa = 0;
         key.emission_epoch = key.field_1e4 < now ? key.field_1e4 : now;
 

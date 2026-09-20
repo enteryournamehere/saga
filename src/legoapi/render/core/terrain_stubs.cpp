@@ -201,6 +201,7 @@ void TerrainImpact(NUVEC *position, NUVEC *movement, u8 *hit_flags);
 void TerrFlush(void);
 void NewScanRot(NUVEC *position, i32 terrain_mask);
 f32 NewCast(NUVEC *position, f32 height_above, f32 height_below);
+void RemoveChunkControlFromStack(debris_chunk_control_s *, debris_chunk_control_s **);
 
 extern "C" {
     extern debkeydatatype_s *debkeydata;
@@ -704,28 +705,102 @@ extern "C" {
         }
     }
 
-    void DebrisFindAllOfType(void) {
-        STUBBED();
+    i32 DebrisFindAllOfType(i32 effect_index, NUVEC *positions, i32 *handles, i32 capacity, i32 skip,
+                           i32 active_only) {
+        i32 count = 0;
+        debkeydatatype_s *key = debkeydata;
+        for (i32 i = 0; i < maxdebkeys; ++i, ++key) {
+            if ((active_only == 0 || key->allocated_chunk_count != 0) && key->effect_index == effect_index) {
+                i32 output_index = count - skip;
+                if (output_index >= 0 && output_index < capacity) {
+                    if (positions != NULL) {
+                        positions[output_index].x = key->position.x;
+                        positions[output_index].y = key->position.y;
+                        positions[output_index].z = key->position.z;
+                    }
+                    if (handles != NULL)
+                        handles[output_index] = i;
+                }
+                ++count;
+            }
+        }
+        return count - skip;
     }
 
-    void DebrisGetConeProperties(void) {
-        STUBBED();
+    i32 DebrisGetConeProperties(i32 handle, NUVEC *origin, NUVEC *end, f32 *start_radius, f32 *end_radius,
+                               NUVEC *direction, f32 *length, f32 *speed) {
+        debkeydatatype_s *key = &debkeydata[handle];
+        debinftype *effect = debtab[key->effect_index];
+        if (effect == NULL)
+            return 0;
+        origin->x = key->position.x;
+        origin->y = key->position.y;
+        origin->z = key->position.z;
+        if (effect->generator_type == 8) {
+            NUVEC axis = {0.0f, 1.0f, 0.0f};
+            NuVecMtxTransform(&axis, &axis, &key->emitter_orientation);
+            direction->x = axis.x;
+            direction->y = axis.y;
+            direction->z = axis.z;
+            *speed = effect->field_048;
+            *length = effect->field_048 * effect->particle_lifetime;
+            end->x = *length * direction->x + origin->x;
+            end->y = direction->y * *length + origin->y;
+            end->z = direction->z * *length + origin->z;
+            *start_radius = (effect->field_058 + effect->field_060) * 0.5f;
+            *end_radius = (effect->field_04c + effect->field_054) / 2.8f * effect->particle_lifetime + *start_radius;
+            return 1;
+        }
+        end->x = end->y = end->z = 0.0f;
+        *direction = *end;
+        *start_radius = *end_radius = *length = *speed = 0.0f;
+        return 0;
     }
 
-    void DebrisGetDuration(void) {
-        STUBBED();
+    f32 DebrisGetDuration(i32 effect_index) {
+        if (effect_index < 0 || effect_index >= EDPP_MAX_TYPES || debtab[effect_index] == NULL)
+            return 0.0f;
+        debinftype *effect = debtab[effect_index];
+        return effect->emission_period_random + effect->emission_pause + effect->emission_pause_random +
+               effect->start_offset_random;
     }
 
-    void DebrisGetName(void) {
-        STUBBED();
+    char *DebrisGetName(i32 effect_index) {
+        if (effect_index < 0 || effect_index >= EDPP_MAX_TYPES)
+            return NULL;
+        debinftype *effect = debtab[effect_index];
+        return effect == NULL ? NULL : effect->name;
     }
 
-    void DebrisGetParticleCount(void) {
-        STUBBED();
+    i32 DebrisGetParticleCount(i32 handle) {
+        if (handle == -1)
+            return 0;
+        return debkeydata[handle].allocated_chunk_count;
     }
 
-    void DebrisGetRingProperties(void) {
-        STUBBED();
+    i32 DebrisGetRingProperties(i32 handle, NUVEC *origin, NUVEC *direction, f32 *radius) {
+        debkeydatatype_s *key = &debkeydata[handle];
+        debinftype *effect = debtab[key->effect_index];
+        if (effect == NULL)
+            return 0;
+        origin->x = key->position.x;
+        origin->y = key->position.y;
+        origin->z = key->position.z;
+        NUVEC axis;
+        if (effect->generator_type == 11)
+            axis = NUVEC{0.0f, 1.0f, 0.0f};
+        else
+            axis = NUVEC{0.0f, 0.0f, 1.0f};
+        NuVecMtxTransform(&axis, &axis, &key->emitter_orientation);
+        direction->x = axis.x;
+        direction->y = axis.y;
+        direction->z = axis.z;
+        if (effect->generator_type == 6 || effect->generator_type == 7 || effect->generator_type == 11) {
+            *radius = effect->field_058;
+            return 1;
+        }
+        *radius = 0.0f;
+        return 0;
     }
 
     void DebrisOrientation(i32 handle, i16 z, i16 y) {
@@ -859,8 +934,27 @@ extern "C" {
             renderpanelglobaltime -= 800.0f;
     }
 
-    void DebrisQueryPriority(void) {
-        STUBBED();
+    i32 DebrisQueryPriority(i32 effect_index) {
+        if (effect_index < 0 || effect_index >= EDPP_MAX_TYPES || debtab[effect_index] == NULL)
+            return 0;
+        i16 priority = 0;
+        switch (static_cast<i8>(debtab[effect_index]->particle_type)) {
+        case 0:
+            priority = 20000;
+            break;
+        case 2:
+            priority = -25536;
+            break;
+        case 3:
+            priority = 30000;
+            break;
+        case 7:
+            priority = 10000;
+            break;
+        default:
+            break;
+        }
+        return priority;
     }
 
     void DebrisReScale(i32 effect_index, f32 scale) {
@@ -977,12 +1071,18 @@ extern "C" {
         matrix->m32 = z3 * cosine - x3 * sine;
     }
 
-    void DebrisSetGroupID(void) {
-        STUBBED();
+    void DebrisSetGroupID(i32 handle, i16 group) {
+        if (handle != -1)
+            debkeydata[handle].render_group = group;
     }
 
-    void DebrisSetPriority(void) {
-        STUBBED();
+    void DebrisSetPriority(i32 handle, i16 priority, u8 automatic) {
+        if (handle != -1) {
+            debkeydatatype_s *key = &debkeydata[handle];
+            key->timed_flags = automatic;
+            if (automatic == 0)
+                key->render_priority = priority;
+        }
     }
 
     i32 debris_render_group;
@@ -990,8 +1090,17 @@ extern "C" {
         debris_render_group = group;
     }
 
-    void DebrisSetRoomID(void) {
-        STUBBED();
+    void DebrisSetRoomID(i32 handle, nugscn_s *scene) {
+        if (scene != NULL) {
+            debkeydata[handle].field_2f2 = NuPortalWhichRoom(scene, &debkeydata[handle].position);
+            if (debkeydata[handle].field_2f2 != -1)
+                debkeydata[handle].gscene = scene;
+            else
+                debkeydata[handle].gscene = NULL;
+        } else {
+            debkeydata[handle].field_2f2 = -1;
+            debkeydata[handle].gscene = NULL;
+        }
     }
 
     void DebrisSetTrigger(i32 handle, i32 first, i32 second, i32 third) {
@@ -1003,12 +1112,51 @@ extern "C" {
         }
     }
 
-    void DebrisSetUserData(void) {
-        STUBBED();
+    void DebrisSetUserData(i32 handle, void *user_data) {
+        if (handle != -1)
+            debkeydata[handle].user_data = user_data;
     }
 
-    void DebrisShift(void) {
-        STUBBED();
+    void DebrisShift(NUMTX *transform) {
+        for (i32 i = 0; i < maxdebkeys; ++i) {
+            debkeydatatype_s *key = &debkeydata[i];
+            if (key->effect_index == 0)
+                continue;
+            debinftype *effect = debtab[key->effect_index];
+            i32 slot;
+            for (slot = 0; slot < 8; ++slot) {
+                if (effect->particle_keys[slot] == i)
+                    break;
+            }
+            if (slot != 8) {
+                i32 group = effect->time_group == 4;
+                if (key->controlled_chunk_count != 0) {
+                    for (i32 chunk = 0; chunk < key->controlled_chunk_count; ++chunk) {
+                        for (debris_chunk_control_s *control = debris_chunk_control_stack[group]; control != NULL;
+                             control = control->next) {
+                            if (control->particle_chunk == key->particle_chunks[chunk]) {
+                                RemoveChunkControlFromStack(control, &debris_chunk_control_stack[group]);
+                                freechunkcontrols[--freechunkcontrolsptr] = control;
+                                break;
+                            }
+                        }
+                    }
+                    key->controlled_chunk_count = 0;
+                }
+                DebReAlloc(&debkeydata[i], 0);
+            } else {
+                NuMtxMulR(&key->effect_orientation, transform, &key->effect_orientation);
+                NuVecMtxTransform(&debkeydata[i].position, &debkeydata[i].position, transform);
+                debkeydata[i].orientation_dirty = 0.0f;
+            }
+        }
+        for (i32 i = 0; i < debrischunks + debrischunksglass; ++i) {
+            particlechunkrendertype_s *chunk = &ParticleChunkToRender[i];
+            if (chunk->particle_chunk != NULL && chunk->key == NULL) {
+                NuMtxMulR(&chunk->effect_orientation, transform, &chunk->effect_orientation);
+                NuVecMtxTransform(&ParticleChunkToRender[i].position, &ParticleChunkToRender[i].position, transform);
+            }
+        }
     }
 
     void DebrisStartOffset(i32 handle, f32 offset) {
@@ -1022,12 +1170,14 @@ extern "C" {
             debkeydata[*handle].field_2f4 = 0;
     }
 
-    void DebrisStatusAlwaysOn(void) {
-        STUBBED();
+    void DebrisStatusAlwaysOn(i32 *handle) {
+        if (*handle != -1)
+            debkeydata[*handle].field_2f4 = 2;
     }
 
-    void DebrisStatusNormal(void) {
-        STUBBED();
+    void DebrisStatusNormal(i32 *handle) {
+        if (*handle != -1)
+            debkeydata[*handle].field_2f4 = 1;
     }
 
     void DebrisTorusCollisionCheck(void) {

@@ -1291,8 +1291,10 @@ extern "C" {
 
 } // extern "C"
 
-void NuQFntSetMtx2d(void *, numtx_s *) {
-    STUBBED();
+void NuQFntSetMtx2d(void *font, numtx_s *matrix) {
+    NuQFntPushPrintMode(2);
+    NuQFntSetMtx(font, matrix);
+    NuQFntPopPrintMode();
 }
 
 extern "C" {
@@ -1327,12 +1329,12 @@ void NuFntDumpReadable(nufnt_s *, char *) {
     STUBBED();
 }
 
-void NuFntFindStart(nutex_s *, i32 *, i32 *, i32, i32) {
-    STUBBED();
+i32 NuFntFindStart(nutex_s *, i32 *, i32 *, i32, i32) {
+    return 1;
 }
 
-void NuFntFindEnd(nutex_s *, i32 *, i32 *, i32, i32) {
-    STUBBED();
+i32 NuFntFindEnd(nutex_s *, i32 *, i32 *, i32, i32) {
+    return 1;
 }
 
 extern "C" {
@@ -1375,8 +1377,8 @@ extern "C" {
 
 } // extern "C"
 
-void NuFntPrintChar(char) {
-    STUBBED();
+i32 NuFntPrintChar(char) {
+    return 1;
 }
 
 extern "C" {

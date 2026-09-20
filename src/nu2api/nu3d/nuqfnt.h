@@ -182,8 +182,8 @@ struct nufnt_s;
 struct nutex_s;
 void NuFntSave(nufnt_s *font, i32 texture_id, char *path);
 void NuFntDumpReadable(nufnt_s *font, char *path);
-void NuFntFindStart(nutex_s *texture, i32 *x, i32 *y, i32 width, i32 height);
-void NuFntFindEnd(nutex_s *texture, i32 *x, i32 *y, i32 width, i32 height);
-void NuFntPrintChar(char character);
+i32 NuFntFindStart(nutex_s *texture, i32 *x, i32 *y, i32 width, i32 height);
+i32 NuFntFindEnd(nutex_s *texture, i32 *x, i32 *y, i32 width, i32 height);
+i32 NuFntPrintChar(char character);
 void NuQFntSetMtx2d(void *font, numtx_s *matrix);
 #endif

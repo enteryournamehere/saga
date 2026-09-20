@@ -231,20 +231,96 @@ struct EdEnumControl {
     void cbChanged(eduimenu_s *, eduiitem_s *, u32);
     void cbSelectItem(eduimenu_s *, eduiitem_s *, u32);
 };
-struct EdFileInputStream {
-    void BeginBlock(char const *);
-    void Eat(i32, i32);
-    void EndBlock();
-    void Open(i32, i32);
-    void SerialiseBuffer(void *, i32, i32);
+struct MemoryBuffer {
+    variptr_u *position;
+    variptr_u *end;
+    u32 used;
+    u32 remaining;
 };
-struct EdFileOutputStream {
-    void BeginBlock(char const *);
-    void Eat(i32, i32);
-    void EndBlock();
-    void Open(i32, i32);
-    void SerialiseBuffer(void *, i32, i32);
+struct EdStream {
+    virtual ~EdStream() {}
+    virtual i32 Eat(i32, i32) = 0;
+    virtual i32 SerialiseBuffer(void *, i32, i32) = 0;
+    virtual i32 SerialiseString(char *, i32) = 0;
+    virtual i32 SerialiseString(char **) = 0;
+    virtual i32 SerialiseString(char **, i32) = 0;
+    virtual char const *BeginBlock(char const *) = 0;
+    virtual void EndBlock() = 0;
+
+    i32 version;
+    i32 mode;
+    i32 swap_endianness;
+    i32 unknown_10;
+    MemoryBuffer *memory_buffer;
+    MemoryBuffer *secondary_buffer;
+    i32 flags;
+
+    EdStream();
+    EdStream(MemoryBuffer *);
+    EdStream(MemoryBuffer *, MemoryBuffer *);
 };
+struct EdInputStream : EdStream {
+    virtual ~EdInputStream() {}
+    virtual i32 SerialiseString(char **);
+    virtual i32 SerialiseString(char **, i32);
+    virtual i32 SerialiseString(char *, i32);
+};
+struct EdOutputStream : EdStream {
+    virtual ~EdOutputStream() {}
+    virtual i32 SerialiseString(char **);
+    virtual i32 SerialiseString(char **, i32);
+    virtual i32 SerialiseString(char *, i32);
+};
+struct EdFileInputStream : EdInputStream {
+    struct Block {
+        i32 position;
+        i32 size;
+        i32 name_offset;
+    };
+    Block blocks[8];
+    i32 block_count;
+    char block_names[256];
+    i32 name_length;
+    Block pending_block;
+    i32 pending;
+    i32 file;
+
+    virtual ~EdFileInputStream() {}
+    virtual char const *BeginBlock(char const *);
+    virtual i32 Eat(i32, i32);
+    virtual void EndBlock();
+    void Open(i32, i32);
+    virtual i32 SerialiseBuffer(void *, i32, i32);
+};
+struct EdFileOutputStream : EdOutputStream {
+    i32 block_positions[8];
+    i32 block_count;
+    i32 file;
+
+    virtual ~EdFileOutputStream() {}
+    virtual char const *BeginBlock(char const *);
+    virtual i32 Eat(i32, i32);
+    virtual void EndBlock();
+    void Open(i32, i32);
+    virtual i32 SerialiseBuffer(void *, i32, i32);
+};
+DECOMP_ASSERT(sizeof(MemoryBuffer) == 0x10, "MemoryBuffer size");
+DECOMP_ASSERT(sizeof(EdStream) == 0x20, "EdStream size");
+DECOMP_ASSERT(offsetof(EdStream, version) == 0x04, "EdStream version offset");
+DECOMP_ASSERT(offsetof(EdStream, mode) == 0x08, "EdStream mode offset");
+DECOMP_ASSERT(offsetof(EdStream, swap_endianness) == 0x0c, "EdStream endian offset");
+DECOMP_ASSERT(offsetof(EdStream, memory_buffer) == 0x14, "EdStream memory buffer offset");
+DECOMP_ASSERT(offsetof(EdStream, secondary_buffer) == 0x18, "EdStream secondary buffer offset");
+DECOMP_ASSERT(offsetof(EdStream, flags) == 0x1c, "EdStream flags offset");
+DECOMP_ASSERT(sizeof(EdFileInputStream::Block) == 0x0c, "EdFileInputStream block size");
+DECOMP_ASSERT(offsetof(EdFileInputStream, block_count) == 0x80, "EdFileInputStream block count offset");
+DECOMP_ASSERT(offsetof(EdFileInputStream, name_length) == 0x184, "EdFileInputStream name length offset");
+DECOMP_ASSERT(offsetof(EdFileInputStream, pending_block) == 0x188, "EdFileInputStream pending block offset");
+DECOMP_ASSERT(offsetof(EdFileInputStream, file) == 0x198, "EdFileInputStream file offset");
+DECOMP_ASSERT(sizeof(EdFileInputStream) == 0x19c, "EdFileInputStream size");
+DECOMP_ASSERT(offsetof(EdFileOutputStream, block_count) == 0x40, "EdFileOutputStream block count offset");
+DECOMP_ASSERT(offsetof(EdFileOutputStream, file) == 0x44, "EdFileOutputStream file offset");
+DECOMP_ASSERT(sizeof(EdFileOutputStream) == 0x48, "EdFileOutputStream size");
 struct EdInputContext {
     u8 reserved_00[0x48];
     f32 current_time;
@@ -266,11 +342,6 @@ struct EdInputContext {
     f32 GetRepeat(i32);
     void Set(i32, float, float);
     void Update(nucamera_s *, nupad_s *, float, bool);
-};
-struct EdInputStream {
-    void SerialiseString(char **);
-    void SerialiseString(char **, i32);
-    void SerialiseString(char *, i32);
 };
 struct EdManMove {
     EdManMove();
@@ -306,11 +377,6 @@ struct EdMatrixControl {
     void cbButton(eduimenu_s *, eduiitem_s *, u32);
     void cbChanged(eduimenu_s *, eduiitem_s *, u32);
     void cbSelected(eduimenu_s *, eduiitem_s *, u32);
-};
-struct EdOutputStream {
-    void SerialiseString(char **);
-    void SerialiseString(char **, i32);
-    void SerialiseString(char *, i32);
 };
 struct EdRef {
     void CheckType(i32);
@@ -396,15 +462,14 @@ struct EdSpecialObjectControl {
     void cbChanged(eduimenu_s *, eduiitem_s *, u32);
     void cbSelectObject(eduimenu_s *, eduiitem_s *, u32);
 };
-struct EdStream {
-    EdStream();
-    EdStream(MemoryBuffer *);
-    EdStream(MemoryBuffer *, MemoryBuffer *);
-};
 struct EdString {
+    char *data;
+
     void Set(char const *);
     ~EdString();
 };
+DECOMP_ASSERT(sizeof(EdString) == 4, "EdString size");
+DECOMP_ASSERT(offsetof(EdString, data) == 0, "EdString data offset");
 struct EdStringControl {
     void AddMenuItem(eduimenu_s *, EdRef *, void *);
     EdStringControl();

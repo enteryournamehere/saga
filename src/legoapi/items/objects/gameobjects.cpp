@@ -5435,80 +5435,91 @@ void ThingManager::edTimingRender() {
     eduiMenuRender(edTimingMenu);
 }
 
-void SpecialObject::Exists() const {
-    STUBBED();
+i32 SpecialObject::Exists() const {
+    return NuSpecialExistsFn(const_cast<nuhspecial_s *>(&special));
 }
 
-void SpecialObject::GetCollision() const {
-    STUBBED();
+i32 SpecialObject::GetCollision() const {
+    return NuSpecialGetCollision(const_cast<nuhspecial_s *>(&special)) != 0;
 }
 
-void SpecialObject::GetCurrentPosition() const {
-    STUBBED();
+VuVec const *SpecialObject::GetCurrentPosition() const {
+    return reinterpret_cast<VuVec const *>(NuSpecialGetDrawPos(const_cast<nuhspecial_s *>(&special)));
 }
 
-void SpecialObject::GetCurrentTransform() const {
-    STUBBED();
+VuMtx const *SpecialObject::GetCurrentTransform() const {
+    return reinterpret_cast<VuMtx const *>(NuSpecialGetDrawMtx(const_cast<nuhspecial_s *>(&special)));
 }
 
-void SpecialObject::GetInitialPosition() const {
-    STUBBED();
+VuVec const *SpecialObject::GetInitialPosition() const {
+    return reinterpret_cast<VuVec const *>(NuSpecialGetPos(const_cast<nuhspecial_s *>(&special)));
 }
 
-void SpecialObject::GetInitialTransform() const {
-    STUBBED();
+VuMtx const *SpecialObject::GetInitialTransform() const {
+    return reinterpret_cast<VuMtx const *>(NuSpecialGetMtx(const_cast<nuhspecial_s *>(&special)));
 }
 
-void SpecialObject::GetMtl(i32) const {
-    STUBBED();
+numtl_s *SpecialObject::GetMtl(i32 index) const {
+    return NuSpecialGetMtl(const_cast<nuhspecial_s *>(&special), index);
 }
 
-void SpecialObject::GetName() const {
-    STUBBED();
+char const *SpecialObject::GetName() const {
+    return NuSpecialGetName(const_cast<nuhspecial_s *>(&special));
 }
 
-void SpecialObject::GetNumMtls() const {
-    STUBBED();
+i32 SpecialObject::GetNumMtls() const {
+    return NuSpecialNumMtls(const_cast<nuhspecial_s *>(&special));
 }
 
-void SpecialObject::GetRadius() const {
-    STUBBED();
+f32 SpecialObject::GetRadius() const {
+    f32 radius = 1.0f;
+    NUVEC position;
+    if (NuSpecialExistsFn(const_cast<nuhspecial_s *>(&special))) {
+        NuSpecialGetRadius(const_cast<nuhspecial_s *>(&special), &position, &radius);
+    }
+    return radius;
 }
 
-void SpecialObject::GetVisibility() const {
-    STUBBED();
+i32 SpecialObject::GetVisibility() const {
+    return NuSpecialGetVisibilityFn(const_cast<nuhspecial_s *>(&special));
 }
 
-void SpecialObject::Render(VuMtx const *) const {
-    STUBBED();
+void SpecialObject::Render(VuMtx const *matrix) const {
+    if (matrix != NULL) {
+        NuSpecialDrawAt(const_cast<nuhspecial_s *>(&special),
+                        reinterpret_cast<NUMTX *>(const_cast<VuMtx *>(matrix)));
+    } else {
+        NuSpecialDrawAt(const_cast<nuhspecial_s *>(&special),
+                        NuSpecialGetDrawMtx(const_cast<nuhspecial_s *>(&special)));
+    }
 }
 
-void SpecialObject::SetCollision(i32) {
-    STUBBED();
+void SpecialObject::SetCollision(i32 enabled) {
+    NuSpecialSetCollision(&special, enabled);
 }
 
-void SpecialObject::SetCurrentPosition(VuVec const *) {
-    STUBBED();
+void SpecialObject::SetCurrentPosition(VuVec const *position) {
+    NuSpecialSetDrawPos(&special, reinterpret_cast<NUVEC *>(const_cast<VuVec *>(position)));
 }
 
-void SpecialObject::SetCurrentTransform(VuMtx const *) {
-    STUBBED();
+void SpecialObject::SetCurrentTransform(VuMtx const *matrix) {
+    NuSpecialSetDrawMtx(&special, reinterpret_cast<NUMTX *>(const_cast<VuMtx *>(matrix)));
 }
 
 void SpecialObject::SetInitialPosition(VuVec const *) {
     STUBBED();
 }
 
-void SpecialObject::SetInitialTransform(VuMtx const *) {
-    STUBBED();
+void SpecialObject::SetInitialTransform(VuMtx const *matrix) {
+    NuSpecialSetMtx(&special, reinterpret_cast<NUMTX *>(const_cast<VuMtx *>(matrix)));
 }
 
-void SpecialObject::SetVisibility(i32) {
-    STUBBED();
+void SpecialObject::SetVisibility(i32 enabled) {
+    NuSpecialSetVisibility(&special, enabled);
 }
 
 SpecialObject::SpecialObject() {
-    STUBBED();
+    NuSpecialClear(&special);
 }
 
 void GameThingManager::AddLevelOnlyThings() {

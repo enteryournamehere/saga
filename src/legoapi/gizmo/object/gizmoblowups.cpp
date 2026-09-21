@@ -2031,21 +2031,27 @@ GIZMOBLOWUP_s *GizmoBlowUpOpponent(GameObject_s *object, f32 range, f32 extra_ra
     if (forceNextAttackOpponent.Get() != NULL && (object->apiobj.flags_low & 0x80) != 0) {
         return forceNextAttackOpponent->GetGizBlowup();
     }
-    GIZMOBLOWUP_s *nearest = NULL;
-    f32 nearest_distance = GizmoBlowUpOpponent_Range2;
-    if (WORLD->gizmo_blowups != NULL) {
-        nearest_distance = range * range;
+    GIZMOBLOWUP_s *target = WORLD->gizmo_blowups;
+    if (target != NULL) {
+        GIZMOBLOWUP_s *nearest = NULL;
+        f32 nearest_distance = range * range;
         GizmoBlowUpOpponent_Behind = 0;
-        for (i32 i = 0; i < WORLD->gizmo_blowup_count; ++i) {
-            GIZMOBLOWUP_s *target = &WORLD->gizmo_blowups[i];
-            u32 flags = target->draw_flags;
+        for (i32 i = 0; i < WORLD->gizmo_blowup_count; ++i, ++target) {
             if ((target->status_flags & 0x80c001) != 0x80c000 ||
                 ((object->apiobj.flags_low & 0x80) != 0 && target->platform_id != -1 &&
-                 target->platform_id == object->apiobj.supporting_platform_id) ||
-                ((flags & 0x20) != 0 && ShadowMode == 0))
+                 target->platform_id == object->apiobj.supporting_platform_id))
                 continue;
-            if (mask != 0 && (value == 0 ? (flags & mask) == 0 : (flags & mask) != value))
+            u32 flags = target->draw_flags;
+            if ((flags & 0x20) != 0 && ShadowMode == 0)
                 continue;
+            if (mask != 0) {
+                if (value != 0) {
+                    if ((flags & mask) != value)
+                        continue;
+                } else if ((flags & mask) == 0) {
+                    continue;
+                }
+            }
             if (secondary_mask != 0 && (target->secondary_flags & secondary_mask) == 0)
                 continue;
             if (mode == 4 && (flags & 0x80) == 0)
@@ -2063,7 +2069,7 @@ GIZMOBLOWUP_s *GizmoBlowUpOpponent(GameObject_s *object, f32 range, f32 extra_ra
                     continue;
                 distance = NuVecDistSqr(&object->apiobj.collision_position, &target->mid_position, &delta);
             }
-            if (distance >= nearest_distance)
+            if (!(distance < nearest_distance))
                 continue;
             if (mode == 2) {
                 GizmoBlowUpOpponent_Behind = 0;
@@ -2094,9 +2100,10 @@ GIZMOBLOWUP_s *GizmoBlowUpOpponent(GameObject_s *object, f32 range, f32 extra_ra
             nearest_distance = distance;
             GizmoBlowUpOpponent_Behind = behind;
         }
+        GizmoBlowUpOpponent_Range2 = nearest_distance;
+        return nearest;
     }
-    GizmoBlowUpOpponent_Range2 = nearest_distance;
-    return nearest;
+    return NULL;
 }
 
 GIZMOBLOWUP_s *GizmoBlowUp_FindByName(WORLDINFO_s *world, char *name) {

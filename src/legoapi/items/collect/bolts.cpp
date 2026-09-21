@@ -44,6 +44,7 @@ static void Bolt_GetShootOrigin_Default(GameObject_s *, NUVEC *);
 static i32 Bolt_GetShootDirection_Default(GameObject_s *, NUVEC *);
 static void UpdateBolt_Geonosian(BOLT_s *);
 static void EndBolt_EwokTorpedo(BOLT_s *);
+void BoltTypes_Reset(WORLDINFO_s *);
 
 #include "legoapi/items/collect/bolttypes_lsw.inc"
 
@@ -60,11 +61,6 @@ static NUGSCN *BT_scene;
 static i32 BT_gdeb_moving_count;
 
 // Configuration entry point and parser callbacks share the original BT state.
-void BoltTypes_Configure(WORLDINFO_s *world, char *config) {
-    STUBBED();
-    (void)world;
-    (void)config;
-}
 
 static __used__ void BT_canonlyhitplayers(nufpar_s *) {
     BT_bolttype->field_60 |= 0x80;
@@ -196,6 +192,83 @@ static __used__ void BT_speed(nufpar_s *parser) {
 }
 static __used__ void BT_trooper_bolt(nufpar_s *) {
     BT_bolttype->field_60 |= 0x80000;
+}
+
+static NUFPCOMJMP BoltType_ConfigKeywords[] = {
+    {const_cast<char *>("name"), BT_name},
+    {const_cast<char *>("speed"), BT_speed},
+    {const_cast<char *>("duration"), BT_duration},
+    {const_cast<char *>("radius"), BT_radius},
+    {const_cast<char *>("scale"), BT_scale},
+    {const_cast<char *>("rand_angle"), BT_rand_angle},
+    {const_cast<char *>("scene"), BT_sceneconfig},
+    {const_cast<char *>("obj"), BT_obj},
+    {const_cast<char *>("ref_obj"), BT_ref_obj},
+    {const_cast<char *>("glow_obj"), BT_glow_obj},
+    {const_cast<char *>("ref_glow_obj"), BT_ref_glow_obj},
+    {const_cast<char *>("shadow_obj"), BT_shadow_obj},
+    {const_cast<char *>("debris"), BT_debris},
+    {const_cast<char *>("debris_moving"), BT_debris_moving},
+    {const_cast<char *>("part_hit"), BT_part_hit},
+    {const_cast<char *>("sfx"), BT_sfx_shoot},
+    {const_cast<char *>("sfx_shoot"), BT_sfx_shoot},
+    {const_cast<char *>("sfx_hit"), BT_sfx_hit},
+    {const_cast<char *>("damage"), BT_damage},
+    {const_cast<char *>("nodeflect"), BT_nodeflect},
+    {const_cast<char *>("converge"), BT_converge},
+    {const_cast<char *>("canonlyhitplayers"), BT_canonlyhitplayers},
+    {const_cast<char *>("no_terrain"), BT_no_terrain},
+    {const_cast<char *>("no_collide"), BT_no_collide},
+    {const_cast<char *>("trooper_bolt"), BT_trooper_bolt},
+    {const_cast<char *>("single_debris"), BT_single_debris},
+    {NULL, NULL},
+};
+
+void BoltTypes_Configure(WORLDINFO_s *world, char *config) {
+    BoltTypes_Reset(world);
+    NUFPAR *parser = NuFParCreateMem(const_cast<char *>("bolttypes"), config, 0xffff);
+    if (parser == NULL) {
+        return;
+    }
+
+    NuFParPushCom(parser, BoltType_ConfigKeywords);
+    BOLTTYPE_s type;
+    bool reading_type = false;
+    while (NuFParGetLine(parser) != 0) {
+        if (NuFParGetWord(parser) == 0) {
+            continue;
+        }
+
+        if (reading_type) {
+            if (NuStrICmp(parser->word_buf, const_cast<char *>("bolttype_end")) == 0) {
+                if (type.name[0] != '\0') {
+                    for (i32 i = 0; i < 8; ++i) {
+                        if (world->bolt_types[i].name[0] == '\0') {
+                            world->bolt_types[i] = type;
+                            break;
+                        }
+                    }
+                }
+                reading_type = false;
+            } else {
+                NuFParInterpretWord(parser);
+            }
+            continue;
+        }
+
+        if (NuStrICmp(parser->word_buf, const_cast<char *>("bolttype_start")) == 0) {
+            type = GlobalBoltType_Default;
+            type.name[0] = '\0';
+            type.moving_debris[0] = -1;
+            type.moving_debris[1] = -1;
+            BT_worldinfo = world;
+            BT_bolttype = &type;
+            BT_gdeb_moving_count = 0;
+            BT_scene = things_scene;
+            reading_type = true;
+        }
+    }
+    NuFParDestroy(parser);
 }
 
 BOLT_s *Bolt_Alloc() {
@@ -1455,8 +1528,37 @@ static __used__ unsigned int BoltInitSfx_LSW(GameObject_s *) {
 }
 
 void BoltTypes_Init(WORLDINFO_s *world) {
-    STUBBED();
-    (void)world;
+    for (i32 index = 0; index < BoltSys->count; ++index) {
+        BOLTTYPE_s &type = BoltSys->types[index];
+        memset(&type.specials, 0, sizeof(type.specials));
+
+        const i16 object_id = type.object_ids[0];
+        const i16 glow_id = type.object_ids[1];
+        if (object_id != -1) {
+            type.specials.object_special = world->lev_objs[object_id].special;
+            if (glow_id != -1) {
+                type.specials.glow_special = world->lev_objs[glow_id].special;
+            }
+
+            const i32 reflected_object_id = LevelObject_GetReflection(object_id);
+            if (reflected_object_id == -1) {
+                type.specials.reference_object_special = type.specials.object_special;
+                type.specials.reference_glow_special = type.specials.glow_special;
+            } else {
+                type.specials.reference_object_special = world->lev_objs[reflected_object_id].special;
+                if (glow_id != -1) {
+                    const i32 reflected_glow_id = LevelObject_GetReflection(glow_id);
+                    if (reflected_glow_id != -1) {
+                        type.specials.reference_glow_special = world->lev_objs[reflected_glow_id].special;
+                    }
+                }
+            }
+        }
+
+        if (type.field_2c_lo != -1) {
+            type.specials.shadow_special = world->lev_objs[type.field_2c_lo].special;
+        }
+    }
 }
 
 extern "C" {

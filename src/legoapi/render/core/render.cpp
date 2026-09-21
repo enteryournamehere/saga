@@ -8,6 +8,7 @@
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/gizmos/object/gizbuildits.h"
 #include "legoapi/gizmos/fx/gizmopickups.h"
+#include "legoapi/gizmos/door/zipups.h"
 #include "legoapi/menus/core/text.h"
 #include "legoapi/menus/core/panel.h"
 #include "legoapi/menus/core/gamemessages.h"
@@ -17,11 +18,17 @@
 #include "legoapi/render/light/fade_material.h"
 #include "legoapi/render/fx/edsplines.h"
 #include "legoapi/world/levels/levels.h"
+#include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
 #include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nu3d/android/nuportal_android.h"
 #include "nu2api/nu3d/nuvport.h"
 #include "legoapi/cutscenes/cutscenes.h"
 #include <stdio.h>
+#include <math.h>
 
 void DrawSubItems();
 
@@ -302,6 +309,8 @@ extern f32 cointotaltime;
 extern f32 MainRenderTime;
 extern i32 editor_active;
 extern i32 Paused;
+extern i32 screendump;
+extern f32 pause_fade;
 extern i32 PANELOFF;
 extern i32 noscenespecials;
 extern void RotateGameMatrix(numtx_s *matrix, i32 order, u16 x, u16 y, u16 z);
@@ -348,7 +357,8 @@ i32 RemoveNormalMaps = 0;
 NUVIDEORESHEADER g_VideoResHeader;
 
 extern "C" {
-    i32 NuDisplayListRndrSpecial(nuhspecial_s *special, NUMTX *mtx, i32 skinned, void *skin_mtx, void *blend_values);
+    i32 NuDisplayListRndrSpecial(nuhspecial_s *special, NUMTX *mtx, i32 skinned, NUMTX *skin_mtx,
+                                 DEFORMERWEIGHTSARRAY *blend_values);
     void *NuVisiEvaluate(NUGSCN *scene, void *visibility_context);
 
     static void DisplaySceneSetClipResult(NUDLDLISTSCENE *scene, i32 clip_index, i32 clip_result) {
@@ -767,8 +777,93 @@ extern "C" {
     }
 } // extern "C"
 
+i32 solid_cable;
+i32 nsegments_drawn;
+f32 slack_factor = 1.0f;
+f32 cable_slack = 1.0f;
+f32 nsegments_per_unit = 6.0f;
+extern CABLE_s cables[8];
+extern f32 tow_length;
+extern NUMTL *SolidMtl3D;
+
+static void DrawCableSegment(const NUVEC &start, const NUVEC &end, f32 sag) {
+    if (solid_cable == 0) {
+        NURND_VERTEX3D vertices[2] = {};
+        vertices[0].position = start;
+        vertices[1].position = end;
+        vertices[0].colour = 0xff000000;
+        vertices[1].colour = 0xff000000;
+        NuRndrLine3d(vertices, SolidMtl3D, NULL);
+    } else {
+        NUVEC first = start;
+        NUVEC second = end;
+        DrawRopeSingle(&first, &second, 1.0f, ropemtl, sag, sag, 10.0f, 5.0f);
+    }
+    ++nsegments_drawn;
+}
+
 void DrawCables() {
-    STUBBED();
+    nsegments_drawn = 0;
+    for (i32 cable_index = 0; cable_index < 8; ++cable_index) {
+        CABLE_s &cable = cables[cable_index];
+        if ((cable.flags_1e9 & 1) == 0 || cable.point_count < 2) {
+            continue;
+        }
+
+        if ((cable.flags_1e9 & 4) != 0) {
+            cable.slack += FRAMETIME * cable_slack * slack_factor;
+            if (cable.slack > cable_slack) {
+                cable.slack = cable_slack;
+            }
+        } else if (tow_length > 0.0f && cable.total_length < tow_length) {
+            cable.slack = (1.0f - cable.total_length / tow_length) * cable_slack;
+        } else {
+            cable.slack = 0.0f;
+        }
+
+        const f32 first_y = cable.points[0].y;
+        const f32 last_y = cable.points[cable.point_count - 1].y;
+        f32 distance_along = 0.0f;
+        for (i32 segment = 0; segment < cable.point_count - 1; ++segment) {
+            const f32 segment_length = cable.segment_lengths[segment];
+            i32 subdivisions = cable.slack == 0.0f ? 1 : static_cast<i32>(ceilf(segment_length * nsegments_per_unit));
+            if (subdivisions < 1) {
+                subdivisions = 1;
+            }
+            NUVEC previous = cable.points[segment];
+            for (i32 subdivision = 0; subdivision < subdivisions; ++subdivision) {
+                const f32 local_start = static_cast<f32>(subdivision) / static_cast<f32>(subdivisions);
+                const f32 local_end = static_cast<f32>(subdivision + 1) / static_cast<f32>(subdivisions);
+                const f32 global_start = cable.total_length > 0.0f
+                                             ? (distance_along + segment_length * local_start) / cable.total_length
+                                             : 0.0f;
+                const f32 global_end = cable.total_length > 0.0f
+                                           ? (distance_along + segment_length * local_end) / cable.total_length
+                                           : 0.0f;
+                NUVEC start = {
+                    cable.points[segment].x + (cable.points[segment + 1].x - cable.points[segment].x) * local_start,
+                    first_y + (last_y - first_y) * global_start,
+                    cable.points[segment].z + (cable.points[segment + 1].z - cable.points[segment].z) * local_start};
+                NUVEC end = {
+                    cable.points[segment].x + (cable.points[segment + 1].x - cable.points[segment].x) * local_end,
+                    first_y + (last_y - first_y) * global_end,
+                    cable.points[segment].z + (cable.points[segment + 1].z - cable.points[segment].z) * local_end};
+                start.y -= cable.slack * NU_SIN_LUT(static_cast<i32>(global_start * 32768.0f));
+                end.y -= cable.slack * NU_SIN_LUT(static_cast<i32>(global_end * 32768.0f));
+                f32 ground = GameShadow(NULL, &start, 5.0f, -1);
+                if (ground != 2000000.0f && start.y < ground + 0.1f) {
+                    start.y = ground + 0.1f;
+                }
+                ground = GameShadow(NULL, &end, 5.0f, -1);
+                if (ground != 2000000.0f && end.y < ground + 0.1f) {
+                    end.y = ground + 0.1f;
+                }
+                DrawCableSegment(start, end, cable.slack);
+                previous = end;
+            }
+            distance_along += segment_length;
+        }
+    }
 }
 
 void DrawRipple(ripple_node_s *node) {
@@ -931,8 +1026,23 @@ void DrawLine_Now(_vuv_s *, _vuv_s *, i32, i32) {
     STUBBED();
 }
 
-void DrawParallax(nuhspecial_s *) {
-    STUBBED();
+void DrawParallax(nuhspecial_s *special) {
+    if (NuIOS_IsLowEndDevice() != 0 && WORLD != NULL && WORLD->current_level != NULL &&
+        WORLD->current_level->data_display.far_clip < 20000.0f &&
+        WORLD->current_level->data_display.fog_start < 20000.0f) {
+        return;
+    }
+
+    const f32 uniform_scale = pNuCam->far_clip * 0.05f;
+    NUVEC scale = {uniform_scale, uniform_scale, uniform_scale};
+    NUMTX_ALIGNED16 matrix;
+    NuMtxSetScale(&matrix, &scale);
+    matrix.m30 = pNuCam->mtx.m30;
+    matrix.m31 = pNuCam->mtx.m31;
+    matrix.m32 = pNuCam->mtx.m32;
+    NuRndrStateSetFogEnabled(0);
+    NuSpecialDrawAt(special, &matrix);
+    NuRndrStateSetFogEnabled(1);
 }
 
 void DrawQuestion(nuvec_s *position, float scale_value, float y_push) {
@@ -1208,7 +1318,23 @@ void DrawGameState(float x, float y, i32 highlight, i32 slot) {
 }
 
 void DrawPauseFade() {
-    STUBBED();
+    if (editor_active != 0 || screendump != 0)
+        return;
+
+    f32 step = FRAMETIME * 2.0f;
+    i32 fade;
+    if (Paused == 0 && NetPaused == 0) {
+        fade = static_cast<i32>(pause_fade - step);
+        if (fade < 0)
+            fade = 0;
+    } else {
+        fade = static_cast<i32>(pause_fade + step);
+        if (fade > 0) {
+            pause_fade = 1.0f;
+            return;
+        }
+    }
+    pause_fade = static_cast<f32>(fade);
 }
 
 void DrawRippleSet(ripple_set_s *set) {
@@ -1263,8 +1389,33 @@ void DrawBoxMtx_Now(_vum_s *, _vuv_s *, i32, i32) {
 
 void *AddGameMessage(char *, NUVEC *, f32, NUVEC *, f32, u8, u8, u8, u32, f32);
 
-void DrawCutBorders(i32) {
-    STUBBED();
+void DrawCutBorders(i32 widescreen) {
+    if (CutBorderScale <= 0.0f) {
+        return;
+    }
+
+    NuRndrBeginScene(-1);
+    f32 border_scale = 0.1f;
+    const CUTINFO *cut = static_cast<CUTINFO *>(CutStopInfo);
+    const bool active_cut_wide = cut != NULL && (cut->flags & 0x4000) != 0;
+    bool single_cut_wide = false;
+    if (WORLD->cutscene_sys != NULL && WORLD->cutscene_sys->count == 1 && WORLD->cutscene_sys->cuts[0] != NULL) {
+        single_cut_wide = (WORLD->cutscene_sys->cuts[0]->flags & 0x4000) != 0;
+    }
+    if (active_cut_wide || single_cut_wide) {
+        border_scale = 0.21276596f;
+    }
+    if (widescreen != 0) {
+        border_scale = (border_scale * 4.0f - 0.5f) / 3.0f;
+    }
+    if (border_scale < 0.02f) {
+        border_scale = 0.02f;
+    }
+    const i32 height =
+        static_cast<i32>(border_scale * 3584.0f * NU_SIN_LUT(static_cast<i32>(CutBorderScale * 16384.0f)));
+    NuRndrRect2di(0, 0, 0x2800, height, 0x80ffffff, FadeMtl);
+    NuRndrRect2di(0, 0xe00 - height, 0x2800, height, 0x80ffffff, FadeMtl);
+    NuRndrEndScene();
 }
 
 void DrawExplosions() {

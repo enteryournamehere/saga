@@ -35,9 +35,25 @@ namespace {
     };
 
     enum SPINNER_RUNTIME_FLAGS : u8 {
+        SPINNER_RUNTIME_AUTO_RETURN = 0x10,
         SPINNER_RUNTIME_ANIMATION_HIDDEN = 0x20,
     };
 
+    enum SPINNER_STATE_RUNTIME_FLAGS : u32 {
+        SPINNER_STATE_ROTATE_POSITIVE = 0x0001,
+        SPINNER_STATE_REVERSE = 0x0002,
+        SPINNER_STATE_INVERT_ANIMATION = 0x0004,
+        SPINNER_STATE_NO_CHARACTER_DEFLECTION = 0x000c,
+        SPINNER_STATE_STOP_ANIMATION = 0x0020,
+        SPINNER_STATE_ROTATING = 0x0040,
+        SPINNER_STATE_TRANSIENT_MASK = 0x0310,
+        SPINNER_STATE_COMPLETION_EFFECT = 0x2000,
+    };
+
+    struct SPINNERARMRUNTIME {
+        u32 field_0x00;
+        NUMTX matrix;
+    };
     struct SPINNERPROGRESSENTRY {
         f32 animation_position;
         u16 rotation;
@@ -197,10 +213,97 @@ static void *GizSpinner_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_en
     return GizmoBufferAlloc(buffer, buffer_end, 0x40);
 }
 
-static i32 *GizSpinner_GetBestBoltTarget(GIZMOSET *, float *, NUVEC *, NUVEC *, void *, NUVEC *, NUVEC *, float, float,
-                                         i32, i32, i32) {
-    UNIMPLEMENTED();
-    return {};
+extern u16 TargetDeg_Near, TargetDeg_Mid, TargetDeg_Far;
+extern f32 TargetDist_Near2, TargetDist_Mid2;
+
+static i32 *GizSpinner_GetBestBoltTarget(GIZMOSET *, float *, NUVEC *result_position, NUVEC *result_velocity, void *,
+                                         NUVEC *position, NUVEC *direction, float radius, float range_squared,
+                                         i32 directional, i32, i32) {
+    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+    NUVEC aim = *direction;
+    if (world->spinners == NULL) {
+        return NULL;
+    }
+
+    GIZMOSET *set = &world->gizmo_sys->sets[spinner_gizmotype_id];
+    if (set->count < 1) {
+        return NULL;
+    }
+    const float min_x = position->x - radius;
+    const float max_x = position->x + radius;
+    const float min_z = position->z - radius;
+    const float max_z = position->z + radius;
+    float best_alignment = 0.0f;
+    GIZMO *result = NULL;
+
+    for (i32 index = 0; index < set->count; ++index) {
+        GIZSPINNER_s *spinner = &world->spinners[index];
+        if (spinner->flags == 0 || (spinner->flags & 0x26) != 0 || (spinner->state_flags & 8) != 0 ||
+            spinner->position.x < min_x || spinner->position.x > max_x || spinner->position.z < min_z ||
+            spinner->position.z > max_z) {
+            continue;
+        }
+
+        NUVEC target_position = spinner->position;
+        target_position.y += spinner->field_0x098;
+        if (spinner->type == 0) {
+            continue;
+        }
+        u16 angle = spinner->rotation + spinner->initial_rotation + spinner->field_0x08c;
+        const u16 angle_step = static_cast<u16>(0x10000 / spinner->type);
+        for (i32 arm = 0; arm < spinner->type; ++arm, angle += angle_step) {
+            target_position.x = spinner->position.x + NuTrigTable[angle >> 1] * spinner->field_0x094;
+            target_position.z =
+                spinner->position.z + NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * spinner->field_0x094;
+
+            NUVEC tangent;
+            tangent.x = NuTrigTable[((angle + 0x4000) & 0xffff) >> 1];
+            tangent.z = NuTrigTable[((angle + 0x8000) >> 1) & 0x7fff];
+            NUVEC facing = aim;
+            if (directional == 0) {
+                NuVecRotateY(&facing, &v001,
+                             NuAtan2D(spinner->position.x - position->x, spinner->position.z - position->z));
+            }
+            if (!(__builtin_fabsf(tangent.x * facing.x + tangent.z * facing.z) > NuTrigTable[0x3000])) {
+                continue;
+            }
+
+            NUVEC delta;
+            float distance = NuVecDistSqr(&target_position, position, &delta);
+            if (!(range_squared > distance)) {
+                continue;
+            }
+            if (directional != 0) {
+                aim = *direction;
+            } else {
+                NuVecRotateY(&aim, &v001, NuAtan2D(target_position.x - position->x, target_position.z - position->z));
+            }
+            NuVecNorm(&delta, &delta);
+            float dot = NuVecDot(&delta, &aim);
+            u16 target_angle;
+            if (TargetDist_Near2 > distance && directional != 0) {
+                target_angle = TargetDeg_Near;
+            } else if (TargetDist_Mid2 > distance) {
+                target_angle = TargetDeg_Mid;
+            } else {
+                target_angle = TargetDeg_Far;
+            }
+            if (!(dot > NuTrigTable[((target_angle + 0x4000) >> 1) & 0x7fff])) {
+                continue;
+            }
+
+            NuVecRotateY(&delta, &v001, NuAtan2D(target_position.x - position->x, target_position.z - position->z));
+            float alignment = delta.x * aim.x + delta.z * aim.z;
+            if (!(alignment > best_alignment)) {
+                continue;
+            }
+            best_alignment = alignment;
+            *result_velocity = v000;
+            *result_position = target_position;
+            result = &set->gizmos[index];
+        }
+    }
+    return reinterpret_cast<i32 *>(result);
 }
 
 static void GizSpinner_Draw(void *world_ptr, void *, float) {
@@ -338,8 +441,7 @@ i32 GizSpinner_UsingSpecial(GIZMO **results, void *world_ptr, i32 capacity, char
                 if ((world->spinners[index].flags & GIZSPINNER_FLAG_VALID) == 0) {
                     continue;
                 }
-                for (GAMEANIMOBJ_s *object = spinners[index].anim_set->objects; object != NULL;
-                     object = object->next) {
+                for (GAMEANIMOBJ_s *object = spinners[index].anim_set->objects; object != NULL; object = object->next) {
                     if (NuSpecialCompare(&special, &object->special) != 0) {
                         GIZMO *gizmo = GizmoFindByName(world->gizmo_sys, type_id, name);
                         if (gizmo != NULL) {
@@ -629,7 +731,8 @@ void GizSpinners_InitTerrain(WORLDINFO_s *world) {
                     PlatInstRotate(world->spinners[index].arms[arm].platform_id, 1);
                 }
             } else {
-                world->spinners[index].platform_id = static_cast<i16>(NewPlatInst(&world->spinners[index].matrix, instance));
+                world->spinners[index].platform_id =
+                    static_cast<i16>(NewPlatInst(&world->spinners[index].matrix, instance));
                 for (i32 arm = 0; arm < world->spinners[index].type; ++arm) {
                     world->spinners[index].arms[arm].platform_id = -1;
                 }
@@ -660,8 +763,127 @@ i32 GizSpinner_GetState(GIZSPINNER_s *spinner) {
     return state;
 }
 
-int GizSpinner_Update(GIZSPINNER_s *) {
-    STUBBED();
+int GizSpinner_Update(GIZSPINNER_s *spinner) {
+    if (spinner == NULL || spinner->anim_set == NULL) {
+        return 0;
+    }
+
+    const u32 old_flags = spinner->state_flags;
+    const bool stop_animation = (old_flags & SPINNER_STATE_STOP_ANIMATION) != 0;
+    spinner->state_flags &= ~SPINNER_STATE_TRANSIENT_MASK;
+    if (stop_animation) {
+        GameAnimSet_Stop(spinner->anim_set);
+    }
+
+    if ((spinner->state_flags & SPINNER_STATE_NO_CHARACTER_DEFLECTION) == 0) {
+        for (i32 index = 0; index < HIGHGAMEOBJECT; ++index) {
+            GameObject_s *object = &Obj[index];
+            APIOBJECT_s *api = &object->apiobj;
+            if ((api->field_0x1f8 & (APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER)) !=
+                    (APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER) ||
+                api->field_0x287 != 0 || (object->field_0xe20 & GAMEOBJECT_E20_FLAG_MOVEMENT_DISABLED) != 0 ||
+                (CInfo[static_cast<i8>(object->character_context)].flags & 0x40008000) != 0 ||
+                spinner->position.x - spinner->field_0x09c > api->collision_max.x ||
+                api->collision_min.x > spinner->position.x + spinner->field_0x09c ||
+                spinner->position.z - spinner->field_0x09c > api->collision_max.z ||
+                api->collision_min.z > spinner->position.z + spinner->field_0x09c) {
+                continue;
+            }
+
+            const f32 dx = api->position.x - spinner->position.x;
+            const f32 dz = api->position.z - spinner->position.z;
+            const f32 radius = 0.5f + spinner->field_0x09c + api->field_0x1dc;
+            if (dx * dx + dz * dz >= radius * radius) {
+                continue;
+            }
+
+            const u16 radial_angle = (dx != 0.0f || dz != 0.0f) ? NuAtan2D(dx, dz) : qrand();
+            u16 movement_angle;
+            f32 speed;
+            if (api->velocity.x == 0.0f && api->velocity.z == 0.0f) {
+                movement_angle = api->facing_angle;
+                speed = api->character_data->game_character->tiptoe_speed;
+            } else {
+                movement_angle = NuAtan2D(api->velocity.x, api->velocity.z);
+                speed = NuFsqrt(api->velocity.x * api->velocity.x + api->velocity.z * api->velocity.z);
+                GAMECHARACTERDATA_s *character = api->character_data->game_character;
+                if (speed >= character->tiptoe_speed && speed < character->run_speed) {
+                    speed = character->run_speed;
+                }
+            }
+
+            const u16 tangent_angle =
+                static_cast<u16>(radial_angle + (RotDiff(radial_angle, movement_angle) < 0 ? -0x3555 : 0x3555));
+            api->velocity.x = NU_SIN_LUT(tangent_angle) * speed;
+            api->velocity.z = NU_COS_LUT(tangent_angle) * speed;
+        }
+    }
+
+    const u8 previous_state = spinner->state;
+    if (!stop_animation) {
+        if (spinner->field_0x090 > 0.0f) {
+            spinner->field_0x090 -= FRAMETIME;
+            if (spinner->field_0x090 <= 0.0f) {
+                spinner->rotation = spinner->target_rotation;
+                spinner->field_0x090 = 0.0f;
+                GameAnimSet_Stop(spinner->anim_set);
+            } else {
+                const f32 blend = NU_SIN_LUT(static_cast<u16>((1.0f - spinner->field_0x090 * 4.0f) * 16384.0f));
+                i32 difference = RotDiff(spinner->previous_rotation, spinner->target_rotation);
+                if ((spinner->state_flags & SPINNER_STATE_ROTATE_POSITIVE) == 0) {
+                    if (difference > 0) {
+                        difference -= 0x10000;
+                    }
+                } else if (difference < 0) {
+                    difference += 0x10000;
+                }
+                spinner->rotation = static_cast<u16>(static_cast<f32>(spinner->previous_rotation) +
+                                                     static_cast<f32>(difference) * blend);
+            }
+        } else if (spinner->room_index != -1) {
+            const bool forward = spinner->room_index == 0x1e
+                                     ? (spinner->state_flags & SPINNER_STATE_INVERT_ANIMATION) == 0
+                                     : (spinner->state_flags & SPINNER_STATE_INVERT_ANIMATION) != 0;
+            const bool at_endpoint = forward ? spinner->anim_set->state == GAMEANIMSET_STATE_AT_END
+                                             : GameAnimSet_IsAnimationReset(spinner->anim_set) != 0;
+            if (!at_endpoint && spinner->animation_speed != 0.0f) {
+                GameAnimSet_Play(spinner->anim_set, forward ? spinner->animation_speed : -spinner->animation_speed, 1);
+            } else {
+                GameAnimSet_Stop(spinner->anim_set);
+            }
+        } else if ((spinner->flags & SPINNER_RUNTIME_AUTO_RETURN) == 0) {
+            GameAnimSet_Stop(spinner->anim_set);
+            spinner->state_flags &= ~SPINNER_STATE_ROTATING;
+        } else if (GameAnimSet_IsAnimationReset(spinner->anim_set) != 0 ||
+                   ((spinner->state_flags & 0x400) != 0 && spinner->anim_set->state == GAMEANIMSET_STATE_AT_END)) {
+            GameAnimSet_Stop(spinner->anim_set);
+            spinner->state_flags &= ~SPINNER_STATE_ROTATING;
+        } else if (spinner->animation_speed != 0.0f && spinner->animation_points[0] != 0.0f) {
+            const f32 return_speed = -spinner->animation_points[0];
+            const i32 rotation_step =
+                static_cast<i32>(5461.0f * FRAMETIME * (spinner->animation_points[0] / spinner->animation_speed));
+            const u32 direction = spinner->state_flags & (SPINNER_STATE_REVERSE | SPINNER_STATE_INVERT_ANIMATION);
+            if (direction == 0 || direction == (SPINNER_STATE_REVERSE | SPINNER_STATE_INVERT_ANIMATION)) {
+                spinner->rotation = static_cast<u16>(spinner->rotation + rotation_step);
+            } else {
+                spinner->rotation = static_cast<u16>(spinner->rotation - rotation_step);
+            }
+            GameAnimSet_Play(spinner->anim_set, return_speed, 1);
+        } else {
+            GameAnimSet_Stop(spinner->anim_set);
+        }
+
+        spinner->state = static_cast<u8>(GizSpinner_GetState(spinner));
+        if ((old_flags & GIZSPINNER_STATE_RESET) == 0 && previous_state == 1 && spinner->state != 1) {
+            NewRumbleAllPlayers(0.0f, 0.1f, 0, 0);
+            GameCam_Judder(GameCam, -0.2f, 0, NULL);
+            GameAudio_PlaySfx(0x39, &spinner->position, 0, 0);
+            spinner->state_flags |= SPINNER_STATE_COMPLETION_EFFECT;
+        }
+    }
+
+    spinner->room_index = -1;
+    spinner->field_70 = GameAnimSet_GetCompletionRatio(spinner->anim_set);
     return 0;
 }
 
@@ -934,8 +1156,8 @@ void Bolt_AddDeflectedBolt(BOLT_s *bolt, NUVEC *velocity, NUVEC *normal, unsigne
 
 static i32 GizSpinner_BoltHitPlat(void *, void *spinner_ptr, BOLT *bolt, unsigned char *hit_flags) {
     GIZSPINNER_s *spinner = static_cast<GIZSPINNER_s *>(spinner_ptr);
-    if (spinner == NULL || (spinner->flags & (GIZSPINNER_FLAG_VALID | GIZSPINNER_FLAG_HIDE_BASE)) !=
-                               GIZSPINNER_FLAG_VALID) {
+    if (spinner == NULL ||
+        (spinner->flags & (GIZSPINNER_FLAG_VALID | GIZSPINNER_FLAG_HIDE_BASE)) != GIZSPINNER_FLAG_VALID) {
         return 0;
     }
 

@@ -6,9 +6,11 @@
 #include "legoapi/menus/screens/shop.h"
 #include "legoapi/menus/screens/gamestructure.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/characters/core/character.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/core/input/timer.h"
 #include "legoapi/items/base/apiobject.h"
+#include "legoapi/items/base/collection.h"
 #include "legoapi/menus/screens/store.h"
 #include "legoapi/world/levels/episode.h"
 #include "legoapi/world/world.h"
@@ -17,12 +19,17 @@
 #include "legoapi/world/levels/levels.h"
 #include "legoapi/world/mission.h"
 #include "legoapi/cutscenes/cutscenes.h"
+#include "legoapi/props/doors/door.h"
+#include "legoapi/render/core/terrain.h"
+#include "legoapi/render/core/render.h"
+#include "nu2api/nu3d/nuspline.h"
 
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nucore/nuvideo.h"
 #include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/nutrig.h"
 #include "nu2api/numusic/numusic.h"
 #include "nu2api/nusound/nusound.h"
 
@@ -211,7 +218,6 @@ i32 InStory() {
 }
 
 i32 Game_Exit(i32) {
-    STUBBED();
     return 0;
 }
 
@@ -273,16 +279,24 @@ void Game_AutoSaving() {
 }
 
 bool FreePlayUnlocked() {
-    STUBBED();
     return true;
 }
 
-void Store_UnlockPack(i32, bool) {
-    STUBBED();
+void Store_UnlockPack(i32, bool save) {
+    if (save) {
+        TriggerExtraDataSave();
+        if (WORLD != NULL && WORLD->current_level == HUB_LDATA)
+            TriggerAutoSave();
+    }
 }
 
 void Store_RestorePurchases() {
-    STUBBED();
+    if (WORLD != NULL && HUB_LDATA != NULL && WORLD->current_level == HUB_LDATA) {
+        TriggerExtraDataSave();
+        TriggerAutoSave();
+    } else {
+        TriggerExtraDataSave();
+    }
 }
 
 void StoreBundle_FindByName(char *) {
@@ -391,12 +405,72 @@ i32 Store_FindPack(i32 id, char *name) {
     }
 }
 
-void Store_HubInitFloorTargets(WORLDINFO_s *) {
-    STUBBED();
+void Store_HubInitFloorTargets(WORLDINFO_s *world) {
+    for (i32 i = 0; i < 11; ++i) {
+        STOREPACK &pack = StorePack[i];
+        pack.floor_target_door = Door_FindByName(world, pack.floor_target_door_name);
+        if (pack.floor_target_door != NULL) {
+            NUVEC *points = pack.floor_target_door->spline->pts;
+            NUVEC direction;
+            NuVecSub(&direction, &points[6], &points[4]);
+            pack.custodian_angle = static_cast<u16>(NuAtan2D(direction.x, direction.z) + 0x4000);
+            NuVecAdd(&pack.custodian_position, &points[4], &points[6]);
+            NuVecScale(&pack.custodian_position, &pack.custodian_position, 0.5f);
+            if (pack.offset_floor_target != 0) {
+                pack.custodian_position.x += NU_SIN_LUT(pack.custodian_angle) * 0.5f;
+                pack.custodian_position.z += NU_COS_LUT(pack.custodian_angle) * 0.5f;
+            }
+        }
+        pack.custodian_position.y = NewShadowEx(&pack.custodian_position, 0, 1.0f, 1.0f, 0) + 0.005f;
+    }
 }
 
-void Store_HubDrawFloorTargets(WORLDINFO_s *) {
-    STUBBED();
+void Store_HubDrawFloorTargets(WORLDINFO_s *world) {
+    (void)NuFmod(GameTimer.time_elapsed, 4.0f);
+    const u16 alpha_angle = static_cast<u16>(NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f) * 65536.0f);
+    const f32 frame_alpha = NU_SIN_LUT(alpha_angle) * 0.2f + 0.8f;
+
+    for (i32 i = 0; i < 11; ++i) {
+        STOREPACK &pack = StorePack[i];
+        if (pack.floor_target_door == NULL && (pack.id == NULL || *pack.id == -1)) {
+            continue;
+        }
+        if (Store_IsPackUnlocked(i) ||
+            (pack.field44_0x32 != 0xff && pack.field44_0x32 != GameCam->sock_position.location.sock)) {
+            continue;
+        }
+
+        const u16 frame_rotation = static_cast<u16>(NuFmod(GameTimer.time_elapsed, 1.5f) / 1.5f * 65536.0f);
+        Draw3DObjectAlpha(world, LEGOOBJ_ICON_FRAME_GREEN, &pack.custodian_position, 0x4000, frame_rotation, 0, 0.9f,
+                          0.9f, 0.9f, 0, frame_alpha);
+
+        if (g_lowEndLevelBehaviour == 0 || Hub_LowEnd_IconsInsteadOfModels == 0 || pack.id == NULL ||
+            APICharacterLoaded(*pack.id) != NULL || big_icon_scene == NULL) {
+            continue;
+        }
+
+        const i32 object_id = CDataList[*pack.id].field20_0x42;
+        if (object_id == -1) {
+            continue;
+        }
+
+        NUVEC position = pack.custodian_position;
+        position.x +=
+            NU_SIN_LUT(static_cast<u16>(NuFmod(GameTimer.time_elapsed, 2.3f) / 2.3f * 65536.0f + i * 0x2000)) * 0.01f;
+        position.y += CDataList[*pack.id].bounds_max_y * 0.75f - 0.01f;
+        position.y +=
+            NU_SIN_LUT(static_cast<u16>(NuFmod(GameTimer.time_elapsed, 2.0f) * 0.5f * 65536.0f + i * 0x2aaa)) * 0.01f;
+        position.z +=
+            NU_SIN_LUT(static_cast<u16>(NuFmod(GameTimer.time_elapsed, 2.4f) / 2.4f * 65536.0f + i * 0x2000 + 0x4000)) *
+            0.01f;
+
+        const u16 facing = NuAtan2D(position.x - GameCam->pos.x, position.z - GameCam->pos.z);
+        nuhspecial_s icon_special;
+        if (NuSpecialFind(big_icon_scene, &icon_special, ObjTabList[object_id].name, 1) != 0) {
+            Draw3DObjectAlpha(world, object_id, &position, 0, facing, 0, 0.45f, 0.45f, 0.45f, 0, 1.0f);
+        }
+        Draw3DObjectAlpha(world, 0xa7, &position, 0, facing, 0, 0.45f, 0.45f, 0.45f, 0, 1.0f);
+    }
 }
 
 void MenuUpdateDebugStore(MENU_s *) {

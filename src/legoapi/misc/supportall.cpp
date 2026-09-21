@@ -5,6 +5,7 @@
 #include "nu2api/numath/nufloat.h"
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/actions/character/streaks.h"
+#include "legoapi/actions/combat/hits.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -15,6 +16,7 @@
 #include "legoapi/core/input/qrand.h"
 #include "gameapi/ai/aisys/aisys.h"
 #include "legoapi/characters/core/character.h"
+#include "legoapi/characters/core/players.h"
 #include "legoapi/characters/motion.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/world/mission.h"
@@ -27,6 +29,7 @@
 #include "legoapi/legoapi_types.h"
 #include "legoapi/menus/core/panel.h"
 #include "legoapi/props/doors/door.h"
+#include "legoapi/props/system/socksys.h"
 #include "legoapi/render/core/render.h"
 #include "legoapi/render/fx.h"
 #include "legoapi/render/fx/game_deb.h"
@@ -36,7 +39,9 @@
 #include "legoapi/world/areas.h"
 #include "legoapi/world/mission.h"
 #include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/nupostparams.h"
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nufile/nufile.h"
@@ -160,8 +165,48 @@ void MakeBaddiesForgetAboutParty(i32);
 extern i32 nbaddies_can_see_players;
 i32 reset_reimport;
 
-void CatchUpCode(GameObject_s *, float, float, i32) {
-    STUBBED();
+void CatchUpCode(GameObject_s *object, f32 divisor, f32 maximum, i32 mode) {
+    if (static_cast<u8>(object->apiobj.field_0x27c) == 0xff) {
+        return;
+    }
+
+    const i32 socket_index = static_cast<i8>(object->field_0x661);
+    object->field_0xc38 = 0.0f;
+    if (socket_index == -1 || WORLD->sock_sys == NULL) {
+        return;
+    }
+    if (mode != 0 && static_cast<i8>(object->apiobj.field_0x1f8) >= 0) {
+        return;
+    }
+
+    const bool looping = WORLD->sock_sys->sock[socket_index].looping != 0;
+    GameObject_s *other;
+    if (Player[0] == object) {
+        other = Player[1];
+    } else if (Player[1] == object) {
+        other = Player[0];
+    } else {
+        return;
+    }
+
+    if (other != NULL &&
+        (static_cast<i8>(object->apiobj.field_0x1f8) >= 0 || static_cast<i8>(other->apiobj.field_0x1f8) < 0) &&
+        static_cast<i8>(other->field_0x661) == socket_index &&
+        (mode == 0 || static_cast<i8>(other->apiobj.field_0x1f8) < 0)) {
+        f32 distance = object->sock_position.normalized_distance - other->sock_position.normalized_distance;
+        if (looping) {
+            if (distance >= 0.5f) {
+                distance -= 1.0f;
+            } else if (-0.5f >= distance) {
+                distance += 1.0f;
+            }
+        }
+        if (distance < 0.0f) {
+            const f32 catchup = -distance / divisor;
+            maximum = MIN(maximum, catchup);
+            object->field_0xc38 = maximum;
+        }
+    }
 }
 
 struct TexQuadVertex {
@@ -237,8 +282,19 @@ void bgProcClose() {
     STUBBED();
 }
 
-void BurnoutApply(i32) {
-    STUBBED();
+extern "C" void edrtlCalculateBurnoutEx(burnset_s *set, NuBloomParameters *parameters, NUVEC *camera_position,
+                                        f32 frame_time);
+
+void BurnoutApply(i32 paused) {
+    NuBloomParameters parameters = {};
+    CUTINFO *cut = static_cast<CUTINFO *>(CutStopInfo);
+    if (cut != NULL && (cut->flags & 0x80) != 0)
+        return;
+    if (WORLD->burnset == NULL)
+        return;
+    edrtlCalculateBurnoutEx(WORLD->burnset, &parameters, reinterpret_cast<NUVEC *>(&global_camera.mtx.m30), FRAMETIME);
+    if (parameters.intensity > 0.0f)
+        NuPostBloom(paused, &parameters);
 }
 
 void bgprocFreeze() {
@@ -333,8 +389,34 @@ apply_weights:
     object->field_0x1089 = current_index + 1;
 }
 
-void RndrTexQuad3D(VuMtx const &, i32, numtl_s *) {
-    STUBBED();
+static inline void TexQuadSubmit3D(f32 x, f32 y, i32 colour, i32 u, i32 v) {
+    TexQuadVertex *vertex = static_cast<TexQuadVertex *>(g_NuPrim_StreamBufferPtr->void_ptr);
+    if (g_NuPrim_NeedsOverbrightening != 0) {
+        vertex->colour = colour;
+    } else {
+        vertex->colour = ((colour >> 1) & 0x7f7f7f) | (colour & 0xff000000);
+    }
+    if (g_NuPrim_NeedsHalfUVs != 0) {
+        vertex->half_uv[0] = u != 0 ? 0x3c00 : 0;
+        vertex->half_uv[1] = v != 0 ? 0x3c00 : 0;
+    } else {
+        vertex->uv[0] = static_cast<f32>(u);
+        vertex->uv[1] = static_cast<f32>(v);
+    }
+    vertex->x = x;
+    vertex->y = y;
+    vertex->z = 0.0f;
+    g_NuPrim_StreamBufferPtr->u8_ptr += sizeof(TexQuadVertex);
+    ++g_NuPrim_VertexCount;
+}
+
+void RndrTexQuad3D(VuMtx const &matrix, i32 colour, numtl_s *material) {
+    NuPrim3DBegin(1, 7, material, reinterpret_cast<NUMTX *>(const_cast<VuMtx *>(&matrix)));
+    TexQuadSubmit3D(-0.5f, -0.5f, colour, 0, 0);
+    TexQuadSubmit3D(0.5f, -0.5f, colour, 1, 0);
+    TexQuadSubmit3D(-0.5f, 0.5f, colour, 0, 1);
+    TexQuadSubmit3D(0.5f, 0.5f, colour, 1, 1);
+    NuPrim3DEnd();
 }
 
 void CheckResetBits() {
@@ -701,8 +783,30 @@ void DebFreeWithoutKey(debkeydatatype_s *key) {
     DebFree(&handle);
 }
 
+i32 CannotKill(GameObject_s *object);
+extern "C" i32 DebrisPreCheckCollisions(NUVEC *position, f32 radius);
+extern "C" i32 DebrisCollisionCheckScaleY(NUVEC *position, f32 radius, f32 y_scale);
+extern "C" i32 DebrisTorusCollisionCheckScaleY(NUVEC *position, f32 radius, f32 y_scale);
+
 void DebrisKillPlayers() {
-    STUBBED();
+    DebrisPreCheckCollisions(&GameCam->pos, 50.0f);
+    for (i32 player_index = 0; player_index < 8; ++player_index) {
+        GameObject_s *player = Player[player_index];
+        if (player == NULL || (player->apiobj.flags_high & 0x10) == 0 || player->apiobj.field_0x287 != 0 ||
+            player->field_0x1024 > 0.0f || player->spawn_protection_timer > 0.0f || (player->field_0xefe & 0x40) != 0 ||
+            CannotKill(player) != 0 || Player_HasInvincibility(player) != 0 ||
+            (player->apiobj.character_data->game_character->flags_090 & 0x04008000) != 0) {
+            continue;
+        }
+        if (DebrisCollisionCheckScaleY(&player->apiobj.collision_position, player->apiobj.collision_radius,
+                                       player->collision_y_scale) != -1) {
+            ObjHitObj(NULL, player, 1, 0, 0, 1);
+        }
+        if (DebrisTorusCollisionCheckScaleY(&player->apiobj.collision_position, player->apiobj.collision_radius,
+                                            player->collision_y_scale) != -1) {
+            ObjHitObj(NULL, player, 1, 0, 0, 1);
+        }
+    }
 }
 
 void RndrUnfilledCircle(float, float, float, float, float, i32, float, float, numtl_s *) {
@@ -1004,7 +1108,8 @@ void DebrisProcessAllocation() {
     }
 }
 
-void DisplayListRenderBuffer() {
+VARIPTR *DisplayListRenderBuffer() {
+    return &rndrstream_free;
 }
 
 static i32 control_stack_lock;
@@ -1105,9 +1210,11 @@ void DebrisProcessControlChunks(i32 panel_time) {
             debkeydatatype_s *key = control->owner;
             debinftype *effect = debtab[key->effect_index];
             i32 chunk_index = 0;
-            while (chunk_index < key->allocated_chunk_count &&
-                   key->particle_chunks[chunk_index] != control->particle_chunk) {
-                ++chunk_index;
+            for (i32 i = 0; i < key->allocated_chunk_count; ++i) {
+                if (key->particle_chunks[i] == control->particle_chunk) {
+                    chunk_index = i;
+                    break;
+                }
             }
 
             const i32 old_chunk_count = key->allocated_chunk_count;
@@ -1173,7 +1280,7 @@ void DebrisProcessControlChunks(i32 panel_time) {
             --freedebchkptr;
             freedebchunks[freedebchkptr] = control->particle_chunk;
             for (dma_particle_s &particle : control->particle_chunk->particles) {
-                particle.start_time = 0.0f;
+                particle.start_time = 10000000000.0f;
                 particle.inverse_lifetime = 128.0f;
             }
             ReleaseChunkControl(control);
@@ -1184,7 +1291,7 @@ void DebrisProcessControlChunks(i32 panel_time) {
             --freedebchkptrg;
             freedebchunksglass[freedebchkptrg] = control->particle_chunk;
             for (i32 i = 0; i < 12; ++i) {
-                control->particle_chunk->particles[i].start_time = 0.0f;
+                control->particle_chunk->particles[i].start_time = 10000000000.0f;
                 control->particle_chunk->particles[i].inverse_lifetime = 128.0f;
             }
             ReleaseChunkControl(control);
@@ -1229,12 +1336,118 @@ void xxxNuDisplayListUpdateSpecial(nuhspecial_s *) {
     STUBBED();
 }
 
-void DebrisSingleCollisionCheckScaleYFlag(i32, nuvec_s *, float, float, unsigned char) {
-    STUBBED();
+static inline __attribute__((always_inline)) f32 DebrisInterpolateFloatKeys(const debris_float_key_s *keys, f32 time) {
+    i32 first;
+    i32 second;
+    if (time >= keys[0].time && time <= keys[1].time) {
+        first = 0;
+        second = 1;
+    } else if (time >= keys[1].time && time <= keys[2].time) {
+        first = 1;
+        second = 2;
+    } else if (time >= keys[2].time && time <= keys[3].time) {
+        first = 2;
+        second = 3;
+    } else if (time >= keys[3].time && time <= keys[4].time) {
+        first = 3;
+        second = 4;
+    } else if (time >= keys[4].time && time <= keys[5].time) {
+        first = 4;
+        second = 5;
+    } else if (time >= keys[5].time && time <= keys[6].time) {
+        first = 5;
+        second = 6;
+    } else if (time >= keys[6].time && time <= keys[7].time) {
+        first = 6;
+        second = 7;
+    } else {
+        return 0.0f;
+    }
+    return keys[first].value + ((time - keys[first].time) / (keys[second].time - keys[first].time)) *
+                                   (keys[second].value - keys[first].value);
 }
 
-void DebrisSingleTorusCollisionCheckScaleYFlag(i32, nuvec_s *, float, float, unsigned char) {
-    STUBBED();
+extern "C" {
+    extern debkeydatatype_s *debkeydata;
+    extern debinftype **debtab;
+    extern f32 globaltime;
+    extern NUVEC debris_collide_pt;
+}
+
+i32 DebrisSingleCollisionCheckScaleYFlag(i32 key_index, NUVEC *position, f32 radius, f32 y_scale, u8 flags) {
+    debkeydatatype_s *key = &debkeydata[key_index];
+    const i32 effect_index = key->effect_index;
+    if (static_cast<u16>(effect_index + 1) <= 1)
+        return 0;
+    debinftype *effect = debtab[effect_index];
+    if (effect == NULL || (effect->field_2f2 & flags) == 0)
+        return 0;
+    const i32 sphere_count = static_cast<i8>(effect->process_spheres);
+    if (sphere_count <= 0)
+        return 0;
+
+    for (i32 i = 0; i < sphere_count; ++i) {
+        debris_process_sphere_s *sphere = &key->process_spheres[i];
+        f32 age = globaltime - sphere->time;
+        if (age < 0.0f || age > effect->particle_lifetime)
+            continue;
+
+        debris_collide_pt.x = sphere->position.x + sphere->momentum.x * age;
+        f32 acceleration = age * age;
+        acceleration *= effect->field_0a0;
+        debris_collide_pt.y = sphere->position.y + sphere->momentum.y * age + acceleration;
+        debris_collide_pt.z = sphere->position.z + sphere->momentum.z * age;
+
+        f32 effect_radius = DebrisInterpolateFloatKeys(effect->collision_keys, age / effect->particle_lifetime);
+        if (effect_radius <= 0.0f)
+            continue;
+
+        f32 dx = position->x - debris_collide_pt.x;
+        f32 dy = position->y - debris_collide_pt.y;
+        f32 dz = position->z - debris_collide_pt.z;
+        f32 combined_radius = radius + effect_radius;
+        if (y_scale != 1.0f)
+            dy *= combined_radius / (radius * y_scale + effect_radius);
+        if (combined_radius * combined_radius > dx * dx + dy * dy + dz * dz)
+            return 1;
+    }
+    return 0;
+}
+
+i32 DebrisSingleTorusCollisionCheckScaleYFlag(i32 key_index, NUVEC *position, f32 radius, f32 y_scale, u8 flags) {
+    debkeydatatype_s *key = &debkeydata[key_index];
+    const i32 effect_index = key->effect_index;
+    if (static_cast<u16>(effect_index + 1) <= 1)
+        return 0;
+    debinftype *effect = debtab[effect_index];
+    if (effect == NULL || (effect->field_2f2 & flags) == 0 || effect->torus_lifetime == 0.0f)
+        return 0;
+
+    f32 age =
+        globaltime > key->emission_time ? globaltime - key->emission_time : globaltime - key->previous_emission_time;
+    if (age <= 0.0f || age >= effect->torus_lifetime)
+        return 0;
+    f32 normalised_time = age / effect->torus_lifetime;
+    f32 ring_radius = DebrisInterpolateFloatKeys(effect->torus_keys1, normalised_time) * effect->torus_radius1;
+    f32 horizontal_radius = DebrisInterpolateFloatKeys(effect->torus_keys2, normalised_time) * effect->torus_radius2;
+    f32 vertical_radius = DebrisInterpolateFloatKeys(effect->torus_keys3, normalised_time) * effect->torus_radius2;
+
+    debris_collide_pt.x = position->x - key->position.x;
+    debris_collide_pt.y = 0.0f;
+    debris_collide_pt.z = position->z - key->position.z;
+    NuVecNorm(&debris_collide_pt, &debris_collide_pt);
+    NuVecScale(&debris_collide_pt, &debris_collide_pt, ring_radius);
+    debris_collide_pt.x += key->position.x;
+    debris_collide_pt.y += key->position.y;
+    debris_collide_pt.z += key->position.z;
+
+    f32 dx = position->x - debris_collide_pt.x;
+    f32 dy = position->y - debris_collide_pt.y;
+    f32 dz = position->z - debris_collide_pt.z;
+    f32 combined_radius = radius + horizontal_radius;
+    if (horizontal_radius != vertical_radius || y_scale != 1.0f)
+        dy *= combined_radius / (radius * y_scale + vertical_radius);
+    return combined_radius * combined_radius > dx * dx + dy * dy + dz * dz;
 }
 
 void unref(unsigned char *, unsigned char *) {

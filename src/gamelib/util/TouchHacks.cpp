@@ -21,6 +21,8 @@
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/nucore/nuvuvec.hpp"
 #include "legoapi/render/core/terrain.h"
+#include "legoapi/world/area.h"
+#include "legoapi/world/world.h"
 
 f32 GameShadow(GameObject_s *, NUVEC *, f32, i32);
 i32 SuperWeirdo(GameObject_s *);
@@ -99,8 +101,40 @@ bool TouchHacks::CanSlam(GameObject_s &object) {
     return LEGOACT_SLAM != -1 && object.apiobj.character_model->model_data_b[LEGOACT_SLAM] != NULL;
 }
 
-void TouchHacks::CanTagTo(GameObject_s &, GameObject_s &) {
-    STUBBED();
+bool TouchHacks::CanTagTo(GameObject_s &source, GameObject_s &target) {
+    if (&source == &target || (target.apiobj.field_0x1f8 & 0x1001) != 0x1001 || target.apiobj.field_0x287 != 0 ||
+        (target.tag_flags & 2) != 0) {
+        return false;
+    }
+
+    const i8 context = target.character_context;
+    if (context == 0x3d || context == 0x17 || context < 0 || (CInfo[context].flags & 0x8000) != 0) {
+        return false;
+    }
+    if ((target.field_0xf00 & 2) != 0 && (player == NULL || player->id != id_LUKESKYWALKERDAGOBAH)) {
+        return false;
+    }
+    if (target.apiobj.model_draw_result == 0) {
+        return false;
+    }
+    if ((target.apiobj.field_0x1f4 & 5) != 0 && (HUB_ADATA == NULL || WORLD == NULL || WORLD->area != HUB_ADATA)) {
+        return false;
+    }
+    if (static_cast<i32>(target.apiobj.field_0x1f4) < 0) {
+        return false;
+    }
+
+    const f32 vertical_distance = NuFabs(target.apiobj.position.y - source.apiobj.position.y);
+    const f32 maximum_height =
+        target.apiobj.scaled_height > source.apiobj.scaled_height ? target.apiobj.scaled_height
+                                                                 : source.apiobj.scaled_height;
+    if (vertical_distance > maximum_height) {
+        return false;
+    }
+    const f32 dx = source.apiobj.position.x - target.apiobj.position.x;
+    const f32 dy = source.apiobj.position.y - target.apiobj.position.y;
+    const f32 dz = source.apiobj.position.z - target.apiobj.position.z;
+    return dx * dx + dy * dy + dz * dz <= 4.0f;
 }
 
 void Move_CHARACTER(GameObject_s *);
@@ -277,8 +311,55 @@ void TouchHacks::CheckJumpForLandingSpot(GameObject_s &, float) {
     STUBBED();
 }
 
-void TouchHacks::CleanupAllMechObjectInterfaces(WORLDINFO_s *) {
-    STUBBED();
+void TouchHacks::CleanupAllMechObjectInterfaces(WORLDINFO_s *world) {
+    if (world == NULL) {
+        return;
+    }
+
+    for (i32 i = 0; i < world->gizmo_blowup_count; ++i) {
+        world->gizmo_blowups[i].ClearMechObjectInterface();
+    }
+    if (world->giz_buildit_sys != NULL) {
+        for (i32 i = 0; i < world->giz_buildit_sys->count; ++i) {
+            world->giz_buildit_sys->buildits[i].ClearMechObjectInterface();
+        }
+    }
+    for (i32 i = 0; i < world->nlevers; ++i) {
+        world->levers[i].ClearMechObjectInterface();
+    }
+    if (world->hat_machine_sys != NULL) {
+        for (i32 i = 0; i < world->hat_machine_sys->count; ++i) {
+            world->hat_machine_sys->machines[i].ClearMechObjectInterface();
+        }
+    }
+    for (i32 i = 0; i < world->teleport_count; ++i) {
+        world->teleports[i].ClearMechObjectInterface();
+    }
+    if (world->giz_panel_sys != NULL) {
+        for (i32 i = 0; i < world->giz_panel_sys->count; ++i) {
+            world->giz_panel_sys->panels[i].ClearMechObjectInterface();
+        }
+    }
+    if (world->giz_turret_sys != NULL) {
+        for (i32 i = 0; i < world->giz_turret_sys->count; ++i) {
+            world->giz_turret_sys->turrets[i].ClearMechObjectInterface();
+        }
+    }
+    if (WORLD != NULL && WORLD->giz_obstacle_sys != NULL) {
+        for (i32 i = 0; i < WORLD->giz_obstacle_sys->count; ++i) {
+            WORLD->giz_obstacle_sys->obstacles[i].ClearMechObjectInterface();
+        }
+    }
+    if (world->giz_force_sys != NULL) {
+        for (i32 i = 0; i < world->giz_force_sys->count; ++i) {
+            world->giz_force_sys->forces[i].ClearMechObjectInterface();
+        }
+    }
+    if (Part != NULL) {
+        for (i32 i = 0; i < MAXPARTS; ++i) {
+            Part[i].ClearMechObjectInterface();
+        }
+    }
 }
 
 MechObjectInterface *TouchHacks::FindBombTarget(GameObject_s &object) {

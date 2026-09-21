@@ -1,7 +1,10 @@
 #include "decomp.h"
+#include "gameapi/gui/apimenu.h"
 #include "globals.h"
 #include "legoapi/characters/core/character.h"
+#include "legoapi/audio/audio.h"
 #include "legoapi/world/levels/levels.h"
+#include "legoapi/world/area.h"
 #include "legoapi/gizmo/base/TeleportObjectInterface.h"
 #include "nu2api/nu3d/nuspline.h"
 #include "legoapi/gizmos/object/gizpanel.h"
@@ -10,19 +13,28 @@
 #include "gamelib/util/gamelib_util_types.h"
 #include "legoapi/gizmo/base/GizForceObjectInterface.h"
 #include "legoapi/items/base/apiobject.h"
+#include "legoapi/core/input/gamepads.h"
+#include "legoapi/menus/core/gamehint.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nucore/common.h"
+#include "nu2api/nucore/NuVirtualTouchDevice.h"
 #include "nu2api/numath/nuvec.h"
 
 extern i16 id_RANCOR, id_ANAKINJEDI;
+extern i16 id_YODA;
 i32 GameRayCast(NUVEC *, NUVEC *, f32, i32);
 bool CalculateRayBoxIntersection(VuVec const &, VuVec const &, VuVec const &, VuVec const &, f32, f32 &);
 extern "C" void NewRayCastGetImpactNormal(NUVEC *);
 f32 CalcCapsuleIntersectDistance(VuVec const &, VuVec const &, f32, VuVec const &, f32);
 void PerformPauseButtonStuff();
+extern NuVirtualTouchDevice *inputTouchDevice;
+extern i32 players_cannot_exit_speeder;
+void TakeOver2GetIn(GameObject_s *, GameObject_s *);
+void Tag_NewTransfer(GameObject_s *, GameObject_s *);
+i32 TagCode(GameObject_s *, GameObject_s *, i32, i32, i32);
 
 i32 MechInputTouchSystem::s_baseControlMode = 1;
 i32 MechInputTouchSystem::s_actualTouchMode = 2;
@@ -53,8 +65,30 @@ void MechAutoJumpSetIsUsing(GameObject_s &object, MechAutoJumpConnection &connec
     connection.is_using = 1;
 }
 
-void MechTouchUITagButton_OnClick_Callback(MechTouchUIElement &, TouchHolder &) {
-    STUBBED();
+void MechTouchUITagButton_OnClick_Callback(MechTouchUIElement &element, TouchHolder &) {
+    MechTouchUITagButton &button = static_cast<MechTouchUITagButton &>(element);
+    MechObjectInterface *interface = button.target_object.Get();
+    GameObject_s *target = interface != NULL ? interface->GetCharacterObject() : NULL;
+    if (target == NULL || player == NULL ||
+        (player->field_0xcc0 != NULL && player->field_0xcc0->id != id_YODA) || button.disabled != 0) {
+        GameAudio_PlaySfx(0x32, NULL, 0, 0);
+        return;
+    }
+
+    Hint_SetComplete(0x5f6);
+    player->pause_input_state = 0;
+    bool tagged = false;
+    if ((target->field_0xf00 & 2) != 0) {
+        TakeOver2GetIn(target, player);
+        tagged = true;
+    } else if (TagCode(player, target, 0, 0, 1) == 1) {
+        Tag_NewTransfer(player, target);
+        tagged = true;
+    }
+    if (tagged) {
+        GameAudio_PlaySfx(0x21, NULL, 0, 0);
+    }
+    target->pause_input_state = 0;
 }
 
 void MechTouchUIPauseButton_OnClick_Callback(MechTouchUIElement &element, TouchHolder &) {
@@ -62,16 +96,90 @@ void MechTouchUIPauseButton_OnClick_Callback(MechTouchUIElement &element, TouchH
     PerformPauseButtonStuff();
 }
 
-void MechTouchUIPartySelector_OnRelease_Callback(MechTouchUIElement &, TouchHolder &) {
-    STUBBED();
+void MechTouchUIPartySelector_OnRelease_Callback(MechTouchUIElement &element, TouchHolder &) {
+    MechTouchUICharIcon &icon = static_cast<MechTouchUICharIcon &>(element);
+    if (icon.selector->field_0x88 != 0) {
+        return;
+    }
+    if (player == NULL || player->field_0xcc0 != NULL || icon.disabled != 0) {
+        GameAudio_PlaySfx(0x32, NULL, 0, 0);
+        return;
+    }
+    if (icon.hovered == 0) {
+        return;
+    }
+
+    if (FreePlay != 0) {
+        Hint_SetComplete(0x5f5);
+        NewPlayerCharacter(player, icon.character_id, player->id, 1);
+        GameAudio_PlaySfx(0x24, NULL, 0, 0);
+        player->pause_input_state = 0;
+        return;
+    }
+
+    Hint_SetComplete(0x5f4);
+    GameObject_s *target = NULL;
+    for (i32 i = 0; i < 8; ++i) {
+        if (Player[i] != NULL && Player[i]->id == icon.character_id) {
+            target = Player[i];
+            break;
+        }
+    }
+    if (target != NULL) {
+        bool tagged = false;
+        if ((target->field_0xf00 & 2) != 0) {
+            TakeOver2GetIn(target, player);
+            tagged = true;
+        } else if (TagCode(player, target, 0, 0, 1) == 1) {
+            Tag_NewTransfer(player, target);
+            tagged = true;
+        }
+        if (tagged) {
+            GameAudio_PlaySfx(0x21, NULL, 0, 0);
+        }
+        target->pause_input_state = 0;
+    }
+    player->pause_input_state = 0;
 }
 
 void MechInputTouchSystem::AddChangeLayoutButtons(NuVirtualTouchDevice &, i32) {
     STUBBED();
 }
 
-void MechInputTouchSystem::ChooseTouchLayout(bool) {
-    STUBBED();
+i32 MechInputTouchSystem::ChooseTouchLayout(bool paused) {
+    i32 layout = control_mode;
+    s_baseControlMode = layout != 1;
+
+    const i32 menu_id = GetMenuID();
+    const bool in_gameplay = menu_id == 0x19 || (!paused && menu_id == -1);
+    if (Controller_IsConnected() != 0) {
+        s_baseControlMode = 0;
+        layout = 7;
+        TouchHacks::TouchControlsActive = false;
+    } else if (in_gameplay && layout != 2) {
+        TouchHacks::TouchControlsActive = layout != 7 && layout != 1;
+    } else if (WORLD != NULL && (WORLD->area == PODRACE_ADATA || WORLD->area == PODSPRINT_ADATA)) {
+        layout = 3;
+        TouchHacks::TouchControlsActive = true;
+    } else if (WORLD != NULL && WORLD->area == BONUS_GUNSHIP_ADATA) {
+        layout = 4;
+        TouchHacks::TouchControlsActive = true;
+    } else if (WORLD != NULL && WORLD->current_level == DEATHSTARRESCUEE_LDATA && Player[0] != NULL &&
+               Player[0]->id == id_GRABCONTROL) {
+        layout = 5;
+        TouchHacks::TouchControlsActive = true;
+    } else if (WORLD != NULL && WORLD->current_level == SPEEDERCHASEA_LDATA &&
+               players_cannot_exit_speeder != 0 && Player[0] != NULL &&
+               (Player[0]->id == id_SPEEDERBIKE || Player[0]->id == id_SPEEDERBIKESNOW)) {
+        layout = 6;
+        TouchHacks::TouchControlsActive = true;
+    } else {
+        layout = 2;
+        TouchHacks::TouchControlsActive = true;
+    }
+
+    s_actualTouchMode = layout;
+    return layout;
 }
 
 void MechInputTouchSystem::ConvertToScreenCoords(float x, float y, float &screen_x, float &screen_y) {
@@ -89,7 +197,29 @@ bool MechInputTouchSystem::CouldTouchBeLockedBy(u32 touch_id, MechInputTouchButt
 }
 
 void MechInputTouchSystem::CreateGamePanels() {
-    STUBBED();
+    if (inputTouchDevice == NULL) {
+        return;
+    }
+
+    MechSystems *systems = MechSystems::Get();
+    inputTouchDevice->AddAlwaysActiveElement(
+        reinterpret_cast<NuTouchInputElement *>(&systems->gesture_tracking_system));
+
+    systems->menu_controller = new MechInputTouchMenuController(0);
+    inputTouchDevice->AddAlwaysActiveElement(
+        reinterpret_cast<NuTouchInputElement *>(systems->menu_controller));
+
+    inputTouchDevice->GetAspectRatio();
+    CreateGamePlayLayoutConsoleMode(*inputTouchDevice, 1);
+    CreateGamePlayLayoutGestureBased(*inputTouchDevice, 2);
+    CreateGamePlayLayoutGestureBased_Podrace(*inputTouchDevice, 3);
+    CreateGamePlayLayoutGestureBased_Cavalry(*inputTouchDevice, 4);
+    CreateGamePlayLayoutGestureBased_DeathStarTurret(*inputTouchDevice, 5);
+    CreateGamePlayLayoutGestureBased_SpeederChase(*inputTouchDevice, 6);
+    CreateGamePlayLayoutBlank(*inputTouchDevice, 7);
+
+    control_mode = SuperOptions.touch_controls == 1 ? 2 : 1;
+    inputTouchDevice->SetCurrentLayoutIndex(control_mode);
 }
 
 void MechInputTouchSystem::CreateGamePlayLayoutBlank(NuVirtualTouchDevice &, i32) {
@@ -525,8 +655,15 @@ MechInputTouchSystem::MechInputTouchSystem() {
     }
 }
 
-void MechInputTouchSystem::ProcessEvenWhenPaused(ThingProcessData *) {
-    STUBBED();
+void MechInputTouchSystem::ProcessEvenWhenPaused(ThingProcessData *data) {
+    if (inputTouchDevice == NULL) {
+        return;
+    }
+    const i32 layout = ChooseTouchLayout(data != NULL && data->paused != 0);
+    if (inputTouchDevice->GetCurrentLayoutIndex() != static_cast<u32>(layout)) {
+        ResetAllOwners();
+        inputTouchDevice->SetCurrentLayoutIndex(layout);
+    }
 }
 
 void MechInputTouchSystem::ResetAllOwners() {

@@ -1,6 +1,7 @@
 #include "decomp.h"
 #include "MechInputTouch_types.h"
 #include "legoapi/audio/audio.h"
+#include "legoapi/audio/sfx.h"
 
 #include <string.h>
 
@@ -8,10 +9,15 @@
 #include "gameframework/saveload.h"
 #include "globals.h"
 #include "legoapi/items/base/apiobject.h"
+#include "legoapi/items/base/collection.h"
+#include "legoapi/characters/core/character.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/core/config/cheat.h"
 #include "legoapi/core/input/timer.h"
 #include "legoapi/cutscenes/cutscenes.h"
 #include "legoapi/render/core/render.h"
 #include "legoapi/menus/core/text.h"
+#include "legoapi/world/area.h"
 #include "legoapi/world/level.h"
 #include "nu2api/nu3d/numtl.h"
 
@@ -22,7 +28,11 @@ extern i32 editor_active;
 extern i32 NewMode;
 extern i32 PANELOFF;
 extern i32 Paused;
+extern FadeSystem FadeSys;
 f32 TagButtonSize;
+extern "C" {
+    i32 procActive;
+}
 
 i32 GetMenuID();
 float GetAspectRatio();
@@ -30,6 +40,11 @@ void PlayerButton_OnClick_Callback_NextButton(MechTouchUIElement &, TouchHolder 
 void PlayerButton_OnHold_Callback(MechTouchUIElement &, TouchHolder &);
 void PlayerButton_OnLeave_Callback(MechTouchUIElement &, TouchHolder &);
 void MechTouchUIPauseButton_OnClick_Callback(MechTouchUIElement &, TouchHolder &);
+void MechTouchUIPartySelector_OnRelease_Callback(MechTouchUIElement &, TouchHolder &);
+extern "C" i32 NuIOS_IsSmallScreen(void);
+extern i16 id_YODA;
+i32 TagCode(GameObject_s *, GameObject_s *, i32, i32, i32);
+void Tag_NewTransfer(GameObject_s *, GameObject_s *);
 
 bool MechInputTouchGestureTracker::OnDown(GameObject_s &, TouchHolder &) {
     STUBBED();
@@ -62,11 +77,9 @@ bool MechInputTouchGestureTracker::OnSwipe(GameObject_s &, TouchHolder &, i32) {
 }
 
 void MechTouchUIElement::Process(float) {
-    STUBBED();
 }
 
 void MechTouchUIElement::Render() {
-    STUBBED();
 }
 
 bool MechTouchUI::AddUIElement(MechTouchUIElement &element) {
@@ -247,7 +260,43 @@ MechTouchUICharIcon::MechTouchUICharIcon(MechTouchUIPartySelector &party, VuVec 
 }
 
 void MechTouchUICharIcon::Process(float) {
-    STUBBED();
+    if (selector->field_0x88 != 0) {
+        position.z = 10.0f;
+    }
+
+    const bool is_hovered = hovered != 0;
+    if (is_hovered && field_0x46 == 0) {
+        PlaySfx(const_cast<char *>("LegoClicks2"), NULL);
+    }
+    field_0x46 = is_hovered;
+
+    if (alpha_duration >= 0.0f && alpha_elapsed < alpha_duration + alpha_delay) {
+        alpha_elapsed = MIN(alpha_elapsed + FRAMETIME, alpha_duration + alpha_delay);
+        if (alpha_elapsed >= alpha_delay) {
+            *alpha_target = ((alpha_elapsed - alpha_delay) / alpha_duration) * (alpha_end - alpha_start) + alpha_start;
+        }
+    }
+
+    visible = player != NULL && NewMode == 0 && NewLData == NULL && editor_active == 0 &&
+              GameTimer.time_elapsed > 0.0f && GameTimer.update_count != 0 && WORLD != NULL &&
+              WORLD->current_level != TITLES_LDATA && Paused == 0 && GameMenu[GameMenuLevel].menu == -1 &&
+              CutSceneWaiting == 0 && CUTSTOPGAME == 0 && MiniCutCam == 0;
+    if (player == NULL) {
+        return;
+    }
+
+    const bool was_disabled = disabled != 0;
+    SetupDisabled();
+    if (field_0x45 == 0 && was_disabled != (disabled != 0)) {
+        const f32 destination = disabled != 0 ? 0.3f : 1.0f;
+        if (alpha_duration < 0.0f || alpha_elapsed >= alpha_duration + alpha_delay) {
+            alpha_start = *alpha_target;
+            alpha_elapsed = 0.0f;
+            alpha_duration = 0.4f;
+            alpha_delay = 0.0f;
+        }
+        alpha_end = destination;
+    }
 }
 
 void MechTouchUICharIcon::Render() {
@@ -266,7 +315,23 @@ void MechTouchUICharIcon::Render() {
 }
 
 void MechTouchUICharIcon::SetupDisabled() {
-    STUBBED();
+    disabled = 0;
+    if (FreePlay != 0) {
+        disabled = player == NULL || !TouchHacks::CanToggleTo(*player, character_id);
+        return;
+    }
+
+    disabled = 1;
+    if (player == NULL || player->field_0xcc0 != NULL) {
+        return;
+    }
+    for (i32 i = 0; i < 8; ++i) {
+        GameObject_s *target = Player[i];
+        if (target != NULL && target->id == character_id) {
+            disabled = !TouchHacks::CanTagTo(*player, *target);
+            return;
+        }
+    }
 }
 
 void MechTouchUITagButton::FadeOut() {
@@ -489,11 +554,137 @@ MechTouchUIPlayerButton::MechTouchUIPlayerButton() : MechTouchUIElement(VuVec(-0
 }
 
 void MechTouchUIPlayerButton::Process(float) {
-    STUBBED();
+    disabled = GetMenuID() != -1 || Paused != 0 || NewMode != 0 || NewLData != NULL || CUTSTOPGAME != 0 ||
+               MiniCutCam != 0 || FadeSys.fade > 0.0f || player == NULL;
+
+    if (selector != NULL) {
+        if (owner == NULL && selector->field_0x88 == 0) {
+            selector->BlendOut();
+        }
+        if (selector->BlendedOut()) {
+            delete selector;
+            selector = NULL;
+        }
+    }
+    if (disabled || player == NULL) {
+        return;
+    }
+
+    if (chooser_mode == 0) {
+        const i32 update = procActive++;
+        if (update % 5 != 0) {
+            return;
+        }
+        for (i32 target_index = 0; target_index < 32; ++target_index) {
+            if (field_0x144[target_index] != 0 || target_ids[target_index] < 0) {
+                continue;
+            }
+            for (i32 slot = 0; slot < 8; ++slot) {
+                GameObject_s *target = Player[slot];
+                if (target != NULL && target->id == target_ids[target_index] && TouchHacks::CanTagTo(*player, *target)) {
+                    field_0x144[target_index] = 1;
+                    MechSystems::Get()->NewRadarPulse(position, false);
+                    break;
+                }
+            }
+        }
+        return;
+    }
+
+    if (procActive++ <= 20) {
+        return;
+    }
+    chooser_mode = 0;
+    for (i32 target_index = 0; target_index < 32; ++target_index) {
+        field_0x144[target_index] = 0;
+        for (i32 slot = 0; slot < 8; ++slot) {
+            GameObject_s *target = Player[slot];
+            if (target != NULL && target->id == target_ids[target_index]) {
+                field_0x144[target_index] = target == player || TouchHacks::CanTagTo(*player, *target);
+                break;
+            }
+        }
+    }
 }
 
 void MechTouchUIPlayerButton::SetupTargetIds() {
-    STUBBED();
+    for (i32 i = 0; i < 32; ++i) {
+        target_ids[i] = -1;
+        free_play_target_ids[i] = -1;
+        field_0x144[i] = 0;
+    }
+
+    procActive = 0;
+    chooser_mode = 1;
+
+    i32 target_count = 0;
+    for (i32 i = 0; i < 8; ++i) {
+        GameObject_s *player = Player[i];
+        if (player != NULL && (player->apiobj.object_flags & 0x1001) == 0x1001) {
+            target_ids[target_count++] = player->id;
+        }
+    }
+
+    if (FreePlay == 0 || apicharsys == NULL || apicharsys->loaded_model_count <= 0) {
+        return;
+    }
+
+    i32 free_play_count = 0;
+    const bool cheat_enabled = Cheats_CheckFlags(0x100) != 0;
+    for (i32 i = 0; i < apicharsys->loaded_model_count; ++i) {
+        const APICHARACTERMODEL &model = apicharsys->models[i];
+        if ((model.flags & 1) == 0) {
+            continue;
+        }
+
+        const i32 id = model.model_id;
+        const i32 collected = InCollectList_Index(id, NULL, 0);
+        const GAMECHARACTERDATA &game_character = GCDataList[id];
+        const bool bonus_cheat_character =
+            VehicleArea != 0 && BonusArea != 0 && cheat_enabled && (game_character.flags_094[3] & 2) != 0;
+
+        if (collected == -1 && static_cast<i32>(game_character.flags_090) >= 0 &&
+            (game_character.flags_094[3] & 1) == 0 && !bonus_cheat_character) {
+            continue;
+        }
+
+        if (VehicleArea != 0) {
+            const u32 model_flags = CDataList[id].model_flags;
+            if ((model_flags & 0x2000) == 0 && !(BonusArea != 0 && (model_flags & 0x4000000) != 0) &&
+                static_cast<i32>(game_character.flags_090) >= 0 && !bonus_cheat_character) {
+                continue;
+            }
+
+            if (BonusArea != 0) {
+                const i32 area = AreaFromMiniKitID(id);
+                if (area != -1) {
+                    if (Game_AreaSave == NULL || Game_AreaSave[area].minikit_complete == 0) {
+                        continue;
+                    }
+                } else if (static_cast<i32>(game_character.flags_090) >= 0 && !bonus_cheat_character) {
+                    continue;
+                }
+            }
+        } else if ((CDataList[id].model_flags & 0x2000) != 0 || (game_character.flags_090 & 0x40) != 0) {
+            continue;
+        }
+
+        if (BonusArea == 0 || VehicleArea == 0) {
+            if (static_cast<i32>(game_character.flags_090) < 0) {
+                if (!cheat_enabled) {
+                    continue;
+                }
+            } else if ((game_character.flags_094[3] & 1) == 0 &&
+                       (collected == -1 || Collection_Got(id) == 0)) {
+                continue;
+            }
+        }
+
+        free_play_target_ids[free_play_count++] = id;
+        if (free_play_count == 32) {
+            return;
+        }
+    }
 }
 
 void MechTouchUIPlayerButton::ShowChooser() {
@@ -509,7 +700,51 @@ void MechTouchUIPlayerButton::ShowChooser() {
 }
 
 void MechTouchUIPlayerButton::TriggerTagNext() {
-    STUBBED();
+    if (player == NULL) {
+        return;
+    }
+    if (FreePlay != 0) {
+        for (i32 index = 0; index < 32; ++index) {
+            target_ids[index] = -1;
+        }
+        i32 target_count = 0;
+        for (i32 slot = 0; slot < 8 && target_count < 32; ++slot) {
+            GameObject_s *target = Player[slot];
+            if (target != NULL && (target->apiobj.field_0x1f8 & 0x1001) == 0x1001) {
+                target_ids[target_count++] = target->id;
+            }
+        }
+    }
+
+    i32 current_index = -1;
+    for (i32 index = 0; index < 32; ++index) {
+        if (target_ids[index] == player->id) {
+            current_index = index;
+            break;
+        }
+    }
+    if (current_index == -1) {
+        return;
+    }
+
+    for (i32 offset = 1; offset < 32; ++offset) {
+        const i32 index = (current_index + offset) & 31;
+        if (target_ids[index] < 0) {
+            continue;
+        }
+        for (i32 slot = 0; slot < 8; ++slot) {
+            GameObject_s *target = Player[slot];
+            if (target == NULL || target->id != target_ids[index] || !TouchHacks::CanTagTo(*player, *target)) {
+                continue;
+            }
+            GameObject_s *source = player;
+            if (TagCode(source, target, 0, 0, 1) == 1) {
+                GameAudio_PlaySfx(0x21, NULL, 0, 0);
+                Tag_NewTransfer(source, target);
+            }
+            return;
+        }
+    }
 }
 
 void MechTouchUIPartySelector::BlendOut() {
@@ -550,8 +785,56 @@ void MechTouchUIPartySelector::Cleanup() {
     }
 }
 
-MechTouchUIPartySelector::MechTouchUIPartySelector(MechTouchUIPlayerButton &, i32 *) {
-    STUBBED();
+MechTouchUIPartySelector::MechTouchUIPartySelector(MechTouchUIPlayerButton &button, i32 *target_ids)
+    : icon_count(0), player_button(&button), field_0x88(0) {
+    memset(icons, 0, sizeof(icons));
+
+    const bool small_screen = NuIOS_IsSmallScreen() != 0;
+    const f32 gap = small_screen ? 0.11f : 0.06f;
+    const f32 scale = small_screen ? 0.16f : 0.15f;
+    const i32 icons_per_row = small_screen ? 5 : 7;
+    const f32 first_y = button.position.y - button.radius_y - gap * 2.0f;
+    f32 x = button.position.x;
+    f32 y = first_y;
+    f32 delay = 0.0f;
+    f32 delay_step = 0.03f;
+    i32 column = 0;
+
+    for (i32 target_index = 0; target_index < 32; ++target_index) {
+        if (target_ids[target_index] < 0 || player == NULL) {
+            continue;
+        }
+        if (column == 0) {
+            ++icon_count;
+        }
+
+        VuVec position(x, y, button.position.z, button.position.w);
+        MechTouchUICharIcon *icon = new MechTouchUICharIcon(*this, position, target_ids[target_index], scale);
+        icons[target_index] = icon;
+        icon->on_release = MechTouchUIPartySelector_OnRelease_Callback;
+        icon->owner = button.owner;
+        icon->SetupDisabled();
+        icon->alpha_end = icon->disabled != 0 ? 0.3f : 1.0f;
+        icon->alpha_delay = delay;
+        icon->alpha_start = 0.0f;
+        icon->alpha_elapsed = 0.0f;
+        icon->alpha_duration = 0.3f;
+        *icon->alpha_target = 0.0f;
+        MechSystems::Get()->TouchUI().AddUIElement(*icon);
+
+        ++column;
+        if (column >= icons_per_row) {
+            column = 0;
+            x += GetAspectRatio() * (scale + gap);
+            y = first_y;
+            delay = 0.0f;
+            delay_step = 0.03f;
+        } else {
+            y -= scale + gap;
+            delay += delay_step;
+            delay_step *= 0.9f;
+        }
+    }
 }
 
 MechTouchUIPartySelector::~MechTouchUIPartySelector() {

@@ -83,7 +83,10 @@ struct BOLTTYPE_s {
     f32 field_1c;
     f32 field_20;
     f32 field_24;
-    i32 field_28;
+    union {
+        i32 field_28;
+        i16 object_ids[2];
+    };
     union {
         i32 field_2c;
         struct {
@@ -172,15 +175,19 @@ typedef struct portalpos_s {
 struct HUBMINIKITPIECE_s {
     nuhspecial_s special;
     NUMTX matrix;
-    u8 reserved_0x4c[0x66 - 0x4c];
+    u8 reserved_0x4c[0x64 - 0x4c];
+    u8 direction;
+    u8 reserved_0x65;
     u8 enabled;
-    u8 reserved_0x67;
+    u8 direction_index;
 };
 DECOMP_ASSERT(sizeof(HUBMINIKITPIECE_s) == 0x68, "Hub minikit piece size");
 DECOMP_ASSERT(offsetof(HUBMINIKITPIECE_s, matrix) == 0xc, "Hub minikit piece matrix offset");
+DECOMP_ASSERT(offsetof(HUBMINIKITPIECE_s, direction) == 0x64, "Hub minikit piece direction offset");
 DECOMP_ASSERT(offsetof(HUBMINIKITPIECE_s, enabled) == 0x66, "Hub minikit piece enabled offset");
+DECOMP_ASSERT(offsetof(HUBMINIKITPIECE_s, direction_index) == 0x67, "Hub minikit piece direction-index offset");
 struct HUBMINIKITPIECES_s {
-    u32 unknown_00;
+    NUGSCN *scene;
     HUBMINIKITPIECE_s *pieces;
     u8 piece_count;
     u8 reserved_09[3];
@@ -209,8 +216,12 @@ DECOMP_ASSERT(offsetof(HUBMINIKIT_s, collision_center) == 0x40, "Hub minikit col
 DECOMP_ASSERT(offsetof(HUBMINIKIT_s, radius) == 0x64, "Hub minikit radius offset");
 
 typedef struct MINIKIT {
-    void *gscn;
-    char filler[0x14];
+    NUGSCN *gscn;
+    void *field_0x4;
+    u8 field_0x8;
+    i8 field_0x9;
+    i16 id;
+    char filler[0xc];
     struct CHARSCENE_s *character_scenes;
 } MINIKIT;
 DECOMP_ASSERT(offsetof(MINIKIT, character_scenes) == 0x18, "MINIKIT character scenes offset");
@@ -328,7 +339,8 @@ typedef struct WORLDINFO_s {
     GIZTURRETSYS_s *giz_turret_sys;        // 0x46bc
     pushblock_s *push_blocks;              // 0x46c0
     i32 push_block_count;                  // 0x46c4
-    char filler7b[0x46d0 - 0x46c8];        // 0x46c8 .. 0x46d0
+    NUVEC *push_block_positions;            // 0x46c8
+    i32 push_block_position_count;          // 0x46cc
     i32 special_sfx_count;                 // 0x46d0
     specialsfx_s *special_sfx;             // 0x46d4
     i32 special_sfx_event_count;           // 0x46d8
@@ -450,7 +462,7 @@ typedef struct WORLDINFO_s {
         char filler14b[0x516c - 0x5124];
         struct {
             struct CUSTOMPIECERESOURCE *customiser_resources[9];
-            u8 customiser_resource_tail[0x24];
+            struct nugscn_s *customiser_shared_scenes[9];
         };
     };
 

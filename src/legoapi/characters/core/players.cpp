@@ -65,6 +65,7 @@ extern void GizForce_ResetLOS(GameObject_s *obj);
 void ResetPlayerAI(GameObject_s *obj);
 void ResetPlayerMoves(GameObject_s *obj);
 void SetProtocolDroidDeactivatedAction(GameObject_s *);
+i32 TagCharacter(GameObject_s *source, GameObject_s *target, i32 mode);
 void NewBuzz(nupad_s *, f32, i32);
 void GameAudio_PlaySfxById(i32 sfx_id, nuvec_s *position, i32 flags, i32 volume);
 extern "C" f32 chattersfxwait;
@@ -793,7 +794,7 @@ void PlayerItemType_Find(i32) {
 
 void (*Player_ClearContextFn)(GameObject_s *, i32);
 void Whip_Release(GameObject_s *);
-void SpecialMove_ReleaseVictim(GameObject_s *);
+i32 SpecialMove_ReleaseVictim(GameObject_s *);
 
 void Player_ClearContext(GameObject_s *object, i32 mode) {
     if (Player_ClearContextFn != NULL)
@@ -1047,8 +1048,13 @@ i32 Player_HasDoubleBoltDamage(GameObject_s *object) {
     return 0;
 }
 
-void PlayerButton_OnHold_Callback(MechTouchUIElement &, TouchHolder &) {
-    STUBBED();
+void PlayerButton_OnHold_Callback(MechTouchUIElement &element, TouchHolder &) {
+    if (player != NULL && (player->field_0xcc0 == NULL || player->field_0xcc0->id == id_YODA)) {
+        static_cast<MechTouchUIPlayerButton &>(element).ShowChooser();
+        GameAudio_PlaySfx(0x30, NULL, 0, 0);
+    } else {
+        GameAudio_PlaySfx(0x32, NULL, 0, 0);
+    }
 }
 
 i32 Player_HasDoubleWeaponDamage(GameObject_s *object) {
@@ -1058,8 +1064,14 @@ i32 Player_HasDoubleWeaponDamage(GameObject_s *object) {
     return 1;
 }
 
-void PlayerButton_OnLeave_Callback(MechTouchUIElement &, TouchHolder &) {
-    STUBBED();
+void PlayerButton_OnLeave_Callback(MechTouchUIElement &element, TouchHolder &holder) {
+    MechTouchUIPlayerButton &button = static_cast<MechTouchUIPlayerButton &>(element);
+    if (player != NULL && (player->field_0xcc0 == NULL || player->field_0xcc0->id == id_YODA) &&
+        button.selector == NULL && holder.touch_position.y <= button.position.y &&
+        holder.touch_position.y != button.position.y) {
+        button.ShowChooser();
+        GameAudio_PlaySfx(0x30, NULL, 0, 0);
+    }
 }
 
 i32 Player_HasDoubleBoltDamage_FromBolt(BOLT_s *bolt) {
@@ -1073,8 +1085,12 @@ i32 Player_HasDoubleBoltDamage_FromBolt(BOLT_s *bolt) {
     return Player_HasDoubleBoltDamage(Player[player]);
 }
 
-void PlayerButton_OnClick_Callback_NextButton(MechTouchUIElement &, TouchHolder &) {
-    STUBBED();
+void PlayerButton_OnClick_Callback_NextButton(MechTouchUIElement &element, TouchHolder &) {
+    if (player != NULL && (player->field_0xcc0 == NULL || player->field_0xcc0->id == id_YODA)) {
+        static_cast<MechTouchUIPlayerButton &>(element).TriggerTagNext();
+    } else {
+        GameAudio_PlaySfx(0x32, NULL, 0, 0);
+    }
 }
 
 static __used__ void Player_ClearContext_Game(GameObject_s *, i32) {
@@ -1768,7 +1784,25 @@ void SetPlayerGroupPosition(float, float, float) {
 i32 (*LastSafePosExtraFn)(GameObject_s *) = NULL;
 
 void CheckForPlayersTurnedOff() {
-    STUBBED();
+    for (i32 source_index = 0; source_index < 2; ++source_index) {
+        GameObject_s *source = Player[source_index];
+        if (source == NULL || (source->apiobj.flags_high & APIOBJECT_HIGH_FLAG_CHARACTER) != 0) {
+            continue;
+        }
+
+        for (i32 target_index = 2; target_index < 8; ++target_index) {
+            GameObject_s *target = Player[target_index];
+            if (target == NULL || (target->tag_flags & 2) != 0 || (target->field_0xefb & 4) != 0 ||
+                target->character_context == 0x24 || target->character_context == 0x1f) {
+                continue;
+            }
+
+            GAMECHARACTERDATA *character = target->apiobj.character_data->game_character;
+            if (target->apiobj.field_0x27d != 0 || (target->field_0xe31 == 1 && character->field_0x28 > 0.0f)) {
+                TagCharacter(source, target, 1);
+            }
+        }
+    }
 }
 
 void FindFurthestPlayerFromVec(nuvec_s *, GameObject_s **, float &, bool, u32) {

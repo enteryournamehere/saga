@@ -563,17 +563,34 @@ DECOMP_ASSERT(sizeof(AREASAVE_s) == 0xc, "AREASAVE_s size");
 DECOMP_ASSERT(offsetof(AREASAVE_s, area_complete) == 0x1, "AREASAVE area completion offset");
 DECOMP_ASSERT(offsetof(AREASAVE_s, challenge_trial_time) == 0x8, "AREASAVE challenge time offset");
 struct ATTRACTO_s;
+struct BATARANG_TARGET_s {
+    void *object;
+    u8 type;
+    u8 lost;
+    u8 reserved_06[0x14 - 0x06];
+};
+DECOMP_ASSERT(sizeof(BATARANG_TARGET_s) == 0x14, "Batarang target size");
 struct BATARANG_s {
-    u8 pad_0x00[0x7c];
-    u8 active; // 0x7c
-    u8 field_0x7d;
-    u8 pad_0x7e[0x84 - 0x7e];
-    i32 target_id; // 0x84
-    u8 pad_0x88[0xac - 0x88];
-    u16 cooldown; // 0xac
-    u8 pad_0xae[0xb4 - 0xae];
+    BATARANG_TARGET_s targets[5]; // 0x00
+    NUVEC position;               // 0x64
+    NUVEC velocity;               // 0x70
+    u8 active;                    // 0x7c, number of selected targets
+    u8 field_0x7d;                // 0x7d, projectile in flight
+    u8 current_target;            // 0x7e
+    u8 reserved_7f;
+    f32 flight_time;       // 0x80
+    GameObject_s *owner;   // 0x84
+    NUVEC sight_position;  // 0x88
+    NUVEC sight_velocity;  // 0x94
+    NUVEC ricochet_normal; // 0xa0
+    u16 cooldown;          // 0xac, level-object id used to draw the projectile
+    i8 ricochet_count;     // 0xae
+    u8 ricochet_flags;     // 0xaf
+    f32 ricochet_timer;    // 0xb0
 };
 DECOMP_ASSERT(sizeof(BATARANG_s) == 0xb4, "BATARANG_s size");
+DECOMP_ASSERT(offsetof(BATARANG_s, position) == 0x64, "Batarang position offset");
+DECOMP_ASSERT(offsetof(BATARANG_s, owner) == 0x84, "Batarang owner offset");
 struct BOLTTYPE_s;
 struct BOLTSYS {
     BOLTTYPE_s *types;
@@ -663,7 +680,8 @@ struct CABLE_s {
     f32 segment_lengths[15];
     f32 max_length;
     f32 total_length;
-    u8 unknown_1cc[8];
+    u8 unknown_1cc[4];
+    f32 slack;
     f32 pull_time;
     u8 wrap_indices[15];
     u8 point_count;
@@ -673,6 +691,7 @@ struct CABLE_s {
 };
 DECOMP_ASSERT(offsetof(CABLE_s, segment_lengths) == 0x188, "CABLE_s segment lengths offset");
 DECOMP_ASSERT(offsetof(CABLE_s, total_length) == 0x1c8, "CABLE_s total length offset");
+DECOMP_ASSERT(offsetof(CABLE_s, slack) == 0x1d0, "CABLE_s slack offset");
 DECOMP_ASSERT(offsetof(CABLE_s, pull_time) == 0x1d4, "CABLE_s pull time offset");
 DECOMP_ASSERT(offsetof(CABLE_s, wrap_indices) == 0x1d8, "CABLE_s wrap indices offset");
 DECOMP_ASSERT(offsetof(CABLE_s, wrap_count) == 0x1e8, "CABLE_s wrap count offset");
@@ -755,8 +774,11 @@ struct CUSTOMPIECECATEGORY {
     char *name;
     u8 uses_special;
     i8 material_tag;
+    u8 pad_06[2];
+    char *shared_scene;
 };
 DECOMP_ASSERT(offsetof(CUSTOMPIECECATEGORY, material_tag) == 5, "Customiser material tag offset");
+DECOMP_ASSERT(offsetof(CUSTOMPIECECATEGORY, shared_scene) == 8, "Customiser shared scene offset");
 struct CUSTOMISER {
     union {
         u8 pad_0x00[0x6c];
@@ -777,11 +799,14 @@ struct CUSTOMISER {
     CUSTOMISESAVE_s *save;             // 0x174
     ANIMPACKET_s animation_packets[2]; // 0x178
     i32 model_texture_ids[18];         // 0x208
-    u8 pad_0x250[0xa68 - 0x250];
+    u8 pad_0x250[0x25c - 0x250];
+    i8 layer_indices[9]; // 0x25c; hierarchy layers shared by both preview characters
+    u8 pad_0x265[0x268 - 0x265];
+    NUMTX joint_matrices[2][16]; // 0x268
     u16 *animation_ids_to_load; // 0xa68; 0xffff-terminated allow-list
     u8 animation_active[2];     // 0xa6c
     u8 animation_state[2];      // 0xa6e
-    i32 animation_values[2];    // 0xa70
+    f32 animation_values[2];    // 0xa70
     u8 pad_0xa78[0xc28 - 0xa78];
     i16 default_pieces[2][10]; // 0xc28; nine saved pieces plus one unused entry per character
 };
@@ -827,7 +852,13 @@ struct CUSTOMPIECE {
     char *name;
     i16 character_id;
     i16 icon_character_id;
-    u8 unknown_08[0xa];
+    union {
+        u8 unknown_08[0xa];
+        struct {
+            i16 weapon_model;
+            u8 reserved_0a[0x8];
+        };
+    };
     union {
         struct {
             u8 layer_flags;
@@ -835,10 +866,24 @@ struct CUSTOMPIECE {
         };
         u16 availability_flags;
     }; // 0x12
-    u8 unknown_14[0x14];
+    u32 model_flags;    // 0x14, merged into CHARACTERDATA::model_flags
+    u32 gameplay_flags; // 0x18, merged into GAMECHARACTERDATA::flags_090
+    u8 unknown_1c[0x0c];
 };
 DECOMP_ASSERT(sizeof(CUSTOMPIECE) == 0x28, "CUSTOMPIECE size");
 DECOMP_ASSERT(offsetof(CUSTOMPIECE, layer_flags) == 0x12, "CUSTOMPIECE layer flags offset");
+struct CUSTOMPIECERESOURCE {
+    NUGSCN *scene;
+    nuhspecial_s special;
+    i32 original_texture_id;
+    union {
+        i32 texture_id;
+        void *model;
+    };
+    i32 material_index;
+    CHARACTERMODEL_s *character_model;
+};
+DECOMP_ASSERT(sizeof(CUSTOMPIECERESOURCE) == 0x20, "CUSTOMPIECERESOURCE size");
 DECOMP_ASSERT(offsetof(CUSTOMISESAVE_s, secondary_pieces) == 0x38, "CUSTOMISESAVE secondary pieces offset");
 struct CUTSCENESFX {
     i16 id;
@@ -981,7 +1026,10 @@ struct DETONATOR_s {
     NUVEC field_0x18;
     GameObject_s *object;
     u8 active;
-    u8 field_0x29[7];
+    u8 draw_result;
+    u16 rotation_x;
+    u16 rotation_y;
+    u16 rotation_z;
     f32 timer;
     void *field_0x34;
 };
@@ -1742,7 +1790,7 @@ DECOMP_ASSERT(sizeof(SPECIALMINIKITSYS_s) == 0x8, "SPECIALMINIKITSYS_s size");
 
 struct FADER_s {
     nuhspecial_s special;
-    u8 pad_0x0c[0xc];
+    nuhspecial_s while_animating;
 };
 DECOMP_ASSERT(sizeof(FADER_s) == 0x18, "FADER_s size");
 

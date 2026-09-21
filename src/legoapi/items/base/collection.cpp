@@ -5,8 +5,10 @@
 #include "legoapi/gizmos/object/gizobstacles.h"
 #include "legoapi/gizmos/traps/gizforce.h"
 #include "legoapi/gizmos/traps/gizturrets.h"
+#include "legoapi/characters/motion.h"
 
 u32 GizmoBlowups_TotalScore(void *world);
+extern i32 DoubleScore;
 
 #include "decomp.h"
 #include "globals.h"
@@ -21,6 +23,7 @@ u32 GizmoBlowups_TotalScore(void *world);
 #include "legoapi/characters/core/character.h"
 #include "legoapi/menus/screens/store.h"
 #include "legoapi/menus/screens/gamestructure.h"
+#include "legoapi/menus/core/gamehint.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
 
@@ -579,8 +582,37 @@ void ResetCoinPacket(COINPACKET_s *packet) {
     }
 }
 
-void UpdateCoinPacket(COINPACKET_s *, i32, i32) {
-    STUBBED();
+void UpdateCoinPacket(COINPACKET_s *packet, i32 active, i32 player_index) {
+    if (packet == NULL) {
+        return;
+    }
+    if (active != 0) {
+        packet->scale = SeekLinearF(packet->scale, 1.0f, 3.0f * FRAMETIME);
+        if (((DoubleScore >> player_index) & 1) == 0) {
+            packet->active = 1;
+            packet->double_score_timer = 0.0f;
+        } else if (packet->double_score_timer > 0.0f) {
+            packet->double_score_timer -= FRAMETIME;
+            if (packet->double_score_timer <= 0.0f) {
+                packet->active = 1;
+            }
+        }
+        return;
+    }
+    packet->active = 1;
+    packet->scale = 1.0f;
+    packet->double_score_timer = 0.0f;
+    if (BonusArea != 0) {
+        if (packet->coins < 10) {
+            packet->coins = 0;
+            return;
+        }
+        u32 decrement = (static_cast<u32>(20000.0f * FRAMETIME) / 10) * 10;
+        if (decrement < 10) {
+            decrement = 10;
+        }
+        packet->coins = packet->coins < decrement ? 0 : packet->coins - decrement;
+    }
 }
 
 u32 GizmoBlowups_TotalScore(void *);
@@ -635,6 +667,152 @@ COLLECTION_s *GetFreePlayCollection(i32 area) {
     return &VehicleCollection;
 }
 
+static i32 CompletionPointInfo_ReCalculate[7];
+extern i32 POINTS_PER_HINT;
+extern i32 SHOPHINTCOUNT;
+extern i16 HintTab[24];
+
 void ReCalculateCompletionPoints() {
-    STUBBED();
+    Game.completion = 0;
+    Game.gold_bricks = 0;
+    memset(CompletionPointInfo_ReCalculate, 0, sizeof(CompletionPointInfo_ReCalculate));
+
+    for (i32 index = 0; index < MasterCollection.count_y; ++index) {
+        COLLECTID *entry = &MasterCollection.list[index];
+        if (entry->field5_0x9 == 0) {
+            continue;
+        }
+        CompletionPointInfo_ReCalculate[2] += POINTS_PER_CHARACTER;
+        if (Collection_Got(entry->id) != 0) {
+            AddToCompletionPoints(POINTS_PER_CHARACTER);
+        }
+    }
+
+    for (i32 index = 0; index < AREACOUNT; ++index) {
+        AREADATA *area = &ADataList[index];
+        AREASAVE_s *save = &Game.area_save[index];
+        const u16 flags = area->flags;
+        if (area == HUB_ADATA || (flags & (AREAFLAG_ENDING_AREA | AREAFLAG_TEST_AREA |
+                                           AREAFLAG_NO_COMPLETION_POINTS)) != 0) {
+            continue;
+        }
+
+        if ((flags & 0x100) != 0) {
+            CompletionPointInfo_ReCalculate[1] += POINTS_PER_SUPERBONUSCOMPLETE;
+            if (save->area_complete != 0) {
+                AddToCompletionPoints(POINTS_PER_SUPERBONUSCOMPLETE);
+                if (GOLDBRICKFORSUPERBONUS != 0) {
+                    AddToGoldBricks();
+                }
+            }
+            continue;
+        }
+
+        if ((flags & AREAFLAG_BONUS_AREA) != 0) {
+            CompletionPointInfo_ReCalculate[1] += POINTS_PER_TIMETRIAL;
+            if (save->area_complete != 0 || save->challenge_trial_time < static_cast<f32>(area->challenge_trial_time)) {
+                AddToCompletionPoints(POINTS_PER_TIMETRIAL);
+                AddToGoldBricks();
+            }
+            continue;
+        }
+
+        CompletionPointInfo_ReCalculate[1] += POINTS_PER_STORY;
+        if (save->area_complete != 0) {
+            AddToCompletionPoints(POINTS_PER_STORY);
+            if ((flags & AREAFLAG_NO_GOLDBRICK) == 0) {
+                AddToGoldBricks();
+            }
+        }
+
+        if ((flags & AREAFLAG_MINIKIT) == 0) {
+            if ((flags & AREAFLAG_TRUE_JEDI) != 0 &&
+                (save->story_buildup_complete != 0 || save->freeplay_buildup_complete != 0)) {
+                AddToCompletionPoints(POINTS_PER_TRUEJEDI);
+                AddToGoldBricks();
+            }
+            continue;
+        }
+
+        CompletionPointInfo_ReCalculate[1] += POINTS_PER_MINIKIT;
+        if (save->minikit_complete != 0) {
+            AddToCompletionPoints(POINTS_PER_MINIKIT);
+            AddToGoldBricks();
+        }
+
+        CompletionPointInfo_ReCalculate[1] += POINTS_PER_TRUEJEDI;
+        if (save->story_buildup_complete != 0) {
+            AddToCompletionPoints(POINTS_PER_TRUEJEDI);
+            AddToGoldBricks();
+        }
+        if (BOTHTRUEJEDIGOLDBRICKS != 0) {
+            CompletionPointInfo_ReCalculate[1] += POINTS_PER_TRUEJEDI;
+            if (save->freeplay_buildup_complete != 0) {
+                AddToCompletionPoints(POINTS_PER_TRUEJEDI);
+                AddToGoldBricks();
+            }
+        } else if (save->story_buildup_complete == 0 && save->freeplay_buildup_complete != 0) {
+            AddToCompletionPoints(POINTS_PER_TRUEJEDI);
+            AddToGoldBricks();
+        }
+
+        CompletionPointInfo_ReCalculate[1] += POINTS_PER_REDBRICK;
+        if (save->red_brick_collected != 0) {
+            AddToCompletionPoints(POINTS_PER_REDBRICK);
+        }
+
+        CompletionPointInfo_ReCalculate[1] += POINTS_PER_CHALLENGE;
+        if (save->reserved_0x7 != 0) {
+            AddToCompletionPoints(POINTS_PER_CHALLENGE);
+            if (GOLDBRICKFORCHALLENGE != 0) {
+                AddToGoldBricks();
+            }
+        }
+    }
+
+    if (MissionSys != NULL && MissionSys->count != 0) {
+        for (i32 index = 0; index < MissionSys->count; ++index) {
+            CompletionPointInfo_ReCalculate[3] += POINTS_PER_MISSION;
+            if (Game.mission_save.completed[index] != 0) {
+                AddToCompletionPoints(POINTS_PER_MISSION);
+                AddToGoldBricks();
+            }
+        }
+    }
+
+    for (i32 index = 0; index < EPISODECOUNT; ++index) {
+        CompletionPointInfo_ReCalculate[0] += POINTS_PER_SUPERSTORY;
+        if ((Game.episode_save[index].flags & SAVE_SUPERSTORY_COMPLETE) != 0) {
+            AddToCompletionPoints(POINTS_PER_SUPERSTORY);
+            if (GOLDBRICKFORSUPERSTORY != 0) {
+                AddToGoldBricks();
+            }
+        }
+    }
+
+    for (i32 index = 0; index < 44; ++index) {
+        CompletionPointInfo_ReCalculate[4] += POINTS_PER_CHEAT;
+        if ((Game.extra_purchased_bits[index >> 5] & (1U << (index & 31))) != 0) {
+            AddToCompletionPoints(POINTS_PER_CHEAT);
+        }
+    }
+
+    for (i32 index = 0; index < SHOPHINTCOUNT; ++index) {
+        HINT_s *hint = Hint_FindHint(HintTab[index]);
+        if (hint == NULL || hint->shop_price == 0) {
+            continue;
+        }
+        CompletionPointInfo_ReCalculate[5] += POINTS_PER_HINT;
+        if ((Game.shop_hint_purchased_bits[index >> 5] & (1U << (index & 31))) != 0) {
+            AddToCompletionPoints(POINTS_PER_HINT);
+        }
+    }
+
+    for (i32 index = 0; index < SHOPGOLDBRICKS; ++index) {
+        CompletionPointInfo_ReCalculate[6] += POINTS_PER_GOLDBRICK;
+        if ((Game.shop_gold_brick_purchased_bits & (1U << (index & 31))) != 0) {
+            AddToCompletionPoints(POINTS_PER_GOLDBRICK);
+            AddToGoldBricks();
+        }
+    }
 }

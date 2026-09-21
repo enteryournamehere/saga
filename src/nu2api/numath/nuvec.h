@@ -25,6 +25,10 @@ typedef struct nuvec_s {
     f32 z;
 } NUVEC;
 
+#ifdef __cplusplus
+NUVEC *makenuvec(f32 x, f32 y, f32 z);
+#endif
+
 typedef NUVEC NUVEC_ALIGNED16 __attribute__((aligned(16)));
 
 /// @relatesalso nuvec_s

@@ -1,19 +1,25 @@
 #include "decomp.h"
 #include "globals.h"
+#include "gameapi/ai/aisys/aipath.h"
 #include "legoapi/ai/core/ai_sys_stubs.h"
+#include "legoapi/audio/sfx.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/gizmos/object/newblowup.h"
 #include "legoapi/gizmos/object/gizbuildits.h"
 #include "legoapi/gizmos/traps/gizbombgen.h"
+#include "legoapi/gizmos/traps/gizforce.h"
 #include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
 #include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/menus/core/panel.h"
 #include "legoapi/render/core/render.h"
 #include "legoapi/render/light/surfaces.h"
 #include "legoapi/render/core/terrain.h"
 #include "legoapi/render/fx/parts.h"
 #include "legoapi/world/levels/levels.h"
+#include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/nustring.h"
@@ -31,6 +37,14 @@ extern u8 troopercannons_beenReset;
 void Asteroid_PartKill(PART_s *, i32);
 void GizmoBlowupUpdateMatrix(GIZMOBLOWUP_s *);
 void PartCollide_3D(PART_s *);
+void ResetTrooperCannons(WORLDINFO_s *, i32);
+void UpdateTrooperCannons(WORLDINFO_s *);
+EXPLOSION *Detonate(NUVEC *, u16);
+extern "C" void NewPartRotation(PART_s *);
+extern "C" void *AIPAthFindPathCnx(AISYS_s *, AIPATH_s *, char *, char *, i32 *);
+
+static GameObject_s *Vader_obj;
+static GIZAIMESSAGE_s *Vader_ai_message;
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -40,22 +54,61 @@ struct SHOPINPUT;
 extern "C" {
     GIZBOMBGEN *HothBattleC_BombGenerator = NULL;
     HOTHBATTLE_MELEE_s melee;
+    u8 dagobahA_nodesNeedUpdating = 1;
 }
 
-void DagobahA_Init(WORLDINFO_s *) {
-    STUBBED();
+void DagobahA_Init(WORLDINFO_s *world) {
+    LevGizForce[0] = GizForce_FindByName(world->giz_force_sys, "force3");
+    LevGizForce[1] = GizForce_FindByName(world->giz_force_sys, "force4");
+    LevGizForce[2] = GizForce_FindByName(world->giz_force_sys, "force5");
+    LevAIPathNode[0] = AIPathFindNode(world->ai_sys, NULL, "force1_a");
+    LevAIPathNode[1] = AIPathFindNode(world->ai_sys, NULL, "force1_b");
+    LevAIPathNode[2] = AIPathFindNode(world->ai_sys, NULL, "force1_c");
+    i32 direction;
+    LevPathCnx[0] = AIPAthFindPathCnx(world->ai_sys, NULL, "force1_a", "force1_b", &direction);
+    LevPathCnx[1] = AIPAthFindPathCnx(world->ai_sys, NULL, "force1_b", "force1_c", &direction);
+    LevPathCnx[2] = AIPAthFindPathCnx(world->ai_sys, NULL, "force1_c", "force1_d", &direction);
+    dagobahA_nodesNeedUpdating = 1;
 }
 
 void DagobahB_Init(WORLDINFO_s *) {
     dagobah_training = 0;
 }
 
-void DagobahC_Init(WORLDINFO_s *) {
-    STUBBED();
+void DagobahC_Init(WORLDINFO_s *world) {
+    Vader_obj = FindGameObject(id_DARTHVADER, 1, 1, 0, 0);
+    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, force_gizmotype_id, "force20");
+    GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, "Thermo_Box1");
+    if (blowup != NULL) {
+        blowup->draw_flags |= 2;
+    }
 }
 
-void DagobahE_Init(WORLDINFO_s *) {
-    STUBBED();
+void DagobahE_Init(WORLDINFO_s *world) {
+    GIZAIMESSAGE_s *completed = CheckGizAIMessage(gizaimessagesys, "CompletedTraining", NULL);
+    if (FreePlay == 0 && completed != NULL && completed->value == 0.0f) {
+        dagobah_training = 1;
+        DOOR_s *door = Door_FindByName(world, "door_e_to_b");
+        if (door != NULL) {
+            door->flags |= DOOR_FLAG_DO_NOT_USE;
+        }
+        door = Door_FindByName(world, "door_b_to_e");
+        if (door != NULL) {
+            door->flags |= DOOR_FLAG_DO_NOT_USE;
+        }
+    } else {
+        dagobah_training = 0;
+        DOOR_s *door = Door_FindByName(world, "door_e_to_b");
+        if (door != NULL) {
+            door->flags &= ~DOOR_FLAG_DO_NOT_USE;
+        }
+        door = Door_FindByName(world, "door_b_to_e");
+        if (door != NULL) {
+            door->flags &= ~DOOR_FLAG_DO_NOT_USE;
+        }
+    }
+    SetGizAIMessage(gizaimessagesys, "DagobahTraining", static_cast<f32>(dagobah_training), NULL);
+    SetGizAIMessage(gizaimessagesys, NULL, 1.0f, completed);
 }
 
 void DagobahB_Reset(WORLDINFO_s *world) {
@@ -76,7 +129,12 @@ void DagobahB_Reset(WORLDINFO_s *world) {
 }
 
 void DagobahC_Panel(WORLDINFO_s *) {
-    STUBBED();
+    if (netclient == 0) {
+        Vader_ai_message = CheckGizAIMessage(gizaimessagesys, "ShowHearts", NULL);
+        if (Vader_obj != NULL && Vader_ai_message != NULL && Vader_ai_message->value == 1.0f) {
+            DrawBossHitPoints(Vader_obj);
+        }
+    }
 }
 
 void KillParts_ATAT(ADDPART_s *, i32, i32, GameObject_s *) {
@@ -85,8 +143,15 @@ void KillParts_ATAT(ADDPART_s *, i32, i32, GameObject_s *) {
 
 f32 rocket_speed = 1.2f;
 
-void BobaRocket_Kill(PART_s *, i32) {
-    STUBBED();
+void BobaRocket_Kill(PART_s *part, i32) {
+    EXPLOSION *explosion = Detonate(&part->position, 0);
+    if (explosion != NULL && Arcade != 0 && part->owner != NULL &&
+        (Player[0] == part->owner || Player[1] == part->owner) &&
+        (part->owner->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
+        static_cast<u8>(part->owner->apiobj.field_0x27c) <= 1) {
+        explosion->field_0x24 |= 0x10000;
+        explosion->object = part->owner;
+    }
 }
 
 void BobaRocket_Move(PART_s *, float) {
@@ -111,8 +176,11 @@ void HothBattleA_Init(WORLDINFO_s *) {
     STUBBED();
 }
 
-void HothBattleB_Init(WORLDINFO_s *) {
-    STUBBED();
+void HothBattleB_Init(WORLDINFO_s *world) {
+    NuSpecialFind(world->current_gscn, &LevHSpecial[0], "snow_ball_1", 1);
+    NuSpecialFind(world->current_gscn, &LevHSpecial[1], "snow_ball_2", 1);
+    NuSpecialFind(world->current_gscn, &LevHSpecial[2], "snow_ball_3", 1);
+    NuSpecialFind(world->current_gscn, &LevHSpecial[3], "snow_ball_4", 1);
 }
 
 void HothBattleC_Draw(WORLDINFO_s *world) {
@@ -218,36 +286,48 @@ void HothEscapeD_Reset(WORLDINFO_s *) {
     STUBBED();
 }
 
-void BobaRocket_Deflect(PART_s *) {
-    STUBBED();
+void BobaRocket_Deflect(PART_s *part) {
+    part->flags = (part->flags & ~0x4000u) | 0x80;
+    NewPartRotation(part);
 }
 
-void HothBattleA_Update(WORLDINFO_s *) {
-    STUBBED();
+void HothBattleA_Update(WORLDINFO_s *world) {
+    UpdateMiniSnowTroopers(world);
 }
 
-void HothBattleC_Update(WORLDINFO_s *) {
-    STUBBED();
+void HothBattleC_Update(WORLDINFO_s *world) {
+    if (netclient == 0 && HothBattleC_BombGenerator != NULL && !HothBattleC_BombGenerator->active &&
+        LevAIMessage[0] != NULL && LevAIMessage[0]->value > 0.0f) {
+        HothBattleC_BombGenerator->active = 1;
+    }
+    UpdateMiniSnowTroopers(world);
 }
 
 void HothBattleE_Update(WORLDINFO_s *) {
     STUBBED();
 }
 
-void HothEscapeA_Update(WORLDINFO_s *) {
-    STUBBED();
+void HothEscapeA_Update(WORLDINFO_s *world) {
+    ResetTrooperCannons(world, id_SNOWTROOPER);
+    UpdateTrooperCannons(world);
 }
 
-void HothEscapeB_Update(WORLDINFO_s *) {
-    STUBBED();
+void HothEscapeB_Update(WORLDINFO_s *world) {
+    ResetTrooperCannons(world, id_SNOWTROOPER);
+    UpdateTrooperCannons(world);
+    if (netclient == 0 && locator != NULL && gameobj != NULL) {
+        locator->position = *NUMTX_GET_ROW_VEC(&gameobj->joint_matrices[1], 3);
+    }
 }
 
-void HothEscapeC_Update(WORLDINFO_s *) {
-    STUBBED();
+void HothEscapeC_Update(WORLDINFO_s *world) {
+    ResetTrooperCannons(world, id_SNOWTROOPER);
+    UpdateTrooperCannons(world);
 }
 
-void HothEscapeD_Update(WORLDINFO_s *) {
-    STUBBED();
+void HothEscapeD_Update(WORLDINFO_s *world) {
+    ResetTrooperCannons(world, id_SNOWTROOPER);
+    UpdateTrooperCannons(world);
 }
 
 void InitTrooperCannons(WORLDINFO_s *) {
@@ -268,7 +348,13 @@ void CloudCityTrapA_Reset(WORLDINFO_s *) {
 }
 
 void CloudCityTrapC_Panel(WORLDINFO_s *) {
-    STUBBED();
+    if (netclient == 0 && LevGameObject[0] != NULL && LevAIMessage[0] != NULL) {
+        if (LevAIMessage[0]->value == 1.0f) {
+            DrawBossHitPoints(LevGameObject[0]);
+        } else {
+            DrawBossHitPoints(NULL);
+        }
+    }
 }
 
 void CloudCityTrapC_Reset(WORLDINFO_s *) {
@@ -283,8 +369,10 @@ void CloudCityEscapeA_Init(WORLDINFO_s *) {
     STUBBED();
 }
 
-void CloudCityEscapeC_Init(WORLDINFO_s *) {
-    STUBBED();
+void CloudCityEscapeC_Init(WORLDINFO_s *world) {
+    NuSpecialFind(world->current_gscn, &LevHSpecial[0], "gas_1_animin", 1);
+    NuSpecialFind(world->current_gscn, &LevHSpecial[1], "gas_2_animin", 1);
+    NuSpecialFind(world->current_gscn, &LevHSpecial[2], "gas_3_animin", 1);
 }
 
 void CloudCityTrapA_Update(WORLDINFO_s *) {
@@ -310,7 +398,14 @@ void HothBattle_Melee_init(HOTHBATTLE_MELEE_s *melee) {
 }
 
 void CloudCityEscapeA_Panel(WORLDINFO_s *) {
-    STUBBED();
+    if (netclient == 0) {
+        GameObject_s *boba = FindGameObject(id_BOBAFETT, 1, 1, 1, 0);
+        if (boba != NULL && LevAIMessage[0] != NULL && LevAIMessage[0]->value == 1.0f) {
+            DrawBossHitPoints(boba);
+        } else if (LevAIMessage[0] != NULL && LevAIMessage[0]->value == 0.0f) {
+            DrawBossHitPoints(NULL);
+        }
+    }
 }
 
 void CloudCityEscapeA_Reset(WORLDINFO_s *world) {
@@ -328,15 +423,24 @@ void CloudCityEscapeA_Update(WORLDINFO_s *) {
 }
 
 void CloudCityEscapeC_Update(WORLDINFO_s *) {
-    STUBBED();
+    TerSurface[14].flags = 0x2002;
+    for (i32 index = 0; index < 3; ++index) {
+        if (NuSpecialExistsFn(&LevHSpecial[index])) {
+            nuinstanim_s *animation = NuSpecialGetInstAnim(&LevHSpecial[index]);
+            if (animation != NULL && animation->ltime == 1.0f) {
+                PlaySfx("env_steam_lp", NuSpecialGetDrawPos(&LevHSpecial[index]));
+                TerSurface[14].flags |= 0x4042;
+            }
+        }
+    }
 }
 
 void HothBattle_StartNewWave() {
     STUBBED();
 }
 
-void HothEscapeC_AlwaysUpdate(WORLDINFO_s *) {
-    STUBBED();
+void HothEscapeC_AlwaysUpdate(WORLDINFO_s *world) {
+    LevelStreaming_DoorOverride(world, HOTHESCAPED_LDATA, 7.5f, NULL);
 }
 
 i32 isHothBattleWaveCreature(GameObject_s *object) {

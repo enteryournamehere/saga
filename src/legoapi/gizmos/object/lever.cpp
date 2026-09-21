@@ -134,19 +134,7 @@ void Lever_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
         return;
     if (!(object->pad_gamepad->buttons_pressed & GAMEPAD_SPECIAL) && !objInNetWaitContext(object, 0x4a))
         return;
-    object->field_0x788 = lever;
-    object->context_animation_timer = 0.0f;
-    object->character_context = 0x4a;
-    object->field_0x768 = 0.0f;
-    object->context_animation = 0x5d;
-    object->airborne_action_duration = AnimDuration(object->id, 0x5d, 0.0f, 0.0f, 1);
-    if (object->airborne_action_duration <= 0.0f)
-        object->airborne_action_duration = 1.0f;
-    object->context_flags &= ~0x40;
-    object->apiobj.movement_facing_angle = static_cast<LEVER_s *>(object->field_0x788)->y_rotation;
-    static_cast<LEVER_s *>(object->field_0x788)->interacting = 1;
-    static_cast<LEVER_s *>(object->field_0x788)->pull_progress = 0.0f;
-    static_cast<LEVER_s *>(object->field_0x788)->auto_reset_timer = 0.0f;
+    Lever_StartPull(object, lever);
 }
 
 void Lever_GetAbsTargetPos(LEVER_s *lever, nuvec_s *target_position) {

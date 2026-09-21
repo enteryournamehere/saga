@@ -205,10 +205,7 @@ typedef struct nugscn_s {
     undefined field314_0x155;
     undefined field315_0x156;
     undefined field316_0x157;
-    undefined field317_0x158;
-    undefined field318_0x159;
-    undefined field319_0x15a;
-    undefined field320_0x15b;
+    i32 shader_texture_animation_enabled; // 0x158
     undefined field321_0x15c;
     undefined field322_0x15d;
     undefined field323_0x15e;
@@ -379,6 +376,7 @@ DECOMP_ASSERT(offsetof(NUGSCN, display_list) == 0x110, "NUGSCN display-list offs
 DECOMP_ASSERT(offsetof(NUGSCN, visibility_result_instance_count) == 0x120, "NUGSCN visibility result offset");
 DECOMP_ASSERT(offsetof(NUGSCN, portal_visibility_marker) == 0x138, "NUGSCN portal-visibility marker offset");
 DECOMP_ASSERT(offsetof(NUGSCN, instance_visibility_flags) == 0x13c, "NUGSCN portal-visibility buffer offset");
+DECOMP_ASSERT(offsetof(NUGSCN, shader_texture_animation_enabled) == 0x158, "NUGSCN shader texture animation offset");
 DECOMP_ASSERT(offsetof(NUGSCN, animation_end_frames) == 0x1e0, "NUGSCN animation end-frame table offset");
 
 #ifdef __cplusplus

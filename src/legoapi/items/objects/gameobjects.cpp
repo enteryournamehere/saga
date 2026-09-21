@@ -9,14 +9,17 @@
 #include "legoapi/gizmos/object/gizbuildits.h"
 #include "legoapi/gizmo/object/gizmoblowups.h"
 #include "legoapi/render/core/render.h"
+#include "legoapi/render/core/rtl.h"
 #include "legoapi/audio/audio.h"
 #include "legoapi/gizmos/transport/grapples.h"
 #include "legoapi/gizmos/transport/gizportal.h"
+#include "legoapi/gizmos/door/zipups.h"
 #include "legoapi/gizmos/fx/gizmopickups.h"
 #include "legoapi/menus/screens/arcade.h"
 #include "decomp.h"
 #include "gameapi/ai/aisys/aisys.h"
 #include "gameapi/edtools/edfile.h"
+#include "gameapi/edtools/edui.h"
 #include "gameapi/gui/apimenu.h"
 #include "globals.h"
 #include "gamelib/util/gamelib_util_types.h"
@@ -26,6 +29,7 @@
 #include "legoapi/render/fx.h"
 #include "legoapi/render/core/terrain.h"
 #include "legoapi/render/light/lighting.h"
+#include "legoapi/render/light/shadow.h"
 #include "legoapi/render/fx/parts.h"
 #include "legoapi/render/fx/spline_position.h"
 #include "nu2api/nucore/nupad.h"
@@ -59,6 +63,7 @@
 #include "legoapi/gizmos/transport/grapples.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/nuqfnt.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numusic/sfx.h"
 #include "nu2api/nucore/numemory.h"
@@ -73,6 +78,7 @@
 #include "nu2api/numath/numtx.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nucore/nugcutscene.h"
+#include "nu2api/nucore/nuhgobj.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -93,6 +99,8 @@ void BobaRocket_Kill(PART_s *, i32);
 void BobaRocket_Move(PART_s *, f32);
 void BobaRocket_Deflect(PART_s *);
 void PartCollide_3D(PART_s *);
+void ConfigureComplexShadow(GameObject_s *);
+f32 DropInOutScale(GameObject_s *);
 extern f32 rocket_speed;
 extern f32 sabrerubwait;
 NUVEC *GetZapOrigin(GameObject_s *);
@@ -105,6 +113,7 @@ f32 testlaser_sizewab = 0.01f;
 f32 testlaser_sizel = 0.1f;
 f32 testlaser_sizew = 0.02f;
 extern i16 id_YODA, id_YODAGHOST, id_GAMORREANGUARD, id_JANGOFETT;
+extern i16 id_MOUSEDROID;
 extern i32 LEGO_AIPATHCNX_WALLSHUFFLE;
 extern i32 VehicleArea;
 extern i32 TERRAINMASK_NONWEAPON, TERRAINMASK_NONDROID;
@@ -193,11 +202,14 @@ extern i32 LEGO_AIPATHCNX_BLOCKAGE;
 extern "C" i32 AISysSetLevelPath(AISYS_s *system, char *path_name);
 
 GAMEFOG_STATE GameFog = {};
+f32 dof_fstop;
 
 static i32 GameFogSnap;
-static i32 GameFogSet;
+static rtlfog_s *GameFogSet;
 static f32 GameFogDuration;
 static f32 GameFogTime;
+static GAMEFOG_STATE GameFogOld;
+static GAMEFOG_STATE GameFogNew;
 
 enum AI_ACTION_SPEED_MODE : u8 {
     AI_ACTION_SPEED_RUN = 0,
@@ -1868,8 +1880,26 @@ static void GameAILoad(AISYS *, i32, NUGSCN *, VARIPTR *, VARIPTR *) {
     STUBBED();
 }
 
-static void GlobalCharacterRender(NUVEC *, i16, i32, i32, EDCREATURE_s *) {
-    STUBBED();
+static void GlobalCharacterRender(NUVEC *position, i16 angle, i32 character, i32, EDCREATURE_s *) {
+    if (character < CHARCOUNT) {
+        i16 model_id = apicharsys->playermodelids[character];
+        if (model_id != -1) {
+            CHARACTERMODEL_s *model = &apicharsys->models[model_id];
+            i16 layers[32];
+            i32 layer_count = GCDataList[model->model_id].make_layer_list(
+                model, layers, apicharsys->char_data[character].game_character->layer_mask);
+            if (layer_count > 0) {
+                angle = NuAngAdd(angle, 0x8000);
+                NUVEC scale;
+                scale.x = scale.y = scale.z = CDataList[character].model_scale;
+                NUMTX matrix;
+                NuMtxSetScale(&matrix, &scale);
+                NuMtxTranslate(&matrix, position);
+                NuMtxPreRotateY(&matrix, angle);
+                NuHGobjRndr(model->hierarchy, &matrix, layer_count, layers);
+            }
+        }
+    }
 }
 
 static f32 GetCharacterGoalSpeed(APIOBJECT *object) {
@@ -3072,8 +3102,17 @@ void GameFog_Reset() {
     GameFogTime = 0.0f;
 }
 
-void Game_KillPart(PART_s *, i32) {
-    STUBBED();
+void Game_KillPart(PART_s *part, i32 reason) {
+    if (reason == 1 && part->force_player_mask != -1) {
+        if ((part->force_player_mask & 1) != 0 && Player[0] != NULL) {
+            NewBuzz(Player[0]->pad_gamepad->pad, 0.2f, 0);
+            NewRumble(Player[0]->pad_gamepad->pad, 0.8f, 0);
+        }
+        if ((part->force_player_mask & 2) != 0 && Player[1] != NULL) {
+            NewBuzz(Player[1]->pad_gamepad->pad, 0.2f, 0);
+            NewRumble(Player[1]->pad_gamepad->pad, 0.8f, 0);
+        }
+    }
 }
 
 void GameAISysReset(AISYS_s *system) {
@@ -3231,15 +3270,121 @@ extern "C" void MenuRegisterSoundFX(i32 move, i32 select, i32 back, i32 no_entry
 i32 GameAudio_GetSfxId(i32 sfx);
 void GameAudio_PlaySfxById(i32 sfx_id, nuvec_s *position, i32 flags, i32 volume);
 
-void GameFog_Update(WORLDINFO_s *) {
-    STUBBED();
+void GameFog_Update(WORLDINFO_s *world) {
+    rtlfog_s *previous = GameFogSet;
+    if (world->rtl_set != NULL &&
+        !(CUTSTOPGAME != 0 && CutStopInfo != NULL && (static_cast<CUTINFO *>(CutStopInfo)->flags & 4) != 0)) {
+        GameFogSet = rtlGetFogSet(world->rtl_set, NUMTX_GET_ROW_VEC(&pNuCam->mtx, 3));
+    } else {
+        GameFogSet = NULL;
+    }
+
+    if (GameFogSnap == 0 && GameFogSet != previous) {
+        GameFogOld = GameFog;
+        GameFogTime = 0.0f;
+        GameFogDuration = 3.0f;
+    }
+    if (GameFogSnap != 0 || GameFogSet != previous) {
+        if (GameFogSet != NULL) {
+            u32 colour = GameFogSet->colour;
+            GameFogNew.high_quality_colour_channels[0] = colour >> 24;
+            GameFogNew.high_quality_colour_channels[1] = (colour >> 16) & 0xff;
+            GameFogNew.high_quality_colour_channels[2] = (colour >> 8) & 0xff;
+            GameFogNew.high_quality_colour_channels[3] = colour & 0xff;
+            GameFogNew.high_quality_start = GameFogSet->start;
+            GameFogNew.high_quality_end = GameFogSet->end;
+            GameFogNew.high_quality_density = GameFogSet->density;
+            GameFogNew.low_quality_density = GameFogSet->low_quality_density;
+            colour = GameFogSet->low_quality_colour;
+            GameFogNew.low_quality_colour_channels[0] = colour >> 24;
+            GameFogNew.low_quality_colour_channels[1] = (colour >> 16) & 0xff;
+            GameFogNew.low_quality_colour_channels[2] = (colour >> 8) & 0xff;
+            GameFogNew.low_quality_colour_channels[3] = colour & 0xff;
+        } else {
+            GameFogNew.high_quality_colour_channels[0] = GameFogNew.high_quality_colour_channels[1] =
+                GameFogNew.high_quality_colour_channels[2] = GameFogNew.high_quality_colour_channels[3] = 0.0f;
+            GameFogNew.high_quality_start = 5.0f;
+            GameFogNew.high_quality_end = 20.0f;
+            GameFogNew.high_quality_density = 0.0f;
+            GameFogNew.low_quality_density = 0.0f;
+            GameFogNew.low_quality_colour_channels[0] = GameFogNew.low_quality_colour_channels[1] =
+                GameFogNew.low_quality_colour_channels[2] = GameFogNew.low_quality_colour_channels[3] = 0.0f;
+        }
+    }
+
+    f32 fstop = 22.0f;
+    if (GameFogSet != NULL) {
+        fstop = static_cast<f32>(static_cast<u32>(GameFogSet->depth_of_field_fstop)) / 10.0f;
+        if (fstop == 0.0f)
+            fstop = 22.0f;
+    }
+    dof_fstop = fstop;
+
+    if (NuIOS_IsLowEndDevice() && world->current_level != NULL) {
+        GameFogNew.low_quality_end = world->current_level->data_display.far_clip;
+        GameFogNew.low_quality_start = world->current_level->data_display.fog_start;
+    }
+    if (GameFogSnap != 0) {
+        GameFog = GameFogNew;
+        GameFogDuration = 0.0f;
+        GameFogTime = 0.0f;
+    } else {
+        if (GameFogTime < GameFogDuration) {
+            GameFogTime += FRAMETIME;
+            if (GameFogTime > GameFogDuration)
+                GameFogTime = GameFogDuration;
+        }
+        if (GameFogTime >= GameFogDuration) {
+            GameFog = GameFogNew;
+        } else {
+            f32 blend = 1.0f - (NU_SIN_LUT(GameFogTime / GameFogDuration * 32768.0f + 16384.0f) + 1.0f) * 0.5f;
+            GameFog.high_quality_colour_channels[0] = GameFogOld.high_quality_colour_channels[0] +
+                (GameFogNew.high_quality_colour_channels[0] - GameFogOld.high_quality_colour_channels[0]) * blend;
+            GameFog.high_quality_colour_channels[1] = GameFogOld.high_quality_colour_channels[1] +
+                (GameFogNew.high_quality_colour_channels[1] - GameFogOld.high_quality_colour_channels[1]) * blend;
+            GameFog.high_quality_colour_channels[2] = GameFogOld.high_quality_colour_channels[2] +
+                (GameFogNew.high_quality_colour_channels[2] - GameFogOld.high_quality_colour_channels[2]) * blend;
+            GameFog.high_quality_colour_channels[3] = GameFogOld.high_quality_colour_channels[3] +
+                (GameFogNew.high_quality_colour_channels[3] - GameFogOld.high_quality_colour_channels[3]) * blend;
+            GameFog.high_quality_start = GameFogOld.high_quality_start +
+                (GameFogNew.high_quality_start - GameFogOld.high_quality_start) * blend;
+            GameFog.high_quality_end = GameFogOld.high_quality_end +
+                (GameFogNew.high_quality_end - GameFogOld.high_quality_end) * blend;
+            GameFog.high_quality_density = GameFogOld.high_quality_density +
+                (GameFogNew.high_quality_density - GameFogOld.high_quality_density) * blend;
+            GameFog.low_quality_density = GameFogOld.low_quality_density +
+                (GameFogNew.low_quality_density - GameFogOld.low_quality_density) * blend;
+            GameFog.low_quality_colour_channels[0] = GameFogOld.low_quality_colour_channels[0] +
+                (GameFogNew.low_quality_colour_channels[0] - GameFogOld.low_quality_colour_channels[0]) * blend;
+            GameFog.low_quality_colour_channels[1] = GameFogOld.low_quality_colour_channels[1] +
+                (GameFogNew.low_quality_colour_channels[1] - GameFogOld.low_quality_colour_channels[1]) * blend;
+            GameFog.low_quality_colour_channels[2] = GameFogOld.low_quality_colour_channels[2] +
+                (GameFogNew.low_quality_colour_channels[2] - GameFogOld.low_quality_colour_channels[2]) * blend;
+            GameFog.low_quality_colour_channels[3] = GameFogOld.low_quality_colour_channels[3] +
+                (GameFogNew.low_quality_colour_channels[3] - GameFogOld.low_quality_colour_channels[3]) * blend;
+        }
+    }
+    GameFog.colour = (static_cast<i32>(GameFog.high_quality_colour_channels[0]) << 24) +
+        (static_cast<i32>(GameFog.high_quality_colour_channels[1]) << 16) +
+        (static_cast<i32>(GameFog.high_quality_colour_channels[2]) << 8) +
+        static_cast<i32>(GameFog.high_quality_colour_channels[3]);
+    GameFog.low_quality_colour = (static_cast<i32>(GameFog.low_quality_colour_channels[0]) << 24) +
+        (static_cast<i32>(GameFog.low_quality_colour_channels[1]) << 16) +
+        (static_cast<i32>(GameFog.low_quality_colour_channels[2]) << 8) +
+        static_cast<i32>(GameFog.low_quality_colour_channels[3]);
+    GameFogSnap = 0;
+    g_BackgroundColour = GameFog.colour;
 }
 
 void *GameBufferAlloc(variptr_u *buf, variptr_u *buf_end, i32 size) {
-    // Carves `size` bytes out of the permanent buffer (original at
-    // 0x4890a0); returns the previous cursor.
-    void *ptr = (void *)(usize)buf->addr;
-    buf->addr += size;
+    void *ptr = NULL;
+    if (buf_end != NULL && buf != NULL && buf->addr + size < buf_end->addr) {
+        buf->addr = (buf->addr + 3) & ~usize(3);
+        ptr = buf->void_ptr;
+        buf->addr += size;
+    }
+    if (ptr != NULL)
+        memset(ptr, 0, size);
     return ptr;
 }
 
@@ -3364,8 +3509,17 @@ update_bounds:
     }
 }
 
-void PortalGameObject(GameObject_s *, i32, i32, i16, nugscn_s *) {
-    STUBBED();
+void PortalGameObject(GameObject_s *object, i32 enabled, i32 update_room, i16 room, nugscn_s *scene) {
+    if (enabled != 0) {
+        object->field_0xefa |= 0x40;
+        object->field_0xefa = (object->field_0xefa & 0x7f) | ((update_room & 1) << 7);
+        if (room != -1)
+            object->room_id = room;
+        else
+            object->room_id = scene != NULL ? NuPortalWhichRoom(scene, &object->apiobj.position) : -1;
+    } else {
+        object->field_0xefa &= ~0x40;
+    }
 }
 
 void SnapCreaturePos(GameObject_s *object, NUVEC *position, i32 angle, AIPATHINFO_s *path_info, i32 set_on_surface) {
@@ -3923,8 +4077,14 @@ void GameObjectSetCanUse(GameObject_s *object, void *target, unsigned char actio
     object->use_action_frames = grapple_attach_frames;
 }
 
-void GameObjOwnsAnyCables(GameObject_s *) {
-    STUBBED();
+CABLE_s *GameObjOwnsAnyCables(GameObject_s *object) {
+    CABLE_s *cable = cables;
+    for (i32 i = 0; i < 8; ++i, ++cable) {
+        // The original checks the first cable's owner for the entire array.
+        if (cables->source == object && (cable->flags_1e9 & 1) != 0)
+            return cable;
+    }
+    return NULL;
 }
 
 void GameObjectDimensionsExtra_LSW(GameObject_s *object);
@@ -3945,9 +4105,30 @@ void GameObjectDimensions(GameObject_s *object) {
     GameObjectDimensionsExtra_LSW(object);
 }
 
-void GameAntiNodeData_Init(GAMEANTINODEDATA_s *data, nuhspecial_s *) {
+void GameAntiNodeData_Init(GAMEANTINODEDATA_s *data, nuhspecial_s *special) {
     if (data != NULL) {
         memset(data, 0, sizeof(*data));
+        if (special != NULL && NuSpecialExistsFn(special)) {
+            NUVEC minimum;
+            NUVEC maximum;
+            NuSpecialGetBounds(special, &minimum, &maximum);
+            NUMTX *matrix = NuSpecialGetMtx(special);
+            NuVecMtxTransform(&minimum, &minimum, matrix);
+            NuVecMtxTransform(&maximum, &maximum, matrix);
+            f32 x = NuFabs((maximum.x - minimum.x) * 0.5f);
+            f32 z = NuFabs((maximum.z - minimum.z) * 0.5f);
+            if (NuFabs(x - z) < 0.01f) {
+                data->radius = x;
+                data->use_largest_extent = 0;
+            } else {
+                data->radius = x > z ? x : z;
+                data->use_largest_extent = 1;
+            }
+            data->extent_x = x;
+            data->extent_z = z;
+            data->max_y = NuFabs((maximum.y - minimum.y) * 0.5f);
+            data->min_y = -data->max_y;
+        }
     }
 }
 
@@ -3988,21 +4169,112 @@ APIOBJECT *GameAPIOBJECTFromObjID(u8 object_id) {
 
 i32 GameDrawCharacterModel(CHARACTERMODEL_s *model, ANIMPACKET_s *animation, NUMTX *matrix, NUMTX *secondary_matrix,
                            NUMTX *reflection_matrix, NUMTX *auxiliary_matrix, GameObject_s *object, u32 flags) {
-    if (model == NULL) {
-        return 0;
+    NUMTX special_matrix;
+    NUMTX scaled_matrix;
+    NUMTX scaled_reflection;
+    NUMTX output_matrices[256];
+    i32 drag_bomb = 0;
+    if (object != NULL && object->id == id_DRAGBOMB && Cheat_IsOn(5) && WORLD->lev_objs[0x135].active) {
+        ResetShadowMapRendering();
+        special_matrix = *matrix;
+        NuSpecialDrawAt(&WORLD->lev_objs[0x135].special, &special_matrix);
+        if (reflection_matrix != NULL) {
+            special_matrix = *reflection_matrix;
+            NuRndrStartReflectionRender(1);
+            NuSpecialDrawAt(&WORLD->lev_objs[0x135].special, &special_matrix);
+            NuRndrEndReflectionRender();
+        }
+        scaled_matrix = *matrix;
+        NUVEC scale = {0.5f, 0.5f, 0.5f};
+        NuMtxPreScale(&scaled_matrix, &scale);
+        matrix = &scaled_matrix;
+        if (reflection_matrix != NULL) {
+            scaled_reflection = *reflection_matrix;
+            NuMtxPreScale(&scaled_reflection, &scale);
+            reflection_matrix = &scaled_reflection;
+        }
+        drag_bomb = 1;
     }
 
+    if (TimingBarSet == 5)
+        TBOPENFN("chrs", 5);
+    i32 complex_shadow = 0;
+    if (object != NULL && (object->apiobj.character_data->model_flags & 0x10000) != 0 &&
+        (WORLD->area == NULL || WORLD->area != DOGFIGHT_ADATA)) {
+        model->hierarchy->suppress_shadow_surface_points = 0;
+        if (reflection_matrix != NULL) {
+            ConfigureComplexShadow(object);
+            complex_shadow = 1;
+        }
+    } else {
+        model->hierarchy->suppress_shadow_surface_points = 1;
+    }
     drawcharactermodel_keepmergeaction = game_keepmergeaction;
     MakeLayerList = GCDataList[model->model_id].make_layer_list;
+    i32 result = APIDrawCharacterModel(
+        model, object != NULL ? object->apiobj.character_data : NULL, animation, matrix, secondary_matrix,
+        reflection_matrix, NULL, auxiliary_matrix, object, flags,
+        object != NULL && JointRotation_On ? object->joint_modifiers : NULL,
+        object != NULL && JointRotation_On ? object->field_0x1089 : 0, Paused, FRAMETIME, output_matrices, NULL,
+        WORLD->debris_sys);
+    if (TimingBarSet == 5)
+        TBCLOSEFN("chrs", 5);
 
-    CHARACTERDATA *character_data =
-        object != NULL ? object->apiobj.character_data : &apicharsys->char_data[model->model_id];
+    i32 draw_shadow = 0;
+    if (result == 0 && object != NULL) {
+        if (auxiliary_matrix != NULL) {
+            for (i32 i = 0; i < 16; ++i) {
+                if (model->points_of_interest[i] != NULL) {
+                    auxiliary_matrix[i] = object->apiobj.field_0xb8;
+                    auxiliary_matrix[i].m30 = object->apiobj.position.x;
+                    auxiliary_matrix[i].m31 = object->apiobj.position.y;
+                    auxiliary_matrix[i].m32 = object->apiobj.position.z;
+                    auxiliary_matrix[i].m31 -=
+                        (object->character_bottom + object->character_top) * object->apiobj.field_0xa8 * 0.5f;
+                }
+            }
+        }
+    } else if (result != 0 && object != NULL && (object->field_0xeff & 4) == 0 &&
+               (object->apiobj.character_data->model_flags & 0x10000) == 0) {
+        draw_shadow = 1;
+    }
+    if (g_lowEndLevelBehaviour != 0 && object != NULL && (object->apiobj.flags_low & 0x80) == 0)
+        draw_shadow = 0;
 
-    // The original reserves a fixed 256-matrix evaluation array in this
-    // wrapper before calling APIDrawCharacterModel.
-    NUMTX output_matrices[256];
-    return APIDrawCharacterModel(model, character_data, animation, matrix, secondary_matrix, reflection_matrix, 0,
-                                 auxiliary_matrix, object, flags, NULL, 0, WORLD, FRAMETIME, output_matrices, 0, NULL);
+    if (draw_shadow && object != NULL && secondary_matrix != NULL) {
+        i32 level_alpha = static_cast<u8>(WORLD->current_level->blob_shadow_alpha);
+        if (level_alpha != 0 && object->shadow_opacity > 0.0f && object->surface_normal.y > 0.0f &&
+            (object->apiobj.water_height == -1.0f ||
+             (TerLayer[static_cast<i8>(object->apiobj.field_0x27f)].flags & 1) == 0)) {
+            if (object->id == id_MOUSEDROID && WORLD->lev_objs[0xa2].active) {
+                special_matrix = *secondary_matrix;
+                NuSpecialDrawAtAlpha(&WORLD->lev_objs[0xa2].special, &special_matrix,
+                                    object->shadow_opacity * object->surface_normal.y);
+            } else if (CHARSHADOWS_ON) {
+                PLAYERCHARACTERCONFIG_s *config = object->apiobj.character_data->player_config;
+                i32 alpha = config->blob_shadow_alpha;
+                if (alpha == 0xff)
+                    alpha = level_alpha;
+                if (alpha > 0) {
+                    f32 radius = config->shadow_radius;
+                    if (!(radius < 99.0f))
+                        radius = object->apiobj.character_data->collision_radius;
+                    if (radius > 0.0f) {
+                        f32 drop_scale = DropInOutScale(object);
+                        NuRndrAddShadow(NUMTX_GET_ROW_VEC(secondary_matrix, 3),
+                                        drop_scale * radius * object->apiobj.field_0xa8,
+                                        static_cast<i32>(alpha * object->shadow_opacity * object->surface_normal.y),
+                                        object->field_0x105e, 0, object->field_0x1060);
+                    }
+                }
+            }
+        }
+    }
+    if (complex_shadow)
+        ConfigureComplexShadow(NULL);
+    if (drag_bomb)
+        EnableShadowMapRendering(0);
+    return result;
 }
 
 extern i16 id_ANAKINJEDISCARRED;
@@ -4056,8 +4328,24 @@ apply_layers:
     object->field_0x1054 = AdjustLayerBits(object->field_0x1054, object);
 }
 
-void GameBlowUpBlownUpFn_LSW(GIZMOBLOWUP_s *) {
-    STUBBED();
+void GameBlowUpBlownUpFn_LSW(GIZMOBLOWUP_s *blowup) {
+    extern AREADATA *MOSEISLEY_ADATA;
+    extern AREADATA *TATOOINE_ADATA;
+    if (blowup == NULL || blowup->type == NULL || WORLD->area == NULL || netclient != 0)
+        return;
+    if (WORLD->area == MOSEISLEY_ADATA || WORLD->area == HUB_ADATA) {
+        char *name = NuSpecialGetName(&blowup->type->special);
+        if (name == NULL || NuStrIStr(name, "bin_lid") != NULL || NuStrIStr(name, "bin") == NULL ||
+            qrand() >= 49200)
+            return;
+    } else if (WORLD->area == TATOOINE_ADATA) {
+        char *name = NuSpecialGetName(&blowup->type->special);
+        if (name == NULL || NuStrIStr(name, "womp_gen") == NULL)
+            return;
+    } else {
+        return;
+    }
+    AddDynamicCreature(id_WOMPRAT, &blowup->position, 0, "spawned_womprat", NULL, NULL, 1, NULL, NULL, 0, 16);
 }
 
 void GameLoadCharacterModels(APICHARACTERMODELLIST_s *list, i32 append, VARIPTR *buf, VARIPTR *buf_end, i32 area_models,
@@ -4374,8 +4662,9 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
     }
 }
 
-void GameObjectDimensionsExtra_LSW(GameObject_s *) {
-    STUBBED();
+void GameObjectDimensionsExtra_LSW(GameObject_s *object) {
+    if (object->id == id_ATAT && object->character_context == 0x17 && object->context_animation == 0x41)
+        object->apiobj.field_0x1dc *= 2.0f;
 }
 
 i32 AnakinGreenSabre(GameObject_s *object);
@@ -4971,13 +5260,13 @@ void ThingManager::DisplayThings(ThingRenderData *data) {
         BaseThing *thing = this->things[i];
         if (thing == NULL || (thing->flags & THING_FLAG_SKIP_DISPLAY)) {
         } else {
-            if (thing->profiling_0xc != NULL) {
+            if (thing->profiling_0xc != 0) {
                 _NuTimeBarSlotBegin(this->timebar, 3, name);
                 thing = this->things[i];
             }
             thing->Display(data);
             thing = this->things[i];
-            if (thing->profiling_0xc != NULL) {
+            if (thing->profiling_0xc != 0) {
                 _NuTimeBarSlotEnd(this->timebar, 3);
             }
         }
@@ -4985,8 +5274,20 @@ void ThingManager::DisplayThings(ThingRenderData *data) {
     } while (i < this->count);
 }
 
-void ThingManager::EffectsThings(ThingRenderData *) {
-    STUBBED();
+void ThingManager::EffectsThings(ThingRenderData *data) {
+    const char *name = "Fx";
+    for (i32 i = 0; i < this->count; ++i) {
+        if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_EFFECTS) != 0) {
+            continue;
+        }
+        if (this->things[i]->profiling_0xc != 0) {
+            _NuTimeBarSlotBegin(this->timebar, 5, name);
+        }
+        this->things[i]->Effects(data);
+        if (this->things[i]->profiling_0xc != 0) {
+            _NuTimeBarSlotEnd(this->timebar, 5);
+        }
+    }
 }
 
 // ThingManager::EnableActions @0x425930. Finds the first thing whose 0x4 id
@@ -5012,85 +5313,92 @@ void ThingManager::EnableActions(i32 id, i32 flags, i32 invert) {
     }
 }
 
-void ThingManager::EnterLevelThings(ThingLevelData *) {
-    STUBBED();
+void ThingManager::EnterLevelThings(ThingLevelData *data) {
+    for (i32 i = 0; i < this->count; ++i) {
+        if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_ENTER_LEVEL) != 0) {
+            continue;
+        }
+        this->things[i]->EnterLevel(data);
+    }
 }
 
-void ThingManager::ExitLevelThings(ThingLevelData *) {
-    STUBBED();
+void ThingManager::ExitLevelThings(ThingLevelData *data) {
+    for (i32 i = 0; i < this->count; ++i) {
+        if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_EXIT_LEVEL) != 0) {
+            continue;
+        }
+        this->things[i]->ExitLevel(data);
+    }
 }
 
 // ThingManager::ProcessThings @0x425460. Pass 1 always runs
 // ProcessEvenWhenPaused first; then, per ThingProcessData.paused, either
 // Process or ProcessOnlyWhenPaused. Each pass has its own opt-out flag. The count
 // is re-read every iteration because thing Process calls may add things.
-// Profiling: things with a non-NULL profiling handle are bracketed with
-// NuTimeBarSlotBegin/End (stubbed no-ops on this build).
+// Profiling flags select which things receive NuTimeBarSlotBegin/End calls.
 void ThingManager::ProcessThings(ThingProcessData *data) {
-    static const char *name = "PROC"; // timebar slot name @0x5734e3
-
+    const char *name = "PROC";
     if (this->count <= 0) {
         return;
     }
-    for (i32 i = 0; i < this->count; i++) {
-        BaseThing *thing = this->things[i];
-        if (thing == NULL || (thing->flags & THING_FLAG_SKIP_PROCESS_EVEN_WHEN_PAUSED)) {
+    for (i32 i = 0; i < this->count; ++i) {
+        if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_PROCESS_EVEN_WHEN_PAUSED) != 0) {
             continue;
         }
-        if (thing->profiling_0xc != NULL) {
+        if (this->things[i]->profiling_0xc != 0) {
             _NuTimeBarSlotBegin(this->timebar, 0, name);
         }
-        thing->ProcessEvenWhenPaused(data);
-        thing = this->things[i];
-        if (thing->profiling_0xc != NULL) {
+        this->things[i]->ProcessEvenWhenPaused(data);
+        if (this->things[i]->profiling_0xc != 0) {
             _NuTimeBarSlotEnd(this->timebar, 0);
         }
     }
-    if (data->paused != 0) {
-        if (this->count <= 0) {
-            return;
-        }
-        for (i32 i = 0; i < this->count; i++) {
-            BaseThing *thing = this->things[i];
-            if (thing == NULL || (thing->flags & THING_FLAG_SKIP_PROCESS_ONLY_WHEN_PAUSED)) {
+    if (data->paused == 0) {
+        for (i32 i = 0; i < this->count; ++i) {
+            if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_PROCESS) != 0) {
                 continue;
             }
-            if (thing->profiling_0xc != NULL) {
+            if (this->things[i]->profiling_0xc != 0) {
                 _NuTimeBarSlotBegin(this->timebar, 0, name);
             }
-            thing->ProcessOnlyWhenPaused(data);
-            thing = this->things[i];
-            if (thing->profiling_0xc != NULL) {
+            this->things[i]->Process(data);
+            if (this->things[i]->profiling_0xc != 0) {
                 _NuTimeBarSlotEnd(this->timebar, 0);
             }
         }
     } else {
-        if (this->count <= 0) {
-            return;
-        }
-        for (i32 i = 0; i < this->count; i++) {
-            BaseThing *thing = this->things[i];
-            if (thing == NULL || (thing->flags & THING_FLAG_SKIP_PROCESS)) {
+        for (i32 i = 0; i < this->count; ++i) {
+            if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_PROCESS_ONLY_WHEN_PAUSED) != 0) {
                 continue;
             }
-            if (thing->profiling_0xc != NULL) {
+            if (this->things[i]->profiling_0xc != 0) {
                 _NuTimeBarSlotBegin(this->timebar, 0, name);
             }
-            thing->Process(data);
-            thing = this->things[i];
-            if (thing->profiling_0xc != NULL) {
+            this->things[i]->ProcessOnlyWhenPaused(data);
+            if (this->things[i]->profiling_0xc != 0) {
                 _NuTimeBarSlotEnd(this->timebar, 0);
             }
         }
     }
 }
 
-void ThingManager::RemoveDependanciesThings(ThingRemoveData *) {
-    STUBBED();
+i32 ThingManager::RemoveDependanciesThings(ThingRemoveData *data) {
+    i32 removed = 1;
+    for (i32 i = 0; i < this->count; ++i) {
+        if (this->things[i] == NULL || (this->things[i]->flags & THING_FLAG_SKIP_REMOVE_DEPENDANCIES) != 0) {
+            continue;
+        }
+        removed &= this->things[i]->RemoveDependancies(data);
+    }
+    return removed;
 }
 
 void ThingManager::RemoveTemporaryThings() {
-    STUBBED();
+    for (i32 i = this->count - 1; this->permanent_count <= i; --i) {
+        delete this->things[i];
+        this->things[i] = NULL;
+    }
+    this->count = this->permanent_count;
 }
 
 // ThingManager::RenderThings @0x425390. Single pass over Render,
@@ -5106,13 +5414,13 @@ void ThingManager::RenderThings(ThingRenderData *data) {
         BaseThing *thing = this->things[i];
         if (thing == NULL || (thing->flags & THING_FLAG_SKIP_RENDER)) {
         } else {
-            if (thing->profiling_0xc != NULL) {
+            if (thing->profiling_0xc != 0) {
                 _NuTimeBarSlotBegin(this->timebar, 1, name);
                 thing = this->things[i];
             }
             thing->Render(data);
             thing = this->things[i];
-            if (thing->profiling_0xc != NULL) {
+            if (thing->profiling_0xc != 0) {
                 _NuTimeBarSlotEnd(this->timebar, 1);
             }
         }
@@ -5128,13 +5436,13 @@ void ThingManager::ResetThings(ThingResetData *data) {
         do {
             BaseThing *thing = this->things[i];
             if (thing != NULL && (thing->flags & 8) == 0) {
-                if (thing->profiling_0xc != NULL) {
+                if (thing->profiling_0xc != 0) {
                     _NuTimeBarSlotBegin(this->timebar, 4, name);
                 }
                 thing = this->things[i];
                 thing->Reset(data);
                 thing = this->things[i];
-                if (thing->profiling_0xc != NULL) {
+                if (thing->profiling_0xc != 0) {
                     _NuTimeBarSlotEnd(this->timebar, 4);
                 }
             }
@@ -5172,104 +5480,158 @@ ThingManager::ThingManager(i32 max_things) {
 ThingManager::~ThingManager() {
 }
 
-void ThingManager::cbEdTimingSelect(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static eduimenu_s *edTimingMenu;
+static u32 EdAttr[] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+
+void ThingManager::cbEdTimingSelect(eduimenu_s *menu, eduiitem_s *item, u32) {
+    ThingManager *manager = static_cast<ThingManager *>(theThingManager);
+    u32 selection = item->data;
+    manager->ed_timing_state = selection;
+    manager->field_0x1c = selection - 3;
+    if (selection <= 3) {
+        i32 enabled = selection == 3;
+        for (i32 i = 0; i < manager->count; ++i) {
+            manager->things[i]->profiling_0xc = enabled;
+        }
+        if (selection <= 1) {
+            eduiMenuDestroy(menu);
+            edTimingMenu = NULL;
+        } else {
+            i32 index = 0;
+            for (eduiitem_s *entry = menu->first->next; entry != NULL; entry = entry->next) {
+                entry->highlighted = index < 3 ? 0 : enabled;
+                ++index;
+            }
+        }
+        NuTimeBarEnable(item->data != 0);
+    } else {
+        manager->things[selection - 4]->profiling_0xc ^= 1;
+    }
 }
 
-void ThingManager::cbEdTrackCancel(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+void ThingManager::cbEdTrackCancel(eduimenu_s *menu, eduimenu_s *) {
+    eduiMenuDestroy(menu);
+    edTimingMenu = NULL;
 }
 
 void ThingManager::edTimingEnter() {
-    STUBBED();
+    edTimingMenu = eduiMenuCreate(30, 30, 250, 320, NULL, cbEdTrackCancel, "Timings");
+    if (edTimingMenu != NULL) {
+        eduiMenuAddItem(edTimingMenu, eduiItemSelCreate(0, EdAttr, 0, 1, cbEdTimingSelect, "Off"));
+        eduiMenuAddItem(edTimingMenu, eduiItemSelCreate(1, EdAttr, 0, 2, cbEdTimingSelect, "System"));
+        eduiMenuAddItem(edTimingMenu, eduiItemSelCreate(2, EdAttr, 0, 3, cbEdTimingSelect, "No Things"));
+        eduiMenuAddItem(edTimingMenu, eduiItemSelCreate(3, EdAttr, 0, 4, cbEdTimingSelect, "All Things"));
+        for (i32 i = 0; i < static_cast<ThingManager *>(theThingManager)->count; ++i) {
+            eduiMenuAddItem(edTimingMenu,
+                           eduiItemToggleCreate(i + 4, EdAttr,
+                                               static_cast<ThingManager *>(theThingManager)->things[i]->profiling_0xc,
+                                               i + 5, cbEdTimingSelect,
+                                               const_cast<char *>(static_cast<ThingManager *>(theThingManager)
+                                                                      ->things[i]->GetName())));
+        }
+    }
 }
 
 void ThingManager::edTimingInit() {
     static_cast<ThingManager *>(theThingManager)->ed_timing_state = 0;
 }
 
-void ThingManager::edTimingProc(float, nupad_s *) {
-    STUBBED();
+i32 ThingManager::edTimingProc(float delta_time, nupad_s *pad) {
+    NuFntSet(0);
+    NuFntScale(12, 12);
+    eduiMenuProcess(edTimingMenu, delta_time, pad);
+    return edTimingMenu == NULL ? 2 : 0;
 }
 
 void ThingManager::edTimingRender() {
-    STUBBED();
+    eduiMenuRender(edTimingMenu);
 }
 
-void SpecialObject::Exists() const {
-    STUBBED();
+i32 SpecialObject::Exists() const {
+    return NuSpecialExistsFn(const_cast<nuhspecial_s *>(&special));
 }
 
-void SpecialObject::GetCollision() const {
-    STUBBED();
+i32 SpecialObject::GetCollision() const {
+    return NuSpecialGetCollision(const_cast<nuhspecial_s *>(&special)) != 0;
 }
 
-void SpecialObject::GetCurrentPosition() const {
-    STUBBED();
+VuVec const *SpecialObject::GetCurrentPosition() const {
+    return reinterpret_cast<VuVec const *>(NuSpecialGetDrawPos(const_cast<nuhspecial_s *>(&special)));
 }
 
-void SpecialObject::GetCurrentTransform() const {
-    STUBBED();
+VuMtx const *SpecialObject::GetCurrentTransform() const {
+    return reinterpret_cast<VuMtx const *>(NuSpecialGetDrawMtx(const_cast<nuhspecial_s *>(&special)));
 }
 
-void SpecialObject::GetInitialPosition() const {
-    STUBBED();
+VuVec const *SpecialObject::GetInitialPosition() const {
+    return reinterpret_cast<VuVec const *>(NuSpecialGetPos(const_cast<nuhspecial_s *>(&special)));
 }
 
-void SpecialObject::GetInitialTransform() const {
-    STUBBED();
+VuMtx const *SpecialObject::GetInitialTransform() const {
+    return reinterpret_cast<VuMtx const *>(NuSpecialGetMtx(const_cast<nuhspecial_s *>(&special)));
 }
 
-void SpecialObject::GetMtl(i32) const {
-    STUBBED();
+numtl_s *SpecialObject::GetMtl(i32 index) const {
+    return NuSpecialGetMtl(const_cast<nuhspecial_s *>(&special), index);
 }
 
-void SpecialObject::GetName() const {
-    STUBBED();
+char const *SpecialObject::GetName() const {
+    return NuSpecialGetName(const_cast<nuhspecial_s *>(&special));
 }
 
-void SpecialObject::GetNumMtls() const {
-    STUBBED();
+i32 SpecialObject::GetNumMtls() const {
+    return NuSpecialNumMtls(const_cast<nuhspecial_s *>(&special));
 }
 
-void SpecialObject::GetRadius() const {
-    STUBBED();
+f32 SpecialObject::GetRadius() const {
+    f32 radius = 1.0f;
+    NUVEC position;
+    if (NuSpecialExistsFn(const_cast<nuhspecial_s *>(&special))) {
+        NuSpecialGetRadius(const_cast<nuhspecial_s *>(&special), &position, &radius);
+    }
+    return radius;
 }
 
-void SpecialObject::GetVisibility() const {
-    STUBBED();
+i32 SpecialObject::GetVisibility() const {
+    return NuSpecialGetVisibilityFn(const_cast<nuhspecial_s *>(&special));
 }
 
-void SpecialObject::Render(VuMtx const *) const {
-    STUBBED();
+void SpecialObject::Render(VuMtx const *matrix) const {
+    if (matrix != NULL) {
+        NuSpecialDrawAt(const_cast<nuhspecial_s *>(&special),
+                        reinterpret_cast<NUMTX *>(const_cast<VuMtx *>(matrix)));
+    } else {
+        NuSpecialDrawAt(const_cast<nuhspecial_s *>(&special),
+                        NuSpecialGetDrawMtx(const_cast<nuhspecial_s *>(&special)));
+    }
 }
 
-void SpecialObject::SetCollision(i32) {
-    STUBBED();
+void SpecialObject::SetCollision(i32 enabled) {
+    NuSpecialSetCollision(&special, enabled);
 }
 
-void SpecialObject::SetCurrentPosition(VuVec const *) {
-    STUBBED();
+void SpecialObject::SetCurrentPosition(VuVec const *position) {
+    NuSpecialSetDrawPos(&special, reinterpret_cast<NUVEC *>(const_cast<VuVec *>(position)));
 }
 
-void SpecialObject::SetCurrentTransform(VuMtx const *) {
-    STUBBED();
+void SpecialObject::SetCurrentTransform(VuMtx const *matrix) {
+    NuSpecialSetDrawMtx(&special, reinterpret_cast<NUMTX *>(const_cast<VuMtx *>(matrix)));
 }
 
 void SpecialObject::SetInitialPosition(VuVec const *) {
     STUBBED();
 }
 
-void SpecialObject::SetInitialTransform(VuMtx const *) {
-    STUBBED();
+void SpecialObject::SetInitialTransform(VuMtx const *matrix) {
+    NuSpecialSetMtx(&special, reinterpret_cast<NUMTX *>(const_cast<VuMtx *>(matrix)));
 }
 
-void SpecialObject::SetVisibility(i32) {
-    STUBBED();
+void SpecialObject::SetVisibility(i32 enabled) {
+    NuSpecialSetVisibility(&special, enabled);
 }
 
 SpecialObject::SpecialObject() {
-    STUBBED();
+    NuSpecialClear(&special);
 }
 
 void GameThingManager::AddLevelOnlyThings() {
@@ -5316,7 +5678,7 @@ CantPickupBombTimerAddon::~CantPickupBombTimerAddon() {
 BaseThing::BaseThing() {
     this->field_0x4 = 0;
     this->flags = 0;
-    this->profiling_0xc = NULL;
+    this->profiling_0xc = 0;
 }
 
 // BaseThing defaults @0x424bf0 (dtor) and 0x425990..0x425a20 (interface
@@ -5587,28 +5949,190 @@ GameObject_s *FindGameObject(i32 character_id, u32 required_flags, i32 alive_onl
     return NULL;
 }
 
-void KillGameObject(GameObject_s *object, i32 reason, i32) {
-    if (object == NULL || (object->apiobj.field_0x1f8 & APIOBJECT_FLAG_IN_USE) == 0) {
-        return;
-    }
+extern "C" void NuSound3ClearLoopHold(NUVEC *, i32);
+void Grapple_RemoveDynamic(void *);
+void Shards_HandleLostObj(WORLDINFO_s *, GameObject_s *);
+void DestroySnakeBody(GameObject_s *);
+void BlowUpSnakeBody(GameObject_s *);
+void PlayDieSfx(GameObject_s *);
+void DieRumble(GameObject_s *);
+void GetTakeOverPos(GameObject_s *, NUVEC *);
+void SetToLastSafePos(GameObject_s *);
+void ReleaseLever(GameObject_s *);
+void Batarangs_CheckLostData(void *);
+void SpecialMove_ReleaseVictim(GameObject_s *);
+void ReleaseEat(GameObject_s *);
+void ReleasePush(GameObject_s *);
+void ReleaseForce(GameObject_s *, i32);
+void LoseHelmet(GameObject_s *, i32, i32);
+EXPLOSION *AddExplosion(NUVEC *, f32, f32, GameObject_s *, i32, i32);
+extern EXPLOSION Explosion[8];
+i32 speeder_hitpoints_lost;
+extern i16 id_MOUSEDROID;
 
-    const i32 requested_reason = reason;
-    if (reason == 5) {
-        reason = 4;
+i32 KillGameObject(GameObject_s *object, i32 requested_reason, i32) {
+    NUVEC momentum;
+    NUVEC position;
+    i32 reason = requested_reason == 5 ? 4 : requested_reason;
+    if (object->apiobj.player_controlled) {
+        ++AreaGlobals.values.field_0x00;
+        ++LevDeaths;
     }
-
     object->KillTasks();
-    object->current_hp = 0;
-    object->apiobj.velocity.x = 0.0f;
-    object->apiobj.velocity.z = 0.0f;
+    NuSound3ClearLoopHold(&object->apiobj.upper_position, 0);
+    NuSound3ClearLoopHold(&object->apiobj.collision_position, 0);
+    NuSound3ClearLoopHold(&object->apiobj.lower_position, 0);
+    Grapple_RemoveDynamic(object);
+    Shards_HandleLostObj(WORLD, object);
 
-    // The shipped function converts the ordinary scripted kill (reason 4)
-    // into the terminal death state 2 after its effects have been emitted.
-    const bool terminal_kill = reason == 4;
-    if (terminal_kill) {
-        reason = 2;
+    i32 debris[4] = {-1, -1, -1, -1};
+    if (reason != 4) {
+        i32 part_debris = -1;
+        if ((object->apiobj.character_data->model_flags & 0x04000000) != 0) {
+            debris[0] = 73;
+            debris[1] = 74;
+            debris[2] = 75;
+        } else if (object->apiobj.character_data->move_fn == Move_CANNON) {
+            debris[0] = 75;
+            debris[1] = 117;
+        } else if (object->id == id_TRAININGREMOTE) {
+            debris[0] = 38;
+            part_debris = 0;
+        } else if (object->id == id_CLONEWALKER || object->id == id_ATST_LOWRES) {
+            debris[1] = 130;
+            debris[2] = 133;
+            debris[3] = 132;
+        } else if (object->id == id_ATST) {
+            debris[0] = 44;
+        } else if (object->id == id_ATAT) {
+            GameCam_NewShake(GameCam, 1.0f, 1.0f, 1.0f);
+            NewRumbleAllPlayers(0.7f, 0.0f, 0, 0);
+        } else if (object->id == id_XWING || object->id == id_SNOWSPEEDER || object->id == id_MILLENNIUMFALCON ||
+                   object->id == id_TIEFIGHTER || object->id == id_TIEINTERCEPTOR ||
+                   object->id == id_TIEFIGHTERDARTH || object->id == id_TIEBOMBER ||
+                   object->id == id_IMPERIALSHUTTLE || object->id == id_SLAVE1) {
+            debris[0] = 34;
+            if (WORLD->current_level == DEATHSTARRESCUEE_LDATA && object->apiobj.field_0x27c == -1) {
+                GameCam_Judder(GameCam, qrand() < 32768 ? -0.75f : 0.75f, 2, NULL);
+                NewRumbleAllPlayers(1.0f, 0.1f, 0, 0);
+            }
+        } else if (object->id == id_SPEEDERBIKESNOW) {
+            debris[0] = 34;
+        } else if (object->id == id_MOUSEDROID) {
+            debris[0] = 69;
+            part_debris = 1;
+        } else if (object->id == id_DRAGBOMB) {
+            GameCam_NewShake(GameCam, 1.0f, 1.0f, 1.0f);
+            NewRumbleAllPlayers(1.0f, 0.1f, 0, 0);
+            AddExplosion(&object->apiobj.collision_position, 0.6f * AreaPickupScale, 0.5f, NULL, -1, 0x807);
+            if (Cheat_IsOn(5)) {
+                debris[0] = 125;
+                debris[1] = 126;
+            } else {
+                debris[0] = 82;
+                debris[1] = 83;
+                debris[2] = 84;
+                part_debris = 3;
+            }
+            PlaySfx("exp_thermalDet", &object->apiobj.collision_position);
+        } else if (object->id == id_WOMPRAT) {
+            part_debris = 5;
+        } else if (object->id == id_PROBEDROID) {
+            debris[0] = 130;
+            debris[1] = 133;
+        }
+        if (object->character_context != 43)
+            PlayDieSfx(object);
+        if (object->apiobj.player_controlled)
+            DieRumble(object);
+        if ((object->apiobj.character_data->model_flags & 0x2000) != 0) {
+            momentum.x = object->apiobj.velocity.x * 0.5f;
+            momentum.y = object->apiobj.velocity.y * 0.5f;
+            momentum.z = object->apiobj.velocity.z * 0.5f;
+        } else {
+            momentum = v000;
+        }
+        for (i32 i = 0; i < 4; ++i) {
+            if (debris[i] != -1) {
+                if ((object->apiobj.character_data->model_flags & 0x2000) != 0)
+                    AddGameDebrisMomentum(WORLD->debris_sys, debris[i], &object->apiobj.collision_position,
+                                         &momentum, &momentum);
+                else
+                    AddGameDebris(WORLD->debris_sys, debris[i], &object->apiobj.collision_position);
+            }
+        }
+        if (part_debris != -1)
+            AddPartDebris(WORLD->part_debris_sys, part_debris, &object->apiobj.collision_position);
+        BlowUpSnakeBody(object);
+    } else {
+        DestroySnakeBody(object);
     }
-    object->apiobj.field_0x287 = static_cast<u8>(reason == 3 ? 2 : reason);
+
+    if (object->character_context == 43) {
+        object->character_context = -1;
+        if (object->apiobj.player_controlled &&
+            (WORLD->current_level == HOTHBATTLEA_LDATA || WORLD->current_level == GUNSHIPA_LDATA))
+            GameCam_Blend(GameCam, 0.5f, 0.0f, 1);
+    }
+    i32 terminal_kill = 0;
+    bool kill_rider = false;
+    if (reason == 4) {
+        terminal_kill = 1;
+        reason = 2;
+        kill_rider = true;
+    } else if (WORLD->current_level == SPEEDERCHASEA_LDATA && object->ai.creature_set == 2) {
+        GIZAIMESSAGE_s *message = CheckGizAIMessage(gizaimessagesys, "SpeedersKilled", NULL);
+        if (message != NULL)
+            message->value += 1.0f;
+        ++speeder_hitpoints_lost;
+    }
+    if ((object->apiobj.character_data->model_flags & 0x2000) != 0) {
+        object->apiobj.velocity.x *= 0.5f;
+        object->apiobj.velocity.y *= 0.5f;
+        object->apiobj.velocity.z *= 0.5f;
+    } else {
+        object->apiobj.velocity.x = 0.0f;
+        object->apiobj.velocity.z = 0.0f;
+    }
+    object->current_hp = 0;
+    object->apiobj.field_0x287 = reason == 3 ? 2 : reason;
+    if (object->character_context == 7 || object->field_0xe32 == 1)
+        object->field_0xe22 |= 1;
+    else if (object->character_context == 6 || object->field_0xe32 == 2)
+        object->field_0xe22 &= ~1;
+    if (object->field_0x108e != 0)
+        LoseHelmet(object, 1, 0);
+    GameObject_s *rider = object->field_0xcc0;
+    Player_ClearContext(object, 1);
+    if (kill_rider && rider != NULL)
+        KillGameObject(rider, 4, 0);
+    ReleaseLever(object);
+    Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
+    if (object->apiobj.player_controlled) {
+        while (object->torpedo != NULL && object->torpedo->count != 0) {
+            AddVariableShotDebrisEffect(WORLD->debris_sys->entries[71].effect,
+                                        &object->torpedo->pickup_positions[object->torpedo->count], 30, 0, 0);
+            --object->torpedo->count;
+        }
+        if (object->apiobj.field_0x287 == 0 || !object->apiobj.player_controlled ||
+            (object->apiobj.character_data->model_flags & 0x2000) == 0 ||
+            (WORLD->current_level == SPEEDERCHASEA_LDATA && disable_narrow_socks == 0))
+            GameCam_Blend(GameCam, 1.0f, 0.0f, 1);
+        if ((object->apiobj.field_0x1f4 & 0x40000) == 0) {
+            if (object->takeover_source != NULL &&
+                (object->takeover_source->field_0xcc0 == NULL || object->takeover_source->field_0xcc0 == object)) {
+                GetTakeOverPos(object->takeover_source, &position);
+                object->apiobj.start_position = position;
+                object->apiobj.position = position;
+                object->saved_position = position;
+            } else {
+                SetToLastSafePos(object);
+            }
+        }
+        GameObjectOrigin(object);
+        AISysGetCharacterPathPos(WORLD->ai_sys, &object->apiobj, &object->ai, 255, 1);
+    }
+    object->field_0x1014 = 0;
     if (object->apiobj.field_0x287 == 2) {
         object->movement_lean_angle = 0;
         object->field_0x1018 = 0.0f;
@@ -5617,35 +6141,146 @@ void KillGameObject(GameObject_s *object, i32 reason, i32) {
         object->apiobj.start_position = object->apiobj.position;
         object->field_0x1018 = 0.5f;
     }
+    if (terminal_kill == 0 && AIScriptSetBaseScriptStateByName(&object->ai.script_process, "BeenKilled"))
+        AIScriptProcess(WORLD->ai_sys, &object->apiobj, &object->ai, &object->ai.script_process, FRAMETIME);
 
-    object->ai.opponent = NULL;
+    AIGROUP *group = object->ai.group;
+    if (group != NULL) {
+        group->member_is_alive &= ~static_cast<u32>(1ull << object->ai.group_member_index);
+        group->rows[object->ai.group_row].is_alive &=
+            ~static_cast<u8>(1ull << (object->ai.group_member_index - object->ai.group_row * group->count_across));
+        group = object->ai.group;
+        if (group->leader == &object->apiobj) {
+            group->leader = NULL;
+            if (group->is_reversed) {
+                for (i32 i = group->member_count - 1; i != -1; --i) {
+                    if (group->members[i] != NULL) {
+                        GameObject_s *candidate = group->members[i]->objptr;
+                        if (candidate != object && (candidate->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
+                            candidate->apiobj.field_0x287 == 0) {
+                            group->leader = &candidate->apiobj;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                for (i32 i = 0; i < group->member_count; ++i) {
+                    if (group->members[i] != NULL) {
+                        GameObject_s *candidate = group->members[i]->objptr;
+                        if (candidate != object && candidate != NULL &&
+                            (candidate->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
+                            candidate->apiobj.field_0x287 == 0) {
+                            group->leader = &candidate->apiobj;
+                            break;
+                        }
+                        if (candidate == NULL)
+                            group->members[i] = NULL;
+                    }
+                }
+            }
+        }
+    }
+    object->ai.field_0x1e5 &= ~0x50;
     object->ai.nearest_opponent = NULL;
-    object->ai.dont_avoid_character = NULL;
-    object->last_attacker = NULL;
-    object->force_target = NULL;
-    object->airborne_collision_target = NULL;
+    object->ai.pending_nearest_opponent = NULL;
+    object->ai.pending_opponent = NULL;
+    object->ai.pending_nearest_metric = 1000000000.0f;
+    object->ai.pending_opponent_metric = 1000000000.0f;
+    object->apiobj.ai_awareness_mask = 0;
+    object->ai_seen_mask = 0;
+    object->opponent = NULL;
+    object->ai.opponent = NULL;
     object->field_0xecc = 0;
-    object->field_0xed0 = 0;
-
-    if (!terminal_kill) {
-        AISCRIPTPROCESS *processor = reinterpret_cast<AISCRIPTPROCESS *>(&object->ai);
-        if (AIScriptSetBaseScriptStateByName(processor, const_cast<char *>("BeenKilled")) != 0 && WORLD != NULL &&
-            WORLD->ai_sys != NULL) {
-            AIScriptProcess(WORLD->ai_sys, &object->apiobj, &object->ai, processor, FRAMETIME);
+    object->field_0xed0 = 0.0f;
+    if (object->takeover_target != NULL) {
+        object->takeover_target->takeover_target = NULL;
+        object->takeover_target = NULL;
+    }
+    if (object->character_context == 71 && object->field_0x788 != NULL) {
+        static_cast<ZIPUP_s *>(object->field_0x788)->runtime_flags &= ~ZIPUP_RUNTIME_FLAG_OCCUPIED;
+        object->field_0x788 = NULL;
+    }
+    Batarangs_CheckLostData(object);
+    SpecialMove_ReleaseVictim(object);
+    ReleaseEat(object);
+    ReleaseBuildIt(object, 0);
+    ReleasePush(object);
+    GameObject_s *candidate = Obj;
+    for (i32 i = 0; i < HIGHGAMEOBJECT; ++i, ++candidate) {
+        if ((candidate->apiobj.field_0x1f8 & 0x1001) != 0x1001 || candidate == object)
+            continue;
+        if (candidate->character_context == 27 && candidate->force_target == object)
+            ReleaseForce(candidate, 0);
+        if (candidate->force_target == object)
+            candidate->force_target = NULL;
+        if (candidate->airborne_collision_target == object)
+            candidate->airborne_collision_target = NULL;
+    }
+    ReleaseForce(object, 0);
+    if (object->apiobj.field_0x27c == -1) {
+        for (i32 i = 0; i < 32; ++i) {
+            if (Bolt[i].active != 0 && Bolt[i].owner == object)
+                Bolt[i].owner = NULL;
+        }
+        PART_s *part = Part;
+        for (i32 i = 0; i < MAXPARTS; ++i, ++part) {
+            if ((part->active & 1) != 0 && part->owner == object)
+                part->owner = NULL;
+        }
+        for (i32 i = 0; i < 8; ++i) {
+            if (Explosion[i].field_0x20 > Explosion[i].field_0x1c && Explosion[i].object == object)
+                Explosion[i].object = NULL;
         }
     }
-
-    if (terminal_kill && object->apiobj.field_0x27c == -1) {
-        const u8 respawn_flags = object->field_0xefa >> 4;
-        if (requested_reason == 5 || (respawn_flags & 1) == 0) {
+    if (DOGFIGHTA_LDATA != NULL && WorldInfo_CurrentlyActive()->current_level == DOGFIGHTA_LDATA &&
+        BonusWinner == -1 && (object->apiobj.field_0x1f4 & 0x40000) == 0)
+        ResetLevel(WorldInfo_CurrentlyActive(), "EP3_DOGFIGHT_DIE", 1);
+    if (terminal_kill != 0 && object->apiobj.field_0x27c == -1) {
+        bool remove = requested_reason == 5;
+        AICREATURE *creature = NULL;
+        bool respawn = false;
+        if (!remove) {
+            bool persistent = (object->field_0xefa & 0x10) != 0;
+            if ((object->apiobj.field_0x1f4 & 0x4400) == 0x4400) {
+                creature = &WORLD->ai_sys->creatures[object->ai.field_0x134];
+                if (persistent) {
+                    respawn = (object->field_0xefa & 0x20) != 0;
+                } else {
+                    u32 limit = object->ai_respawn_count + 1;
+                    if (creature->max_respawn_count != -1 && object->ai.respawn_locator == NULL)
+                        limit = creature->min_respawn_count +
+                                ((creature->max_respawn_count - creature->min_respawn_count) *
+                                 (Game.difficulty - 1)) / 9 + 1;
+                    remove = limit <= object->ai_respawn_count;
+                    respawn = !remove;
+                }
+            } else {
+                remove = !persistent;
+            }
+        }
+        if (remove) {
+            object->apiobj.character = 0;
             object->ai.reset_mode = 4;
-        } else if ((respawn_flags & 2) != 0) {
-            object->field_0x101c = 1.0f;
-        } else {
+        } else if (respawn && creature != NULL) {
+            object->apiobj.character = 0;
             object->ai.reset_mode = 1;
-            object->ai_spawn_delay = 1.0f;
+            object->ai_spawn_delay = 1.0f - (static_cast<f32>(static_cast<u32>(Game.difficulty)) - 1.0f) / 9.0f;
+            if (creature->min_respawn_time > 0.0f && creature->max_respawn_time > 0.0f)
+                object->ai_spawn_delay = creature->max_respawn_time * object->ai_spawn_delay +
+                                         creature->min_respawn_time * (1.0f - object->ai_spawn_delay);
+            else
+                object->ai_spawn_delay *= (static_cast<f32>(qrand()) * (1.0f / 65535.0f)) * 2.0f;
+        } else {
+            object->field_0x101c = 1.0f;
         }
     }
+    if (object->torpedo != NULL && object->apiobj.field_0x27c == -1) {
+        FreeTorpedoPacket(&object->torpedo);
+        object->torpedo = NULL;
+    }
+    if (VehicleArea != 0 && static_cast<u8>(object->apiobj.field_0x27c) < 2)
+        DebFreeInstantly(&FalconDebKey[object->apiobj.field_0x27c]);
+    return 1;
 }
 
 void ConstantRumble(GameObject_s *object, f32 strength, f32 phase);
@@ -6698,8 +7333,9 @@ void ManageGameObjects() {
     }
 }
 
-void PowerUp_Particles(WORLDINFO_s *, nuvec_s *) {
-    STUBBED();
+void PowerUp_Particles(WORLDINFO_s *world, NUVEC *position) {
+    if (VehicleArea == 0 && ParticlesPerSecond(10.0f, FRAMETIME) > 0)
+        AddGameDebris(world->debris_sys, GizBuilditGDeb[qrand() / 10923], position);
 }
 
 extern i32 adaptivedifficulty[3];
@@ -7539,8 +8175,26 @@ void DeactivateGameObject(GameObject_s *object) {
     }
 }
 
-i32 EquivalentObject_Find(WORLDINFO_s *, nuhspecial_s *) {
-    STUBBED();
+i32 EquivalentObject_Find(WORLDINFO_s *world, nuhspecial_s *special) {
+    if (special != NULL && NuSpecialExistsFn(special)) {
+        EQUIVALENTOBJECTGROUP_s *group = world->equivalent_groups;
+        if (group != NULL) {
+            for (i32 group_index = 0; group_index < world->equivalent_group_count; ++group_index) {
+                for (i32 i = 0; i < group->object_count; ++i) {
+                    if (NuSpecialCompare(special, &group->objects[i])) {
+                        for (i32 j = 0; j < group->object_count; ++j) {
+                            if (NuSpecialGetVisibilityFn(&group->objects[j])) {
+                                *special = group->objects[j];
+                                return 1;
+                            }
+                        }
+                        return 0;
+                    }
+                }
+                group = reinterpret_cast<EQUIVALENTOBJECTGROUP_s *>(reinterpret_cast<u8 *>(group) + group->byte_size);
+            }
+        }
+    }
     return 0;
 }
 

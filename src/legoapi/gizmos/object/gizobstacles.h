@@ -29,6 +29,7 @@ void GizObstacle_EvalAveragePosAndRadius(GIZOBSTACLE_s *obstacle, i32 state);
 void GizObstacles_AddTrigger(NUVEC *position);
 i32 GizObstacles_Hit(void *world, GIZOBSTACLE_s *obstacle, NUVEC *position, i32 player, i32 flags);
 void GizObstacle_SetTechnoControlled(GIZOBSTACLE_s *obstacle, f32 speed);
+void GizObstacle_SetPushControlled(GIZOBSTACLE_s *obstacle, GameObject_s *object, f32 speed);
 void GizObstacle_SetDefaultSFXFn_LSW(void *world, GIZOBSTACLE_s *obstacle);
 i32 GizObstacle_CheckExcludeFlagsFn_LSW(GIZOBSTACLE_s *obstacle, GameObject_s *object);
 GIZOBSTACLE_s *GizObstacle_FindByName(GIZOBSTACLESYS_s *system, char *name);

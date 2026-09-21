@@ -65,11 +65,11 @@ class NuSoundSource {
     virtual void Unlock() {
     }
     virtual bool IsLocked() const = 0;
-    virtual u32 GetNumInitialBuffers() const;
+    virtual i32 GetNumInitialBuffers() const;
     virtual void VoiceReference();
     virtual void VoiceRelease();
 
     // Number of buffers Play() requests before starting the hardware voice
     // (the original read this global through an inline accessor).
-    static const u32 sNumInitialBuffers[2];
+    static const i32 sNumInitialBuffers[2];
 };

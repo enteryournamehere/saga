@@ -7,8 +7,8 @@ extern "C" {
 #endif
     typedef struct DEFHUFFMAN {
         u16 fast_lookup[512];
-        u16 first_code[17];
-        i32 base_code[16];
+        u16 first_code[16];
+        i32 base_code[17];
         u16 num_codes[16];
         u8 symbols[288];
         u16 symbol_index[288];

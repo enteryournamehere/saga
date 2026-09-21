@@ -649,7 +649,7 @@ void DebrisDrawCalculateClipBoxes(debinftype *effect, debkeydatatype_s *key) {
         extent.y = -extent.y;
     if (extent.z < 0.0f)
         extent.z = -extent.z;
-    f32 padding = 0.0001f * effect->field_14c;
+    f32 padding = 0.0001f * effect->max_size;
     extent.x = (extent.x + padding) + 0.2f;
     extent.y = (extent.y + padding) + 0.2f;
     extent.z = (extent.z + padding) + 0.2f;
@@ -792,7 +792,8 @@ extern "C" {
         500.0f,                                       // field_14c
         {{0.0f, 500.0f}, {1.0f, 500.0f}},             // width_keys
         {{0.0f, 500.0f}, {1.0f, 500.0f}},             // height_keys
-        {0x0, 0x0, 0xb4, 0xc3, 0x0, 0x0, 0xb4, 0x43}, // fields_1d0
+        -360.0f,                                      // min_rotation
+        360.0f,                                       // max_rotation
         {{0.0f, 0.0f}, {1.0f, 0.0f}},                 // rotation_keys
         {
             // fields_218

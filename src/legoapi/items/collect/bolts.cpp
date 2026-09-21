@@ -629,14 +629,7 @@ i32 Bolt_HitGameObject(BOLT_s *bolt, GameObject_s *object, NUVEC *points, NUVEC 
     }
     i16 bolt_index = static_cast<i16>(bolt - Bolt);
     i16 object_index = static_cast<i16>(object - Obj);
-    NetMessage message = {1, NULL, 0x20, 0x20};
-    for (i32 i = 0; i < 512; ++i) {
-        if (NetMessage::sm_poolMessageData[i].references == 0) {
-            message.data = &NetMessage::sm_poolMessageData[i];
-            message.data->references = 1;
-            break;
-        }
-    }
+    NetMessage message;
     if (message.data != NULL) {
         u8 *destination = message.data->bytes + message.write_offset;
         memcpy(destination, &bolt_index, 2);
@@ -670,16 +663,10 @@ i32 Bolt_HitGameObject(BOLT_s *bolt, GameObject_s *object, NUVEC *points, NUVEC 
         message.write_offset += 4;
     }
     Bolt_HitGameObjectRC(message);
-    if (message.data != NULL) {
-        if (message.data->references > 1)
-            --message.data->references;
-        else
-            message.data->references = 0;
-    }
     return 1;
 }
 
-void KaminoE_CheckPlatHit(BOLT_s *);
+i32 KaminoE_CheckPlatHit(BOLT_s *);
 
 i32 Bolt_HitPlatFn_LSW(BOLT_s *bolt) {
     if (WORLD->current_level == KAMINOE_LDATA)
@@ -1067,14 +1054,7 @@ BOLT_s *Bolt_Add(GameObject_s *object, nuvec_s *position, numtx_s *matrix, i32 t
     if (bolt == NULL)
         return NULL;
     i16 owner = object != NULL ? static_cast<i16>(object - Obj) : -1;
-    NetMessage message = {1, NULL, 0x20, 0x20};
-    for (i32 i = 0; i < 512; ++i) {
-        if (NetMessage::sm_poolMessageData[i].references == 0) {
-            message.data = &NetMessage::sm_poolMessageData[i];
-            message.data->references = 1;
-            break;
-        }
-    }
+    NetMessage message;
     if (message.data != NULL) {
         memcpy(message.data->bytes + message.write_offset, &owner, sizeof(owner));
         EdFileSwapEndianess16(message.data->bytes + message.write_offset);
@@ -1095,12 +1075,6 @@ BOLT_s *Bolt_Add(GameObject_s *object, nuvec_s *position, numtx_s *matrix, i32 t
         message.write_offset += 4;
     }
     Bolt_Init(bolt, message);
-    if (message.data != NULL) {
-        if (message.data->references > 1)
-            --message.data->references;
-        else
-            message.data->references = 0;
-    }
     return bolt;
 }
 
@@ -1489,7 +1463,6 @@ extern "C" {
     void NewTerrHitInfo(u8 *);
     void NewRayCastGetImpactNormal(NUVEC *);
     i32 NewShadowOnPlatform();
-    void AddVariableShotDebrisEffectTimed5(i32, NUVEC *, NUVEC *, NUVEC *, i32, f32, NUMTX *, NUMTX *, i16, u8);
 }
 f32 GameShadow(GameObject_s *, NUVEC *, f32, i32);
 f32 FindReflectionNoPlatforms(NUVEC *);

@@ -172,69 +172,68 @@ i32 NuDDSGetSize(char const *dds_data) {
 void NuDDSGetMipLevel(i32 width, i32 height, i32 depth, NUTEXFORMAT format, i32 mip_count, bool is_cube_map,
                       i32 level, i32 face, i32 &out_width, i32 &out_height, i32 &out_size) {
     if (width == 0 && height == 0 && mip_count == 1) {
-        out_width = 0;
-        out_height = 0;
-        out_size = 0;
+        out_width = out_height = out_size = 0;
         return;
     }
-
-    // These are the DDS file format's block rules. Other texture APIs differ for a few formats.
-    static const u8 compressed_formats[128] = {
-        1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    };
-    static const u8 block_widths[128] = {
-        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 8, 8, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    };
-    static const u8 minimum_block_rows[128] = {
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    };
-    // Bit rate per pixel, including the effective rate of a compressed block.
-    static const u8 bits_per_pixel[128] = {
-        4, 4, 0, 0, 0, 8, 32, 64, 128, 0, 0, 8, 4, 16, 24, 0,
-        4, 8, 0, 2, 2, 4, 4, 8, 4, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 32, 0, 0, 2, 0, 0, 32, 0, 0, 0
-    };
 
     bool compressed = false;
     i32 block_width = 4;
     i32 minimum_blocks = 1;
     i32 bpp = 0;
-    if (format > NUTEX_UNKNOWN && format < 120) {
-        i32 index = format - 1;
-        compressed = compressed_formats[index];
-        block_width = block_widths[index];
-        minimum_blocks = minimum_block_rows[index];
-        bpp = bits_per_pixel[index];
+    switch (format) {
+        case NUTEX_DXT1:
+        case NUTEX_DX1A:
+        case NUTEX_ETC1:
+        case NUTEX_ATC:
+            compressed = true;
+            bpp = 4;
+            break;
+        case NUTEX_DXT5:
+        case NUTEX_ETCA:
+        case NUTEX_ATCA:
+            compressed = true;
+            bpp = 8;
+            break;
+        case NUTEX_PVRTC2:
+        case NUTEX_PVRTC2A:
+            compressed = true;
+            block_width = 8;
+            minimum_blocks = 2;
+            bpp = 2;
+            break;
+        case NUTEX_PVRTC4:
+        case NUTEX_PVRTC4A:
+            compressed = true;
+            minimum_blocks = 2;
+            bpp = 4;
+            break;
+        case NUTEX_RGBA32:
+        case 119:
+            bpp = 32;
+            break;
+        case NUTEX_FLOAT16:
+            bpp = 64;
+            break;
+        case NUTEX_FLOAT32:
+            bpp = 128;
+            break;
+        case NUTEX_PAL8:
+            bpp = 8;
+            break;
+        case NUTEX_PAL4:
+            bpp = 4;
+            break;
+        case NUTEX_BANN:
+            bpp = 16;
+            break;
+        case NUTEX_RGB24:
+            bpp = 24;
+            break;
+        default:
+            break;
     }
 
-    if (depth <= 0)
-        depth = 1;
+    i32 mip_depth = depth > 0 ? depth : 1;
 
     out_width = 0;
     out_height = 0;
@@ -242,55 +241,40 @@ void NuDDSGetMipLevel(i32 width, i32 height, i32 depth, NUTEXFORMAT format, i32 
     i32 previous_size = 0;
     i32 mip_width = width;
     i32 mip_height = height;
-    i32 mip_depth = depth;
 
-    if (compressed) {
-        i32 minimum_width = minimum_blocks * 4;
-        i32 minimum_height = minimum_blocks * block_width;
-        for (i32 mip = 0; mip <= mip_count; ++mip) {
-            if (previous_size * 8 != bpp) {
-                total_size += previous_size;
-                if (mip <= level)
-                    out_width = total_size;
-            }
-
-            i32 current_width = mip_width > minimum_width ? mip_width : minimum_width;
-            i32 current_height = mip_height > minimum_height ? mip_height : minimum_height;
-            i32 current_size = current_width * current_height * bpp * mip_depth / 8;
+    for (i32 mip = 0; mip <= mip_count; ++mip) {
+        if (previous_size * 8 != bpp) {
+            total_size += previous_size;
             if (mip <= level)
-                out_height = current_size;
-            previous_size = current_size;
-
-            mip_width >>= 1;
-            mip_height >>= 1;
-            if (mip_depth != 1)
-                mip_depth >>= 1;
+                out_width = total_size;
         }
-    } else {
-        for (i32 mip = 0; mip <= mip_count; ++mip) {
-            if (previous_size * 8 != bpp) {
-                total_size += previous_size;
-                if (mip <= level)
-                    out_width = total_size;
-            }
 
-            i32 current_width = mip_width > 0 ? mip_width : 1;
-            i32 current_height = mip_height > 0 ? mip_height : 1;
-            i32 current_size = current_width * current_height * bpp * mip_depth / 8;
-            if (mip <= level)
-                out_height = current_size;
-            previous_size = current_size;
-
-            mip_width >>= 1;
-            mip_height >>= 1;
-            if (mip_depth != 1)
-                mip_depth >>= 1;
+        if (!compressed) {
+            if (mip_width < 1)
+                mip_width = 1;
+            if (mip_height < 1)
+                mip_height = 1;
+        } else {
+            i32 minimum_width = minimum_blocks * block_width;
+            i32 minimum_height = minimum_blocks * 4;
+            mip_width = mip_width >= minimum_width ? mip_width : minimum_width;
+            mip_height = mip_height >= minimum_height ? mip_height : minimum_height;
         }
+
+        previous_size = bpp * mip_width * mip_height * mip_depth / 8;
+        out_height = mip > level ? out_height : previous_size;
+        mip_width >>= 1;
+        mip_height >>= 1;
+        if (mip_depth != 1)
+            mip_depth >>= 1;
     }
 
     if (is_cube_map)
         out_width += total_size * face;
-    out_size = compressed ? (block_width * 4 * bpp) / 8 : bpp / 8;
+    if (compressed)
+        out_size = (block_width * 4 * bpp) / 8;
+    else
+        out_size = bpp / 8;
 }
 
 void NuDDSSetTextureDescription(char *dds_data, NUTEXFORMAT format, i32 width, i32 height, i32 depth, i32 mip_count,

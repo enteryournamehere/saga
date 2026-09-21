@@ -5,6 +5,7 @@
 
 #include "decomp.h"
 #include "nu2api/nu3d/nurendercontext.h"
+#include "nu2api/nu3d/android/nublend_internal.h"
 #include "nu2api/nu3d/nushader_plain.h"
 #include "nu2api/nu3d/nuvport.h"
 #include "nu2api/numath/nuvec.h"
@@ -142,8 +143,8 @@ extern "C" {
         g_renderContext_zFunc = zfunc;
     }
 
-    void NuRenderContextSetAlphaBlend(void) {
-        STUBBED();
+    void NuRenderContextSetAlphaBlend(i32 blend, i32 alpha_reference) {
+        NuSetBlendState(blend, [alpha_reference]() { return alpha_reference; });
     }
 
     void NuRenderContext360BeginGameTime(void) {

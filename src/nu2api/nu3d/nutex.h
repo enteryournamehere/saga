@@ -106,7 +106,7 @@ extern "C" {
 
     void NuTexInitEx(VARIPTR *buf, i32 max_tex_count);
 
-    i32 NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end);
+    i32 NuTexRead(char *name, VARIPTR *buf, VARIPTR buf_end);
 
     i32 NuTexCreate(NUTEX *tex);
     i32 NuTexCreateNative(NUNATIVETEX *tex, bool is_pvrtc);

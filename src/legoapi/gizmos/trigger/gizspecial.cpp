@@ -293,8 +293,13 @@ char *GizSpecial_GetName(GIZSPECIAL_s *special) {
     return special->name;
 }
 
-void GizSpecial_FindByName(char *, WORLDINFO_s *) {
-    STUBBED();
+GIZSPECIAL *GizSpecial_FindByName(char *name, WORLDINFO_s *world) {
+    for (i32 index = 0; index < world->giz_special_sys->count; ++index) {
+        if (NuStrICmp(GizSpecial_GetName(&world->giz_special_sys->specials[index]), name) == 0) {
+            return &world->giz_special_sys->specials[index];
+        }
+    }
+    return NULL;
 }
 
 ADDGIZMOTYPE *GizSpecial_RegisterGizmo(i32 type_id) {

@@ -558,7 +558,7 @@ extern "C" i32 APIDrawCharacterModel(CHARACTERMODEL_s *model, CHARACTERDATA *cha
                                      numtx_s *matrix, numtx_s *secondary_matrix, numtx_s *reflection_matrix,
                                      NUVEC *locator_positions, numtx_s *auxiliary_matrix, GameObject_s *object,
                                      u32 flags, NUJOINTANIM_s *joint_overrides, i32 joint_override_count,
-                                     WORLDINFO_s *world, f32 frame_time, numtx_s *output_matrices,
+                                     i32 paused, f32 frame_time, numtx_s *output_matrices,
                                      void (*footprint_callback)(void *, GameObject_s *, i32, i32),
                                      APIDEBRISSYS_s *debris_sys);
 

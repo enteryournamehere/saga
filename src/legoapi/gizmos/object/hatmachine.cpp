@@ -571,8 +571,14 @@ static void HatMachine_Draw(void *world_ptr, void *, float) {
     ResetShadowMapRendering();
 }
 
-void HatMachines_InitTerrain(WORLDINFO_s *) {
-    STUBBED();
+void HatMachines_InitTerrain(WORLDINFO_s *world) {
+    if (world->hat_machine_sys != NULL) {
+        for (i32 index = 0; index < world->hat_machine_sys->count; ++index) {
+            HATMACHINE *machine = &world->hat_machine_sys->machines[index];
+            machine->platform_id = NewPlatPickupInst(&machine->matrix, HATMACHINE_PLATFORM_COLLISION);
+            PlatInstRotate(world->hat_machine_sys->machines[index].platform_id, 1);
+        }
+    }
 }
 
 MechObjectInterface *HATMACHINE_s::GetMechObjectInterface() {
@@ -586,8 +592,38 @@ void HATMACHINE_s::ClearMechObjectInterface() {
     delete mech_object_interface;
 }
 
-void HatMachine_FindNearest(WORLDINFO_s *, nuvec_s *, GameObject_s *, float *) {
-    STUBBED();
+HATMACHINE *HatMachine_FindNearest(WORLDINFO_s *world, nuvec_s *position, GameObject_s *object, float *distance) {
+    HATMACHINE *nearest = NULL;
+    f32 nearest_distance = 1000000000.0f;
+    if (world == NULL || world->hat_machine_sys == NULL) {
+        return NULL;
+    }
+
+    for (i32 index = 0; index < world->hat_machine_sys->count; ++index) {
+        HATMACHINE *machine = &world->hat_machine_sys->machines[index];
+        f32 candidate_distance;
+        if (object != NULL) {
+            if ((machine->flags & (HATMACHINE_FLAG_ANIMATING | HATMACHINE_FLAG_FINISHED | HATMACHINE_FLAG_VISIBLE |
+                                   HATMACHINE_FLAG_ENABLED)) !=
+                    (HATMACHINE_FLAG_VISIBLE | HATMACHINE_FLAG_ENABLED) ||
+                machine->player_position.y == 2000000.0f) {
+                continue;
+            }
+            NUVEC target_position;
+            Hat_GetAbsTargetPos(machine, &target_position);
+            candidate_distance = NuVecDistSqr(position, &target_position, NULL);
+        } else {
+            candidate_distance = NuVecDistSqr(position, &machine->position, NULL);
+        }
+        if (candidate_distance < nearest_distance) {
+            nearest_distance = candidate_distance;
+            nearest = machine;
+        }
+    }
+    if (distance != NULL) {
+        *distance = nearest_distance;
+    }
+    return nearest;
 }
 
 i32 HatMachine_BeingUsed(HATMACHINE_s *hat_machine) {

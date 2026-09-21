@@ -67,17 +67,17 @@ i32 NuSpecialFind(NUGSCN *scene, nuhspecial_s *dest, char *name, i32 flags) {
         NUDLDLISTSCENE *display_scene = reinterpret_cast<NUDLDLISTSCENE *>(scene->display_list);
         if (display_scene != NULL) {
             NUDISPLAYSPECIAL *special = static_cast<NUDISPLAYSPECIAL *>(display_scene->specials);
-            for (i32 i = 0; i < display_scene->nspecials; ++i, ++special) {
+            for (i32 i = 0; i < scene->display_list->nspecials; ++special, ++i) {
                 if (NuStrICmp(name, special->name) == 0) {
                     handle->scene = scene;
-                    handle->special = NULL;
                     handle->display_special = reinterpret_cast<NUDISPLAYSPECIAL_s *>(special);
+                    handle->special = NULL;
                     return 1;
                 }
             }
         } else {
             NuSpecialLegacyLayout *special = reinterpret_cast<NuSpecialLegacyLayout *>(scene->specials);
-            for (i32 i = 0; i < scene->numspecial; ++i, ++special) {
+            for (i32 i = 0; i < scene->numspecial; ++special, ++i) {
                 if (NuStrICmp(name, special->name) == 0) {
                     handle->scene = scene;
                     handle->special = special;
@@ -94,13 +94,85 @@ i32 NuSpecialFind(NUGSCN *scene, nuhspecial_s *dest, char *name, i32 flags) {
     return 0;
 }
 
-extern "C" void NuSpecialFindMultiWC(void) {
-    STUBBED();
+extern "C" i32 NuSpecialFindMultiWC(NUGSCN *scene, nuhspecial_s *dest, char (*wildcards)[20], char *pattern,
+                                    i32 capacity, i32 flags) {
+    i32 count = 0;
+    if (scene != NULL) {
+        if (scene->display_list != NULL) {
+            NUDISPLAYSPECIAL *special = static_cast<NUDISPLAYSPECIAL *>(scene->display_list->specials);
+            for (i32 i = 0; i < scene->display_list->nspecials; ++special, ++i) {
+                if (NuStrICmpWC(pattern, special->name, wildcards != NULL ? *wildcards : NULL) == 0) {
+                    if (dest != NULL) {
+                        dest->scene = scene;
+                        dest->display_special = special;
+                        dest->special = NULL;
+                        ++dest;
+                    }
+                    if (wildcards != NULL) {
+                        ++wildcards;
+                    }
+                    if (++count >= capacity) {
+                        return count;
+                    }
+                }
+            }
+        } else {
+            NuSpecialLegacyLayout *special = reinterpret_cast<NuSpecialLegacyLayout *>(scene->specials);
+            for (i32 i = 0; i < scene->numspecial; ++special, ++i) {
+                if (NuStrICmpWC(pattern, special->name, wildcards != NULL ? *wildcards : NULL) == 0) {
+                    if (dest != NULL) {
+                        dest->scene = scene;
+                        dest->special = special;
+                        dest->display_special = NULL;
+                        ++dest;
+                    }
+                    if (wildcards != NULL) {
+                        ++wildcards;
+                    }
+                    if (++count >= capacity) {
+                        return count;
+                    }
+                }
+            }
+        }
+    }
+    return count;
 }
 
-extern "C" i32 NuSpecialFindMulti(NUGSCN *, nuhspecial_s *, char *, i32, i32) {
-    STUBBED();
-    return 0;
+extern "C" i32 NuSpecialFindMulti(NUGSCN *scene, nuhspecial_s *dest, char *name, i32 capacity, i32 flags) {
+    i32 count = 0;
+    if (scene != NULL) {
+        if (scene->display_list != NULL) {
+            NUDISPLAYSPECIAL *special = static_cast<NUDISPLAYSPECIAL *>(scene->display_list->specials);
+            for (i32 i = 0; i < scene->display_list->nspecials; ++special, ++i) {
+                if (NuStrIStr(special->name, name) != NULL) {
+                    ++count;
+                    dest->scene = scene;
+                    dest->display_special = special;
+                    dest->special = NULL;
+                    ++dest;
+                    if (count >= capacity) {
+                        return count;
+                    }
+                }
+            }
+        } else {
+            NuSpecialLegacyLayout *special = reinterpret_cast<NuSpecialLegacyLayout *>(scene->specials);
+            for (i32 i = 0; i < scene->numspecial; ++special, ++i) {
+                if (NuStrIStr(special->name, name) != NULL) {
+                    ++count;
+                    dest->scene = scene;
+                    dest->special = special;
+                    dest->display_special = NULL;
+                    ++dest;
+                    if (count >= capacity) {
+                        return count;
+                    }
+                }
+            }
+        }
+    }
+    return count;
 }
 
 extern "C" i32 NuSpecialTestAnim(nuhspecial_s *special) {

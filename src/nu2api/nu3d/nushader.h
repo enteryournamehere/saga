@@ -33,10 +33,22 @@ void NuShaderObjectInitGLSL(nushaderobjectglsl_s *obj, nushaderobjectkey_s const
 
 struct GLSLParameter {
     i16 location;
-    u8 element_count_and_setter;
+    union {
+        u8 element_count_and_setter;
+        struct {
+            u8 setter_class : 2;
+            u8 element_count : 6;
+        };
+    };
     u8 array_size;
     u8 semantic;
-    u8 type_and_flags;
+    union {
+        u8 type_and_flags;
+        struct {
+            u8 parameter_type : 4;
+            u8 flags : 4;
+        };
+    };
     u8 reserved[2];
 
 #ifdef __cplusplus
@@ -49,7 +61,9 @@ typedef struct NuShaderUsageMask_s {
 } NUSHADERUSAGEMASK;
 
 DECOMP_ASSERT(sizeof(GLSLParameter) == 8, "GLSL parameter metadata size");
+DECOMP_ASSERT(offsetof(GLSLParameter, element_count_and_setter) == 2, "GLSL parameter element metadata offset");
 DECOMP_ASSERT(offsetof(GLSLParameter, semantic) == 4, "GLSL parameter semantic offset");
+DECOMP_ASSERT(offsetof(GLSLParameter, type_and_flags) == 5, "GLSL parameter type metadata offset");
 
 #define NUSHADEROBJECT_PARAMETERS_COUNT 91
 

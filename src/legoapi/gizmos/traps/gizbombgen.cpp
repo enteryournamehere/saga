@@ -326,8 +326,18 @@ static i32 GizBombGens_Load(void *world_ptr, void *system_ptr) {
     return 1;
 }
 
-void GizBombGen_FindByName(GIZBOMBGENSYS_s *, char *) {
-    STUBBED();
+GIZBOMBGEN *GizBombGen_FindByName(GIZBOMBGENSYS_s *system, char *name) {
+    if (name == NULL || system == NULL) {
+        return NULL;
+    }
+    GIZBOMBGEN *generator = system->bomb_generators;
+    for (i32 index = 0; index < system->count; ++index, ++generator) {
+        if (NuStrICmp(generator->name, name) == 0) {
+            break;
+        }
+    }
+    // The original returns the end pointer when no generator has this name.
+    return generator;
 }
 
 ADDGIZMOTYPE *GizBombGen_RegisterGizmo(i32 type_id) {

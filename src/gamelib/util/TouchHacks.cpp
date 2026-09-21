@@ -3,22 +3,30 @@
 
 #include "globals.h"
 #include "legoapi/core/input/qrand.h"
+#include "legoapi/core/input/gamepads.h"
 #include "legoapi/core/config/cheat.h"
+#include "legoapi/audio/sfx.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/motion.h"
 #include "legoapi/characters/motion/gameanim.h"
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/items/base/collection.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/gizmos/fx/gizmopickups.h"
+#include "legoapi/menus/core/gamehint.h"
+#include "legoapi/world/world.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nuvec.h"
+#include "nu2api/numath/nutrig.h"
 #include "nu2api/nucore/nuvuvec.hpp"
 #include "legoapi/render/core/terrain.h"
 
 f32 GameShadow(GameObject_s *, NUVEC *, f32, i32);
 i32 SuperWeirdo(GameObject_s *);
 i32 GizForce_StoodOnForce(GIZFORCE_s *, GameObject_s *);
+EXPLOSION *AddExplosion(NUVEC *, f32, f32, GameObject_s *, i32, i32);
+extern "C" void PlaySfxAndSetVolume(char *, NUVEC *, f32);
 
 NUCOLOUR3 flashCol = {2.0f, 2.0f, 2.0f};
 bool TouchHacks::TouchControlsActive;
@@ -129,8 +137,9 @@ bool TouchHacks::CanTagVehicle(GameObject_s &object, GameObject_s &vehicle) {
     return !(x * x + y * y + z * z > 4.0f);
 }
 
-void TouchHacks::CanThrowBountyBomb(GameObject_s &) {
+bool TouchHacks::CanThrowBountyBomb(GameObject_s &) {
     STUBBED();
+    return false;
 }
 
 void Move_DEFAULT(GameObject_s *);
@@ -272,8 +281,34 @@ void TouchHacks::CleanupAllMechObjectInterfaces(WORLDINFO_s *) {
     STUBBED();
 }
 
-void TouchHacks::FindBombTarget(GameObject_s &) {
-    STUBBED();
+MechObjectInterface *TouchHacks::FindBombTarget(GameObject_s &object) {
+    const VuVec forward(NU_SIN_LUT(object.apiobj.facing_angle), 0.0f,
+                        NU_COS_LUT(object.apiobj.facing_angle), 1.0f);
+    MechObjectInterface *result = NULL;
+    f32 best_alignment = 0.5f;
+    GIZMOBLOWUP_s *blowup = WORLD->gizmo_blowups;
+    if (blowup != NULL) {
+        for (i32 i = 0; i < WORLD->gizmo_blowup_count; ++i, ++blowup) {
+            if ((blowup->state_flags & 0x80) == 0 || blowup->type == NULL || (blowup->output_flags & 1) != 0 ||
+                (blowup->type->type_flags & 0x02000000) == 0) {
+                continue;
+            }
+            VuVec direction(blowup->mid_position.x - object.apiobj.position.x,
+                            blowup->mid_position.y - object.apiobj.position.y,
+                            blowup->mid_position.z - object.apiobj.position.z, 1.0f);
+            const f32 squared_distance = direction.x * direction.x + direction.y * direction.y +
+                                         direction.z * direction.z;
+            if (squared_distance < 90000.0f) {
+                NuVecNorm(&direction.xyz, &direction.xyz);
+                const f32 alignment = direction.x * forward.x + direction.y * forward.y + direction.z * forward.z;
+                if (alignment > best_alignment) {
+                    result = blowup->GetMechObjectInterface();
+                    best_alignment = alignment;
+                }
+            }
+        }
+    }
+    return result;
 }
 
 nucolour3_s *TouchHacks::GetFlashColour() {
@@ -302,8 +337,8 @@ bool TouchHacks::InParty(GameObject_s &object) {
     return false;
 }
 
-void TouchHacks::PlaySmartBombBuildupEffects(GameObject_s &, float, float) {
-    STUBBED();
+void TouchHacks::PlaySmartBombBuildupEffects(GameObject_s &, float elapsed, float duration) {
+    PlaySfxAndSetVolume("JForceUse", NULL, 3.0f * elapsed / duration);
 }
 
 bool TouchHacks::ShouldAutoGrabDragBomb(GameObject_s &object) {
@@ -365,6 +400,11 @@ bool TouchHacks::SolveRoot(float a, float b, float c, float &root1, float &root2
     return true;
 }
 
-void TouchHacks::TriggerVehicleSmartBomb(GameObject_s &) {
-    STUBBED();
+void TouchHacks::TriggerVehicleSmartBomb(GameObject_s &object) {
+    AddExplosion(&object.apiobj.collision_position, 7.5f * AreaPickupScale, 1.0f, NULL, -1, 0x4021);
+    NewRumbleAllPlayers(1.0f, 0.1f, 0, 0);
+    GameCam_Judder(GameCam, qrand() > 0x7fff ? 1.5f : -1.5f, 2, NULL);
+    GameCam_NewShake(GameCam, 2.0f, 1.0f, 1.0f);
+    PlaySfx("Explode1", NULL);
+    Hint_SetComplete(0x5e1);
 }

@@ -19,6 +19,15 @@ extern "C" {
     extern f32 edpp_scale_factor;
     extern f32 edpp_copy_size;
     extern i32 edpp_create_type;
+    extern i32 edpp_emitrotx;
+    extern i32 edpp_emitroty;
+    extern i32 edpp_emitrotz;
+    extern i32 edpp_roty;
+    extern i32 edpp_rotz;
+    extern i32 edpp_refroty;
+    extern i32 edpp_refrotz;
+    extern i32 edpp_facrotx;
+    extern i32 edpp_facroty;
     extern i32 edptl_clipboard_entry;
     extern i32 edptl_repeatboxxzlock;
     extern u8 edpp_effect_list;

@@ -1,5 +1,6 @@
 #include "decomp.h"
 #include "globals.h"
+#include "MechInputTouch/MechInputTouch_types.h"
 #include "legoapi/audio/sfx.h"
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/legoapi_types.h"
@@ -15,6 +16,8 @@ struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
+
+NuMechPtr<MechObjectInterface, 4> NextThermalTarget;
 
 EXPLOSION *AddExplosion(nuvec_s *, f32, f32, GameObject_s *, i32, i32);
 void NewRumbleAllPlayers(f32, f32, i32, i32);

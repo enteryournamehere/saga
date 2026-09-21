@@ -2012,9 +2012,9 @@ extern "C" {
     }
 
     void AddAnimEffects(CHARACTERMODEL_s *model, CHARACTERDATA *, ANIMPACKET_s *packet, NUMTX *locator_matrices,
-                        GameObject_s *object, CHARACTER_EFFECT_s *effects, WORLDINFO_s *world_info, f32 frame_time,
+                        GameObject_s *object, CHARACTER_EFFECT_s *effects, i32 paused, f32 frame_time,
                         void (*footprint_callback)(void *, GameObject_s *, i32, i32), APIDEBRISSYS_s *debris_sys) {
-        if (world_info != NULL || effects == NULL) {
+        if (paused != 0 || effects == NULL) {
             return;
         }
 
@@ -2330,7 +2330,7 @@ extern "C" {
     i32 APIDrawCharacterModel(CHARACTERMODEL_s *model, CHARACTERDATA *character_data, ANIMPACKET_s *animation,
                               NUMTX *matrix, NUMTX *, NUMTX *reflection_matrix, NUVEC *locator_positions,
                               NUMTX *locator_matrices, GameObject_s *object, u32 flags, NUJOINTANIM_s *joint_overrides,
-                              i32 joint_override_count, WORLDINFO_s *world, f32 frame_time, NUMTX *output_matrices,
+                              i32 joint_override_count, i32 paused, f32 frame_time, NUMTX *output_matrices,
                               void (*footprint_callback)(void *, GameObject_s *, i32, i32),
                               APIDEBRISSYS_s *debris_sys) {
         drawcharactermodel_locatorsupdated = 0;
@@ -2543,10 +2543,10 @@ extern "C" {
             StoreLocatorCoordinates(model, matrix, output_matrices, locator_positions, locator_matrices);
             drawcharactermodel_locatorsupdated = 1;
 
-            if (locator_matrices != NULL && world == NULL && character_data != NULL &&
+            if (locator_matrices != NULL && paused == 0 && character_data != NULL &&
                 character_data->effects != NULL) {
                 AddAnimEffects(model, character_data, animation, locator_matrices, object,
-                               apicharsys->char_data[model->model_id].effects, world, frame_time, footprint_callback,
+                               apicharsys->char_data[model->model_id].effects, paused, frame_time, footprint_callback,
                                debris_sys);
             }
 

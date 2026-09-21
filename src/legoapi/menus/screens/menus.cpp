@@ -70,8 +70,14 @@ i32 GetParentMenuID() {
     }
     return MenuInfo[parent_menu].id;
 }
-void GetMenuActiveChild(eduimenu_s *) {
-    STUBBED();
+eduimenu_s *GetMenuActiveChild(eduimenu_s *menu) {
+    if (menu == NULL) {
+        return NULL;
+    }
+    while (menu->child != NULL) {
+        menu = menu->child;
+    }
+    return menu;
 }
 void ResizePauseScreenTexture(i32, i32) {
     STUBBED();

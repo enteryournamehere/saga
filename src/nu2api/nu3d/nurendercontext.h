@@ -26,7 +26,7 @@ extern "C" {
     void NuRenderContextSetViewProj(NUMTX *view, NUMTX *projection);
     void NuRenderContextSetViewport(i32 x, i32 y, i32 width, i32 height);
     void NuRenderContextSetZFunc(i32 zfunc);
-    void NuRenderContextSetAlphaBlend(void);
+    void NuRenderContextSetAlphaBlend(i32 blend, i32 alpha_reference);
     void NuRenderContext360BeginGameTime(void);
     void NuRenderContext360EndGameTime(void);
 }

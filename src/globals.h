@@ -176,9 +176,16 @@ DECOMP_ASSERT(sizeof(CUSTOMISESAVE) == 0x6f, "CUSTOMISESAVE size");
 struct EPISODESAVE_s {
     f32 superstory_time_limit;
     i32 superstory_score_target;
-    u32 flags;
+    union {
+        u32 flags;
+        struct {
+            u8 superstory_complete;
+            u8 reserved_0x9[3];
+        };
+    };
 };
 DECOMP_ASSERT(sizeof(EPISODESAVE_s) == 0xc, "EPISODESAVE size");
+DECOMP_ASSERT(offsetof(EPISODESAVE_s, superstory_complete) == 0x8, "EPISODESAVE superstory completion offset");
 
 struct GAMESAVE_s {
     u8 field_0x0;
@@ -712,12 +719,14 @@ extern APICHARACTERMODELLIST_s Area_StoryModelList[52];
 // ------------------------------------------------------------------------
 // Level object tables
 // ------------------------------------------------------------------------
-extern i32 LevObjRef_FirstObj;
-extern i32 LevObjRef_LastObj;
-extern i32 LevObjRef_FirstRefObj;
+extern i32 LEVOBJREF_FIRSTOBJ;
+extern i32 LEVOBJREF_LASTOBJ;
+extern i32 LEVOBJREF_FIRSTREFOBJ;
+extern i32 LEVOBJREF_LASTREFOBJ;
 extern LEVELOBJECT *ObjTabList;
 extern i32 LEVELOBJECTCOUNT;
 extern i32 EXTRALEVELOBJECTCOUNT;
+extern i32 LEVELSPLINECOUNT;
 extern i32 KNOBS;
 extern i32 PLAYERHITPOINTS_2HEARTSIN1;
 extern i32 drawbosshitpoints_2rows;
@@ -894,7 +903,14 @@ extern LEVELDATA *TEMPLEB_LDATA;
 extern LEVELDATA *TEMPLEC_LDATA;
 extern LEVELDATA *TEMPLESTATUS_LDATA;
 extern LEVELDATA *TITLES_LDATA;
-extern u32 trenchrun[8];
+struct TRENCHRUN_s {
+    GameObject_s *objects[3];
+    NUVEC position;
+    u8 reserved_0x18[8];
+};
+DECOMP_ASSERT(sizeof(TRENCHRUN_s) == 0x20, "Trench run state size");
+DECOMP_ASSERT(offsetof(TRENCHRUN_s, position) == 0x0c, "Trench run position offset");
+extern TRENCHRUN_s trenchrun;
 extern LEVELDATA *VADERA_LDATA;
 extern LEVELDATA *VADERB_LDATA;
 extern LEVELDATA *VADERC_LDATA;
@@ -938,7 +954,7 @@ extern void *CutStopInfo;
 extern f32 WaitingForLevelTime;
 extern f32 WaitingForCharacterTime;
 extern f32 g_BgLoadDelayHackTimer;
-extern i16 LevelLoad[48];
+extern LEVELLOAD_s LevelLoad[12];
 extern i32 LevelLoadCount;
 
 // Main game loop state (read/written by NuMain; see batman.h for the rest).
@@ -963,7 +979,8 @@ extern i32 Tag_DoneFirst;
 extern i32 Tag_DoneAny;
 extern i32 LevSfxFlag[4];
 extern struct AIANTINODE_s dynamic_antinodes[64]; // Dynamic AI obstacle pool, cleared per level.
-extern i32 LevInstAnim[12];
+extern nuinstanim_s *LevInstAnim[12];
+DECOMP_ASSERT(sizeof(LevInstAnim) == 0x30, "LevInstAnim clear extent");
 extern AIAREA_s *LevArea[4];
 extern i32 LevPathNodes[8];
 extern void *LevPathCnx[16];

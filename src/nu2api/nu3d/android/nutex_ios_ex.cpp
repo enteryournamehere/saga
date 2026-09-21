@@ -214,33 +214,27 @@ load_android_texture:
 }
 
 GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height, bool is_pvrtc) {
-    const i32 platform = NuPlatform::Get()->GetCurrentPlatform();
-    if (!is_pvrtc) {
-        if (platform > ANDROID_ETC1_PLATFORM) {
-            return loadDefaultTexture(0, 0, 0x20, GL_TEXTURE_2D, GL_TEXTURE_2D);
-        }
-
-        u32 platform_bit = 1;
-        platform_bit <<= platform;
-        if ((platform_bit & 0x1a00) == 0) {
-            if ((platform_bit & 0x0500) == 0) {
-                return loadDefaultTexture(0, 0, 0x20, GL_TEXTURE_2D, GL_TEXTURE_2D);
-            }
-            const GLuint texture = NuIOS_CreateGLTexFromPVRInMemory(data, width, height);
-            if (texture != 0) {
-                return texture;
-            }
-        } else {
-            const GLuint texture = NuIOS_CreateGLTexFromMemoryDDS(data, width, height);
-            if (texture != 0) {
-                return texture;
-            }
-        }
+    const PLATFORMS_SUPPORTED platform = NuPlatform::Get()->GetCurrentPlatform();
+    GLuint texture = 0;
+    if (is_pvrtc) {
+        texture = NuIOS_CreateGLTexFromPVRInMemory(data, width, height);
     } else {
-        const GLuint texture = NuIOS_CreateGLTexFromPVRInMemory(data, width, height);
-        if (texture != 0) {
-            return texture;
+        switch (platform) {
+            case IOS_PLATFORM:
+            case ANDROID_PVRTC_PLATFORM:
+                texture = NuIOS_CreateGLTexFromPVRInMemory(data, width, height);
+                break;
+            case ANDROID_ATITC_PLATFORM:
+            case ANDROID_S3TC_PLATFORM:
+            case ANDROID_ETC1_PLATFORM:
+                texture = NuIOS_CreateGLTexFromMemoryDDS(data, width, height);
+                break;
+            default:
+                break;
         }
+    }
+    if (texture != 0) {
+        return texture;
     }
     return loadDefaultTexture(0, 0, 0x20, GL_TEXTURE_2D, GL_TEXTURE_2D);
 }
@@ -809,6 +803,7 @@ i32 GetMipOffset(i32 width, i32 height, NUTEXFORMAT format, i32 depth, bool isCu
 void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, bool isCubemap, i32 mips,
                      NUTEXFORMAT format, u32 &glFormat, u32 &glInternalFormat, u32 glType, bool isCompressed) {
     u32 faceTarget = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+    const i32 lastSlice = isCubemap ? 5 : 0;
     const i32 faceCount = isCubemap ? 6 : 1;
 
     for (i32 loopCounter = 0; loopCounter < faceCount; ++loopCounter, ++faceTarget) {
@@ -818,11 +813,10 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                 texTarget = faceTarget;
             }
 
-            i32 mip = 0;
             i32 mipWidth;
             i32 hLimit;
 
-            for (i32 mip = 0; mip < mips; ++mip) {
+            for (i32 mip = 0; mip != mips; ++mip) {
                 mipWidth = width >> mip;
                 if (mipWidth < 1) {
                     mipWidth = 1;
@@ -839,22 +833,7 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
 
                 unsigned char *mipData = (unsigned char *)pixels + currentOffset;
 
-                if (!isCompressed) {
-                    BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
-                                           0x58e);
-
-                    u32 bindTarget = isCubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
-                    glBindTexture(bindTarget, texID);
-
-                    if (g_loadDefaultTexture == 0) {
-                        glTexImage2D(texTarget, mip, glInternalFormat, mipWidth, hLimit, 0, glFormat, glType, mipData);
-                    } else {
-                        loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_2D, GL_TEXTURE_2D);
-                    }
-                    EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
-                                         0x5b3);
-
-                } else {
+                if (isCompressed) {
                     i32 nextOffset;
                     i32 sizeOffset;
                     i32 targetSlice;
@@ -862,7 +841,7 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                     if (mips - 1 == mip) {
                         nextOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, -1, -1);
                         sizeOffset = mips - 1;
-                        targetSlice = isCubemap ? 5 : 0;
+                        targetSlice = lastSlice;
                     } else {
                         nextOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, mip + 1, 0);
                         sizeOffset = mip;
@@ -872,22 +851,7 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                     sizeOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, sizeOffset, targetSlice);
                     i32 mipSize = nextOffset - sizeOffset;
 
-                    if (!isCubemap) {
-                        BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
-                                               0x56e);
-                        glBindTexture(GL_TEXTURE_2D, texID);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-                        if (g_loadDefaultTexture == 0) {
-                            NuIOS_UploadCompressedTexture(GL_TEXTURE_2D, mip, glInternalFormat, mipWidth, hLimit, 0,
-                                                          mipSize, mipData);
-                        } else {
-                            loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_2D, GL_TEXTURE_2D);
-                        }
-                        EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
-                                             0x589);
-                    } else {
+                    if (isCubemap) {
                         BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                                0x54b);
                         glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
@@ -904,9 +868,39 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                                              0x566);
 
                         g_loadDefaultTexture = 0;
+                    } else {
+                        BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
+                                               0x56e);
+                        glBindTexture(GL_TEXTURE_2D, texID);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+                        if (g_loadDefaultTexture == 0) {
+                            NuIOS_UploadCompressedTexture(GL_TEXTURE_2D, mip, glInternalFormat, mipWidth, hLimit, 0,
+                                                          mipSize, mipData);
+                        } else {
+                            loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_2D, GL_TEXTURE_2D);
+                        }
+                        EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
+                                             0x589);
                     }
+                } else {
+                    BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
+                                           0x58e);
+
+                    u32 bindTarget = isCubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
+                    glBindTexture(bindTarget, texID);
+
+                    if (g_loadDefaultTexture == 0) {
+                        glTexImage2D(texTarget, mip, glInternalFormat, mipWidth, hLimit, 0, glFormat, glType, mipData);
+                    } else {
+                        loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_2D, GL_TEXTURE_2D);
+                    }
+                    EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
+                                         0x5b3);
+
                 }
-                if (mipWidth == 1 && hLimit == 1) {
+                if (hLimit == 1 && mipWidth == 1) {
                     break;
                 }
             }

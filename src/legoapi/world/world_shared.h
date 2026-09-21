@@ -149,7 +149,7 @@ extern "C" {
     void SockSys_Configure(void *sock_sys, char *config, i32 param, void *buf, void *buf_end, void *gscn);
     void rtlResetDynamic(void);
     i32 rtlFindByUserId(usize rtl_set, i32 user_id);
-    void rtlGetDirection(usize rtl_set, i32 id, void **out);
+    i32 rtlGetDirection(usize rtl_set, i32 id, void **out);
     void NewMenu(i32 menu_id, i32 menu_y, i32 param3);
 }
 

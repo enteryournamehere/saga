@@ -21,8 +21,9 @@ void NetTransporter::FtpUpload(FtpFile *) const {
     STUBBED();
 }
 
-void NetTransporter::NosAcquire(NetworkObject *, NetPeer const &) const {
+i32 NetTransporter::NosAcquire(NetworkObject *, NetPeer const &) const {
     STUBBED();
+    return 0;
 }
 
 void NetTransporter::NosAdopted(NetworkObject *, NetPeer const &) const {

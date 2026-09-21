@@ -201,10 +201,8 @@ void NuSoundDecoder::VoiceRelease() {
 // libTTapp.so 0x31ea10: min(ring buffers, sNumInitialBuffersByType[type]).
 // Every source's type field is 1 (the original's NuSoundSource ctor hardcodes
 // it), so the table's second entry, 2, is the cap.
-u32 NuSoundDecoder::GetNumInitialBuffers() const {
-    const u32 type = (u32)this->feed_type;
-    const u32 cap = NuSoundSource::sNumInitialBuffers[type];
-    return this->ring_count < cap ? this->ring_count : cap;
+i32 NuSoundDecoder::GetNumInitialBuffers() const {
+    return MIN(this->ring_count, NuSoundSource::sNumInitialBuffers[(u32)this->feed_type]);
 }
 
 // libTTapp.so 0x31f000.

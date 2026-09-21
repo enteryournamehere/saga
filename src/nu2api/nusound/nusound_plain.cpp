@@ -86,7 +86,7 @@ extern "C" {
         STUBBED();
         return 0;
     }
-    void NuSound3GetStreamInfo(void) {
+    void NuSound3GetStreamInfo(i32, NuSoundStreamInfo *) {
         STUBBED();
     }
     void NuSound3HoldOffMusic(void) {

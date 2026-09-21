@@ -9,6 +9,7 @@ extern i32 gizspecial_gizmotype_id;
 typedef struct GIZSPECIAL_s GIZSPECIAL;
 
 char *GizSpecial_GetName(GIZSPECIAL *special);
+GIZSPECIAL *GizSpecial_FindByName(char *name, WORLDINFO_s *world);
 GIZMO *createGizSpecial(void *, char *name);
 ADDGIZMOTYPE *GizSpecial_RegisterGizmo(i32 type_id);
 

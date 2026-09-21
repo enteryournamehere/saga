@@ -2,25 +2,101 @@
 #include "gameapi/edtools/gameapi_edtools_types.h"
 #include "gameapi/edtools/edui.h"
 #include "legoapi/legoapi_types.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/nufile/nufile.h"
+#include <string.h>
+#include <new>
 
-void BaseEditor::ReadBuffer(void **, void *, i32) {
-    STUBBED();
+#include <stdio.h>
+
+extern i32 EdType_String;
+
+static inline i32 get_class_object_attribute(EdClass *ed_class, void *object, EdRef *reference,
+                                            i32 attribute, i32 type, void *data, i32 size) {
+    if (reference != NULL && reference->GetAttributeData(object, attribute, type, data, size)) {
+        return 1;
+    }
+    EdMember member;
+    return ed_class->FindMember(&member, object, attribute, 1) &&
+           member.reference->GetAttributeData(member.object, attribute, type, data, size);
 }
 
-void BaseEditor::WriteBeginBlock(i32, i32) {
-    STUBBED();
+extern EdRegistry theRegistry;
+extern ClassEditor theClassEditor;
+extern eduimenu_s *edLevelNextMenu;
+void eduiSetPinnedMenu(eduimenu_s *);
+
+extern i32 EdType_String;
+
+DECOMP_ASSERT(offsetof(EdClass, flags) == 0x04, "EdClass flags offset");
+DECOMP_ASSERT(offsetof(EdClass, members) == 0x08, "EdClass members offset");
+DECOMP_ASSERT(offsetof(EdClass, last_member) == 0x0c, "EdClass last member offset");
+DECOMP_ASSERT(offsetof(EdClass, member_count) == 0x10, "EdClass member count offset");
+DECOMP_ASSERT(offsetof(EdClass, interface) == 0x14, "EdClass interface offset");
+DECOMP_ASSERT(sizeof(EdMember) == 0x08, "EdMember size");
+DECOMP_ASSERT(offsetof(EdMember, reference) == 0x04, "EdMember reference offset");
+
+
+extern EdRegistry theRegistry;
+extern ClassEditor theClassEditor;
+extern LevelEditor theLevelEditor;
+ClassEditor theClassEditor;
+extern EdManipulator theDefaultManipulator;
+extern MemoryManager theMemoryManager;
+extern eduimenu_s *edLevelNextMenu;
+void eduiSetPinnedMenu(eduimenu_s *);
+
+i32 BaseEditor::blockDepth;
+i32 BaseEditor::blockStart[8];
+eduimenu_s *edLevelActiveMenu;
+extern eduimenu_s *edLevelPinnedMenu;
+i32 edLevelDestroyActiveMenu;
+LevelEditor theLevelEditor;
+
+extern "C" void eduiSetCameraEnabled(i32);
+eduimenu_s *GetMenuActiveChild(eduimenu_s *);
+extern "C" void NuFntSet(i32);
+extern "C" void NuFntScale(i32, i32);
+
+PropertyTool thePropertyTool;
+PropertyMenuMetrics menu_startmetrics = {20, 5, 200, 400};
+eduiiattr_s EdLevelAttr = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+i32 EdLevelFnt;
+i32 EdLevelFntScale = 24;
+
+void BaseEditor::ReadBuffer(void **destination, void *source, i32 size) {
+    if (field_0x0c != 0) {
+        memcpy(*destination, source, size);
+    } else {
+        *destination = source;
+    }
 }
 
-void BaseEditor::WriteEndBlock(i32) {
-    STUBBED();
+void BaseEditor::WriteBeginBlock(i32 file, i32 type) {
+    blockStart[blockDepth++] = NuFilePos(file);
+    NuFileWriteInt(file, type);
+    NuFileWriteInt(file, 0);
+    NuFileWriteInt(file, 0);
+    NuFileWriteInt(file, 0);
 }
 
-void BaseEditor::WriteMetaData(i32, i32, i32, i32) {
-    STUBBED();
+void BaseEditor::WriteEndBlock(i32 file) {
+    --blockDepth;
+    NuFileAlign(file, 15);
+    i32 end = NuFilePos(file);
+    NuFileSeek(file, blockStart[blockDepth] + 4, NUFILE_SEEK_START);
+    NuFileWriteInt(file, end - blockStart[blockDepth]);
+    NuFileSeek(file, end, NUFILE_SEEK_START);
+}
+
+void BaseEditor::WriteMetaData(i32 file, i32 type, i32 version, i32 count) {
+    NuFileWriteInt(file, 1);
+    NuFileWriteInt(file, type);
+    NuFileWriteInt(file, version);
+    NuFileWriteInt(file, count);
 }
 
 void CursorTool::Initialise(variptr_u &, variptr_u &, i32) {
-    STUBBED();
 }
 
 void CursorTool::Process(EdInputContext &) {
@@ -32,19 +108,40 @@ void CursorTool::Render() {
 }
 
 ClassEditor::ClassEditor() {
-    STUBBED();
+    next = NULL;
+    previous = NULL;
+    first_tool = NULL;
+    last_tool = NULL;
+    tool_count = 0;
+    selected_objects.first = NULL;
+    selected_objects.last = NULL;
+    selected_objects.count = 0;
+    current_object.ed_class = NULL;
+    current_object.object = NULL;
+    current_object.reference = NULL;
+    pending_object.ed_class = NULL;
+    pending_object.object = NULL;
+    pending_object.reference = NULL;
+    snap_distance = 10.0f;
+    manipulator = &theDefaultManipulator;
+    class_filter = -1;
 }
 
 void ClassEditor::AddMenuItems(eduimenu_s *) {
     STUBBED();
 }
 
-void ClassEditor::ClearLevel(i32) {
-    STUBBED();
+void ClassEditor::ClearLevel(i32 level) {
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->clear_level(interface, level);
+        }
+    }
 }
 
-void ClassEditor::CreateObject() {
-    STUBBED();
+void *ClassEditor::CreateObject() {
+    return NULL;
 }
 
 void ClassEditor::CreateObject(ClassObject &) {
@@ -60,15 +157,30 @@ void ClassEditor::CreateObject(i32) {
 }
 
 void ClassEditor::Enter() {
-    STUBBED();
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->enter_editor(interface);
+        }
+    }
 }
 
 void ClassEditor::Exit() {
-    STUBBED();
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->exit_editor(interface);
+        }
+    }
 }
 
 void ClassEditor::Flush() {
-    STUBBED();
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->flush(interface);
+        }
+    }
 }
 
 void ClassEditor::Initialise(variptr_u &, variptr_u &, i32) {
@@ -79,8 +191,8 @@ void ClassEditor::Process(EdInputContext &) {
     STUBBED();
 }
 
-void ClassEditor::ReadBlock(DATAPTR *) {
-    STUBBED();
+i32 ClassEditor::ReadBlock(DATAPTR *) {
+    return 0;
 }
 
 void ClassEditor::Render() {
@@ -92,7 +204,6 @@ void ClassEditor::Serialise(EdStream &) {
 }
 
 void ClassEditor::WriteBlock(i32) {
-    STUBBED();
 }
 
 void ClassEditor::DestroySelectedObjects() {
@@ -100,15 +211,44 @@ void ClassEditor::DestroySelectedObjects() {
 }
 
 void ClassEditor::DestroySelectedObjectsNow() {
-    STUBBED();
+    while (selected_objects.first != NULL) {
+        ClassObjectListEntry *entry = selected_objects.first;
+        if (current_object.object == entry->object && current_object.reference == entry->reference) {
+            current_object.ed_class = NULL;
+            current_object.object = NULL;
+        }
+        theRegistry.DestroyObject(entry->ed_class->interface, entry->object, 0, 0);
+        if (entry->next != NULL) {
+            entry->next->previous = entry->previous;
+        } else {
+            selected_objects.last = entry->previous;
+        }
+        if (entry->previous != NULL) {
+            entry->previous->next = entry->next;
+        } else {
+            selected_objects.first = entry->next;
+        }
+        entry->next = NULL;
+        entry->previous = NULL;
+        --selected_objects.count;
+        theMemoryManager.FreePool(entry, sizeof(*entry));
+    }
 }
 
 void ClassEditor::DrawObjectSphere(ClassObject &, i32) {
     STUBBED();
 }
 
-void ClassEditor::Editable(void *, EdClass *, i32) {
-    STUBBED();
+i32 ClassEditor::Editable(void *object, EdClass *object_class, i32 index) {
+    i16 scene = 0;
+    if (object == NULL) {
+        return (class_filter >> index) & 1;
+    }
+    EdMember member;
+    if (object_class->FindMember(&member, object, 256, 1)) {
+        member.reference->GetAttributeData(member.object, 256, EdType_Short, &scene, 0);
+    }
+    return theLevelEditor.IsEditable(scene) != 0;
 }
 
 void ClassEditor::FindNearestObject(VuVec &, ClassObject &, ClassObject &, i32) {
@@ -135,40 +275,107 @@ void ClassEditor::InitialiseObject(ClassObject &) {
     STUBBED();
 }
 
-void ClassEditor::IsSelectedClass(EdClass *) {
-    STUBBED();
+i32 ClassEditor::IsSelectedClass(EdClass *object_class) {
+    return selected_objects.IsInList(object_class);
 }
 
-void ClassEditor::IsSelectedObject(ClassObject &) {
-    STUBBED();
+i32 ClassEditor::IsSelectedObject(ClassObject &object) {
+    return selected_objects.IsInList(object);
 }
 
-void ClassEditor::IsSelectedObject(void *, EdRef *) {
-    STUBBED();
+i32 ClassEditor::IsSelectedObject(void *object, EdRef *reference) {
+    return selected_objects.IsInList(object, reference);
 }
 
-void ClassEditor::IsUniqueName(char *) {
-    STUBBED();
+i32 ClassEditor::IsUniqueName(char *name) {
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClass *ed_class = &theRegistry.classes[i];
+        EdClassInterface *interface = ed_class->interface;
+        if (interface == NULL || !(ed_class->flags & 2)) {
+            continue;
+        }
+
+        void *object = interface->vtable->get_next_object(interface, NULL);
+        while (object != NULL) {
+            EdMember member;
+            char candidate_name[128];
+            if (ed_class->FindMember(&member, object, 2, 1)) {
+                member.reference->GetAttributeData(member.object, 2, EdType_String, candidate_name, 128);
+                if (NuStrICmp(name, candidate_name) == 0) {
+                    return 0;
+                }
+            }
+            interface = ed_class->interface;
+            object = interface->vtable->get_next_object(interface, object);
+        }
+    }
+    return 1;
 }
 
-void ClassEditor::MakeUniqueName(char const *, char *, i32) {
-    STUBBED();
+void ClassEditor::MakeUniqueName(char const *name, char *destination, i32 size) {
+    i32 prefix_length = NuStrLen(name);
+    const char *digit = name + prefix_length - 1;
+    i32 digit_count = 0;
+    while (*digit >= '0' && *digit <= '9') {
+        --digit;
+        ++digit_count;
+    }
+
+    i32 suffix;
+    if (digit_count != 0) {
+        prefix_length -= digit_count;
+        suffix = NuAToI(const_cast<char *>(name + prefix_length));
+    } else {
+        suffix = 0;
+        digit_count = 2;
+    }
+
+    if (prefix_length + digit_count >= size) {
+        prefix_length = size - digit_count - 1;
+    }
+    NuStrNCpy(destination, name, prefix_length + 1);
+    char format[16];
+    sprintf(format, "%%.%dd", digit_count);
+    do {
+        ++suffix;
+        sprintf(destination + prefix_length, format, suffix);
+    } while (!IsUniqueName(destination));
 }
 
-void ClassEditor::PostLoadInitialisation(MemoryBuffer *, MemoryBuffer *) {
-    STUBBED();
+void ClassEditor::PostLoadInitialisation(MemoryBuffer *first, MemoryBuffer *second) {
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->post_load_initialisation(interface, first, second);
+        }
+    }
 }
 
 void ClassEditor::PostSaveInitialisation() {
-    STUBBED();
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->post_save_initialisation(interface);
+        }
+    }
 }
 
-void ClassEditor::PreLoadInitialisation(MemoryBuffer *, MemoryBuffer *) {
-    STUBBED();
+void ClassEditor::PreLoadInitialisation(MemoryBuffer *first, MemoryBuffer *second) {
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->pre_load_initialisation(interface, first, second);
+        }
+    }
 }
 
 void ClassEditor::PreSaveInitialisation() {
-    STUBBED();
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->pre_save_initialisation(interface);
+        }
+    }
 }
 
 void ClassEditor::SelectLED(i32) {
@@ -183,20 +390,49 @@ void ClassEditor::SetMode(i32) {
     STUBBED();
 }
 
-void ClassEditor::SetViewMenuHilight(eduimenu_s *) {
-    STUBBED();
+void ClassEditor::SetViewMenuHilight(eduimenu_s *menu) {
+    for (eduiitem_s *item = menu->first; item != NULL; item = item->next) {
+        i32 index = item->data - 3;
+        if (static_cast<u32>(index) <= 60) {
+            item->highlighted = (theClassEditor.class_filter >> index) & 1;
+        }
+    }
 }
 
 void ClassEditor::SnapPoint(VuVec &) {
     STUBBED();
 }
 
-void ClassEditor::UpdateClassFilter(EdInputContext &) {
-    STUBBED();
+void ClassEditor::UpdateClassFilter(EdInputContext &input) {
+    i32 count = theRegistry.class_count;
+    if (count > 10) {
+        count = 10;
+    }
+    for (i32 i = 0; i < count; ++i) {
+        if (input.GetPress(i + 26) != 0.0f) {
+            if (input.GetHold(22) != 0.0f) {
+                class_filter = 1 << i;
+            } else {
+                class_filter ^= 1 << i;
+            }
+        }
+    }
+    if (input.GetPress(36) != 0.0f) {
+        if (input.GetHold(22) != 0.0f) {
+            class_filter = -1;
+        } else {
+            class_filter = ~class_filter;
+        }
+    }
 }
 
-void ClassEditor::UpdateLists(MemoryBuffer *, MemoryBuffer *) {
-    STUBBED();
+void ClassEditor::UpdateLists(MemoryBuffer *first, MemoryBuffer *second) {
+    for (i32 i = 0; i < theRegistry.class_count; ++i) {
+        EdClassInterface *interface = theRegistry.classes[i].interface;
+        if (interface != NULL) {
+            interface->vtable->update_lists(interface, first, second);
+        }
+    }
 }
 
 void ClassEditor::UpdateSelectedObjects(EdInputContext &) {
@@ -207,20 +443,26 @@ void ClassEditor::ViewSelected() {
     STUBBED();
 }
 
-void ClassEditor::cbDestroyMenu(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+void ClassEditor::cbDestroyMenu(eduimenu_s *menu, eduimenu_s *) {
+    eduiMenuDetach(menu);
+    eduiMenuDestroy(menu);
+    if (theClassEditor.menu == menu) {
+        theClassEditor.menu = NULL;
+    }
 }
 
-void ClassEditor::cbDestroyObject(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void ClassEditor::cbDestroyObject(eduimenu_s *, eduiitem_s *item, u32) {
+    if (item->data != 0) {
+        theClassEditor.DestroySelectedObjectsNow();
+    }
+    theLevelEditor.CloseMenu();
 }
 
 void ClassEditor::cbEdClassDeleteObject(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    theClassEditor.DestroySelectedObjects();
 }
 
 void ClassEditor::cbEdClassExportMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
 }
 
 void ClassEditor::cbEdClassFileMenu(eduimenu_s *, eduiitem_s *, u32) {
@@ -228,7 +470,6 @@ void ClassEditor::cbEdClassFileMenu(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 void ClassEditor::cbEdClassImportMenu(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
 }
 
 void ClassEditor::cbEdClassModeMenu(eduimenu_s *, eduiitem_s *, u32) {
@@ -251,28 +492,63 @@ void ClassEditor::cbEdClassSelectClassMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-void ClassEditor::cbEdClassSelectObject(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void ClassEditor::cbEdClassSelectObject(eduimenu_s *, eduiitem_s *item, u32) {
+    theClassEditor.pending_object.object = item->data_ptr;
+    if (theClassEditor.pending_object.object != NULL) {
+        theClassEditor.SelectObject(theClassEditor.pending_object, 0);
+        theClassEditor.FocusSelected();
+        theLevelEditor.CloseMenu();
+    }
 }
 
 void ClassEditor::cbEdClassSelectObjectMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-void ClassEditor::cbEdClassSetMode(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void ClassEditor::cbEdClassSetMode(eduimenu_s *menu, eduiitem_s *item, u32) {
+    theClassEditor.SetMode(item->data);
+    eduiMenuHighlight(menu, item);
 }
 
-void ClassEditor::cbEdClassSetPinned(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void ClassEditor::cbEdClassSetPinned(eduimenu_s *menu, eduiitem_s *item, u32) {
+    menu->flags ^= 4;
+    item->highlighted = !item->highlighted;
+    if (menu->flags & 4) {
+        eduiMenuDetach(menu);
+        eduiSetPinnedMenu(menu);
+    } else {
+        eduiMenuDetach(menu);
+        eduiMenuDestroy(menu);
+        if (edLevelNextMenu == menu) {
+            edLevelNextMenu = NULL;
+        }
+        eduiSetPinnedMenu(NULL);
+    }
 }
 
-void ClassEditor::cbEdClassSetSnap(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void ClassEditor::cbEdClassSetSnap(eduimenu_s *menu, eduiitem_s *item, u32) {
+    theClassEditor.snap_mode = item->data;
+    eduiMenuHighlight(menu, item);
 }
 
-void ClassEditor::cbEdClassSetView(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void ClassEditor::cbEdClassSetView(eduimenu_s *menu, eduiitem_s *item, u32) {
+    switch (item->data) {
+    case 0:
+        theClassEditor.class_filter = -1;
+        break;
+    case 1:
+        theClassEditor.class_filter = 0;
+        break;
+    case 2:
+        theClassEditor.class_filter = ~theClassEditor.class_filter;
+        break;
+    default:
+        if (item->data - 3 >= 0) {
+            theClassEditor.class_filter ^= 1 << (item->data - 3);
+        }
+        break;
+    }
+    SetViewMenuHilight(menu);
 }
 
 void ClassEditor::cbEdClassSnapMenu(eduimenu_s *, eduiitem_s *, u32) {
@@ -308,43 +584,127 @@ void ClassEditor::cbEdLevelSelectAll(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 void ClassEditor::cbEdPadSetManipulatorMode(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    if (theClassEditor.mode == 4) {
+        theClassEditor.mode = 5;
+    } else if (theClassEditor.mode == 5) {
+        theClassEditor.mode = 3;
+    } else if (theClassEditor.mode == 3) {
+        theClassEditor.mode = 4;
+    }
+    theClassEditor.SetMode(theClassEditor.mode);
 }
 
 void ClassEditor::cbFileSelected(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-void ClassObject::GetName(char *, i32) {
-    STUBBED();
+void ClassObject::GetName(char *destination, i32 size) {
+    if (object == NULL) {
+        NuStrNCpy(destination, "None", size);
+        return;
+    }
+
+    char name[128];
+    if (!get_class_object_attribute(ed_class, object, reference, 2, EdType_String, name, 128)) {
+        NuStrCpy(name, "NoName");
+    }
+    sprintf(destination, "%s.%s", ed_class->name, name);
 }
 
-void ClassObject::Set(char *) {
-    STUBBED();
+void ClassObject::Set(char *name) {
+    ed_class = NULL;
+    object = NULL;
+    char *separator = NuStrChr(name, '.');
+    if (separator == NULL) {
+        return;
+    }
+
+    char class_name[128];
+    char object_name[128];
+    char candidate_name[128];
+    EdMember member;
+    *separator = '\0';
+    NuStrCpy(class_name, name);
+    *separator = '.';
+    NuStrCpy(object_name, separator + 1);
+
+    ed_class = theRegistry.GetClass(class_name);
+    if (ed_class == NULL || !(ed_class->flags & 2) || ed_class->interface == NULL) {
+        return;
+    }
+
+    EdClassInterface *interface = ed_class->interface;
+    object = interface->vtable->get_next_object(interface, NULL);
+    while (object != NULL) {
+        if (ed_class->FindMember(&member, object, 2, 1)) {
+            member.reference->GetAttributeData(member.object, 2, EdType_String, candidate_name, 128);
+            if (NuStrICmp(object_name, candidate_name) == 0) {
+                break;
+            }
+        }
+        interface = ed_class->interface;
+        object = interface->vtable->get_next_object(interface, object);
+    }
 }
 
-void LevelEditor::AddInfoText(char *) {
-    STUBBED();
+void LevelEditor::AddInfoText(char *text) {
+    for (i32 i = 0; i < 32; ++i) {
+        if (info_text[i] == NULL) {
+            info_text[i] = AddText(text);
+            return;
+        }
+    }
 }
 
-void LevelEditor::AddScene(char *, nugscn_s *, i32) {
-    STUBBED();
+i32 LevelEditor::AddScene(char *name, nugscn_s *scene, i32 active) {
+    for (i32 i = 0; i < reset_pending; ++i) {
+        if (NuStrICmp(scenes[i].name, name) == 0) {
+            scenes[i].scene = scene;
+            scenes[i].active = active;
+            return i;
+        }
+    }
+    if (reset_pending < 10) {
+        i32 index = reset_pending++;
+        NuStrNCpy(scenes[index].name, name, 32);
+        scenes[index].scene = scene;
+        scenes[index].active = active;
+        return index;
+    }
+    return 0;
 }
 
-void LevelEditor::AddText(char *) {
-    STUBBED();
+char *LevelEditor::AddText(char *text) {
+    i32 size = NuStrLen(text) + 1;
+    char *result = text_buffer + text_length;
+    NuStrCpy(result, text);
+    text_length += size;
+    return result;
 }
 
 void LevelEditor::BeginMultiLoad(variptr_u *, variptr_u *) {
     STUBBED();
 }
 
-void LevelEditor::ClearLevel(i32) {
-    STUBBED();
+void LevelEditor::ClearLevel(i32 index) {
+    scenes[index].active = 0;
+    scenes[index].scene = NULL;
+    for (BaseEditor *editor = first_editor; editor != NULL; editor = editor->next) {
+        editor->ClearLevel(index);
+    }
 }
 
 void LevelEditor::CloseMenu() {
-    STUBBED();
+    eduiSetCameraEnabled(1);
+    if (edLevelActiveMenu != NULL) {
+        if (edLevelActiveMenu->parent != NULL) {
+            edLevelActiveMenu->parent->child = NULL;
+        }
+        if (edLevelActiveMenu->child != NULL) {
+            edLevelActiveMenu->child->parent = NULL;
+        }
+    }
+    edLevelDestroyActiveMenu = 1;
 }
 
 void LevelEditor::CreateEditorList(eduimenu_s *, eduiitem_s *) {
@@ -368,19 +728,41 @@ void LevelEditor::EndMultiLoad(variptr_u *, variptr_u *) {
 }
 
 void LevelEditor::Enter() {
-    STUBBED();
+    edLevelActiveMenu = NULL;
+    eduiSetUsingMenuFocus(1);
+    editors_entered = 1;
+    active = 1;
+    for (BaseEditor *editor = first_editor; editor != NULL; editor = editor->next) {
+        editor->Enter();
+    }
 }
 
 void LevelEditor::Exit() {
-    STUBBED();
+    active = 0;
+    eduiSetUsingMenuFocus(0);
+    if (editors_entered != 0) {
+        for (BaseEditor *editor = first_editor; editor != NULL; editor = editor->next) {
+            editor->Exit();
+        }
+        editors_entered = 0;
+    }
 }
 
-void LevelEditor::FindSceneId(char *) {
-    STUBBED();
+i32 LevelEditor::FindSceneId(char *name) {
+    for (i32 i = 0; i < 10; ++i) {
+        if (NuStrICmp(scenes[i].name, name) == 0) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 void LevelEditor::Flush() {
-    STUBBED();
+    for (BaseEditor *editor = first_editor; editor != NULL; editor = editor->next) {
+        editor->Flush();
+    }
+    reset_pending = 0;
+    memset(scenes, 0, sizeof(scenes));
 }
 
 LevelEditorScene *LevelEditor::GetEdScene(i32 index) {
@@ -390,24 +772,82 @@ LevelEditorScene *LevelEditor::GetEdScene(i32 index) {
     return &scenes[index];
 }
 
-void LevelEditor::GetScene(char *) {
-    STUBBED();
+nugscn_s *LevelEditor::GetScene(char *name) {
+    for (i32 i = 0; i < reset_pending; ++i) {
+        if (NuStrICmp(name, scenes[i].name) == 0) {
+            return scenes[i].scene;
+        }
+    }
+    return NULL;
 }
 
 void LevelEditor::Initalise(variptr_u &, variptr_u &, i32) {
     STUBBED();
 }
 
-void LevelEditor::IsActiveScene(nugscn_s *) {
-    STUBBED();
+i32 LevelEditor::IsActiveScene(nugscn_s *scene) {
+    for (i32 i = 0; i < reset_pending; ++i) {
+        if (scenes[i].scene == scene) {
+            return scenes[i].active;
+        }
+    }
+    return 0;
 }
 
-void LevelEditor::IsEditable(i32) {
-    STUBBED();
+i32 LevelEditor::IsEditable(i32 index) {
+    if (index == -1) {
+        return 1;
+    }
+    if (static_cast<u32>(index) >= 10) {
+        return 0;
+    }
+    return scenes[index].editable != 0 || scenes[index].active == 0;
 }
 
 LevelEditor::LevelEditor() {
-    STUBBED();
+    first_editor = NULL;
+    last_editor = NULL;
+    editor_count = 0;
+    background_colour[3] = 1.0f;
+    overlay_alpha = 0.6f;
+    active = 0;
+    background_colour[0] = 0.0f;
+    reset_pending = 0;
+    background_colour[1] = 0.0f;
+    field_0x20 = 0;
+    background_colour[2] = 0.0f;
+    field_0x24 = 0;
+    field_0x28 = 1;
+    field_0x30 = 1;
+    field_0x38 = 1;
+    info_x = 0;
+    info_y = 0;
+    info_width = 640;
+    info_height = 448;
+    info_colour = 0x80808080;
+    info_background = 0x40000000;
+    pad_x = 0;
+    pad_y = 0;
+    pad_width = 640;
+    pad_height = 448;
+    pad_background = 0x80000000;
+    pad_colour = 0x80808080;
+    SetPadText(0x1000, const_cast<char *>("D-Up"));
+    SetPadText(0x4000, const_cast<char *>("D-Down"));
+    SetPadText(0x8000, const_cast<char *>("D-Left"));
+    SetPadText(0x2000, const_cast<char *>("D-Right"));
+    SetPadText(0x10, const_cast<char *>("Triangle"));
+    SetPadText(0x40, const_cast<char *>("Cross"));
+    SetPadText(0x80, const_cast<char *>("Square"));
+    SetPadText(0x20, const_cast<char *>("Circle"));
+    SetPadText(4, const_cast<char *>("L1"));
+    SetPadText(1, const_cast<char *>("L2"));
+    SetPadText(8, const_cast<char *>("R1"));
+    SetPadText(2, const_cast<char *>("R2"));
+    SetPadText(0x200, const_cast<char *>("L3"));
+    SetPadText(0x400, const_cast<char *>("R1"));
+    SetPadText(0x800, const_cast<char *>("START"));
+    SetPadText(0x100, const_cast<char *>("SELECT"));
 }
 
 void LevelEditor::Load(char *, variptr_u *, variptr_u *, i32) {
@@ -442,20 +882,37 @@ void LevelEditor::SaveState(variptr_u *, variptr_u *) {
     STUBBED();
 }
 
-void LevelEditor::SetPadText(i32, char *) {
-    STUBBED();
+void LevelEditor::SetPadText(i32 buttons, char *text) {
+    for (i32 i = 0; i < 32; ++i) {
+        if ((static_cast<u32>(buttons) & (1u << i)) != 0) {
+            pad_text[i] = text;
+        }
+    }
 }
 
-void LevelEditor::SetSaveFilename(char *) {
-    STUBBED();
+void LevelEditor::SetSaveFilename(char *name) {
+    if (name != NULL) {
+        NuStrCpy(save_filename, name);
+        NuStrCpy(editor_filename, save_filename);
+        char *extension = NuStrRChr(editor_filename, '.');
+        if (extension != NULL) {
+            *extension = '\0';
+        }
+        NuStrCat(editor_filename, ".led");
+    } else {
+        save_filename[0] = '\0';
+        editor_filename[0] = '\0';
+    }
 }
 
 void LevelEditor::WriteStream(EdFileOutputStream &) {
     STUBBED();
 }
 
-void PropertyMenu::AddObject(ClassObject &) {
-    STUBBED();
+void PropertyMenu::AddObject(ClassObject &object) {
+    if (object_count < 8) {
+        objects[object_count++] = object;
+    }
 }
 
 void PropertyMenu::ClearObjecs() {
@@ -472,47 +929,139 @@ bool PropertyMenu::ContainsObject(ClassObject &object) {
 }
 
 void PropertyMenu::Destroy() {
-    STUBBED();
+    eduicbMenuCloseAllexpanders(menu);
+    if (menu != NULL) {
+        for (eduiitem_s *item = menu->first; item != NULL; item = item->next) {
+            delete static_cast<EdControl *>(item->data_ptr);
+        }
+    }
+    eduiMenuDestroy(menu);
 }
 
-void PropertyMenu::SelectAttr(i32) {
-    STUBBED();
+void PropertyMenu::SelectAttr(i32 selected) {
+    for (eduiitem_s *item = menu->first; item != NULL; item = item->next) {
+        EdControl *control = static_cast<EdControl *>(item->data_ptr);
+        if (control != NULL) {
+            control->SetMenuItemAttr(selected, item, &thePropertyTool.selected_attr,
+                                     &thePropertyTool.unselected_attr);
+        }
+    }
 }
 
 void PropertyTool::AddPropertyMenuItems(eduimenu_s *, EdClass *, void *, eduiitem_s *) {
     STUBBED();
 }
 
-void PropertyTool::AutoLocateMenu(PropertyMenu *) {
-    STUBBED();
+void PropertyTool::AutoLocateMenu(PropertyMenu *property_menu) {
+    eduimenu_s *menu = property_menu->menu;
+    menu->x = 70;
+    menu->y = 30;
+    bool use_stored_metrics = true;
+    PropertyMenu *other = active_menu;
+    while (other != NULL) {
+        if (other->menu != menu) {
+            if (menu->x + menu->width >= other->menu->x &&
+                other->menu->x + other->menu->width >= menu->x) {
+                menu->x += 10;
+                if (static_cast<float>(menu->x + menu->width) > 590.0f) {
+                    menu->x = 20;
+                    menu->y = 5;
+                    return;
+                }
+                use_stored_metrics = false;
+                other = active_menu;
+                continue;
+            }
+            use_stored_metrics = false;
+        }
+        other = other->next;
+    }
+    if (use_stored_metrics) {
+        ediMenuRetrieveMetrics(menu);
+    }
+    if (static_cast<float>(menu->x + menu->width) > 590.0f) {
+        menu->x = 20;
+        menu->y = 5;
+    }
 }
 
-void PropertyTool::BringToFront(PropertyMenu *) {
-    STUBBED();
+void PropertyTool::BringToFront(PropertyMenu *menu) {
+    if (menu->next != NULL) {
+        menu->next->previous = menu->previous;
+    } else {
+        last_menu = menu->previous;
+    }
+    if (menu->previous != NULL) {
+        menu->previous->next = menu->next;
+    } else {
+        active_menu = menu->next;
+    }
+    menu->next = NULL;
+    menu->previous = NULL;
+    --menu_count;
+    menu->order = -2;
+    PropertyMenu *position = active_menu;
+    while (position != NULL && position->order < -1) {
+        position = position->next;
+    }
+    if (position != NULL) {
+        menu->next = position;
+        menu->previous = position->previous;
+        if (position->previous != NULL) {
+            position->previous->next = menu;
+        } else {
+            active_menu = menu;
+        }
+        position->previous = menu;
+    } else {
+        menu->previous = last_menu;
+        if (last_menu != NULL) {
+            last_menu->next = menu;
+        }
+        last_menu = menu;
+        if (active_menu == NULL) {
+            active_menu = menu;
+        }
+    }
+    ++menu_count;
 }
 
 void PropertyTool::CreatePropertyMenu(ClassObject &) {
     STUBBED();
 }
 
-void PropertyTool::FindItemMenu(PropertyMenu *, ClassItem *) {
-    STUBBED();
+PropertyMenu *PropertyTool::FindItemMenu(PropertyMenu *menu, ClassItem *item) {
+    for (; menu != NULL; menu = menu->next) {
+        if (menu->ContainsObject(item->object)) {
+            return menu;
+        }
+    }
+    return NULL;
 }
 
-void PropertyTool::GetActiveMenu(PropertyMenu *) {
-    STUBBED();
+PropertyMenu *PropertyTool::GetActiveMenu(PropertyMenu *menu) {
+    for (; menu != NULL; menu = menu->next) {
+        if (menu->menu == eduiGetActiveMenuParent()) {
+            return menu;
+        }
+    }
+    return NULL;
 }
 
 void PropertyTool::GetClassName(EdRef *, char *) {
     STUBBED();
 }
 
-void PropertyTool::GetNextActiveMenu() {
-    STUBBED();
+PropertyMenu *PropertyTool::GetNextActiveMenu() {
+    PropertyMenu *menu = GetActiveMenu(active_menu);
+    return menu != NULL ? menu->next : NULL;
 }
 
-void PropertyTool::GetNextDefaultActiveMenu(eduimenu_s *) {
-    STUBBED();
+eduimenu_s *PropertyTool::GetNextDefaultActiveMenu(eduimenu_s *menu) {
+    if (menu == NULL) {
+        return edLevelActiveMenu;
+    }
+    return menu == edLevelActiveMenu ? edLevelPinnedMenu : NULL;
 }
 
 void PropertyTool::GetTypeName(EdRef *, char *) {
@@ -520,31 +1069,76 @@ void PropertyTool::GetTypeName(EdRef *, char *) {
 }
 
 void PropertyTool::Initialise(variptr_u &, variptr_u &, i32) {
-    STUBBED();
 }
 
-void PropertyTool::Process(EdInputContext &) {
-    STUBBED();
+i32 PropertyTool::Process(EdInputContext &input) {
+    i32 result = ProcessMenu(input);
+    ProcessControls(input);
+    return result;
 }
 
-void PropertyTool::ProcessControls(EdInputContext &) {
-    STUBBED();
+i32 PropertyTool::ProcessControls(EdInputContext &input) {
+    for (PropertyMenu *menu = active_menu; menu != NULL; menu = menu->next) {
+        if (menu->control != NULL) {
+            menu->control->Process(input);
+        }
+    }
+    return 0;
 }
 
-void PropertyTool::ProcessMenu(EdInputContext &) {
+i32 PropertyTool::ProcessMenu(EdInputContext &) {
     STUBBED();
+    return 0;
 }
 
 PropertyTool::PropertyTool() {
-    STUBBED();
+    next = NULL;
+    previous = NULL;
+    active_menu = NULL;
+    last_menu = NULL;
+    menu_count = 0;
+    show_type_names = 1;
+    menu_attr.background = 0x80000000;
+    menu_attr.text = 0x80ff0000;
+    menu_attr.highlight = 0x80804040;
+    menu_attr.disabled = 0x80404040;
+    selected_attr.background = 0x80000000;
+    selected_attr.text = 0x80ff0000;
+    selected_attr.highlight = 0x80406080;
+    selected_attr.disabled = 0x80404040;
+    unselected_attr.background = 0x80000000;
+    unselected_attr.text = 0x80ff0000;
+    unselected_attr.highlight = 0x80707080;
+    unselected_attr.disabled = 0x80808080;
 }
 
-void PropertyTool::RefreshMenuControls(PropertyMenu *) {
-    STUBBED();
+void PropertyTool::RefreshMenuControls(PropertyMenu *property_menu) {
+    eduiitem_s *item = property_menu->menu->field_0c;
+    NuFntSet(EdLevelFnt);
+    NuFntScale(EdLevelFntScale, EdLevelFntScale);
+    for (; item != NULL; item = item->next) {
+        EdControl *control = static_cast<EdControl *>(item->data_ptr);
+        if (control != NULL) {
+            control->Refresh();
+        }
+        if (item == property_menu->menu->field_10) {
+            break;
+        }
+    }
 }
 
 void PropertyTool::Render() {
-    STUBBED();
+    PropertyMenu *selected = NULL;
+    for (PropertyMenu *menu = last_menu; menu != NULL; menu = menu->previous) {
+        if (menu == GetActiveMenu(active_menu)) {
+            selected = menu;
+        } else {
+            RenderMenu(menu);
+        }
+    }
+    if (selected != NULL) {
+        RenderMenu(selected);
+    }
 }
 
 void PropertyTool::RenderMenu(PropertyMenu *) {
@@ -555,39 +1149,110 @@ void PropertyTool::RetrievePropertyMenu(ClassObject *, PropertyMenuList *) {
     STUBBED();
 }
 
-void PropertyTool::SelectAttr(i32) {
-    STUBBED();
+void PropertyTool::SelectAttr(i32 selected) {
+    for (PropertyMenu *menu = active_menu; menu != NULL; menu = menu->next) {
+        menu->SelectAttr(selected);
+    }
 }
 
-void PropertyTool::SetDefaultActiveMenu(PropertyMenu *) {
-    STUBBED();
+void PropertyTool::SetDefaultActiveMenu(PropertyMenu *menu) {
+    if (menu != NULL && menu->menu != NULL) {
+        eduiSetActiveMenu(GetMenuActiveChild(menu->menu));
+    } else {
+        eduiSetActiveMenu(edLevelActiveMenu != NULL ? edLevelActiveMenu : edLevelPinnedMenu);
+    }
 }
 
 void PropertyTool::ToggleActiveMenu() {
-    STUBBED();
+    PropertyMenu *menu = GetActiveMenu(active_menu);
+    if (menu != NULL) {
+        if (menu == last_menu) {
+            eduiSetActiveMenu(NULL);
+        } else {
+            SetDefaultActiveMenu(GetNextActiveMenu());
+        }
+    } else if (GetNextDefaultActiveMenu(eduiGetActiveMenu()) == NULL) {
+        SetDefaultActiveMenu(active_menu);
+    }
 }
 
-void PropertyTool::ediGetMenuStartMetrics() {
-    STUBBED();
+PropertyMenuMetrics PropertyTool::ediGetMenuStartMetrics() {
+    return menu_startmetrics;
 }
 
-void PropertyTool::ediMenuRetrieveMetrics(eduimenu_s *) {
-    STUBBED();
+void PropertyTool::ediMenuRetrieveMetrics(eduimenu_s *menu) {
+    menu->x = menu_startmetrics.x;
+    menu->y = menu_startmetrics.y;
+    menu->width = menu_startmetrics.width;
+    menu->height = menu_startmetrics.height;
 }
 
-void PropertyTool::ediMenuStoreMetrics(eduimenu_s *) {
-    STUBBED();
+void PropertyTool::ediMenuStoreMetrics(eduimenu_s *menu) {
+    menu_startmetrics.x = menu->x > 0 ? menu->x : 20;
+    menu_startmetrics.y = menu->y > 0 ? menu->y : 5;
+    menu_startmetrics.width = menu->width;
+    menu_startmetrics.height = menu->height;
 }
 
-void ClassObjectList::GetAveragePosition(VuVec &) {
-    STUBBED();
+i32 ClassObjectList::GetAveragePosition(VuVec &average) {
+    average = VuVec_Zero;
+    i32 position_count = 0;
+    for (ClassObjectListEntry *entry = first; entry != NULL; entry = entry->next) {
+        VuVec position;
+        if (get_class_object_attribute(entry->ed_class, entry->object, entry->reference,
+                                       8, EdType_VuVec, &position, 0)) {
+            average.x += position.x;
+            average.y += position.y;
+            average.z += position.z;
+            ++position_count;
+        }
+    }
+    if (position_count != 0) {
+        float scale = 1.0f / position_count;
+        average.x *= scale;
+        average.y *= scale;
+        average.z *= scale;
+    }
+    return position_count;
 }
 
-void ClassObjectList::GetAveragePosition(VuVec &, float &) {
-    STUBBED();
+i32 ClassObjectList::GetAveragePosition(VuVec &average, float &radius) {
+    average = VuVec_Zero;
+    i32 position_count = 0;
+    VuVec positions[64];
+    float radii[64];
+    for (ClassObjectListEntry *entry = first; entry != NULL && position_count < 64; entry = entry->next) {
+        VuVec &position = positions[position_count];
+        if (get_class_object_attribute(entry->ed_class, entry->object, entry->reference,
+                                       8, EdType_VuVec, &position, 0)) {
+            average.x += position.x;
+            average.y += position.y;
+            average.z += position.z;
+            radii[position_count] = 1.0f;
+            get_class_object_attribute(entry->ed_class, entry->object, entry->reference,
+                                       64, EdType_Float, &radii[position_count], 0);
+            ++position_count;
+        }
+    }
+    if (position_count != 0) {
+        float scale = 1.0f / position_count;
+        average.x *= scale;
+        average.y *= scale;
+        average.z *= scale;
+        radius = 0.0f;
+        for (i32 index = 0; index < position_count; ++index) {
+            NUVEC difference;
+            difference.x = average.x - positions[index].x;
+            difference.y = average.y - positions[index].y;
+            difference.z = average.z - positions[index].z;
+            float extent = NuVecMag(&difference) + radii[index];
+            radius = extent > radius ? extent : radius;
+        }
+    }
+    return position_count;
 }
 
-bool ClassObjectList::IsInList(void *object, EdRef *reference) {
+i32 ClassObjectList::IsInList(void *object, EdRef *reference) {
     ClassObjectListEntry *entry = first;
     if (entry == NULL) {
         return false;
@@ -623,8 +1288,21 @@ void areaEditor_Enter() {
     STUBBED();
 }
 
-void cbEdLevelDestroy(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+void cbEdLevelDestroy(eduimenu_s *menu, eduimenu_s *) {
+    if ((menu->flags & 4) != 0) {
+        return;
+    }
+    eduiMenuDetach(menu);
+    eduiMenuDestroy(menu);
+    eduiSetCameraEnabled(1);
+    if (menu == edLevelActiveMenu) {
+        edLevelActiveMenu = NULL;
+    }
+    if (menu == edLevelPinnedMenu) {
+        edLevelPinnedMenu = NULL;
+    } else if (edLevelPinnedMenu != NULL && edLevelActiveMenu == NULL) {
+        edLevelActiveMenu = edLevelPinnedMenu;
+    }
 }
 
 void cbEdLevelSetText(eduimenu_s *, eduiitem_s *, u32) {
@@ -639,8 +1317,10 @@ void areaEditor_Process(nupad_s *) {
     STUBBED();
 }
 
-void cbEdLevelToggleInt(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void cbEdLevelToggleInt(eduimenu_s *, eduiitem_s *item, u32) {
+    i32 *value = static_cast<i32 *>(item->data_ptr);
+    *value ^= 1;
+    item->highlighted = *value;
 }
 
 void cbCEDeleteConfirmed(eduimenu_s *, eduiitem_s *, u32) {
@@ -651,56 +1331,301 @@ void LightEverythingInEditor(void *) {
     STUBBED();
 }
 
-void cbEdLevelDestroyOnSelect(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+void cbEdLevelDestroyOnSelect(eduimenu_s *menu, eduiitem_s *, u32) {
+    eduiMenuDetach(menu);
+    eduiMenuDestroy(menu);
+    if (menu == edLevelActiveMenu) {
+        edLevelActiveMenu = NULL;
+    }
+    if (menu == edLevelPinnedMenu) {
+        edLevelPinnedMenu = NULL;
+    }
 }
 
-void EdClass::SerialiseObject(EdStream &, void *) {
-    STUBBED();
+void EdClass::SerialiseObject(EdStream &stream, void *object) {
+    if (stream.BeginBlock("Object") == NULL) {
+        return;
+    }
+    if (object != NULL) {
+        u8 data[256];
+        for (EdRef *member = members; member != NULL; member = member->next) {
+            if ((stream.flags & 0x400000) != 0 ? (member->attributes & 0x400000) != 0
+                                              : (member->attributes & 0x10000000) != 0) {
+                continue;
+            }
+            if (member->attributes < 0) {
+                EdClass *member_class = theRegistry.GetClass(member->type_id);
+                member_class->SerialiseObject(stream, member->GetMemberObject(object));
+            } else {
+                EdType *type = theRegistry.GetType(member->type_id);
+                i32 size = member->size > 0 ? member->size : type->size;
+                if (stream.mode == 2) {
+                    member->GetMemberData(object, member->type_id, data, sizeof(data));
+                }
+                type->serialise(stream, data, size);
+                if (stream.mode == 1) {
+                    member->SetMemberData(object, member->type_id, data, sizeof(data), NULL);
+                }
+            }
+        }
+        if (interface != NULL) {
+            interface->vtable->serialise_object(interface, stream, object);
+        }
+    }
+    stream.EndBlock();
 }
 
-void EdClass::SerialiseObjectHeader(EdStream &, void *) {
-    STUBBED();
+i32 EdClass::SerialiseObjectHeader(EdStream &stream, void *object) {
+    u8 present = 0;
+    if (stream.mode == 2 && object != NULL) {
+        present = 1;
+    }
+    stream.SerialiseBuffer(&present, 1, 1);
+    return present;
 }
 
-void EdClass::CopyObject(void *, void *) {
-    STUBBED();
+void EdClass::CopyObject(void *destination, void *source) {
+    for (EdRef *member = members; member != NULL; member = member->next) {
+        if ((member->attributes & 0x1800000) != 0) {
+            continue;
+        }
+        if (member->attributes < 0) {
+            EdClass *member_class = theRegistry.GetClass(member->type_id);
+            void *source_member = member->GetMemberObject(source);
+            void *destination_member = member->GetMemberObject(destination);
+            member_class->CopyObject(destination_member, source_member);
+        } else {
+            theRegistry.GetType(member->type_id);
+            u8 data[256];
+            member->GetMemberData(source, member->type_id, data, sizeof(data));
+            member->SetMemberData(destination, member->type_id, data, sizeof(data), NULL);
+        }
+    }
 }
 
-void EdClass::AddType(EdRef *) {
-    STUBBED();
+void EdClass::AddType(EdRef *member) {
+    member->next = NULL;
+    member->previous = last_member;
+    if (last_member != NULL) {
+        last_member->next = member;
+    }
+    EdRef *first = members;
+    last_member = member;
+    if (first == NULL) {
+        members = member;
+    }
+    ++member_count;
+    flags |= member->attributes & 0x17a;
+    if (member->attributes < 0) {
+        flags |= theRegistry.GetClass(member->type_id)->flags & 0x17a;
+    }
 }
 
-void EdClass::Serialise(EdStream &, i32 *) {
-    STUBBED();
+void EdClass::Serialise(EdStream &stream, i32 *class_mapping) {
+    if (stream.BeginBlock("Class") == NULL) {
+        return;
+    }
+    stream.SerialiseString(&name);
+    i32 count;
+    if (stream.version == 0) {
+        stream.SerialiseBuffer(&count, sizeof(count), 1);
+    }
+    if (stream.mode == 2) {
+        count = 0;
+        for (EdRef *member = members; member != NULL; member = member->next) {
+            if ((stream.flags & 0x400000) != 0) {
+                if ((member->attributes & 0x400000) != 0) {
+                    continue;
+                }
+            } else {
+                if ((member->attributes & 0x10000000) != 0 ||
+                    (class_mapping != NULL && member->attributes < 0 &&
+                     class_mapping[member->type_id] == -1)) {
+                    continue;
+                }
+            }
+            ++count;
+        }
+        stream.SerialiseBuffer(&count, sizeof(count), 1);
+        for (EdRef *member = members; member != NULL; member = member->next) {
+            if ((stream.flags & 0x400000) != 0) {
+                if ((member->attributes & 0x400000) != 0) {
+                    continue;
+                }
+            } else {
+                if ((member->attributes & 0x10000000) != 0 ||
+                    (class_mapping != NULL && member->attributes < 0 &&
+                     class_mapping[member->type_id] == -1)) {
+                    continue;
+                }
+            }
+            member->Serialise(stream, class_mapping);
+        }
+    }
+    if (stream.mode == 1) {
+        if (stream.version <= 2) {
+            stream.SerialiseBuffer(&count, sizeof(count), 1);
+            for (i32 i = 0; i < count; ++i) {
+                EdRef *member = new (stream.secondary_buffer->Allocate(sizeof(EdRef))) EdRef;
+                member->Serialise(stream, NULL);
+                AddType(member);
+            }
+        }
+        stream.SerialiseBuffer(&count, sizeof(count), 1);
+        for (i32 i = 0; i < count; ++i) {
+            EdRef *member = new (stream.secondary_buffer->Allocate(sizeof(EdRef))) EdRef;
+            member->Serialise(stream, NULL);
+            AddType(member);
+        }
+    }
+    stream.EndBlock();
 }
 
-void EdClass::GetStreamClasses(EdStream &, i32 *, i32 &, i32) {
-    STUBBED();
+i32 EdClass::GetStreamClasses(EdStream &stream, i32 *classes, i32 &count, i32 capacity) {
+    i32 result = 0;
+    if (count < capacity) {
+        classes[count] = theRegistry.GetClassId(this);
+        ++count;
+    }
+    for (EdRef *member = members; member != NULL; member = member->next) {
+        if (member->attributes >= 0) {
+            continue;
+        }
+        if ((stream.flags & 0x400000) != 0 ? (member->attributes & 0x400000) != 0
+                                          : (member->attributes & 0x10000000) != 0) {
+            continue;
+        }
+        theRegistry.GetClass(member->type_id)->GetStreamClasses(stream, classes, count, capacity);
+        result = 1;
+    }
+    return result;
 }
 
-void EdClass::FindTypeRef(char *, i32) {
-    STUBBED();
+EdRef *EdClass::FindTypeRef(char *member_name, i32 recursive) {
+    for (EdRef *member = members; member != NULL; member = member->next) {
+        if (recursive != 0 && member->attributes < 0) {
+            EdRef *reference = theRegistry.GetClass(member->type_id)->FindTypeRef(member_name, 1);
+            if (reference != NULL) {
+                return reference;
+            }
+        } else if (NuStrICmp(member->name, member_name) == 0) {
+            return member;
+        }
+    }
+    return NULL;
 }
 
-void EdClass::SerialiseObject(EdStream &, void *, EdClass *, EdRegistry *) {
-    STUBBED();
+void EdClass::SerialiseObject(EdStream &stream, void *object, EdClass *schema, EdRegistry *registry) {
+    if (stream.BeginBlock("Object") == NULL) {
+        return;
+    }
+    if (object != NULL) {
+        u8 data[256];
+        for (EdRef *source = schema->members; source != NULL; source = source->next) {
+            EdRef *member = FindTypeRef(source->name, 0);
+            if (member != NULL) {
+                if (stream.mode != 1) {
+                    if (stream.mode != 2) {
+                        continue;
+                    }
+                    if ((stream.flags & 0x400000) != 0 ? (member->attributes & 0x400000) != 0
+                                                      : (member->attributes & 0x10000000) != 0) {
+                        continue;
+                    }
+                }
+                if (member->attributes < 0) {
+                    EdClass *source_class = registry->GetClass(source->type_id);
+                    EdClass *member_class = theRegistry.GetClass(member->type_id);
+                    member_class->SerialiseObject(stream, member->GetMemberObject(object), source_class,
+                                                 registry);
+                } else {
+                    registry->GetType(source->type_id);
+                    EdType *type = theRegistry.GetType(member->type_id);
+                    i32 size = member->size > 0 ? member->size : type->size;
+                    if (stream.mode == 2) {
+                        member->GetMemberData(object, member->type_id, data, sizeof(data));
+                    }
+                    type->serialise(stream, data, size);
+                    if (stream.mode == 1) {
+                        member->SetMemberData(object, member->type_id, data, sizeof(data), NULL);
+                    }
+                }
+            } else {
+                EdType *type = registry->GetType(source->type_id);
+                if (source->size <= 0) {
+                    stream.Eat(type->size, 1);
+                } else if (NuStrICmp(type->name, "String") != 0) {
+                    stream.Eat(source->size, 1);
+                } else {
+                    i32 length;
+                    stream.SerialiseBuffer(&length, sizeof(length), 1);
+                    stream.Eat(length, 1);
+                }
+            }
+        }
+        if (interface != NULL) {
+            interface->vtable->serialise_object(interface, stream, object);
+        }
+    }
+    stream.EndBlock();
 }
 
-void EdClass::FindTypeRef(i32, i32) {
-    STUBBED();
+EdRef *EdClass::FindTypeRef(i32 attributes, i32 recursive) {
+    for (EdRef *member = members; member != NULL; member = member->next) {
+        if (member->attributes < 0) {
+            if (recursive != 0) {
+                EdRef *reference = theRegistry.GetClass(member->type_id)->FindTypeRef(attributes, 1);
+                if (reference != NULL) {
+                    return reference;
+                }
+            }
+        } else if ((member->attributes & attributes) != 0) {
+            return member;
+        }
+    }
+    return NULL;
 }
 
-void EdClass::FindMember(EdMember *, void *, i32, i32) {
-    STUBBED();
+i32 EdClass::FindMember(EdMember *result, void *object, i32 attributes, i32 recursive) {
+    for (EdRef *member = members; member != NULL; member = member->next) {
+        if (member->attributes < 0) {
+            if (recursive != 0) {
+                EdClass *member_class = theRegistry.GetClass(member->type_id);
+                void *member_object = member->GetMemberObject(object);
+                if (member_class->FindMember(result, member_object, attributes, 1) != 0) {
+                    return 1;
+                }
+            }
+        } else if ((member->attributes & attributes) != 0) {
+            result->object = object;
+            result->reference = member;
+            return 1;
+        }
+    }
+    return 0;
 }
 
-void EdClass::FindObject(char *) {
-    STUBBED();
+void *EdClass::FindObject(char *object_name) {
+    void *object = interface->vtable->get_next_object(interface, NULL);
+    while (object != NULL) {
+        EdMember member;
+        i32 string_type = EdType_String;
+        if (FindMember(&member, object, 2, 1) != 0) {
+            char name_buffer[256];
+            if (member.reference->GetAttributeData(member.object, 2, string_type, name_buffer,
+                                                   sizeof(name_buffer)) != 0 &&
+                NuStrICmp(object_name, name_buffer) == 0) {
+                return object;
+            }
+        }
+        object = interface->vtable->get_next_object(interface, object);
+    }
+    return NULL;
 }
 
 EditorSettings::EditorSettings() {
-    STUBBED();
+    cursor_radius = 1.0f;
+    snap_terrain = 1;
 }
 
 void EditorSettings::AddMenuItems(eduimenu_s *) {
@@ -745,7 +1670,7 @@ void ClassEditor::UpdateSnapRay(VuVec &position) {
     }
 }
 
-bool ClassObjectList::IsInList(ClassObject object) {
+i32 ClassObjectList::IsInList(ClassObject object) {
     for (ClassObjectListEntry *entry = first; entry != NULL; entry = entry->next) {
         if (entry->object == object.object && entry->reference == object.reference) {
             return true;
@@ -754,7 +1679,7 @@ bool ClassObjectList::IsInList(ClassObject object) {
     return false;
 }
 
-bool ClassObjectList::IsInList(EdClass *ed_class) {
+i32 ClassObjectList::IsInList(EdClass *ed_class) {
     for (ClassObjectListEntry *entry = first; entry != NULL; entry = entry->next) {
         if (entry->ed_class == ed_class) {
             return true;

@@ -3,6 +3,8 @@
 #include "legoapi/gizmo/base/gizmo.h"
 
 extern i32 spinner_gizmotype_id;
+extern i32 LEGOTHINGSSCENE_TER_SPINBASE;
+extern i32 LEGOTHINGSSCENE_TER_SPINARM;
 
 #ifdef __cplusplus
 struct GIZSPINNER_s;

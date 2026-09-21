@@ -617,7 +617,7 @@ void NuSound3CreateVoice(nuvec_s *pos, i32 index, f32 falloff_a, f32 falloff_b, 
 }
 
 extern "C" void NuSound3Play3dLoopSfx(nuvec_s *position, i32 sample_index, f32 falloff_near, f32 falloff_far,
-                                      i32 volume_left, i32 volume_right, f32 pitch) {
+                                      i32 volume_left, i32 volume_right, f32 pitch, f32, i32, f32, f32) {
     NuSound3Voice *entry = g_NuSoundVoicesActive.Front();
     NuSound3Voice *end = g_NuSoundVoicesActive.End();
     while (entry != end && entry->source_position != position) {

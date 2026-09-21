@@ -2,6 +2,7 @@
 
 #include "decomp.h"
 #include "legoapi/gizmo/base/gizmo.h"
+#include "nu2api/nu3d/nuhspecial.h"
 
 extern i32 grapple_gizmotype_id;
 
@@ -24,7 +25,9 @@ typedef struct GRAPPLE_s {
         struct {
             u8 active : 1;
             u8 visible : 1;
-            u8 reserved_flags : 6;
+            u8 disabled : 1;
+            u8 reversed : 1;
+            u8 reserved_flags : 4;
         };
     };
     u8 field_0x1f;
@@ -41,7 +44,7 @@ typedef struct GRAPPLE_s {
     f32 activation_progress;              // 0x58
     NUVEC rope_points[6];                 // 0x5c
     NUVEC target_rope_points[6];          // 0xa4
-    void *display_specials[3];            // 0xec
+    nuhspecial_s display_special;         // 0xec
 } GRAPPLE;
 
 DECOMP_ASSERT(sizeof(GRAPPLE) == 0xf8, "GRAPPLE ABI");
@@ -52,8 +55,14 @@ DECOMP_ASSERT(offsetof(GRAPPLE, hook_position) == 0x30, "GRAPPLE hook-position o
 DECOMP_ASSERT(offsetof(GRAPPLE, attached_object) == 0x54, "GRAPPLE attached-object offset");
 DECOMP_ASSERT(offsetof(GRAPPLE, activation_progress) == 0x58, "GRAPPLE activation progress offset");
 DECOMP_ASSERT(offsetof(GRAPPLE, target_rope_points) == 0xa4, "GRAPPLE target-points offset");
+DECOMP_ASSERT(offsetof(GRAPPLE, display_special) == 0xec, "GRAPPLE display-special offset");
 
 ADDGIZMOTYPE *Grapples_RegisterGizmo(i32 type_id);
+GRAPPLE *Grapple_FindNearest(struct WORLDINFO_s *world, NUVEC *position, GameObject_s *object, f32 *distance_squared);
+GRAPPLE *Grapple_FindNearestToPos(struct WORLDINFO_s *world, NUVEC *position);
+void Grapple_DrawLine(GameObject_s *object);
+i32 Grapple_ReachedTop(GameObject_s *object);
+i32 Grapple_LookAtPos(GameObject_s *object, NUVEC *position);
 i32 Grapple_SetTargetMom(GameObject_s *object);
 void Grapple_SetRotOrder(GameObject_s *object);
 void Grapple_SetPlayerTargetPoint(GameObject_s *object, NUVEC *target);

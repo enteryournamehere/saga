@@ -11,29 +11,29 @@ NuSoundEffectPitchRamp::NuSoundEffectPitchRamp()
 }
 
 void NuSoundEffectPitchRamp::Process(float frametime) {
-    if (!enabled || pitch_mix == target_pitch) {
-        return;
-    }
-
-    state = 1;
-    finished = false;
-    if (duration != 0.0f) {
-        f32 step = frametime != 0.0f ? frametime / duration : 0.0f;
-        if (target_pitch <= pitch_mix) {
-            pitch_mix -= step;
-            if (target_pitch <= pitch_mix) {
-                return;
-            }
+    if (enabled && pitch_mix != target_pitch) {
+        state = 1;
+        finished = false;
+        if (duration == 0.0f) {
+            pitch_mix = target_pitch;
         } else {
-            pitch_mix += step;
-            if (pitch_mix <= target_pitch) {
-                return;
+            if (target_pitch > pitch_mix) {
+                pitch_mix += frametime != 0.0f ? frametime / duration : 0.0f;
+                if (pitch_mix > target_pitch) {
+                    state = 0;
+                    finished = true;
+                    pitch_mix = target_pitch;
+                }
+            } else {
+                pitch_mix -= frametime != 0.0f ? frametime / duration : 0.0f;
+                if (pitch_mix < target_pitch) {
+                    state = 0;
+                    finished = true;
+                    pitch_mix = target_pitch;
+                }
             }
         }
-        state = 0;
-        finished = true;
     }
-    pitch_mix = target_pitch;
 }
 
 void NuSoundEffectPitchRamp::ProcessVoice(NuSoundVoice *voice, float) {

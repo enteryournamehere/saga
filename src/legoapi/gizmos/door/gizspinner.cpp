@@ -4,6 +4,7 @@
 #include "decomp.h"
 #include "gameapi/edtools/edfile.h"
 #include "globals.h"
+#include "legoapi/ai/game/gameantinode.h"
 #include "legoapi/audio/audio.h"
 #include "legoapi/characters/motion.h"
 #include "legoapi/characters/motion/gameanim.h"
@@ -37,11 +38,6 @@ namespace {
         SPINNER_RUNTIME_ANIMATION_HIDDEN = 0x20,
     };
 
-    struct SPINNERARMRUNTIME {
-        u32 field_0x00;
-        NUMTX matrix;
-    };
-
     struct SPINNERPROGRESSENTRY {
         f32 animation_position;
         u16 rotation;
@@ -55,14 +51,11 @@ namespace {
 
     DECOMP_ASSERT(sizeof(SPINNERPROGRESSENTRY) == 8, "spinner progress entry ABI");
     DECOMP_ASSERT(sizeof(SPINNERPROGRESS) == 0x40, "spinner progress ABI");
-    DECOMP_ASSERT(sizeof(SPINNERARMRUNTIME) == 0x44, "spinner arm runtime ABI");
-
-    SPINNERARMRUNTIME *GizSpinner_GetArms(GIZSPINNER_s *spinner) {
-        return reinterpret_cast<SPINNERARMRUNTIME *>(spinner->field_0x0ad + 3);
-    }
 } // namespace
 
 i32 spinner_gizmotype_id = -1;
+i32 LEGOTHINGSSCENE_TER_SPINBASE = -1;
+i32 LEGOTHINGSSCENE_TER_SPINARM = -1;
 
 static nuhspecial_s thingsSceneBase;
 static nuhspecial_s thingsSceneArm;
@@ -229,7 +222,7 @@ static void GizSpinner_Draw(void *world_ptr, void *, float) {
             NuSpecialDrawAt(&spinner->special, &spinner->matrix);
             if (spinner->type != 0 && NuSpecialCompare(&spinner->special, &thingsSceneBase) != 0 &&
                 NuSpecialExistsFn(&thingsSceneArm) != 0) {
-                SPINNERARMRUNTIME *arms = GizSpinner_GetArms(spinner);
+                GIZSPINNERARM_s *arms = spinner->arms;
                 for (i32 arm = 0; arm < spinner->type; ++arm) {
                     NuSpecialDrawAt(&thingsSceneArm, &arms[arm].matrix);
                 }
@@ -251,7 +244,7 @@ static void GizSpinner_Draw(void *world_ptr, void *, float) {
         NuSpecialDrawAt(&spinner->special, &reflection_matrix);
         if (spinner->type != 0 && NuSpecialCompare(&spinner->special, &thingsSceneBase) != 0 &&
             NuSpecialExistsFn(&thingsSceneArm) != 0) {
-            SPINNERARMRUNTIME *arms = GizSpinner_GetArms(spinner);
+            GIZSPINNERARM_s *arms = spinner->arms;
             for (i32 arm = 0; arm < spinner->type; ++arm) {
                 NuSpecialDrawAt(&thingsSceneArm, &arms[arm].matrix);
             }
@@ -274,13 +267,92 @@ static void GizSpinner_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_p
     }
 }
 
-void GizSpinner_SetVisibility(GIZMO *gizmo, i32) {
-    UNIMPLEMENTED();
+void GizSpinner_SetVisibility(GIZMO *gizmo, i32 visible) {
+    if (gizmo == NULL) {
+        return;
+    }
+
+    GIZSPINNER_s *spinner = static_cast<GIZSPINNER_s *>(gizmo->object);
+    if (visible != 0) {
+        spinner->flags &= static_cast<u8>(~GIZSPINNER_FLAG_HIDE_BASE);
+        if (spinner->platform_id == -1) {
+            i32 instance = NuSpecialGetInstanceix(&spinner->special);
+            FindPlatInst(instance);
+            NUMTX_ALIGNED16 matrix;
+            NuMtxSetIdentity(&matrix);
+            NuMtxSetRotationY(&matrix, 0);
+            NuMtxRotateY(&matrix, spinner->rotation);
+            NuMtxTranslate(&matrix, &spinner->position);
+            spinner->matrix = matrix;
+
+            if (NuSpecialCompare(&spinner->special, &thingsSceneBase) != 0) {
+                if (LEGOTHINGSSCENE_TER_SPINBASE != -1) {
+                    spinner->platform_id = NewPlatPickupInst(&spinner->matrix, LEGOTHINGSSCENE_TER_SPINBASE);
+                } else {
+                    spinner->platform_id = -1;
+                }
+                for (i32 arm = 0; arm < spinner->type; ++arm) {
+                    if (LEGOTHINGSSCENE_TER_SPINARM != -1) {
+                        spinner->arms[arm].platform_id =
+                            NewPlatPickupInst(&spinner->arms[arm].matrix, LEGOTHINGSSCENE_TER_SPINARM);
+                    } else {
+                        spinner->arms[arm].platform_id = -1;
+                    }
+                    PlatInstRotate(spinner->arms[arm].platform_id, 1);
+                }
+            } else {
+                spinner->platform_id = static_cast<i16>(NewPlatInst(&spinner->matrix, instance));
+            }
+        }
+        if (spinner->anti_node == NULL) {
+            spinner->anti_node = GameAntinode_RegisterAntiNode(WORLD->game_antinode_sys, &spinner->position, 0.66f,
+                                                               1.0f, 1.0f, spinner->rotation, 0, 0.0f);
+        }
+    } else {
+        spinner->flags |= GIZSPINNER_FLAG_HIDE_BASE;
+        DeletePlatinst(spinner->platform_id);
+        spinner->platform_id = -1;
+        for (i32 arm = 0; arm < spinner->type; ++arm) {
+            if (spinner->arms[arm].platform_id != -1) {
+                DeletePlatinst(spinner->arms[arm].platform_id);
+                spinner->arms[arm].platform_id = -1;
+            }
+        }
+        if (spinner->anti_node != NULL) {
+            GameAntinode_UnregisterAntiNode(WORLD->game_antinode_sys, spinner->anti_node);
+            spinner->anti_node = NULL;
+        }
+    }
 }
 
-i32 GizSpinner_UsingSpecial(GIZMO **, void *, i32, char *) {
-    UNIMPLEMENTED();
-    return 0;
+i32 GizSpinner_UsingSpecial(GIZMO **results, void *world_ptr, i32 capacity, char *name) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    i32 count = 0;
+    if (world != NULL && results != NULL && world->spinners != NULL) {
+        nuhspecial_s special;
+        NuSpecialFind(world->current_gscn, &special, name, 0);
+        if (NuSpecialExistsFn(&special) != 0) {
+            GIZSPINNER_s *spinners = world->spinners;
+            i32 type_id = -1;
+            for (i32 index = 0; index < world->current_level->max_spinners && count < capacity; ++index) {
+                if ((world->spinners[index].flags & GIZSPINNER_FLAG_VALID) == 0) {
+                    continue;
+                }
+                for (GAMEANIMOBJ_s *object = spinners[index].anim_set->objects; object != NULL;
+                     object = object->next) {
+                    if (NuSpecialCompare(&special, &object->special) != 0) {
+                        GIZMO *gizmo = GizmoFindByName(world->gizmo_sys, type_id, name);
+                        if (gizmo != NULL) {
+                            type_id = gizmo->type_id;
+                            results[count++] = gizmo;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return count;
 }
 
 char *GizSpinner_GetOutputName(GIZMO *gizmo, i32 output_index) {
@@ -437,7 +509,7 @@ static i32 GizSpinner_Load(void *world_ptr, void *) {
                 }
             }
             if (output_points <= 7) {
-                for (i32 point = output_points + 1; point < 10; ++point) {
+                for (i32 point = output_points + 1; point < 9; ++point) {
                     spinner->animation_points[point] = -1.0f;
                 }
             }
@@ -466,7 +538,7 @@ static i32 GizSpinner_Load(void *world_ptr, void *) {
                     }
                 }
                 if (output_points <= 7) {
-                    for (i32 point = output_points + 1; point < 10; ++point) {
+                    for (i32 point = output_points + 1; point < 9; ++point) {
                         spinner->animation_points[point] = -1.0f;
                     }
                 }
@@ -519,8 +591,52 @@ static i32 GizSpinner_Load(void *world_ptr, void *) {
     return 1;
 }
 
-void GizSpinners_InitTerrain(WORLDINFO_s *) {
-    STUBBED();
+void GizSpinners_InitTerrain(WORLDINFO_s *world) {
+    if (world->spinners == NULL || world->current_level->max_spinners == 0) {
+        return;
+    }
+
+    i32 index = 0;
+    i32 use_default_terrain = 0;
+    do {
+        if ((world->spinners[index].flags & GIZSPINNER_FLAG_VALID) != 0) {
+            i32 instance = NuSpecialGetInstanceix(&world->spinners[index].special);
+            FindPlatInst(instance);
+            NUMTX_ALIGNED16 matrix;
+            NuMtxSetIdentity(&matrix);
+            NuMtxSetRotationY(&matrix, 0);
+            NuMtxRotateY(&matrix, world->spinners[index].rotation);
+            NuMtxTranslate(&matrix, &world->spinners[index].position);
+            world->spinners[index].matrix = matrix;
+
+            if (NuSpecialCompare(&world->spinners[index].special, &thingsSceneBase) != 0) {
+                use_default_terrain = 1;
+            }
+            if (use_default_terrain != 0) {
+                if (LEGOTHINGSSCENE_TER_SPINBASE != -1) {
+                    world->spinners[index].platform_id =
+                        NewPlatPickupInst(&world->spinners[index].matrix, LEGOTHINGSSCENE_TER_SPINBASE);
+                } else {
+                    world->spinners[index].platform_id = -1;
+                }
+                for (i32 arm = 0; arm < world->spinners[index].type; ++arm) {
+                    if (LEGOTHINGSSCENE_TER_SPINARM != -1) {
+                        world->spinners[index].arms[arm].platform_id =
+                            NewPlatPickupInst(&world->spinners[index].arms[arm].matrix, LEGOTHINGSSCENE_TER_SPINARM);
+                    } else {
+                        world->spinners[index].arms[arm].platform_id = -1;
+                    }
+                    PlatInstRotate(world->spinners[index].arms[arm].platform_id, 1);
+                }
+            } else {
+                world->spinners[index].platform_id = static_cast<i16>(NewPlatInst(&world->spinners[index].matrix, instance));
+                for (i32 arm = 0; arm < world->spinners[index].type; ++arm) {
+                    world->spinners[index].arms[arm].platform_id = -1;
+                }
+            }
+        }
+        ++index;
+    } while (world->current_level->max_spinners > index);
 }
 
 GIZSPINNER_s *GizSpinner_FindBySpecialName(void *world_ptr, char *name) {
@@ -568,7 +684,7 @@ void GizSpinners_Update(void *world_ptr, void *, float) {
         NuMtxTranslate(&matrix, &spinner->position);
         spinner->matrix = matrix;
 
-        SPINNERARMRUNTIME *arms = GizSpinner_GetArms(spinner);
+        GIZSPINNERARM_s *arms = spinner->arms;
         NUANG angle = 0;
         for (i32 arm = 0; arm < spinner->type; ++arm) {
             NuMtxSetRotationY(&matrix, 0);
@@ -813,9 +929,42 @@ i32 GizSpinner_Spin(GIZSPINNER_s *spinner, i32 context) {
     return 3;
 }
 
-static i32 GizSpinner_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
-    UNIMPLEMENTED();
-    return {};
+void Bolt_PlayHitSfx(BOLT_s *bolt);
+void Bolt_AddDeflectedBolt(BOLT_s *bolt, NUVEC *velocity, NUVEC *normal, unsigned char *hit_flags);
+
+static i32 GizSpinner_BoltHitPlat(void *, void *spinner_ptr, BOLT *bolt, unsigned char *hit_flags) {
+    GIZSPINNER_s *spinner = static_cast<GIZSPINNER_s *>(spinner_ptr);
+    if (spinner == NULL || (spinner->flags & (GIZSPINNER_FLAG_VALID | GIZSPINNER_FLAG_HIDE_BASE)) !=
+                               GIZSPINNER_FLAG_VALID) {
+        return 0;
+    }
+
+    bool active = (spinner->flags & (GIZSPINNER_FLAG_HIDE_ARM | SPINNER_RUNTIME_ANIMATION_HIDDEN)) == 0;
+    if (spinner->platform_id != bolt->hit_platform) {
+        i32 arm;
+        for (arm = 0; arm < spinner->type; ++arm) {
+            if (spinner->arms[arm].platform_id == bolt->hit_platform) {
+                break;
+            }
+        }
+        if (arm == spinner->type) {
+            return 0;
+        }
+    } else if (!active) {
+        return 1;
+    }
+
+    GameObject_s *owner = bolt->owner;
+    if ((spinner->state_flags & 8) == 0) {
+        const i32 state = GizSpinner_Spin(spinner, bolt->field_0x104);
+        if ((state == 1 || state == 2) && hit_flags != NULL) {
+            GameAudio_PlaySfx(0x29, &bolt->position, 0, 0);
+            Bolt_AddDeflectedBolt(bolt, &bolt->velocity, &bolt->hit_normal, hit_flags);
+        }
+        NewRumble(owner->pad_gamepad->pad, 0.5f, 0);
+        Bolt_PlayHitSfx(bolt);
+    }
+    return 1;
 }
 
 i32 GizSpinner_GetTargetPoints(GIZSPINNER_s *spinner, nuvec_s *positions, nuvec_s *directions) {
@@ -928,7 +1077,7 @@ GIZSPINNER_s *GizSpinner_Find(WORLDINFO_s *world, nuvec_s *position, i32 alterna
                     }
                 }
                 ++index;
-            } while (index < world->current_level->max_spinners);
+            } while (world->current_level->max_spinners > index);
         } else {
             i32 index = 0;
             do {
@@ -943,7 +1092,7 @@ GIZSPINNER_s *GizSpinner_Find(WORLDINFO_s *world, nuvec_s *position, i32 alterna
                     }
                 }
                 ++index;
-            } while (index < world->current_level->max_spinners);
+            } while (world->current_level->max_spinners > index);
         }
     }
     return nearest;

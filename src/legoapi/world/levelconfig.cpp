@@ -8,9 +8,8 @@
 #include "globals.h"
 
 static __used__ void LC_AL_backb(nufpar_s *fp) {
-    u8 v = (u8)NuFParGetInt(fp);
-    levelconfig_ldata->data_display.bg_blue_bottom = v;
-    levelconfig_ldata->data_display.bg_blue_top = v;
+    levelconfig_ldata->data_display.bg_blue_top =
+        levelconfig_ldata->data_display.bg_blue_bottom = (u8)NuFParGetInt(fp);
 }
 
 static __used__ void LC_AL_backb_bottom(nufpar_s *fp) {
@@ -22,9 +21,8 @@ static __used__ void LC_AL_backb_top(nufpar_s *fp) {
 }
 
 static __used__ void LC_AL_backg(nufpar_s *fp) {
-    u8 v = (u8)NuFParGetInt(fp);
-    levelconfig_ldata->data_display.bg_green_bottom = v;
-    levelconfig_ldata->data_display.bg_green_top = v;
+    levelconfig_ldata->data_display.bg_green_top =
+        levelconfig_ldata->data_display.bg_green_bottom = (u8)NuFParGetInt(fp);
 }
 
 static __used__ void LC_AL_backg_bottom(nufpar_s *fp) {
@@ -36,9 +34,8 @@ static __used__ void LC_AL_backg_top(nufpar_s *fp) {
 }
 
 static __used__ void LC_AL_backr(nufpar_s *fp) {
-    u8 v = (u8)NuFParGetInt(fp);
-    levelconfig_ldata->data_display.bg_red_bottom = v;
-    levelconfig_ldata->data_display.bg_red_top = v;
+    levelconfig_ldata->data_display.bg_red_top =
+        levelconfig_ldata->data_display.bg_red_bottom = (u8)NuFParGetInt(fp);
 }
 
 static __used__ void LC_AL_backr_bottom(nufpar_s *fp) {
@@ -191,10 +188,16 @@ static __used__ void LC_BL_max_gameantinodes(nufpar_s *fp) {
 
 static __used__ void LC_BL_max_gizmoblowups(nufpar_s *fp) {
     levelconfig_ldata->max_gizmo_blowups = (i16)NuFParGetInt(fp);
+    if (levelconfig_ldata->max_gizmo_blowups > 512) {
+        levelconfig_ldata->max_gizmo_blowups = 512;
+    }
 }
 
 static __used__ void LC_BL_max_gizmoblowuptypes(nufpar_s *fp) {
     levelconfig_ldata->max_gizmo_blowup_types = (i16)NuFParGetInt(fp);
+    if (levelconfig_ldata->max_gizmo_blowup_types > 255) {
+        levelconfig_ldata->max_gizmo_blowup_types = 255;
+    }
 }
 
 static __used__ void LC_BL_max_gizpanels(nufpar_s *fp) {
@@ -255,10 +258,16 @@ static __used__ void LC_BL_max_plugs(nufpar_s *fp) {
 
 static __used__ void LC_BL_max_pushblock_endpos(nufpar_s *fp) {
     levelconfig_ldata->max_push_block_end_pos = (u8)NuFParGetInt(fp);
+    if (levelconfig_ldata->max_push_block_end_pos > 64) {
+        levelconfig_ldata->max_push_block_end_pos = 64;
+    }
 }
 
 static __used__ void LC_BL_max_pushblocks(nufpar_s *fp) {
     levelconfig_ldata->max_push_blocks = (u8)NuFParGetInt(fp);
+    if (levelconfig_ldata->max_push_blocks > 16) {
+        levelconfig_ldata->max_push_blocks = 16;
+    }
 }
 
 static __used__ void LC_BL_max_securitydoors(nufpar_s *fp) {
@@ -279,6 +288,9 @@ static __used__ void LC_BL_max_spinneranim_objs(nufpar_s *fp) {
 
 static __used__ void LC_BL_max_spinners(nufpar_s *fp) {
     levelconfig_ldata->max_spinners = (u8)NuFParGetInt(fp);
+    if (levelconfig_ldata->max_spinners > 8) {
+        levelconfig_ldata->max_spinners = 8;
+    }
 }
 
 static __used__ void LC_BL_max_technos(nufpar_s *fp) {
@@ -418,10 +430,12 @@ static __used__ void LC_AL_farclip(nufpar_s *fp) {
     } else {
         farclip = 10;
     }
-    if (NuIOS_IsLowEndDevice() && (f32)farclip <= levelconfig_ldata->data_display.far_clip) {
-        farclip = (i32)levelconfig_ldata->data_display.far_clip;
-    }
-    levelconfig_ldata->data_display.unknown_14 = (i16)farclip;
+    levelconfig_ldata->data_display.unknown_14 = (i16)(
+        NuIOS_IsLowEndDevice()
+            ? ((f32)farclip < levelconfig_ldata->data_display.far_clip
+                   ? (f32)farclip
+                   : levelconfig_ldata->data_display.far_clip)
+            : (f32)farclip);
 }
 static __used__ void LC_AL_camera_rain(nufpar_s *fp) {
     levelconfig_ldata->flags |= LEVEL_CAMERA_RAIN;
@@ -498,8 +512,10 @@ static __used__ void LC_AL_cam_pullback_dist(nufpar_s *fp) {
 }
 static __used__ void LC_AL_lowendcharclip(nufpar_s *fp) {
     f32 v = NuFParGetFloat(fp);
-    if (!NuIOS_IsLowEndDevice()) {
+    if (NuIOS_IsLowEndDevice()) {
         levelconfig_ldata->unknown_11c = v;
+    } else {
+        levelconfig_ldata->unknown_11c = 0.0f;
     }
 }
 static __used__ void LC_AL_lowendfogstart(nufpar_s *fp) {
@@ -531,14 +547,18 @@ static __used__ void LC_AL_farclip_hack(nufpar_s *fp) {
 }
 static __used__ void LC_AL_lowendcamerazoom(nufpar_s *fp) {
     f32 v = NuFParGetFloat(fp);
-    if (!NuIOS_IsLowEndDevice()) {
+    if (NuIOS_IsLowEndDevice()) {
         levelconfig_ldata->unknown_120 = v;
+    } else {
+        levelconfig_ldata->unknown_120 = 1.0f;
     }
 }
 static __used__ void LC_AL_lowendparticlethin(nufpar_s *fp) {
     f32 v = NuFParGetFloat(fp);
-    if (!NuIOS_IsLowEndDevice()) {
+    if (NuIOS_IsLowEndDevice()) {
         levelconfig_ldata->data_display.particle_thin = v;
+    } else {
+        levelconfig_ldata->data_display.particle_thin = 1.0f;
     }
 }
 static __used__ void LC_AL_forget_takeovers(nufpar_s *fp) {
@@ -664,7 +684,7 @@ void LevelConfig_AfterLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keyword
     }
     NuFParDestroy(parser);
 
-    if (level->blob_shadow_fade_far < level->blob_shadow_fade_near) {
+    if (level->blob_shadow_fade_near > level->blob_shadow_fade_far) {
         level->blob_shadow_fade_near = level->blob_shadow_fade_far;
     }
     level->field91_0x118 = level->data_display.unknown_14;

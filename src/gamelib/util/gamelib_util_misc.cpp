@@ -16,27 +16,3 @@ TouchHacks::TintStack::~TintStack() {
     NuRndrLightingStateCurrent.ambient.b = ambient[2];
     NuRndrSetAmbientLightPS(reinterpret_cast<const NUCOLOUR3 *>(ambient));
 }
-
-void NetworkObjectManager::NetPeerPush::FlushMessages() {
-    STUBBED();
-}
-
-void NetworkObjectManager::NetPeerPush::GetMessage(i32) {
-    STUBBED();
-}
-
-void NetworkObjectManager::NetPeerPush::GetReliableMessage(i32) {
-    STUBBED();
-}
-
-void NetworkObjectManager::NetPeerPush::NextStage() {
-    STUBBED();
-}
-
-void NetworkObjectManager::NetPeerPush::Stop() {
-    STUBBED();
-}
-
-void NetworkObjectManager::NetPeerPush::Sync() {
-    STUBBED();
-}

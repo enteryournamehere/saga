@@ -98,7 +98,7 @@ extern "C" {
         key->field_2f4 = 1;
         key->field_2f6 = 1;
         key->field_2f7 = 1;
-        key->field_32c = 0;
+        key->user_data = NULL;
         key->allocation_index = slot;
         key->field_2fa = 0;
         return slot;

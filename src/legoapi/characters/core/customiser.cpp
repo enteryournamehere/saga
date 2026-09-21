@@ -189,7 +189,7 @@ void Customiser_LoadAccessories(CUSTOMISER *customiser, APICHARACTERMODELLIST_s 
                 }
                 NuStrCat(path, ".pnt");
                 resource->texture_id =
-                    NuTexRead(path, &characterbuffer_ptr, reinterpret_cast<VARIPTR *>(characterbuffer_end.addr));
+                    NuTexRead(path, &characterbuffer_ptr, characterbuffer_end);
                 if (resource->texture_id == 0) {
                     continue;
                 }

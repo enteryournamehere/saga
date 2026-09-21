@@ -34,7 +34,7 @@ class NuSoundDecoder : public NuSoundSource {
     void Unlock();
     void VoiceReference() override;
     void VoiceRelease() override;
-    u32 GetNumInitialBuffers() const override;
+    i32 GetNumInitialBuffers() const override;
     u32 GetMaxBufferSize() override;
     unsigned int GetNumRingBuffers() const;
     void RequestBuffer(bool loop, NuSoundWeakPtr<NuSoundBufferCallback> callback) override;

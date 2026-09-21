@@ -32,7 +32,7 @@ static i32 PodRaceKey[8] __attribute__((aligned(16))) = {-1, -1, -1, -1, -1, -1,
 u8 troopercannons_beenReset = 0;
 i32 players_going_forward = 0;
 
-MechObjectInterface *forceNextAttackOpponent;
+NuMechPtr<MechObjectInterface, 4> forceNextAttackOpponent;
 NuMechPtr<MechObjectInterface, 4> nextShootTarget;
 i32 objopponent_ignoreaiopponent;
 i32 test_ai_combo;
@@ -47,7 +47,7 @@ u32 SpecialMove_GetFlags(i32, u32);
 GameObject_s *ObjOpponent(GameObject_s *object, f32 range, f32 extra_radius, i32 allow_untargeted, i32 mode,
                           i32 player_filter) {
     i32 ignore_ai = objopponent_ignoreaiopponent;
-    if (forceNextAttackOpponent != NULL && (object->apiobj.flags_low & 0x80) != 0) {
+    if (forceNextAttackOpponent.Get() != NULL && (object->apiobj.flags_low & 0x80) != 0) {
         return forceNextAttackOpponent->GetCharacterObject();
     }
     objopponent_ignoreaiopponent = 0;

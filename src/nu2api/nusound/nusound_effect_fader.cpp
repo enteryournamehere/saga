@@ -25,7 +25,7 @@ NuSoundEffectFader::NuSoundEffectFader()
 }
 
 void NuSoundEffectFader::Process(float frametime) {
-    if (!enabled || progress >= 1.0f) {
+    if (!enabled || !(progress < 1.0f)) {
         return;
     }
 
@@ -36,13 +36,7 @@ void NuSoundEffectFader::Process(float frametime) {
         return;
     }
 
-    f32 step = frametime != 0.0f ? frametime / duration : 0.0f;
-    progress += step;
-    if (progress < 0.0f) {
-        progress = 0.0f;
-    } else if (progress > 1.0f) {
-        progress = 1.0f;
-    }
+    progress = MAX(0.0f, MIN(progress + (frametime != 0.0f ? frametime / duration : 0.0f), 1.0f));
 
     f32 target_weight = 0.0f;
     f32 start_weight = 1.0f;
@@ -50,7 +44,7 @@ void NuSoundEffectFader::Process(float frametime) {
         target_weight = progress;
         start_weight = 1.0f - progress;
     } else if (curve.type == 1) {
-        target_weight = NuSoundSystem::Get()->CalculateCrossfadeHeight(
+        target_weight = NuSoundSystem::GetInstance()->CalculateCrossfadeHeight(
             *static_cast<const NuSoundSystem::CurveData *>(curve.data), progress);
         start_weight = 1.0f - target_weight;
     }
@@ -75,9 +69,7 @@ void NuSoundEffectFader::ProcessVoice(NuSoundVoice *voice, float) {
         voice->Pause();
     } else if (finish_state == FinishState::CALLBACK) {
         if (callback != NULL) {
-            typedef void (*CallbackFn)(void *);
-            CallbackFn *vtable = *reinterpret_cast<CallbackFn **>(callback);
-            vtable[0](callback);
+            callback->OnFinished();
         }
     } else if (finish_state == FinishState::STOP) {
         voice->Stop(true);
@@ -92,23 +84,20 @@ void NuSoundEffectFader::SetCurveParams(NuSoundEffectFader::Curve const &new_cur
 void NuSoundEffectFader::SetParameters(float target, float time, NuSoundEffectFader::FinishState finish) {
     if (target != target_mix || time != duration) {
         start_mix = output_mix;
-        f32 current = start_mix;
+        decreasing = !(target > output_mix);
         f32 initial_progress = 0.0f;
-        decreasing = target <= current;
 
-        if (time <= 0.0f) {
+        if (!(time > 0.0f)) {
             output_mix = target;
             state = 0;
             initial_progress = 1.0f;
-            current = target;
         }
 
-        if (target == current) {
+        progress = initial_progress;
+        if (target == output_mix) {
             progress = 1.0f;
             state = 0;
             finished = true;
-        } else {
-            progress = initial_progress;
         }
         target_mix = target;
         duration = time;

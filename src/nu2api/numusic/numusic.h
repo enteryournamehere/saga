@@ -42,8 +42,13 @@ class NuMusic {
     };
 
     struct Track {
-        char *path;          // 0x00 full path with $lang substitution applied
-        char *name;          // 0x04 alternate "NOMUSIC" file inside the track block
+        union {
+            char *filenames[2];
+            struct {
+                char *path; // 0x00 full path with $lang substitution applied
+                char *name; // 0x04 alternate "NOMUSIC" file inside the track block
+            };
+        };
         char *ident;         // 0x08 bare filename, used for handle lookup by name
         i32 file_indexes[2]; // 0x0c sound-table indexes: [0] = path file, [1] = name file
         TRACK_CLASS clazz;   // 0x14
@@ -231,6 +236,9 @@ class NuMusic {
 };
 
 DECOMP_ASSERT(sizeof(NuMusic) == 0x1e4, "NuMusic size");
+DECOMP_ASSERT(sizeof(NuMusic::Track) == 0x3c, "NuMusic::Track size");
+DECOMP_ASSERT(offsetof(NuMusic::Track, filenames) == 0, "NuMusic::Track filenames offset");
+DECOMP_ASSERT(offsetof(NuMusic::Track, name) == 4, "NuMusic::Track alternate filename offset");
 
 extern "C" {
 #endif

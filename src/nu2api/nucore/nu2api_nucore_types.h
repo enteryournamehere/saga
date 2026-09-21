@@ -144,7 +144,6 @@ struct nudisplaylistitem_s;
 struct nurenderscene_s;
 struct nudynamiclight_s {};
 struct nueffecttex_s;
-struct nufnt_s {};
 struct nuframebuffer_s {};
 struct nugeom_s {};
 struct nugscn_s;

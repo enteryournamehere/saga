@@ -229,6 +229,9 @@ extern "C" NUMTL *NuMtlCreate3D(i32 count);
 extern "C" NUMTL *NuMtlCreateEx3D(i32 count, u8 render_plane);
 extern "C" NUMTL *NuMtlCreateEx(i32 count, u8 render_plane);
 extern "C" void NuMtlInitOverride(i32 count, VARIPTR *buffer, VARIPTR *end);
+extern "C" void NuMtlRegisterForOverride(NUMTL *original, NUVERTEXDESCRIPTOR *descriptors, i32 count);
+extern "C" NUMTL *NuMtlFindVariantMtl(NUMTL *source, NUMTL *original);
+extern "C" NUMTL *NuMtlFindVariantMtlFromDesc(NUMTL *original, NUVERTEXDESCRIPTOR descriptor);
 extern "C" void NuMtlDestroy(NUMTL *mtl);
 void NuMtlInsert(NUMTL *mtl, i32 plane);
 extern "C" void NuMtlSetRenderPlane(NUMTL *mtl, i8 plane);
@@ -248,6 +251,9 @@ extern "C" {
     void NuMtlSetShaderDescPS(NUMTL *mtl, NUSHADERMTLDESC *desc);
     i32 NuMtlSetCurrentRenderPlane(i32 render_plane);
     NUMTL *NuMtlCreate(i32 count);
+    NUMTL *NuMtlCreateBuff(i32 count, VARIPTR *buffer);
+    NUMTL *NuMtlCreateBuff3D(i32 count, VARIPTR *buffer);
+    void NuMtlAnimateShaderMtlTextures(f32 frame_time);
     void NuMtlUpdate(NUMTL *mtl);
 #ifdef __cplusplus
 }

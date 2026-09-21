@@ -3,12 +3,14 @@
 
 #include "decomp.h"
 #include "globals.h"
+#include "gameapi/edtools/edfile.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/characters/motion.h"
 #include "legoapi/world/world_shared.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/numtx.h"
@@ -24,8 +26,10 @@ void EnableShadowMapRendering(i32 enabled);
 void ResetShadowMapRendering();
 
 extern i32 editor_active;
+extern NUMTL *SolidMtl3D;
 
 i32 grapple_gizmotype_id = -1;
+i32 Grapple_RopeSwingsAvailable;
 
 struct GRAPPLEPROGRESS {
     u32 active_mask;
@@ -164,8 +168,8 @@ static void Grapples_Update(void *world_ptr, void *, float) {
                 grapple->activation_progress -= FRAMETIME;
             }
 
-            if (NuSpecialExistsFn(&grapple->display_specials[0]) != 0) {
-                grapple->hook_position = *NuSpecialGetDrawPos(&grapple->display_specials[0]);
+            if (NuSpecialExistsFn(&grapple->display_special) != 0) {
+                grapple->hook_position = *NuSpecialGetDrawPos(&grapple->display_special);
                 grapple->shadow_probe_position.x = grapple->hook_position.x;
                 grapple->shadow_probe_position.y = grapple->hook_position.y - 0.1f;
                 grapple->shadow_probe_position.z = grapple->hook_position.z;
@@ -297,7 +301,7 @@ static void Grapples_DrawList(WORLDINFO *world, GRAPPLE *grapples, i32 grapple_c
                 continue;
             }
 
-            if (NuSpecialExistsFn(&grapple->display_specials[0]) == 0 && LEGOOBJ_GRAPPLE_HOOK != -1 &&
+            if (NuSpecialExistsFn(&grapple->display_special) == 0 && LEGOOBJ_GRAPPLE_HOOK != -1 &&
                 world->lev_objs[LEGOOBJ_GRAPPLE_HOOK].active != 0) {
                 NuMtxSetRotationX(&matrix, grapple->x_rotation);
                 NuMtxRotateY(&matrix, grapple->y_rotation);
@@ -492,25 +496,198 @@ static void *Grapples_ReserveBufferSpace(void *world_ptr) {
     return reserved_space;
 }
 
-static i32 Grapples_Load(void *, void *) {
-    UNIMPLEMENTED();
-    return {};
+static i32 Grapples_Load(void *world_ptr, void *) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    char special_name[256];
+    if (world->grapple_count != 0) {
+        return 0;
+    }
+
+    const i32 version = EdFileReadInt();
+    world->grapple_count = EdFileReadInt();
+    for (i32 index = 0; index < world->grapple_count; ++index) {
+        EdFileRead(world->grapples[index].name, 16);
+        EdFileReadNuVec(&world->grapples[index].position);
+        if (version < 2) {
+            EdFileReadUnsignedShort();
+        }
+        world->grapples[index].y_rotation = EdFileReadUnsignedShort();
+        if (version > 2) {
+            world->grapples[index].field_0x4c = EdFileReadFloat();
+        } else {
+            world->grapples[index].field_0x4c = 1.0f;
+        }
+        if (version > 3) {
+            world->grapples[index].disabled = EdFileReadChar() != 0;
+            world->grapples[index].rope_length = EdFileReadFloat();
+        } else {
+            world->grapples[index].disabled = 0;
+            world->grapples[index].rope_length = 2.0f;
+        }
+        if (version > 4) {
+            world->grapples[index].x_rotation = EdFileReadUnsignedShort();
+        } else {
+            world->grapples[index].x_rotation = 0;
+        }
+        if (version > 5) {
+            world->grapples[index].reversed = EdFileReadChar() != 0;
+        } else {
+            world->grapples[index].reversed = 0;
+        }
+        world->grapples[index].display_special = nuhspecial_s();
+        if (version > 6) {
+            const i32 name_length = EdFileReadUnsignedChar();
+            if (name_length != 0) {
+                EdFileRead(special_name, name_length);
+                special_name[name_length] = '\0';
+                NuSpecialFind(world->current_gscn, &world->grapples[index].display_special, special_name, 1);
+            }
+        }
+    }
+    return 1;
 }
 
-static __used__ void Grapple_FindNearestInList(nuvec_s *, GRAPPLE_s *, int, GameObject_s *, GRAPPLE_s **, float *) {
-    STUBBED();
+static void Grapple_FindNearestInList(NUVEC *position, GRAPPLE *grapple, i32 count, GameObject_s *object,
+                                     GRAPPLE **nearest, f32 *nearest_distance) {
+    NUVEC local;
+    for (i32 index = 0; index < count; ++index, ++grapple) {
+        f32 distance;
+        if (object != NULL) {
+            if ((grapple->flags & (GRAPPLE_FLAG_ACTIVE | GRAPPLE_FLAG_VISIBLE)) !=
+                    (GRAPPLE_FLAG_ACTIVE | GRAPPLE_FLAG_VISIBLE) ||
+                (grapple->has_terrain_platform != 0 && grapple->attached_object == NULL)) {
+                continue;
+            }
+            if ((grapple->flags & GRAPPLE_FLAG_DISABLED) != 0) {
+                if (Grapple_Occupied(grapple, NULL, NULL) != NULL) {
+                    continue;
+                }
+                if (object->apiobj.player_controlled != 0 &&
+                    (object->apiobj.field_0x27d != 0 || !(object->apiobj.velocity.y <= 0.0f) ||
+                     (object->character_context != -1 &&
+                      (LEGOCONTEXT_JUMP == -1 || object->character_context != LEGOCONTEXT_JUMP ||
+                       !(object->context_animation_timer >= 0.1f))))) {
+                    continue;
+                }
+            }
+            if ((grapple->flags & GRAPPLE_FLAG_REVERSED) != 0 &&
+                ((object->apiobj.character_data->game_character->flags_094[3] & 0x20) == 0 ||
+                 (grapple->flags & GRAPPLE_FLAG_DISABLED) == 0)) {
+                continue;
+            }
+            if (!(object->apiobj.upper_position.y < grapple->shadow_probe_position.y)) {
+                continue;
+            }
+            if ((grapple->flags & GRAPPLE_FLAG_DISABLED) != 0) {
+                if (!(object->apiobj.upper_position.y > grapple->hook_position.y - (0.1f + grapple->rope_length))) {
+                    continue;
+                }
+            } else if (!(object->apiobj.pos_y > grapple->ground_position.y)) {
+                continue;
+            }
+            NuVecSub(&local, &object->apiobj.upper_position, &grapple->hook_position);
+            NuVecRotateY(&local, &local, -GameCam->yaw);
+            if (!(NuFabs(local.z) < 0.5f)) {
+                continue;
+            }
+            distance = local.x * local.x;
+        } else {
+            distance = NuVecDistSqr(position, &grapple->hook_position, NULL);
+        }
+        if (distance < *nearest_distance) {
+            *nearest = grapple;
+            *nearest_distance = distance;
+        }
+    }
 }
 
-void Grapple_FindNearest(WORLDINFO_s *, nuvec_s *, GameObject_s *, float *) {
-    STUBBED();
+GRAPPLE *Grapple_FindNearest(WORLDINFO *world, NUVEC *position, GameObject_s *object, f32 *distance_squared) {
+    if (world->grapples == NULL) {
+        return NULL;
+    }
+    GRAPPLE *nearest = NULL;
+    f32 nearest_distance;
+    if (object != NULL) {
+        nearest_distance = object->apiobj.field_0x1dc;
+        if (object->apiobj.field_0x27d == 0 && Grapple_RopeSwingsAvailable == 0) {
+            nearest_distance += nearest_distance;
+        }
+        nearest_distance += 0.25f;
+        nearest_distance *= nearest_distance;
+    } else {
+        nearest_distance = 1000000000.0f;
+    }
+    Grapple_FindNearestInList(position, world->grapples, world->grapple_count, object, &nearest, &nearest_distance);
+    if (object != NULL) {
+        Grapple_FindNearestInList(position, DynamicGrapple, 4, object, &nearest, &nearest_distance);
+    }
+    if (distance_squared != NULL) {
+        *distance_squared = nearest_distance;
+    }
+    return nearest;
 }
 
-void Grapple_FindNearestToPos(WORLDINFO_s *, nuvec_s *) {
-    STUBBED();
+GRAPPLE *Grapple_FindNearestToPos(WORLDINFO *world, NUVEC *position) {
+    GRAPPLE *nearest = NULL;
+    if (world->grapples != NULL) {
+        f32 nearest_distance = 1000000000.0f;
+        GRAPPLE *grapple = world->grapples;
+        for (i32 index = 0; index < world->grapple_count; ++index, ++grapple) {
+            NUVEC midpoint;
+            midpoint.x = (grapple->ground_position.x + grapple->hook_position.x) * 0.5f;
+            midpoint.y = (grapple->ground_position.y + grapple->hook_position.y) * 0.5f;
+            midpoint.z = (grapple->ground_position.z + grapple->hook_position.z) * 0.5f;
+            const f32 distance = NuVecDistSqr(&midpoint, position, NULL);
+            if (distance < nearest_distance) {
+                nearest_distance = distance;
+                nearest = grapple;
+            }
+        }
+    }
+    return nearest;
 }
 
-void Grapple_DrawLine(GameObject_s *) {
-    STUBBED();
+void Grapple_DrawLine(GameObject_s *object) {
+    GRAPPLE *grapple = static_cast<GRAPPLE *>(object->field_0x788);
+    if ((grapple->flags & GRAPPLE_FLAG_DISABLED) == 0 &&
+        object->apiobj.character_model->model_data_b[object->context_animation] != NULL &&
+        AnimPlaying(&object->apiobj.anim_packet, object->context_animation, 0, 0) == NULL) {
+        return;
+    }
+    if (object->field_0x7a3 == 1) {
+        return;
+    }
+
+    grapple = static_cast<GRAPPLE *>(object->field_0x788);
+    NURND_VERTEX3D vertices[2];
+    vertices[1].colour = vertices[0].colour = grapple->reversed ? 0xff003f5f : 0xffffffff;
+    PLAYERCHARACTERCONFIG_s *config = object->apiobj.character_data->player_config;
+    const NUVEC *first_attachment;
+    const NUVEC *second_attachment = NULL;
+    const i32 joint_a = config->grapple_joint_a;
+    if (joint_a != -1 && object->apiobj.character_model->points_of_interest[joint_a] != NULL) {
+        first_attachment = NUMTX_GET_ROW_VEC(&object->joint_matrices[joint_a], 3);
+        const i32 joint_b = config->grapple_joint_b;
+        if (joint_b != -1 && object->apiobj.character_model->points_of_interest[joint_b] != NULL) {
+            second_attachment = NUMTX_GET_ROW_VEC(&object->joint_matrices[joint_b], 3);
+        }
+    } else {
+        first_attachment = grapple->disabled ? &object->apiobj.collision_position : &object->apiobj.upper_position;
+    }
+
+    vertices[0].position = grapple->hook_position;
+    vertices[1].position = *first_attachment;
+    if (second_attachment != NULL) {
+        NuRndrLine3d(vertices, SolidMtl3D, NULL);
+        vertices[0].position = vertices[1].position;
+        vertices[1].position = *second_attachment;
+    }
+    NuRndrLine3d(vertices, SolidMtl3D, NULL);
+    grapple = static_cast<GRAPPLE *>(object->field_0x788);
+    if ((grapple->flags & (GRAPPLE_FLAG_DISABLED | GRAPPLE_FLAG_REVERSED)) == GRAPPLE_FLAG_DISABLED) {
+        vertices[0].position = vertices[1].position;
+        DrawRopeCurved(&vertices[0].position, grapple->rope_points, 6, 0, NULL);
+    }
 }
 
 ADDGIZMOTYPE *Grapples_RegisterGizmo(i32 type_id) {
@@ -586,9 +763,14 @@ void Grapple_MoveCode(GameObject_s *) {
     STUBBED();
 }
 
-// Original 0x4d6eb0, 220 bytes.
-void Grapple_ReachedTop(GameObject_s *) {
-    STUBBED();
+i32 Grapple_ReachedTop(GameObject_s *object) {
+    if (LEGOCONTEXT_GRAPPLE != -1 && object->character_context == LEGOCONTEXT_GRAPPLE) {
+        if (object->field_0x7a3 == 1 ||
+            (object->field_0x7a3 == 0 && object->airborne_action_duration >= 0.5f)) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 void Grapple_SetPlayerTargetPoint(GameObject_s *object, nuvec_s *target) {
@@ -625,7 +807,9 @@ void Grapple_SetRotOrder(GameObject_s *object) {
         object->field_0x1086 = 2;
 }
 
-i32 Grapple_LookAtPos(GameObject_s *, nuvec_s *) {
-    STUBBED();
-    return 0;
+i32 Grapple_LookAtPos(GameObject_s *object, NUVEC *position) {
+    position->x = static_cast<GRAPPLE *>(object->field_0x788)->hook_position.x;
+    position->y = static_cast<GRAPPLE *>(object->field_0x788)->hook_position.y - object->field_0x768;
+    position->z = static_cast<GRAPPLE *>(object->field_0x788)->hook_position.z;
+    return 1;
 }

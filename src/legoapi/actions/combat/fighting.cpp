@@ -143,8 +143,8 @@ i32 ObjZappedBlue(GameObject_s *object) {
     return 0;
 }
 
-void SetForcedAttackOpponent(MechObjectInterface *) {
-    STUBBED();
+void SetForcedAttackOpponent(MechObjectInterface *target) {
+    forceNextAttackOpponent = NuMechPtr<MechObjectInterface, 4>(target);
 }
 
 void Punch_Hit(GameObject_s *, GameObject_s *, float, float) {

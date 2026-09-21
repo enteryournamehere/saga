@@ -3,6 +3,7 @@
 #include "legoapi/world/level.h"
 #include "legoapi/render/core/terrain.h"
 #include "legoapi/render/light/surfaces.h"
+#include "legoapi/render/fx/parts.h"
 #include "nu2api/nu3d/nulgtlaser.h"
 #include "legoapi/gizmos/traps/gizforce.h"
 #include "legoapi/gizmos/object/gizobstacles.h"
@@ -26,6 +27,7 @@ extern f32 testlaser_sizew, testlaser_sizel, testlaser_sizewab, testlaser_endw;
 #include "legoapi/ai/core/ai_sys_stubs.h"
 #include "legoapi/gizmo/base/gizmo.h"
 #include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/menus/core/panel.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nudlist.h"
@@ -36,6 +38,7 @@ struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
+extern u8 LevFlag[16];
 
 // Episode 6 level handlers, in the game's Episode_VI progression:
 // jabbas palace / sarlacc pit / speeder chase / endor battle / death star 2
@@ -45,16 +48,29 @@ struct SHOPINPUT;
 // Jabba's Palace (JabbasPalace_A / B / D / E)
 // ===========================================================================
 
-void JabbasPalaceA_Init(WORLDINFO_s *) {
-    STUBBED();
+void JabbasPalaceA_Init(WORLDINFO_s *world) {
+    NuSpecialFind(world->current_gscn, &LevHSpecial[0], "grill_02", 1);
+    GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, "entrance11");
+    if (blowup != NULL)
+        blowup->field_0xa0 |= 2;
+    blowup = GizmoBlowUp_FindByName(world, "entrance21");
+    if (blowup != NULL)
+        blowup->field_0xa0 |= 2;
 }
 
-void JabbasPalaceB_Init(WORLDINFO_s *) {
-    STUBBED();
+void JabbasPalaceB_Init(WORLDINFO_s *world) {
+    LevGizObst[0] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle5");
+    LevBlowUp[0] = GizmoBlowUp_FindByName(world, "prison_stone1");
+    GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, "prison_blast1");
+    if (blowup != NULL)
+        blowup->field_0xa0 |= 2;
 }
 
-void JabbasPalaceE_Init(WORLDINFO_s *) {
-    STUBBED();
+void JabbasPalaceE_Init(WORLDINFO_s *world) {
+    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "prox_explo1");
+    LevGizmo[1] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "prox_explo2");
+    LevFlag[6] = 0;
+    LevFlag[7] = 0;
 }
 
 void JabbasPalaceA_Reset(WORLDINFO_s *) {
@@ -92,11 +108,24 @@ void JabbasPalaceE_Reset(WORLDINFO_s *world) {
 }
 
 void JabbasPalaceE_Panel(WORLDINFO_s *) {
-    STUBBED();
+    if (!netclient) {
+        if (LevGameObject[0] != NULL && LevAIMessage[0] != NULL && LevAIMessage[0]->value == 1.0f)
+            DrawBossHitPoints(LevGameObject[0]);
+        else
+            DrawBossHitPoints(NULL);
+    }
 }
 
 void JabbasPalaceA_Update(WORLDINFO_s *) {
-    STUBBED();
+    NUVEC position = {-0.01503f, 0.7414f, 11.5824f};
+    if (NuSpecialExistsFn(&LevHSpecial[0]) && !NuSpecialGetVisibilityFn(&LevHSpecial[0])) {
+        AIANTINODE *antinode = AIAntinodeCreateSingleFrame(&position, 1.0f);
+        if (antinode != NULL) {
+            antinode->type = 2;
+            antinode->base_radius = 0.82443f;
+            antinode->base_height = 1.0f;
+        }
+    }
 }
 
 void JabbasPalaceE_Update(WORLDINFO_s *) {
@@ -164,9 +193,21 @@ static u8 prevOnTaunTaun;
 static u8 prevOnTractor;
 static u8 prevOnMoonCar;
 static u8 prevOnTownCar;
+static u8 prevOnFireTruck;
+static u8 prevOnLifeBoat;
 
-void LegoCity_Init(WORLDINFO_s *) {
-    STUBBED();
+void LegoCity_Init(WORLDINFO_s *world) {
+    char name[0x18];
+    i32 i = 1;
+    for (;;) {
+        sprintf(name, "lamp_%d", i);
+        GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, name);
+        if (blowup == NULL)
+            break;
+        blowup->field_0x128 = 0.3f;
+        blowup->field_0x124 = 1;
+        ++i;
+    }
 }
 
 void LegoCity_Reset(WORLDINFO_s *world) {
@@ -204,8 +245,18 @@ void LegoCity_Update(WORLDINFO_s *) {
     STUBBED();
 }
 
-void SenateA_Init(WORLDINFO_s *) {
-    STUBBED();
+void SenateA_Init(WORLDINFO_s *world) {
+    char *names[] = {
+        "deton_0110", "deton_0111", "deton_011", "deton_012", "deton_013", "deton_014",
+        "deton_015", "deton_017", "deton_018", "deton_019", "console_btm19", "console_btm110",
+        "console_btm11", "console_btm18", "console_btm13", "console_btm16", "console_btm15",
+        "console_btm14", NULL
+    };
+    for (i32 i = 0; names[i] != NULL; ++i) {
+        GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, names[i]);
+        if (blowup != NULL)
+            blowup->draw_flags |= 2;
+    }
 }
 
 void NewTown_Init(WORLDINFO_s *world) {
@@ -222,8 +273,36 @@ void NewTown_Init(WORLDINFO_s *world) {
     }
 }
 
-void NewTown_Reset(WORLDINFO_s *) {
-    STUBBED();
+void NewTown_Reset(WORLDINFO_s *world) {
+    u32 seed = 17;
+    prevOnTaunTaun = 0;
+    prevOnFireTruck = 0;
+    prevOnLifeBoat = 0;
+
+    GIZMOPICKUP_s *pickup = world->pickup_sys->pickups;
+    if (pickup == NULL)
+        return;
+    if (world->pickup_sys->pickup_count <= 0)
+        return;
+    for (i32 i = 0; pickup != NULL && i < world->pickup_sys->pickup_count; ++i, ++pickup) {
+        if (!(pickup->runtime_flags & 8)) {
+            switch (pickup->type_id) {
+                case 2:
+                case 3:
+                case 4:
+                    pickup->collected = 0;
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (pickup->type_id == 4) {
+            f32 x = NuRandFloatSeeded(&seed);
+            f32 z = NuRandFloatSeeded(&seed);
+            pickup->position.x = x * 4.0f - 7.656 - 1.5;
+            pickup->position.z = z * 4.0f - 5.871 - 1.5;
+        }
+    }
 }
 
 void NewTown_Update(WORLDINFO_s *) {
@@ -234,16 +313,29 @@ void NewTown_Update(WORLDINFO_s *) {
 // Endor battle (EndorBattle_A / C)
 // ===========================================================================
 
-void EndorBattleA_Init(WORLDINFO_s *) {
-    STUBBED();
+void EndorBattleA_Init(WORLDINFO_s *world) {
+    NuSpecialFind(world->current_gscn, &LevHSpecial[0], "bbq_popnull", 1);
 }
 
-void EndorBattleC_Init(WORLDINFO_s *) {
-    STUBBED();
+void EndorBattleC_Init(WORLDINFO_s *world) {
+    GIZFORCE_s *force = GizForce_FindByName(world->giz_force_sys, "force3");
+    if (force != NULL)
+        force->force_strength = 10.0f;
+    force = GizForce_FindByName(world->giz_force_sys, "force4");
+    if (force != NULL)
+        force->force_strength = 10.0f;
 }
 
 void EndorBattleA_Update(WORLDINFO_s *) {
-    STUBBED();
+    static f32 parttimer = 0.75f;
+    nuinstanim_s *animation = NuSpecialGetInstAnim(&LevHSpecial[0]);
+    if (animation != NULL && animation->playing && NuSpecialGetVisibilityFn(&LevHSpecial[0])) {
+        if (parttimer >= 0.75f)
+            AddPartDebris(WORLD->part_debris_sys, 7, NuSpecialGetDrawPos(&LevHSpecial[0]));
+        parttimer -= FRAMETIME;
+        if (parttimer <= 0.0f)
+            parttimer = 0.75f;
+    }
 }
 
 void Platform_Init(WORLDINFO_s *world) {
@@ -254,8 +346,10 @@ void Platform_Reset(WORLDINFO_s *) {
     NuSpecialSetVisibility(&LevHSpecial[0], 0);
 }
 
-void E1CharacterBonus_Init(WORLDINFO_s *) {
-    STUBBED();
+void E1CharacterBonus_Init(WORLDINFO_s *world) {
+    GIZOBSTACLE_s *obstacle = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle16");
+    if (obstacle != NULL)
+        obstacle->field_a1_0xa1 |= 1;
 }
 
 // ===========================================================================
@@ -275,7 +369,8 @@ void DeathStar2BattleD_InZapRange(GameObject_s *) {
 }
 
 void DeathStar2BattleA_AlwaysUpdate(WORLDINFO_s *) {
-    STUBBED();
+    if (!FreePlay && DEATHSTAR2BATTLEMIDTRO_LDATA != NULL)
+        other_level_override = DEATHSTAR2BATTLEMIDTRO_LDATA->idx;
 }
 
 // ===========================================================================
@@ -296,7 +391,6 @@ i32 floor_route_on;
 static u64 routemask_efloor_on;
 static u64 routemask_efloor_off;
 static nuhspecial_s *hspecial_efloor;
-extern u8 LevFlag[16];
 
 void EmperorFightA_Init(WORLDINFO_s *world) {
     emperorfighta_netpacket = static_cast<EmperorFightAPacket *>(SetLevelHack(8));
@@ -796,7 +890,9 @@ void EmperorFightA_Update(WORLDINFO_s *world) {
 }
 
 void EmperorFightA_Panel(WORLDINFO_s *) {
-    STUBBED();
+    drawbosshitpoints_2rows = 1;
+    if (LevGameObject[0] != NULL && LevAIMessage[0] != NULL && LevAIMessage[0]->value == 1.0f)
+        DrawBossHitPoints(LevGameObject[0]);
 }
 
 // ===========================================================================

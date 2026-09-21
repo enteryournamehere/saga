@@ -449,8 +449,6 @@ void *NuSoundMemoryManager::AllocAddress(u32 size) {
     return buffer != NULL ? buffer->GetAddress() : NULL;
 }
 
-// libTTapp.so 0x3225a0 (CheckList). Debug-only list validator; not
-// transcribed yet.
 bool NuSoundMemoryManager::CheckList() {
     NuSoundMemoryBuffer *buffer = this->free_list_head;
     usize expected_address = reinterpret_cast<usize>(this->memory2);
@@ -467,7 +465,7 @@ bool NuSoundMemoryManager::CheckList() {
             return false;
         }
         expected_address += buffer->GetSize();
-        buffer = next;
+        buffer = buffer->GetNext();
     }
     return true;
 }

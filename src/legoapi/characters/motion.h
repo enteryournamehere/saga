@@ -80,7 +80,7 @@ GAMEPAD_s *ViewCamGetGamePad();
 NUVEC *ViewCamGetTgt();
 i32 ViewCamGetMode();
 void ViewCamSetActive(i32 mode, GAMEPAD_s *gamepad);
-extern MechObjectInterface *forceNextAttackOpponent;
+extern NuMechPtr<MechObjectInterface, 4> forceNextAttackOpponent;
 extern NuMechPtr<MechObjectInterface, 4> nextShootTarget;
 void ForceNextShootTarget(MechObjectInterface &target);
 extern f32 ComboOpponent_Range2;

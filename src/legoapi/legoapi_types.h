@@ -2,6 +2,8 @@
 #define LEGOAPI_TYPES_H
 #pragma once
 #include "gameapi/ai/aisys/aimessage_types.h"
+#include "gameapi/edtools/gameapi_edtools_types.h"
+#include "gameapi/edtools/edui.h"
 #include "gamelib/util/gamelib_util_types.h"
 
 #include "nu2api/nu3d/ShaderManagerOpenGL.h"
@@ -357,7 +359,10 @@ struct ADDGAMEMSG {
     f32 field_0x20;                     // 0x20
     u16 field_0x24;                     // 0x24
     i16 icon;                           // 0x26
-    nuvec_s *extra_position;            // 0x28
+    union {
+        nuvec_s *extra_position;
+        nuhspecial_s *special;
+    };                                 // 0x28
     u32 score;                          // 0x2c
     f32 field_0x30;                     // 0x30
     f32 field_0x34;                     // 0x34
@@ -372,6 +377,7 @@ struct ADDGAMEMSG {
     u8 field_0x4f;
 };
 DECOMP_ASSERT(sizeof(ADDGAMEMSG) == 0x50, "ADDGAMEMSG size");
+DECOMP_ASSERT(offsetof(ADDGAMEMSG, special) == 0x28, "game message special offset");
 typedef ADDGAMEMSG ADDGAMEMSG_ALIGNED16 __attribute__((aligned(16)));
 struct PARTLIGHTSOURCE_s {
     u8 reserved_00[0x78];
@@ -962,7 +968,13 @@ struct CUTSYS {
     i32 count;
     u32 *character_bits;
 };
-struct ClassItem {};
+struct ClassItem {
+    ClassItem *next;
+    ClassItem *previous;
+    EdClass *ed_class;
+    void *object;
+    EdRef *reference;
+};
 struct DETONATOR_s {
     u8 field_0x00[0xc];
     NUVEC field_0x0c;
@@ -1007,10 +1019,16 @@ struct EdInputContext;
 struct EdRef;
 struct EdStream;
 struct EdTool {
-    u8 reserved_0x00[4];
+    virtual ~EdTool() {}
+    virtual void Initialise(variptr_u &, variptr_u &, i32) {}
+    virtual const char *GetName() { return ""; }
+    virtual i32 Process(EdInputContext &) { return 0; }
+    virtual void Render() {}
+
     EdTool *next;
     EdTool *previous;
 };
+DECOMP_ASSERT(sizeof(EdTool) == 0x0c, "EdTool ABI");
 enum FADETYPE_VALUE {
     FADE_TYPE_NONE = -1,
     FADE_TYPE_SCREEN = 0,
@@ -1330,7 +1348,9 @@ DECOMP_ASSERT(offsetof(GAMECUTSCENES_s, cutscene) == 0x1c, "GAMECUTSCENES_s acti
 struct GAMEMESSAGE_s {
     char pad_0x00[0x88];
     NUVEC target_position;
-    char pad_0x94[0xe6 - 0x94];
+    char pad_0x94[0xe2 - 0x94];
+    u16 rotation_y; // 0xe2
+    char pad_0xe4[2];
     u16 icon;   // 0xe6
     u32 color1; // 0xe8
     u32 color2; // 0xec
@@ -1347,6 +1367,7 @@ struct GAMEMESSAGE_s {
 };
 DECOMP_ASSERT(sizeof(GAMEMESSAGE_s) == 0x114, "GAMEMESSAGE_s size");
 static_assert(offsetof(GAMEMESSAGE_s, target_position) == 0x88, "game message target position offset");
+DECOMP_ASSERT(offsetof(GAMEMESSAGE_s, rotation_y) == 0xe2, "game message rotation offset");
 static_assert(offsetof(GAMEMESSAGE_s, player_index) == 0xfd, "game message player index offset");
 // Rumble state packet embedded in GAMEPAD_s (20 bytes; floats driven by
 // NuSound3UpdateRumble / UpdateRumble).
@@ -1753,6 +1774,14 @@ enum GIZSPINNER_STATE_FLAGS : u32 {
     GIZSPINNER_STATE_SHADOW_PLATFORM = 0x0800,
 };
 
+struct GIZSPINNERARM_s {
+    NUMTX matrix;
+    i16 platform_id;
+    u8 field_0x42[2];
+};
+DECOMP_ASSERT(sizeof(GIZSPINNERARM_s) == 0x44, "GIZSPINNERARM_s ABI");
+DECOMP_ASSERT(offsetof(GIZSPINNERARM_s, platform_id) == 0x40, "GIZSPINNERARM platform offset");
+
 struct GIZSPINNER_s {
     NUMTX matrix;                    // 0x000
     char name[0x10];                 // 0x040
@@ -1787,9 +1816,14 @@ struct GIZSPINNER_s {
     u8 output_count;   // 0x0a4
     u8 field_0x0a5[7];
     u8 flags; // 0x0ac, GIZSPINNER_FLAGS
-    u8 field_0x0ad[0x2d8 - 0x0ad];
+    u8 field_0x0ad;
+    i16 platform_id; // 0x0ae
+    u8 field_0x0b0[4];
+    GIZSPINNERARM_s arms[8]; // 0x0b4
+    u8 field_0x2d4[4];
     f32 field_0x2d8;
-    f32 animation_points[10]; // 0x2dc
+    f32 animation_points[9]; // 0x2dc
+    GAMEANTINODE_s *anti_node; // 0x300
 };
 DECOMP_ASSERT(sizeof(GIZSPINNER_s) == 0x304, "GIZSPINNER_s ABI");
 DECOMP_ASSERT(offsetof(GIZSPINNER_s, name) == 0x40, "GIZSPINNER name offset");
@@ -1797,7 +1831,10 @@ DECOMP_ASSERT(offsetof(GIZSPINNER_s, position) == 0x5c, "GIZSPINNER position off
 DECOMP_ASSERT(offsetof(GIZSPINNER_s, field_70) == 0x70, "GIZSPINNER trigger progress offset");
 DECOMP_ASSERT(offsetof(GIZSPINNER_s, anim_set) == 0x68, "GIZSPINNER anim-set offset");
 DECOMP_ASSERT(offsetof(GIZSPINNER_s, flags) == 0xac, "GIZSPINNER flags offset");
+DECOMP_ASSERT(offsetof(GIZSPINNER_s, platform_id) == 0xae, "GIZSPINNER platform offset");
+DECOMP_ASSERT(offsetof(GIZSPINNER_s, arms) == 0xb4, "GIZSPINNER arms offset");
 DECOMP_ASSERT(offsetof(GIZSPINNER_s, animation_points) == 0x2dc, "GIZSPINNER animation-points offset");
+DECOMP_ASSERT(offsetof(GIZSPINNER_s, anti_node) == 0x300, "GIZSPINNER antinode offset");
 struct GIZTURRETSYS_s;
 struct GRABBER_s {
     union {
@@ -2192,7 +2229,11 @@ DECOMP_ASSERT(offsetof(PULSESYS_s, pulse_count) == 0x4, "PULSESYS pulse count of
 DECOMP_ASSERT(offsetof(PULSESYS_s, collide_radius) == 0x10, "PULSESYS collision radius offset");
 DECOMP_ASSERT(offsetof(PULSESYS_s, radial_hit_direction) == 0x1e, "PULSESYS hit direction mode offset");
 struct PartHeader;
-struct PropertyMenuList {};
+struct PropertyMenuList {
+    PropertyMenu *first;
+    PropertyMenu *last;
+    i32 count;
+};
 struct REGISTERSTATUSPACKET_s {
     STATUSPACKET_LSW_s *lsw_packet;
     i32 (*init_callback)(WORLDINFO_s *, STATUSPACKET_s *);
@@ -2362,14 +2403,36 @@ struct SUIT_s {
 DECOMP_ASSERT(sizeof(SUIT_s) == 0x18, "SUIT_s size");
 DECOMP_ASSERT(offsetof(SUIT_s, store_flag) == 0x0c, "SUIT_s store flag offset");
 DECOMP_ASSERT(offsetof(SUIT_s, group) == 0xe, "SUIT_s group offset");
+struct SUPERCOUNTERPICKUP {
+    GIZMO_s *gizmo;
+    GIZMO_s *position_gizmo;
+    nuhspecial_s position_special;
+    char name[8];
+    char position_name[16];
+    i16 level_index;
+    u8 use_special;
+    u8 pad_2f;
+};
+DECOMP_ASSERT(sizeof(SUPERCOUNTERPICKUP) == 0x30, "SUPERCOUNTERPICKUP size");
+DECOMP_ASSERT(offsetof(SUPERCOUNTERPICKUP, position_special) == 0x08, "Super counter pickup special offset");
+DECOMP_ASSERT(offsetof(SUPERCOUNTERPICKUP, name) == 0x14, "Super counter pickup name offset");
+DECOMP_ASSERT(offsetof(SUPERCOUNTERPICKUP, position_name) == 0x1c, "Super counter pickup position name offset");
+DECOMP_ASSERT(offsetof(SUPERCOUNTERPICKUP, level_index) == 0x2c, "Super counter pickup level offset");
+DECOMP_ASSERT(offsetof(SUPERCOUNTERPICKUP, use_special) == 0x2e, "Super counter pickup special flag offset");
 struct SUPERCOUNTER {
-    u8 pad_0x00[0x1e2];
-    u16 reset_value; // 0x1e2
-    u8 pad_0x1e4[0x1e7 - 0x1e4];
-    u8 processed_flags; // 0x1e7
+    SUPERCOUNTERPICKUP pickups[10];
+    u16 pickup_count;
+    u16 collected_count;
+    u8 red;
+    u8 green;
+    u8 blue;
+    u8 processed_flags;
 };
 DECOMP_ASSERT(sizeof(SUPERCOUNTER) == 0x1e8, "SUPERCOUNTER size");
-struct SUPERCOUNTERPICKUP {};
+DECOMP_ASSERT(offsetof(SUPERCOUNTER, pickup_count) == 0x1e0, "Super counter pickup count offset");
+DECOMP_ASSERT(offsetof(SUPERCOUNTER, collected_count) == 0x1e2, "Super counter collected count offset");
+DECOMP_ASSERT(offsetof(SUPERCOUNTER, red) == 0x1e4, "Super counter color offset");
+DECOMP_ASSERT(offsetof(SUPERCOUNTER, processed_flags) == 0x1e7, "Super counter flags offset");
 struct ShaderObjectKey;
 struct SoundTable {
     u16 bits[100];
@@ -2839,7 +2902,13 @@ struct debinftype {
     u8 momentum_adjustment_type; // 0x02d
     u8 particle_type;            // 0x02e
     u8 status;                   // 0x02f
-    u8 fields_030[8];            // 0x030
+    union {
+        u8 fields_030[8];
+        struct {
+            u8 fields_030_reserved[4];
+            f32 cut_on;
+        };
+    };
     f32 clip_extent;             // 0x038
     f32 sound_range;
     f32 sound_range_override;
@@ -2859,19 +2928,20 @@ struct debinftype {
     u8 field_0aa;
     u8 field_0ab;
     f32 field_0ac;
-    f32 field_0b0;
-    f32 field_0b4;
-    f32 field_0b8;
-    f32 field_0bc;
+    f32 jib_x_frequency;
+    f32 jib_x_amplitude;
+    f32 jib_y_frequency;
+    f32 jib_y_amplitude;
     debris_colour_key_s colour_keys[8]; // 0x0c0
     debris_float_key_s alpha_keys[8];   // 0x100
     f32 field_140;
     f32 field_144;
-    f32 field_148;
-    f32 field_14c;
+    f32 min_size;
+    f32 max_size;
     debris_float_key_s width_keys[8];  // 0x150
     debris_float_key_s height_keys[8]; // 0x190
-    u8 fields_1d0[8];
+    f32 min_rotation;
+    f32 max_rotation;
     debris_float_key_s rotation_keys[8]; // 0x1d8
     u8 fields_218[0x80];
     f32 texture_u0;          // 0x298
@@ -2880,7 +2950,10 @@ struct debinftype {
     f32 texture_v1;          // 0x2a4
     PartHeader *native_data; // 0x2a8 (target)
     f32 last_render_time;    // 0x2ac (target)
-    u8 fields_2b0[0x40];     // 0x2b0 (target)
+    union {
+        u8 fields_2b0[0x40];
+        debris_float_key_s collision_keys[8];
+    };
     u8 process_spheres;      // 0x2f0 (target)
     i8 time_group;           // 0x2f1
     u8 field_2f2;
@@ -2888,7 +2961,15 @@ struct debinftype {
     f32 thinning;             // 0x2f4
     union {
         u8 fields_2f8[0xd8];
-        NUVEC repeat_box; // 0x2f8
+        struct {
+            NUVEC repeat_box; // 0x2f8
+            f32 torus_radius1;
+            f32 torus_radius2;
+            f32 torus_lifetime;
+            debris_float_key_s torus_keys1[8];
+            debris_float_key_s torus_keys2[8];
+            debris_float_key_s torus_keys3[8];
+        };
     };
     i16 particle_keys[8]; // 0x3d0
     i32 sound_data[12];   // 0x3e0
@@ -2908,6 +2989,20 @@ struct debscale_s {
     f32 scale;
 };
 DECOMP_ASSERT(sizeof(debinftype) == 0x428, "debinftype size");
+DECOMP_ASSERT(offsetof(debinftype, cut_on) == 0x34, "debris cut-on offset");
+DECOMP_ASSERT(offsetof(debinftype, jib_x_frequency) == 0xb0, "debris jib frequency offset");
+DECOMP_ASSERT(offsetof(debinftype, jib_y_amplitude) == 0xbc, "debris jib amplitude offset");
+DECOMP_ASSERT(offsetof(debinftype, min_size) == 0x148, "debris minimum size offset");
+DECOMP_ASSERT(offsetof(debinftype, max_size) == 0x14c, "debris maximum size offset");
+DECOMP_ASSERT(offsetof(debinftype, min_rotation) == 0x1d0, "debris minimum rotation offset");
+DECOMP_ASSERT(offsetof(debinftype, max_rotation) == 0x1d4, "debris maximum rotation offset");
+DECOMP_ASSERT(offsetof(debinftype, collision_keys) == 0x2b0, "debris collision keys offset");
+DECOMP_ASSERT(offsetof(debinftype, torus_radius1) == 0x304, "debris torus radius one offset");
+DECOMP_ASSERT(offsetof(debinftype, torus_radius2) == 0x308, "debris torus radius two offset");
+DECOMP_ASSERT(offsetof(debinftype, torus_lifetime) == 0x30c, "debris torus lifetime offset");
+DECOMP_ASSERT(offsetof(debinftype, torus_keys1) == 0x310, "debris torus keys one offset");
+DECOMP_ASSERT(offsetof(debinftype, torus_keys2) == 0x350, "debris torus keys two offset");
+DECOMP_ASSERT(offsetof(debinftype, torus_keys3) == 0x390, "debris torus keys three offset");
 
 typedef uv1deb *(*DEBRISGENERATOR)(debkeydatatype_s *, debinftype *, f32);
 typedef void (*DEBRISMOMENTUMADJUSTER)(debkeydatatype_s *, debinftype *, uv1deb *);
@@ -3018,10 +3113,7 @@ struct debkeydatatype_s {
     f32 sphere_next_time;
     i32 trigger_first;
     i32 trigger_second;
-    union {
-        i32 trigger_third;
-        f32 switch_variable;
-    };
+    f32 switch_variable;
     i16 reflection_x;
     i16 reflection_y;
     f32 collision_plane;
@@ -3052,9 +3144,11 @@ struct debkeydatatype_s {
     f32 emission_epoch;
     i16 render_priority;
     i16 allocation_index;
-    i32 field_32c;
+    void *user_data;
 };
 DECOMP_ASSERT(sizeof(debkeydatatype_s) == 0x330, "debkeydatatype_s size");
+DECOMP_ASSERT(offsetof(debkeydatatype_s, switch_variable) == 0x2d8, "debris trigger variable offset");
+DECOMP_ASSERT(offsetof(debkeydatatype_s, user_data) == 0x32c, "debris user data offset");
 DECOMP_ASSERT(offsetof(debkeydatatype_s, process_spheres) == 0x1e8, "debris sphere array offset");
 DECOMP_ASSERT(offsetof(debkeydatatype_s, sphere_skip_count) == 0x2ca, "debris sphere skip offset");
 DECOMP_ASSERT(offsetof(debkeydatatype_s, sphere_next_time) == 0x2cc, "debris sphere deadline offset");
@@ -3257,18 +3351,37 @@ struct edpp_particle_s {
     NUVEC position;
     i32 effect_index;
     i32 instance_id;
-    u8 pad_0x14[0x34 - 0x14];
+    i16 rotation_z;
+    i16 rotation_y;
+    i16 emitter_rotation_z;
+    i16 emitter_rotation_y;
+    i16 emitter_rotation_x;
+    u8 reserved_1e[2];
+    f32 start_offset;
+    char name[16];
     i32 switch_type;
     i32 switch_id;
     f32 switch_variable;
-    u8 pad_0x40[0x4c - 0x40];
+    i16 reflection_rotation_z;
+    i16 reflection_rotation_y;
+    f32 reflection_offset;
+    f32 reflection_bounce;
     i16 render_group;
-    u8 pad_0x4e[0x51 - 0x4e];
+    i16 render_priority;
+    i8 dynamic_priority;
     i8 page;
     i8 detail_levels;
-    u8 pad_0x53[0x58 - 0x53];
+    i8 facing_mode;
+    i16 facing_rotation_x;
+    i16 facing_rotation_y;
 };
 DECOMP_ASSERT(sizeof(edpp_particle_s) == 0x58, "edpp_particle_s ABI");
+DECOMP_ASSERT(offsetof(edpp_particle_s, rotation_z) == 0x14, "edpp particle rotation offset");
+DECOMP_ASSERT(offsetof(edpp_particle_s, start_offset) == 0x20, "edpp particle start offset");
+DECOMP_ASSERT(offsetof(edpp_particle_s, name) == 0x24, "edpp particle name offset");
+DECOMP_ASSERT(offsetof(edpp_particle_s, reflection_rotation_z) == 0x40, "edpp particle reflection offset");
+DECOMP_ASSERT(offsetof(edpp_particle_s, render_priority) == 0x4e, "edpp particle priority offset");
+DECOMP_ASSERT(offsetof(edpp_particle_s, facing_mode) == 0x53, "edpp particle facing offset");
 struct pushblock_s {
     union {
         f32 ground_offset; // 0x00
@@ -3445,17 +3558,33 @@ struct terrsitu_s {};
 struct uv1deb {};
 struct uv1debdata;
 struct BaseEditor {
-    u8 reserved_0x00[4];
+    virtual ~BaseEditor() {}
+    virtual void Initialise(variptr_u &, variptr_u &, i32);
+    virtual char *GetName() { return const_cast<char *>(""); }
+    virtual i32 ReadBlock(DATAPTR *) { return 0; }
+    virtual void WriteBlock(i32) {}
+    virtual void Serialise(EdStream &) {}
+    virtual void ClearLevel(i32) {}
+    virtual void Flush() {}
+    virtual void Enter() {}
+    virtual void Exit() {}
+    virtual void Process(EdInputContext &) {}
+    virtual void Render() {}
+    virtual void AddMenuItems(eduimenu_s *) {}
+
     BaseEditor *next;
     BaseEditor *previous;
     i32 field_0x0c;
 
-    void Initialise(variptr_u &, variptr_u &, i32);
     void ReadBuffer(void **, void *, i32);
-    void WriteBeginBlock(i32, i32);
-    void WriteEndBlock(i32);
-    void WriteMetaData(i32, i32, i32, i32);
+    static void WriteBeginBlock(i32, i32);
+    static void WriteEndBlock(i32);
+    static void WriteMetaData(i32, i32, i32, i32);
+    static i32 blockDepth;
+    static i32 blockStart[8];
 };
+DECOMP_ASSERT(sizeof(BaseEditor) == 0x10, "BaseEditor ABI");
+DECOMP_ASSERT(offsetof(BaseEditor, next) == 0x4, "BaseEditor list offset");
 #include "legoapi/items/objects/basething.h"
 struct CantPickupBombTimerAddon : MechAddon {
     CantPickupBombTimerAddon(MechObjectInterface &, float);
@@ -3470,90 +3599,6 @@ struct CantPickupBombTimerAddon : MechAddon {
 DECOMP_ASSERT(sizeof(CantPickupBombTimerAddon) == 0x1c, "CantPickupBombTimerAddon ABI");
 DECOMP_ASSERT(offsetof(CantPickupBombTimerAddon, remaining_time) == 0x18, "Bomb pickup timer offset");
 
-struct ClassEditor {
-    u8 reserved_0x00[0x10];
-    EdTool *first_tool;
-    EdTool *last_tool;
-    i32 tool_count;
-    u8 reserved_0x1c[0x50 - 0x1c];
-    VuVec snap_ray;
-    u8 reserved_0x60[4];
-    i32 snap_mode;
-
-    ClassEditor();
-    void AddMenuItems(eduimenu_s *);
-    void ClearLevel(i32);
-    void CreateObject();
-    void CreateObject(ClassObject &);
-    void CreateObject(EdClass *);
-    void CreateObject(i32);
-    void DestroySelectedObjects();
-    void DestroySelectedObjectsNow();
-    void DrawObjectSphere(ClassObject &, i32);
-    void Editable(void *, EdClass *, i32);
-    void Enter();
-    void Exit();
-    void FindNearestObject(VuVec &, ClassObject &, ClassObject &, i32);
-    void FindNearestObject(VuVec &, ClassObject &, i32);
-    void FindNearestObject(VuVec &, VuVec &, ClassObject &, ClassObject &, i32);
-    void FindNearestObject(VuVec &, VuVec &, ClassObject &, i32);
-    void Flush();
-    void FocusSelected();
-    void Initialise(variptr_u &, variptr_u &, i32);
-    void InitialiseObject(ClassObject &);
-    void IsSelectedClass(EdClass *);
-    void IsSelectedObject(ClassObject &);
-    void IsSelectedObject(void *, EdRef *);
-    void IsUniqueName(char *);
-    void MakeUniqueName(char const *, char *, i32);
-    void PostLoadInitialisation(MemoryBuffer *, MemoryBuffer *);
-    void PostSaveInitialisation();
-    void PreLoadInitialisation(MemoryBuffer *, MemoryBuffer *);
-    void PreSaveInitialisation();
-    void Process(EdInputContext &);
-    void ReadBlock(DATAPTR *);
-    void RegisterTool(EdTool &);
-    void Render();
-    void SelectLED(i32);
-    void SelectObject(ClassObject &, i32);
-    void Serialise(EdStream &);
-    void SetMode(i32);
-    void SetViewMenuHilight(eduimenu_s *);
-    void SnapPoint(VuVec &);
-    void UpdateClassFilter(EdInputContext &);
-    void UpdateLists(MemoryBuffer *, MemoryBuffer *);
-    void UpdateSelectedObjects(EdInputContext &);
-    void UpdateSnapRay(VuVec &);
-    void ViewSelected();
-    void WriteBlock(i32);
-    void cbDestroyMenu(eduimenu_s *, eduimenu_s *);
-    void cbDestroyObject(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassDeleteObject(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassExportMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassFileMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassImportMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassModeMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassNewMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassNewObject(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassRemoveDuplicates(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassSelectClassMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassSelectObject(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassSelectObjectMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassSetMode(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassSetPinned(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassSetSnap(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassSetView(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassSnapMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassToolsMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassViewMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdCopySelectedObject(EdInputContext &);
-    void cbEdCreateClassNewObject(i32);
-    void cbEdFilterLED(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdLevelDeselectAll(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdLevelSelectAll(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdPadSetManipulatorMode(eduimenu_s *, eduiitem_s *, u32);
-    void cbFileSelected(eduimenu_s *, eduiitem_s *, u32);
-};
 struct ClassObject {
     EdClass *ed_class;
     void *object;
@@ -3574,12 +3619,109 @@ struct ClassObjectList {
     ClassObjectListEntry *last;
     i32 count;
 
-    void GetAveragePosition(VuVec &);
-    void GetAveragePosition(VuVec &, float &);
-    bool IsInList(ClassObject);
-    bool IsInList(EdClass *);
-    bool IsInList(void *, EdRef *);
+    i32 GetAveragePosition(VuVec &);
+    i32 GetAveragePosition(VuVec &, float &);
+    i32 IsInList(ClassObject);
+    i32 IsInList(EdClass *);
+    i32 IsInList(void *, EdRef *);
 };
+struct EdManipulator;
+struct ClassEditor : BaseEditor {
+    EdTool *first_tool;
+    EdTool *last_tool;
+    i32 tool_count;
+    i32 field_1c;
+    EdManipulator *manipulator;
+    ClassObjectList selected_objects;
+    ClassObject current_object;
+    i32 field_3c;
+    ClassObject pending_object;
+    eduimenu_s *menu;
+    VuVec snap_ray;
+    f32 snap_distance;
+    i32 snap_mode;
+    i32 mode;
+    i32 class_filter;
+
+    ClassEditor();
+    virtual ~ClassEditor() {}
+    char *GetName() { return const_cast<char *>("Class Editor"); }
+    void AddMenuItems(eduimenu_s *);
+    void ClearLevel(i32);
+    void *CreateObject();
+    void CreateObject(ClassObject &);
+    void CreateObject(EdClass *);
+    void CreateObject(i32);
+    void DestroySelectedObjects();
+    void DestroySelectedObjectsNow();
+    void DrawObjectSphere(ClassObject &, i32);
+    i32 Editable(void *, EdClass *, i32);
+    void Enter();
+    void Exit();
+    void FindNearestObject(VuVec &, ClassObject &, ClassObject &, i32);
+    void FindNearestObject(VuVec &, ClassObject &, i32);
+    void FindNearestObject(VuVec &, VuVec &, ClassObject &, ClassObject &, i32);
+    void FindNearestObject(VuVec &, VuVec &, ClassObject &, i32);
+    void Flush();
+    void FocusSelected();
+    void Initialise(variptr_u &, variptr_u &, i32);
+    void InitialiseObject(ClassObject &);
+    i32 IsSelectedClass(EdClass *);
+    i32 IsSelectedObject(ClassObject &);
+    i32 IsSelectedObject(void *, EdRef *);
+    i32 IsUniqueName(char *);
+    void MakeUniqueName(char const *, char *, i32);
+    void PostLoadInitialisation(MemoryBuffer *, MemoryBuffer *);
+    void PostSaveInitialisation();
+    void PreLoadInitialisation(MemoryBuffer *, MemoryBuffer *);
+    void PreSaveInitialisation();
+    void Process(EdInputContext &);
+    i32 ReadBlock(DATAPTR *);
+    void RegisterTool(EdTool &);
+    void Render();
+    void SelectLED(i32);
+    void SelectObject(ClassObject &, i32);
+    void Serialise(EdStream &);
+    void SetMode(i32);
+    static void SetViewMenuHilight(eduimenu_s *);
+    void SnapPoint(VuVec &);
+    void UpdateClassFilter(EdInputContext &);
+    void UpdateLists(MemoryBuffer *, MemoryBuffer *);
+    void UpdateSelectedObjects(EdInputContext &);
+    void UpdateSnapRay(VuVec &);
+    void ViewSelected();
+    void WriteBlock(i32);
+    static void cbDestroyMenu(eduimenu_s *, eduimenu_s *);
+    static void cbDestroyObject(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassDeleteObject(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassExportMenu(eduimenu_s *, eduiitem_s *, u32);
+    void cbEdClassFileMenu(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassImportMenu(eduimenu_s *, eduiitem_s *, u32);
+    void cbEdClassModeMenu(eduimenu_s *, eduiitem_s *, u32);
+    void cbEdClassNewMenu(eduimenu_s *, eduiitem_s *, u32);
+    void cbEdClassNewObject(eduimenu_s *, eduiitem_s *, u32);
+    void cbEdClassRemoveDuplicates(eduimenu_s *, eduiitem_s *, u32);
+    void cbEdClassSelectClassMenu(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassSelectObject(eduimenu_s *, eduiitem_s *, u32);
+    void cbEdClassSelectObjectMenu(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassSetMode(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassSetPinned(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassSetSnap(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassSetView(eduimenu_s *, eduiitem_s *, u32);
+    void cbEdClassSnapMenu(eduimenu_s *, eduiitem_s *, u32);
+    void cbEdClassToolsMenu(eduimenu_s *, eduiitem_s *, u32);
+    void cbEdClassViewMenu(eduimenu_s *, eduiitem_s *, u32);
+    void cbEdCopySelectedObject(EdInputContext &);
+    void cbEdCreateClassNewObject(i32);
+    void cbEdFilterLED(eduimenu_s *, eduiitem_s *, u32);
+    void cbEdLevelDeselectAll(eduimenu_s *, eduiitem_s *, u32);
+    void cbEdLevelSelectAll(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdPadSetManipulatorMode(eduimenu_s *, eduiitem_s *, u32);
+    void cbFileSelected(eduimenu_s *, eduiitem_s *, u32);
+};
+DECOMP_ASSERT(offsetof(ClassEditor, selected_objects) == 0x24, "ClassEditor selection offset");
+DECOMP_ASSERT(offsetof(ClassEditor, snap_ray) == 0x50, "ClassEditor snap-ray offset");
+DECOMP_ASSERT(sizeof(ClassEditor) == 0x70, "ClassEditor ABI");
 struct CursorTool {
     void Initialise(variptr_u &, variptr_u &, i32);
     void Process(EdInputContext &);
@@ -3662,13 +3804,32 @@ struct part_emit_s {
     u8 field_33;
     i32 shots_remaining;
     f32 time_38;
-    u8 field_3c, field_3d, field_3e, field_3f;
+    union {
+        u8 field_3c;
+        u8 sounds_active;
+    };
+    union {
+        u8 field_3d;
+        u8 switch_state;
+    };
+    u8 field_3e, field_3f;
     f32 camera_distance;
-    i16 field_44, field_46;
+    union {
+        i16 field_44;
+        i16 switch_type;
+    };
+    union {
+        i16 field_46;
+        i16 switch_id;
+    };
     i32 instance_id; // 0x48
     i32 trailing_state_words[8];
 };
 DECOMP_ASSERT(sizeof(part_emit_s) == 0x6c, "part_emit_s size");
+DECOMP_ASSERT(offsetof(part_emit_s, sounds_active) == 0x3c, "Particle emitter sounds offset");
+DECOMP_ASSERT(offsetof(part_emit_s, switch_state) == 0x3d, "Particle emitter switch state offset");
+DECOMP_ASSERT(offsetof(part_emit_s, switch_type) == 0x44, "Particle emitter switch type offset");
+DECOMP_ASSERT(offsetof(part_emit_s, switch_id) == 0x46, "Particle emitter switch id offset");
 
 struct part_typedesc_s {
     char name[16];
@@ -4652,45 +4813,89 @@ DECOMP_ASSERT(offsetof(LEVER_s, name) == 0x5c, "LEVER name offset");
 DECOMP_ASSERT(offsetof(LEVER_s, position) == 0x6c, "LEVER position offset");
 DECOMP_ASSERT(offsetof(LEVER_s, flags) == 0x9c, "LEVER flags offset");
 struct LevelEditorScene {
-    u8 reserved_0x00[0xa0];
+    char name[0x20];
+    u8 reserved_0x20[0x80];
     nugscn_s *scene;
-    i32 field_0xa4;
+    i32 active : 1;
+    u32 editable : 1;
+    u32 reserved_flags : 30;
 };
 DECOMP_ASSERT(sizeof(LevelEditorScene) == 0xa8, "LevelEditorScene ABI");
 
-struct LevelEditor {
-    u8 pad_0x000[0x2a0];
+struct LevelEditor : BaseThing {
+    f32 background_colour[4];
+    i32 field_0x20;
+    i32 field_0x24;
+    i32 field_0x28;
+    i32 field_0x2c;
+    i32 field_0x30;
+    f32 overlay_alpha;
+    i32 field_0x38;
+    i32 field_0x3c;
+    EdInputContext input;
+    u8 reserved_0x298;
+    u8 destroying_objects;
+    u8 reserved_0x29a[6];
     i32 reset_pending;
     LevelEditorScene scenes[10]; // 0x2a4
     BaseEditor *first_editor;
     BaseEditor *last_editor;
     i32 editor_count;
+    BaseEditor *active_editor;
+    char save_filename[0x80];
+    char editor_filename[0x80];
+    u8 reserved_0xa44[8];
+    u16 current_led_file;
+    u8 reserved_0xa4e[0xe];
+    char text_buffer[0x400];
+    i32 text_length;
+    char *info_text[32];
+    i32 info_x;
+    i32 info_y;
+    i32 info_width;
+    i32 info_height;
+    u32 info_colour;
+    u32 info_background;
+    u8 reserved_0xef8[0x100];
+    i32 pad_x;
+    i32 pad_y;
+    i32 pad_width;
+    i32 pad_height;
+    u32 pad_background;
+    u32 pad_colour;
+    u8 reserved_0x1010[4];
+    char *pad_text[32];
+    EditorSettings settings;
+    i32 editors_entered;
+    i32 active;
+
+    virtual char const *GetName() { return "LevelEditor"; }
 
     void AddInfoText(char *);
-    void AddScene(char *, nugscn_s *, i32);
-    void AddText(char *);
+    i32 AddScene(char *, nugscn_s *, i32);
+    char *AddText(char *);
     void BeginMultiLoad(variptr_u *, variptr_u *);
     void ClearLevel(i32);
     void CloseMenu();
     void CreateEditorList(eduimenu_s *, eduiitem_s *);
     void CreateMenu();
-    void Display(ThingRenderData *);
+    void Display(ThingRenderData *) override;
     void DrawInfoText(char **, i32, i32, i32, i32, i32, i32, i32);
     void EndMultiLoad(variptr_u *, variptr_u *);
     void Enter();
     void Exit();
-    void FindSceneId(char *);
+    i32 FindSceneId(char *);
     void Flush();
     LevelEditorScene *GetEdScene(i32);
-    void GetScene(char *);
+    nugscn_s *GetScene(char *);
     nugscn_s *GetScene(i32);
     void Initalise(variptr_u &, variptr_u &, i32);
-    void IsActiveScene(nugscn_s *);
-    void IsEditable(i32);
+    i32 IsActiveScene(nugscn_s *);
+    i32 IsEditable(i32);
     LevelEditor();
     void Load(char *, variptr_u *, variptr_u *, i32);
     void LoadState(variptr_u *, variptr_u *, variptr_u *, variptr_u *, variptr_u *, variptr_u *);
-    void ProcessEvenWhenPaused(ThingProcessData *);
+    void ProcessEvenWhenPaused(ThingProcessData *) override;
     void ReadStream(EdFileInputStream &);
     void RegisterEditor(BaseEditor &);
     void Reset();
@@ -4703,7 +4908,15 @@ struct LevelEditor {
     void WriteStream(EdFileOutputStream &);
 };
 DECOMP_ASSERT(offsetof(LevelEditor, reset_pending) == 0x2a0, "LevelEditor reset_pending offset");
+DECOMP_ASSERT(offsetof(LevelEditor, destroying_objects) == 0x299, "LevelEditor destruction flag offset");
 DECOMP_ASSERT(offsetof(LevelEditor, scenes) == 0x2a4, "LevelEditor scenes offset");
+DECOMP_ASSERT(offsetof(LevelEditor, save_filename) == 0x944, "LevelEditor save filename offset");
+DECOMP_ASSERT(offsetof(LevelEditor, text_buffer) == 0xa5c, "LevelEditor text buffer offset");
+DECOMP_ASSERT(offsetof(LevelEditor, info_text) == 0xe60, "LevelEditor info text offset");
+DECOMP_ASSERT(offsetof(LevelEditor, pad_text) == 0x1014, "LevelEditor pad text offset");
+DECOMP_ASSERT(sizeof(LevelEditor) == 0x10a8, "LevelEditor ABI");
+DECOMP_ASSERT(offsetof(LevelEditor, current_led_file) == 0xa4c, "LevelEditor current LED file offset");
+extern LevelEditor theLevelEditor;
 struct MemoryManager {
     usize cursor;
     usize end;
@@ -4742,13 +4955,6 @@ struct MINESYS_s {
     float update_timer;        // 0x744
 };
 
-struct MoveToMarker {
-    void BlowUp();
-    void FadeOut();
-    MoveToMarker(MechObjectInterface &);
-    void Process(float);
-    void Render();
-};
 struct OccluderRecord {
     NUVEC4 vertices[4];
     NUVEC4 transformed[4];
@@ -4882,6 +5088,7 @@ struct PART_s {
     union {
         u32 field_20c;
         f32 crate_spawn_delay;
+        f32 speeder_index; // 0x20c, bikeParts slot stored as a float
     };
     union {
         f32 field_210;
@@ -4904,6 +5111,7 @@ struct PART_s {
     MechObjectInterface *GetMechObjectInterface();
 };
 DECOMP_ASSERT(sizeof(PART_s) == 0x224, "PART size");
+DECOMP_ASSERT(offsetof(PART_s, speeder_index) == 0x20c, "PART speeder index offset");
 DECOMP_ASSERT(offsetof(PART_s, grabber_blowup) == 0x210, "PART grabber callback data offset");
 DECOMP_ASSERT(offsetof(PART_s, field_1c0) == 0x1c0, "PART kill callback offset");
 DECOMP_ASSERT(offsetof(PART_s, debris_key) == 0x1d8, "PART debris key offset");
@@ -4942,12 +5150,57 @@ struct PartObjectInterface : MechObjectInterface {
 };
 DECOMP_ASSERT(sizeof(PartObjectInterface) == 0xc, "Part interface ABI");
 struct Placeable {
-    void Reset();
-    void GetCurrentPosition() const;
-    void GetInitialPosition() const;
-    void SetCurrentPosition(VuVec const *);
-    void SetInitialPosition(VuVec const *);
+    i16 scene_id;
+    i16 led_file;
+    i32 attributes;
+    EdString name;
+    EdString params;
+    u32 reserved_14;
+
+    static i16 CurrentLedFile;
+
+    Placeable() : scene_id(0), led_file(CurrentLedFile), attributes(0), name{}, params{}, reserved_14(0) {
+    }
+    virtual ~Placeable() {
+    }
+    virtual Placeable *Clone(i32) const {
+        return NULL;
+    }
+    virtual void Reset() {
+    }
+    virtual char const *GetName() const {
+        char const *value = name.data ? name.data + 1 : NULL;
+        return value ? value : "No Name";
+    }
+    virtual void SetName(char const *value) {
+        name.Set(value);
+    }
+    virtual f32 GetRadius() const {
+        return 1.0f;
+    }
+    virtual VuMtx const *GetInitialTransform() const {
+        return NULL;
+    }
+    virtual void SetInitialTransform(VuMtx const *) {
+    }
+    virtual VuMtx const *GetCurrentTransform() const {
+        return NULL;
+    }
+    virtual void SetCurrentTransform(VuMtx const *) {
+    }
+    virtual VuVec const *GetInitialPosition() const;
+    virtual void SetInitialPosition(VuVec const *);
+    virtual VuVec const *GetCurrentPosition() const;
+    virtual void SetCurrentPosition(VuVec const *);
+    virtual void Render(VuMtx const *) const {
+    }
 };
+DECOMP_ASSERT(sizeof(Placeable) == 0x18, "Placeable size");
+DECOMP_ASSERT(offsetof(Placeable, scene_id) == 0x4, "Placeable scene ID offset");
+DECOMP_ASSERT(offsetof(Placeable, led_file) == 0x6, "Placeable LED file offset");
+DECOMP_ASSERT(offsetof(Placeable, attributes) == 0x8, "Placeable attributes offset");
+DECOMP_ASSERT(offsetof(Placeable, name) == 0xc, "Placeable name offset");
+DECOMP_ASSERT(offsetof(Placeable, params) == 0x10, "Placeable params offset");
 struct PlaceableHelper {
     i32 object_type_count;
 
@@ -5025,6 +5278,7 @@ struct PropertyMenu {
     EdControl *control;
     ClassObject objects[8];
     i32 object_count;
+    i32 order;
 
     void AddObject(ClassObject &);
     void ClearObjecs();
@@ -5033,26 +5287,40 @@ struct PropertyMenu {
     void Destroy();
     void SelectAttr(i32);
 };
-struct PropertyTool {
-    u8 reserved_0x00[0xc];
+DECOMP_ASSERT(sizeof(PropertyMenu) == 0x78, "PropertyMenu ABI");
+DECOMP_ASSERT(offsetof(PropertyMenu, object_count) == 0x70, "PropertyMenu object count offset");
+struct PropertyMenuMetrics {
+    i32 x;
+    i32 y;
+    i32 width;
+    i32 height;
+};
+struct PropertyTool : EdTool {
     PropertyMenu *active_menu;
+    PropertyMenu *last_menu;
+    i32 menu_count;
+    i32 show_type_names;
+    eduiiattr_s menu_attr;
+    eduiiattr_s selected_attr;
+    eduiiattr_s unselected_attr;
 
     void AddPropertyMenuItems(eduimenu_s *, EdClass *, void *, eduiitem_s *);
     void AutoLocateMenu(PropertyMenu *);
     void BringToFront(PropertyMenu *);
     void CreatePropertyMenu(ClassObject &);
-    void FindItemMenu(PropertyMenu *, ClassItem *);
-    void GetActiveMenu(PropertyMenu *);
+    PropertyMenu *FindItemMenu(PropertyMenu *, ClassItem *);
+    PropertyMenu *GetActiveMenu(PropertyMenu *);
     void GetClassName(EdRef *, char *);
-    void GetNextActiveMenu();
-    void GetNextDefaultActiveMenu(eduimenu_s *);
+    PropertyMenu *GetNextActiveMenu();
+    eduimenu_s *GetNextDefaultActiveMenu(eduimenu_s *);
     void GetTypeName(EdRef *, char *);
     bool HasActiveMenu();
     void Initialise(variptr_u &, variptr_u &, i32);
-    void Process(EdInputContext &);
-    void ProcessControls(EdInputContext &);
-    void ProcessMenu(EdInputContext &);
+    i32 Process(EdInputContext &);
+    i32 ProcessControls(EdInputContext &);
+    i32 ProcessMenu(EdInputContext &);
     PropertyTool();
+    const char *GetName() override { return "Property Tool"; }
     void RefreshMenuControls(PropertyMenu *);
     void Render();
     void RenderMenu(PropertyMenu *);
@@ -5061,10 +5329,13 @@ struct PropertyTool {
     void SetDefaultActiveMenu(PropertyMenu *);
     void SetMenuControl(eduimenu_s *, EdControl *);
     void ToggleActiveMenu();
-    void ediGetMenuStartMetrics();
+    PropertyMenuMetrics ediGetMenuStartMetrics();
     void ediMenuRetrieveMetrics(eduimenu_s *);
     void ediMenuStoreMetrics(eduimenu_s *);
 };
+DECOMP_ASSERT(sizeof(PropertyTool) == 0x4c, "PropertyTool ABI");
+DECOMP_ASSERT(offsetof(PropertyTool, active_menu) == 0xc, "PropertyTool menu list offset");
+DECOMP_ASSERT(offsetof(PropertyTool, selected_attr) == 0x2c, "PropertyTool selected attributes offset");
 // Retake-G network packet (retakeg_netpacket).
 struct RETAKEGNETPACKET_s {
     i16 guard_a; // 0x00
@@ -5105,10 +5376,13 @@ struct SceneObject {
     SceneObject();
 };
 struct SceneObjectHelper {
-    u8 reserved_0x00[0x6c];
+    u8 reserved_0x00[8];
+    i32 scene_id;
+    u8 reserved_0x0c[0x60];
     i32 scene_object_count;
     u8 reserved_0x70[0x30];
     i32 owned_object_count;
+    u8 reserved_0xa4[0x0c];
 
     void AddMenuItems(eduimenu_s *);
     void ClearLevel(i32);
@@ -5128,27 +5402,40 @@ struct SceneObjectHelper {
     void cbEdSceneObjectShowOwnedObjects(eduimenu_s *, eduiitem_s *, u32);
 };
 
-struct SpecialObject {
-    void Exists() const;
-    void GetCollision() const;
-    void GetCurrentPosition() const;
-    void GetCurrentTransform() const;
-    void GetInitialPosition() const;
-    void GetInitialTransform() const;
-    void GetMtl(i32) const;
-    void GetName() const;
-    void GetNumMtls() const;
-    void GetRadius() const;
-    void GetVisibility() const;
-    void Render(VuMtx const *) const;
-    void SetCollision(i32);
-    void SetCurrentPosition(VuVec const *);
-    void SetCurrentTransform(VuMtx const *);
-    void SetInitialPosition(VuVec const *);
-    void SetInitialTransform(VuMtx const *);
-    void SetVisibility(i32);
+DECOMP_ASSERT(sizeof(SceneObjectHelper) == 0xb0, "SceneObjectHelper size");
+DECOMP_ASSERT(offsetof(SceneObjectHelper, scene_id) == 8, "SceneObjectHelper scene ID offset");
+extern SceneObjectHelper theSceneObjectHelper;
+
+struct SpecialObject : Placeable {
+    nuhspecial_s special;
+
     SpecialObject();
+    ~SpecialObject() override {
+    }
+    char const *GetName() const override;
+    f32 GetRadius() const override;
+    VuMtx const *GetInitialTransform() const override;
+    void SetInitialTransform(VuMtx const *) override;
+    VuMtx const *GetCurrentTransform() const override;
+    void SetCurrentTransform(VuMtx const *) override;
+    VuVec const *GetInitialPosition() const override;
+    void SetInitialPosition(VuVec const *) override;
+    VuVec const *GetCurrentPosition() const override;
+    void SetCurrentPosition(VuVec const *) override;
+    void Render(VuMtx const *) const override;
+    virtual nuhspecial_s *GetNuHSpecial() {
+        return &special;
+    }
+    virtual i32 Exists() const;
+    virtual i32 GetNumMtls() const;
+    virtual numtl_s *GetMtl(i32) const;
+    virtual i32 GetVisibility() const;
+    virtual void SetVisibility(i32);
+    virtual i32 GetCollision() const;
+    virtual void SetCollision(i32);
 };
+DECOMP_ASSERT(sizeof(SpecialObject) == 0x24, "SpecialObject size");
+DECOMP_ASSERT(offsetof(SpecialObject, special) == 0x18, "SpecialObject special handle offset");
 struct TELEPORT_s {
     char name[0x40];
     struct nugspline_s *path;
@@ -5188,14 +5475,16 @@ struct TMClient {
     void SendTTY(char const *, i32);
     void TestKey(i32);
 };
-struct TTNetwork {
+struct TTNetwork : NetTransporter {
   private:
-    u8 reserved_04[0x2168];
+    u8 reserved_10[0x215c];
     NetAddress my_address;
     NetAddress my_host_address;
     i32 has_my_host_address;
+    u8 reserved_2178[0x1608];
 
   public:
+    NetworkObjectManager network_objects;
     void Broadcast(NetMessage, unsigned char);
     void ClearMyHostAddress();
     void Display(ThingRenderData *);
@@ -5214,6 +5503,7 @@ struct TTNetwork {
     void Update();
     virtual ~TTNetwork();
 };
+DECOMP_ASSERT(offsetof(TTNetwork, network_objects) == 0x3780, "TTNetwork object manager offset");
 // All ThingManager methods are virtual in the original: its vtable order is
 // D2, D0, AddThing, AddThingAfterThis, RemoveTemporaryThings,
 // RemoveDependanciesThings, ResetThings, EnterLevelThings, ExitLevelThings,
@@ -5225,7 +5515,7 @@ struct ThingManager {
     virtual void AddThing(BaseThing *);
     virtual void AddThingAfterThis(BaseThing *);
     virtual void RemoveTemporaryThings();
-    virtual void RemoveDependanciesThings(ThingRemoveData *);
+    virtual i32 RemoveDependanciesThings(ThingRemoveData *);
     virtual void ResetThings(ThingResetData *);
     virtual void EnterLevelThings(ThingLevelData *);
     virtual void ExitLevelThings(ThingLevelData *);
@@ -5235,25 +5525,27 @@ struct ThingManager {
     virtual void EffectsThings(ThingRenderData *);
     void EnableActions(i32, i32, i32);
     ThingManager(i32);
-    void cbEdTimingSelect(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdTrackCancel(eduimenu_s *, eduimenu_s *);
-    void edTimingEnter();
-    void edTimingInit();
-    void edTimingProc(float, nupad_s *);
-    void edTimingRender();
+    static void cbEdTimingSelect(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdTrackCancel(eduimenu_s *, eduimenu_s *);
+    static void edTimingEnter();
+    static void edTimingInit();
+    static i32 edTimingProc(float, nupad_s *);
+    static void edTimingRender();
 
     // data (object is 0x24 bytes; the ctor carves `things` from theMemoryManager)
     BaseThing **things; // 0x04
     i32 max_things;     // 0x08
     i32 count;          // 0x0c
-    u32 field_0x10;     // 0x10 high-water cursor (written by the ctor / AllocPool)
+    i32 permanent_count;
     i32 field_0x14;     // 0x14 AddThingAfterThis reservation, folded in by the next AddThing
     i32 timebar;        // 0x18 NuTimeBarCreateSet index
     u32 field_0x1c;
     i32 ed_timing_state; // 0x20 editor timing selection state
 };
 DECOMP_ASSERT(sizeof(ThingManager) == 0x24, "ThingManager ABI");
+DECOMP_ASSERT(offsetof(ThingManager, permanent_count) == 0x10, "ThingManager permanent count offset");
 DECOMP_ASSERT(offsetof(ThingManager, ed_timing_state) == 0x20, "ThingManager timing state offset");
+DECOMP_ASSERT(offsetof(BaseThing, profiling_0xc) == 0xc, "BaseThing profiling flag offset");
 // GameThingManager shares the base vtable entries (only the dtors differ) and
 // registers itself in theGameThings (ctor @0x4e8b00 / D1 dtor @0x4e8a80).
 struct GameThingManager : ThingManager {

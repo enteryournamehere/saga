@@ -172,11 +172,11 @@ bool NuSoundVoice::GetAutoDelete() const {
 }
 
 void NuSoundVoice::SetAutoDelete(bool auto_delete) {
-    this->flags2 = (u8)(this->flags2 & 0xfe | auto_delete);
+    this->source_flags.auto_delete = auto_delete;
 }
 
 void NuSoundVoice::SetMixUpdate(bool mix_update) {
-    this->flags = (u8)(this->flags & 0xef | mix_update << 4);
+    this->playback_flags.mix_update = mix_update;
 }
 
 void NuSoundVoice::SetVolume(f32 volume) {
@@ -210,14 +210,11 @@ void NuSoundVoice::Play() {
     if (this->queued_buffers == 0) {
         // Ask the source for the initial buffers; the streamer (or the sample
         // itself) hands them back through SubmitBuffer.
-        u32 num_buffers = this->sound_source->GetNumInitialBuffers();
-        for (u32 i = 0; i < num_buffers; i++) {
-            if ((this->flags2 & 8) == 0 && (this->flags2 & 2) != 0) {
+        for (i32 i = 0; i < this->sound_source->GetNumInitialBuffers(); i++) {
+            if (!this->source_flags.looping && this->source_flags.last_buffer_queued) {
                 break;
             }
-            NuSoundWeakPtr<NuSoundBufferCallback> callback;
-            callback.Set(this);
-            this->sound_source->RequestBuffer((this->flags2 >> 3) & 1, callback);
+            this->sound_source->RequestBuffer(this->source_flags.looping, this);
         }
     }
 
@@ -230,8 +227,8 @@ void NuSoundVoice::Pause() {
     if (this->GetState() == PLAYSTATE_PLAYING) {
         this->PauseHardwareVoice();
         this->SetState(PLAYSTATE_PAUSED);
-        this->flags = (u8)(this->flags & 0xf0 | (this->flags + 1) & 0xf);
     }
+    this->playback_flags.pause_count++;
 }
 
 void NuSoundVoice::Resume() {
@@ -250,7 +247,7 @@ void NuSoundVoice::Resume() {
         this->SetState(PLAYSTATE_PLAYING);
     }
 
-    this->flags &= 0xf0;
+    this->playback_flags.pause_count = 0;
 }
 
 void NuSoundVoice::Stop(bool with_effects) {
@@ -293,24 +290,21 @@ void NuSoundVoice::Update(f32 frametime) {
 }
 
 void NuSoundVoice::UpdateMix(f32 frametime) {
-    f32 bus_gains[8] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-
     this->CalculatePositionalMix();
 
+    f32 bus_gains[8] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     if (this->output_bus != NULL) {
         this->output_bus->ApplyFinalMix(bus_gains);
     }
 
     f32 attenuation = this->CalculateEffectAttenuation();
-    f32 pitch_scale = this->CalculateEffectPitchScale();
+    this->field67_0xa8 = bus_gains[2] * attenuation * this->field67_0xa8;
+    this->field68_0xac = this->CalculateEffectPitchScale();
     f32 volume = this->volume;
 
     for (u32 i = 0; i < 8; i++) {
         this->mix_gains[i] *= bus_gains[i] * attenuation * volume;
     }
-
-    this->field67_0xa8 = bus_gains[2] * attenuation * this->field67_0xa8;
-    this->field68_0xac = pitch_scale;
 }
 
 static inline VuVec CopySoundPosition(const VuVec &position) {
@@ -540,7 +534,8 @@ bool NuSoundVoice::CheckStopEffects() {
 
 void NuSoundVoice::UpdateEffects(f32 frametime, NuSoundEffect::EffectProcessStage stage) {
     NuListNodeBase *node = this->effects.Head();
-    while (node != this->effects.Tail()) {
+    NuListNodeBase *tail = this->effects.Tail();
+    while (node != tail) {
         NuSoundEffect *effect = static_cast<NuListNode<NuSoundEffect *> *>(node)->value;
         node = node->GetNext();
 
@@ -589,16 +584,17 @@ bool NuSoundVoice::AddEffect(NuSoundEffect *effect) {
 }
 
 bool NuSoundVoice::BeginStopEffects() {
-    if ((this->flags2 & 4) == 0) {
-        for (NuListNodeBase *node = this->effects.Head(); node != this->effects.Tail(); node = node->GetNext()) {
+    if (!this->source_flags.stop_effects_running) {
+        NuListNodeBase *tail = this->effects.Tail();
+        for (NuListNodeBase *node = this->effects.Head(); node != tail; node = node->GetNext()) {
             NuSoundEffect *effect = static_cast<NuListNode<NuSoundEffect *> *>(node)->value;
             if (effect->stop_effect == 1) {
                 effect->Enable();
-                this->flags2 |= 4;
+                this->source_flags.stop_effects_running = true;
             }
         }
     }
-    return (this->flags2 & 4) != 0;
+    return this->source_flags.stop_effects_running;
 }
 
 f32 NuSoundVoice::CalculateEffectAttenuation() {
@@ -876,7 +872,10 @@ void NuSoundVoice::SetPenetration(f32 penetration) {
 
 void NuSoundVoice::SetPosition(VuVec *value) {
     if (value != NULL) {
-        memcpy(&this->position, value, sizeof(this->position));
+        this->position.x = value->x;
+        this->position.y = value->y;
+        this->position.z = value->z;
+        this->position.w = value->w;
     }
 }
 
@@ -918,7 +917,10 @@ void NuSoundVoice::SetSurroundMode(NuSoundSystem::SurroundMode mode) {
 }
 
 void NuSoundVoice::SetVelocity(VuVec const &value) {
-    this->velocity = value;
+    this->velocity.x = value.x;
+    this->velocity.y = value.y;
+    this->velocity.z = value.z;
+    this->velocity.w = value.w;
 }
 
 void NuSoundVoice::UnregisterHandle(NuSoundHandle *handle) {

@@ -1,15 +1,24 @@
 #include "legoapi/gizmos/fx/guidelines.h"
 
 #include "decomp.h"
+#include "gameapi/edtools/edfile.h"
 #include "legoapi/world/level.h"
+#include "nu2api/nucore/nustring.h"
 
 struct GUIDELINEPROGRESS {
     u32 state[2];
 };
 
-static void *GuideLines_ReserveBufferSpace(void *) {
-    UNIMPLEMENTED();
-    return {};
+static void *GuideLines_ReserveBufferSpace(void *world_ptr) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    world->guidelines = NULL;
+    world->guideline_count = 0;
+    if (world->current_level->max_guidelines != 0) {
+        world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
+        world->guidelines = static_cast<GUIDELINE *>(world->giz_buffer.void_ptr);
+        world->giz_buffer.addr += world->current_level->max_guidelines * sizeof(GUIDELINE);
+    }
+    return world->guidelines;
 }
 
 static void GuideLines_Reset(void *world_info, void *, void *progress_data) {
@@ -32,7 +41,6 @@ static void GuideLines_Reset(void *world_info, void *, void *progress_data) {
 }
 
 static void GuideLines_Draw(void *, void *, float) {
-    UNIMPLEMENTED();
 }
 
 static void GuideLine_Activate(GIZMO *gizmo, i32 active) {
@@ -57,13 +65,12 @@ static char *GuideLine_GetGizmoName(GIZMO *gizmo) {
 }
 
 static i32 GuideLine_GetOutput(GIZMO *gizmo, i32, i32) {
-    UNIMPLEMENTED();
-    return {};
+    GUIDELINE *guideline = static_cast<GUIDELINE *>(gizmo->object);
+    return guideline->active && guideline->visible;
 }
 
-static char *GuideLine_GetOutputName(GIZMO *gizmo, i32 output_index) {
-    UNIMPLEMENTED();
-    return {};
+static char *GuideLine_GetOutputName(GIZMO *, i32) {
+    return "Active";
 }
 
 static i32 GuideLine_GetNumOutputs(GIZMO *gizmo) {
@@ -78,26 +85,86 @@ static void GuideLines_ClearProgress(void *, void *progress_data) {
     }
 }
 
-static void *GuideLines_AllocateProgressData(VARIPTR *, VARIPTR *) {
-    UNIMPLEMENTED();
-    return {};
+static void *GuideLines_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {
+    return GizmoBufferAlloc(buffer, buffer_end, sizeof(GUIDELINEPROGRESS));
 }
 
-static void GuideLines_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
-    UNIMPLEMENTED();
+static void GuideLines_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    for (i32 index = 0; index < world->guideline_count; ++index) {
+        if (NuStrLen(world->guidelines[index].name) != 0) {
+            AddGizmo(gizmo_sys, type_id, NULL, &world->guidelines[index]);
+        }
+    }
 }
 
-static i32 GuideLines_Load(void *, void *) {
-    UNIMPLEMENTED();
-    return {};
+static i32 GuideLines_Load(void *world_ptr, void *) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    if (world->guideline_count != 0) {
+        return 0;
+    }
+    EdFileReadInt();
+    world->guideline_count = EdFileReadInt();
+    for (i32 index = 0; index < world->guideline_count; ++index) {
+        EdFileRead(world->guidelines[index].name, sizeof(world->guidelines[index].name));
+        EdFileReadNuVec(&world->guidelines[index].start_position);
+        EdFileReadNuVec(&world->guidelines[index].end_position);
+    }
+    return 1;
 }
 
-static void GuideLines_StoreProgress(void *, void *, void *) {
-    UNIMPLEMENTED();
+static void GuideLines_StoreProgress(void *world_ptr, void *, void *progress_ptr) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    GUIDELINEPROGRESS *progress = static_cast<GUIDELINEPROGRESS *>(progress_ptr);
+    if (progress == NULL) {
+        return;
+    }
+    progress->state[0] = ~0u;
+    progress->state[1] = ~0u;
+    if (world == NULL || world->guidelines == NULL) {
+        return;
+    }
+    GUIDELINE *guideline = world->guidelines;
+    for (i32 index = 0; index < world->guideline_count; ++index, ++guideline) {
+        if (index == 32) {
+            break;
+        }
+        const u32 bit = 1u << index;
+        if (guideline->visible == 0) {
+            progress->state[(index >> 5) + 1] &= ~bit;
+        }
+        if (guideline->active == 0) {
+            progress->state[index >> 5] &= ~bit;
+        }
+    }
 }
 
-void GuideLine_FindNearest(nuvec_s *, WORLDINFO_s *, i32 *, float *) {
-    STUBBED();
+GUIDELINE *GuideLine_FindNearest(nuvec_s *position, WORLDINFO_s *world, i32 *endpoint, float *distance) {
+    GUIDELINE *nearest = NULL;
+    f32 nearest_distance = 1000000000.0f;
+    i32 nearest_endpoint = -1;
+    GUIDELINE *guideline = world->guidelines;
+    for (i32 index = 0; index < world->guideline_count; ++index, ++guideline) {
+        f32 candidate_distance = NuVecDistSqr(position, &guideline->start_position, NULL);
+        if (candidate_distance < nearest_distance) {
+            nearest_distance = candidate_distance;
+            nearest = guideline;
+            nearest_endpoint = 0;
+        }
+        candidate_distance = NuVecDistSqr(position, &guideline->end_position, NULL);
+        if (candidate_distance < nearest_distance) {
+            nearest_distance = candidate_distance;
+            nearest = guideline;
+            nearest_endpoint = 1;
+        }
+    }
+    if (endpoint != NULL) {
+        *endpoint = nearest_endpoint;
+    }
+    if (distance != NULL) {
+        *distance = nearest_distance;
+    }
+    return nearest;
 }
 
 ADDGIZMOTYPE *GuideLines_RegisterGizmo(i32 type_id) {

@@ -230,6 +230,10 @@ class NuSoundEffectDoppler : public NuSoundEffect {
 
 class NuSoundEffectFader : public NuSoundEffect {
   public:
+    struct Callback {
+        virtual void OnFinished() = 0;
+    };
+
     struct Curve {
         u32 type;
         const void *data;
@@ -249,7 +253,7 @@ class NuSoundEffectFader : public NuSoundEffect {
     f32 progress;
     u32 decreasing;
     FinishState finish_state;
-    void *callback;
+    Callback *callback;
     bool finished;
     u8 padding_0x69[3];
 
@@ -299,6 +303,7 @@ DECOMP_ASSERT(sizeof(NuSoundEffectRandomPitch) == 0x44, "NuSoundEffectRandomPitc
 DECOMP_ASSERT(sizeof(NuSoundEffectRepeat) == 0x54, "NuSoundEffectRepeat size");
 DECOMP_ASSERT(sizeof(NuSoundEffectDoppler) == 0x50, "NuSoundEffectDoppler size");
 DECOMP_ASSERT(sizeof(NuSoundEffectFader) == 0x6c, "NuSoundEffectFader size");
+DECOMP_ASSERT(sizeof(NuSoundEffectFader::Callback) == sizeof(void *), "NuSoundEffectFader callback size");
 DECOMP_ASSERT(sizeof(NuSoundEffectPitchRamp) == 0x54, "NuSoundEffectPitchRamp size");
 
 // Voice factories (nu2api.2013/nusound/nusound.cpp): one factory per decoded
@@ -667,5 +672,7 @@ DECOMP_ASSERT(sizeof(NuSoundHandle) == 0x28, "NuSoundHandle size");
 
 class NuSoundOutOfMemCallback {
   public:
-    virtual void operator()() = 0;
+    // Load uses slot 0 for exhausted memory and slot 1 for fragmentation.
+    virtual bool ReleaseMemory(u32 size) = 0;
+    virtual bool CompactMemory(u32 size) = 0;
 };

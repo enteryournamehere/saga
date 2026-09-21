@@ -21,6 +21,16 @@ struct TORPEDOPACKET_s;
 struct SOCKPOSITION_s;
 struct AREADATA_s;
 
+struct LEVELLOAD_s {
+    i16 level;
+    i16 first_level;
+    i16 second_level;
+    u8 flags;
+    u8 padding;
+};
+DECOMP_ASSERT(sizeof(LEVELLOAD_s) == 8, "Level streaming override size");
+DECOMP_ASSERT(offsetof(LEVELLOAD_s, flags) == 6, "Level streaming override flags offset");
+
 struct LEVELSCRIPTPROGRESS_s {
     char name[16];
     f32 params[4];
@@ -44,7 +54,7 @@ struct LEVEL_PROGRESS_s {
     f32 grabber_field_0x48c;
     f32 grabber_field_0x484;
     f32 grabber_field_0x494;
-    u8 pad_2818[4];
+    u32 destroyed_trooper_cannon_mask;
     u32 played_cutscene_mask;
     LEVELSCRIPTPROGRESS_s scripts[32];
     GIZFLOWPROGRESS_s giz_flow_progress;
@@ -52,6 +62,8 @@ struct LEVEL_PROGRESS_s {
 };
 
 DECOMP_ASSERT(offsetof(LEVEL_PROGRESS_s, played_cutscene_mask) == 0x281c, "LEVEL_PROGRESS cutscene mask offset");
+DECOMP_ASSERT(offsetof(LEVEL_PROGRESS_s, destroyed_trooper_cannon_mask) == 0x2818,
+              "LEVEL_PROGRESS trooper cannon mask offset");
 DECOMP_ASSERT(offsetof(LEVEL_PROGRESS_s, flags_low) == 0x2800, "LEVEL_PROGRESS low flags offset");
 DECOMP_ASSERT(offsetof(LEVEL_PROGRESS_s, giz_flow_progress) == 0x2c20, "LEVEL_PROGRESS flow progress offset");
 DECOMP_ASSERT(offsetof(LEVEL_PROGRESS_s, scripts) == 0x2820, "Saved level scripts offset");
@@ -169,8 +181,8 @@ typedef struct LEVELDATA_s {
 
     char area_level_index;
 
-    char blob_shadow_fade_near;
-    char blob_shadow_fade_far;
+    u8 blob_shadow_fade_near;
+    u8 blob_shadow_fade_far;
 
     char cam_pos_seek;
     char cam_angle_seek;
@@ -244,13 +256,19 @@ typedef struct LEVELDATA_s {
     i32 music_tracks[3][2];
 } LEVELDATA;
 
+DECOMP_ASSERT(offsetof(LEVELDATA, blob_shadow_fade_near) == 0xd5, "Level blob shadow fade near offset");
+DECOMP_ASSERT(offsetof(LEVELDATA, blob_shadow_fade_far) == 0xd6, "Level blob shadow fade far offset");
+
 typedef struct LEVELOBJECT {
     u8 kind;
     u8 pad_01;
-    u8 pad_02;
-    u8 pad_03;
+    u16 reflection;
     char *name;
 } LEVELOBJECT;
+
+DECOMP_ASSERT(sizeof(LEVELOBJECT) == 8, "LEVELOBJECT size");
+DECOMP_ASSERT(offsetof(LEVELOBJECT, reflection) == 2, "LEVELOBJECT reflection offset");
+DECOMP_ASSERT(offsetof(LEVELOBJECT, name) == 4, "LEVELOBJECT name offset");
 
 enum LEVEL_OBJECT_SCENE_KIND : u8 {
     LEVEL_OBJECT_SCENE_THINGS = 0,

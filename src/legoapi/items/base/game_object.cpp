@@ -1,20 +1,29 @@
 #include "legoapi/world/world_shared.h"
 
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/actions/character/suit.h"
+#include "legoapi/audio/audio.h"
+#include "legoapi/audio/sfx.h"
+#include "legoapi/characters/motion.h"
+#include "legoapi/characters/motion/gameanim.h"
+#include "legoapi/core/config/cheat.h"
 #include "legoapi/render/core/rtl.h"
 #include "legoapi/render/light/lighting.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/characters/core/charconfig.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/items/base/apiobject.h"
+#include "legoapi/gizmos/object/gizbuildits.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "nu2api/numath/nuvec.h"
 
 #include <string.h>
+#include <new>
 
 // Forward declarations for local (static) game-object helper stubs.
 struct GameObject_s;
@@ -28,8 +37,11 @@ extern void GetTopBot(GameObject_s *obj);
 extern void GameObjectDimensions(GameObject_s *obj);
 extern void GameObjectOrigin(GameObject_s *obj);
 extern void ResetCharacterIdle(GameObject_s *obj, i32 mode, i32 idle);
-extern "C" void ResetAnimPacket(void *packet, i32 enabled);
 extern void ResetPlayerPacket(PLAYERPACKET_s *packet, CHARACTERDATA_s *data);
+extern void Hub_ResetPanel();
+extern f32 VehicleTurnOrLoopOffset(GameObject_s *object);
+extern void StartTurn(GameObject_s *object);
+extern GIZMO *GizmoFindByData(GIZMOSYS *system, i32 type_id, void *data);
 
 extern "C" {
     extern i16 id_MOSEISLEYCITIZEN;
@@ -37,10 +49,43 @@ extern "C" {
     extern i16 id_CLOUDCITYCITIZEN;
     extern i16 id_GEONOSIAN;
     extern i16 id_BOB;
+    extern i16 id_SPEEDERBIKE;
+    extern i16 id_SPEEDERBIKESNOW;
+    extern i16 id_STAP;
+    extern i16 id_STAP2;
+    extern i16 id_TROOPERCANNON;
+    extern i16 id_CANNON;
+    extern i16 id_MOSCANNON;
+    extern i16 id_ATST;
+    extern i16 id_BASKETCANNON;
+    extern i16 id_BIGGUN;
+    extern i16 id_IMPERIALGUARD;
+    extern i16 id_GAMORREANGUARD;
+    extern i16 id_ZAMSSPEEDER;
 }
 
 i32 addcreature_override_id_check;
 f32 default_mover_extra = 0.05f;
+f32 trench_max_height_move = 5.0f;
+f32 trench_roll_f = 5000.0f;
+f32 trench_seek_z = 0.5f;
+f32 trench_seek_y = 0.5f;
+f32 trench_seek_x = 4.0f;
+extern f32 TURNTIME;
+f32 LOOPTIME = 1.5f;
+
+struct TROOPERCANNON_s {
+    u32 field_0x00;
+    GIZBUILDIT_s *buildit;
+    GameObject_s *object;
+    char character_name[32];
+    u8 rebuilding;
+    u8 reserved_0x2d[3];
+};
+DECOMP_ASSERT(sizeof(TROOPERCANNON_s) == 0x30, "Trooper cannon state size");
+DECOMP_ASSERT(offsetof(TROOPERCANNON_s, character_name) == 0x0c, "Trooper cannon name offset");
+DECOMP_ASSERT(offsetof(TROOPERCANNON_s, rebuilding) == 0x2c, "Trooper cannon rebuilding offset");
+TROOPERCANNON_s troopercannons[4];
 
 void ClearGameObjects(APIOBJECTSYS_s *api_object_sys) {
     for (i32 i = 0; i < 64; i++) {
@@ -63,22 +108,20 @@ GameObject_s *AddGameObject(i32 id) {
     object->field_0x661 = 0xff;
     object->apiobj.field_0x27f = 0xff;
     object->apiobj.field_0x280 = 0xff;
-    object->apiobj.field_0x281 = 0xff;
     object->field_0x1086 = 2;
-    object->apiobj.field_0x1f8 |= 0x1000 | APIOBJECT_FLAG_IN_USE;
+    object->apiobj.flags_low |= APIOBJECT_FLAG_IN_USE;
+    object->apiobj.character = 1;
     object->field_0x1054 = 1;
-    object->apiobj.field_0x1e4 = object_index < 32 ? 1u << object_index : 0;
-    object->apiobj.field_0x1e8 = object_index < 32 ? 0 : 1u << (object_index - 32);
+    object->apiobj.collision_identity_mask = u64(1) << object_index;
     object->apiobj.field_0xa8 = 1.0f;
     object->field_0x1004 = 1.0f;
     object->field_0x1020 = 2000000.0f;
-    object->apiobj.field_0x218 = 2000000.0f;
-    object->apiobj.water_height = 2000000.0f;
-    object->apiobj.field_0x220 = 2000000.0f;
+    object->apiobj.field_0x281 = 0xff;
+    object->apiobj.field_0x218 = object->apiobj.water_height = object->apiobj.field_0x220 = 2000000.0f;
 
     HIGHGAMEOBJECT = 0;
     for (i32 i = 0; i < 64; i++) {
-        if ((Obj[i].apiobj.field_0x1f8 & APIOBJECT_FLAG_IN_USE) != 0) {
+        if ((Obj[i].apiobj.flags_low & APIOBJECT_FLAG_IN_USE) != 0) {
             HIGHGAMEOBJECT = i + 1;
         }
     }
@@ -89,53 +132,215 @@ GameObject_s *AddGameObject(i32 id) {
     object->apiobj.objptr = object;
     object->apiobj.ai = &object->ai;
 
-    // The remainder of the original function attaches the Android touch
-    // edge-stop/autofire addons.  The gameplay object itself is complete at
-    // this point; those addon constructors are reconstructed separately.
-    (void)id;
+    MechAddonCollection *addons = object->GetAddons(true);
+    if (addons != NULL) {
+        MechEdgeStopAddon *edge_stop = new MechEdgeStopAddon(*object->GetMechObjectInterface());
+        addons->Add(*edge_stop);
+        if (VehicleArea != 0 || id == id_SPEEDERBIKE || id == id_SPEEDERBIKESNOW || id == id_STAP ||
+            id == id_STAP2 || id == id_TROOPERCANNON || id == id_CANNON || id == id_MOSCANNON ||
+            id == id_ATST || id == id_BASKETCANNON || id == id_BIGGUN) {
+            MechObjectInterface *target = object->GetMechObjectInterface();
+            MechAutofireAddon *addon = NU_ALLOC_T(MechAutofireAddon, 1, "", 0);
+            if (addon != NULL)
+                new (addon) MechAutofireAddon(*target);
+            addons->Add(*addon);
+        }
+    }
     return object;
 }
 // Local (static) game-object behaviour codes and per-object helpers. Stubbed
 // as local `t` symbols matching res/libTTapp.so.
 
-static __used__ void ShieldCode(GameObject_s *) {
-    STUBBED();
+static __used__ void ShieldCode(GameObject_s *object) {
+    f32 target = 0.0f;
+    if (object->field_0xe37 != 0) {
+        if (object->id == id_ZAMSSPEEDER && WORLD->area != NULL && WORLD->area == BOUNTYHUNTERPURSUIT_ADATA) {
+            target = 5.0f;
+        } else {
+            const i32 animation = CurrentAnim(&object->apiobj.anim_packet);
+            if ((object->apiobj.field_0x27d != 0 || object->ground_contact_grace_timer > 0.0f) &&
+                animation != 3 && animation != -1 && animation != 5 && animation != 0x23 && animation != 0x6a &&
+                object->character_context != 0x17 && object->character_context != 0x3d) {
+                target = 1.0f;
+            }
+        }
+    }
+    const f32 previous = object->field_0xd24;
+    object->field_0xd24 = SeekLinearF(previous, target, 5.0f * FRAMETIME);
+    if ((previous == 0.0f && object->field_0xd24 > 0.0f) ||
+        (previous == 1.0f && object->field_0xd24 < 1.0f)) {
+        PlaySfx("DDekaShOn", &object->apiobj.collision_position);
+    }
 }
 
-static __used__ void TrenchMove(GameObject_s *) {
-    STUBBED();
+static __used__ void TrenchMove(GameObject_s *object) {
+    APIOBJECT_s &api = object->apiobj;
+    api.field_0x214 = api.field_0x218;
+    api.start_position = api.position;
+    api.initial_position = api.collision_position;
+    api.field_0x27e = api.field_0x27d;
+    object->pad_gamepad->previous_input_angle = object->pad_gamepad->input_angle;
+    object->pad_gamepad->previous_input_magnitude = object->pad_gamepad->input_magnitude;
+    object->previous_movement_angle = api.field_0x276;
+    object->field_0xefd &= ~0x40;
+    object->field_0x1086 = 0;
+    if (api.model_draw_result != 0)
+        object->field_0xf1c = 0.0f;
+    else
+        object->field_0xf1c += FRAMETIME;
+    if (object->character_context == 0x2b)
+        object->turn_braking += FRAMETIME;
+
+    if (object->character_context != 0x2a) {
+        if ((api.movement_facing_angle > 0x8000) != (player->apiobj.movement_facing_angle > 0x8000) ||
+            (player->character_context == 0x2a &&
+             (api.movement_facing_angle <= 0x8000) != (player->apiobj.movement_facing_angle > 0x8000) &&
+             player->context_animation_timer < 0.5f * TURNTIME)) {
+            StartTurn(object);
+        } else if (object->character_context != 0x36 && player->character_context == 0x36 &&
+                   player->context_animation_timer < 0.75f * LOOPTIME) {
+            object->character_context = 0x36;
+            object->context_animation = 1;
+            object->airborne_action_duration = LOOPTIME;
+            object->context_animation_timer = LOOPTIME;
+        }
+    }
+
+    f32 target_x;
+    if (object->character_context == 0x2a) {
+        const f32 phase = object->context_animation_timer / TURNTIME;
+        if (api.movement_facing_angle > 0x8000)
+            target_x = phase * 10.0f + (1.0f - phase) * -10.0f + trenchrun.position.x;
+        else
+            target_x = phase * -10.0f + (1.0f - phase) * 10.0f + trenchrun.position.x;
+    } else if (api.movement_facing_angle > 0x8000) {
+        target_x = trenchrun.position.x + 10.0f;
+    } else {
+        target_x = trenchrun.position.x - 10.0f;
+    }
+    api.position.x = SeekValF(api.position.x, target_x, trench_seek_x);
+    f32 target_y = trenchrun.position.y + object->movement_spline_offset.y + VehicleTurnOrLoopOffset(object);
+    if (target_y - api.position.y > trench_max_height_move)
+        target_y = api.position.y + trench_max_height_move;
+    api.position.y = SeekValF(api.position.y, target_y, trench_seek_y);
+    api.position.z = SeekValF(api.position.z, trenchrun.position.z + object->movement_spline_offset.z, trench_seek_z);
+    NuVecSub(&api.velocity, &api.position, &api.start_position);
+    NuVecScale(&api.velocity, &api.velocity, 1.0f / FRAMETIME);
+
+    if ((api.character_data->game_character->flags_090 & 1) != 0) {
+        i32 roll = 0;
+        if (object->character_context != 0x36 && object->character_context != 0x2a &&
+            object->character_context != 0x3a) {
+            roll = static_cast<i32>(api.velocity.z * trench_roll_f);
+        }
+        if (static_cast<i16>(player->apiobj.movement_facing_angle) >= 0)
+            roll = -roll;
+        i32 target_roll;
+        if (roll < -0x10000) {
+            target_roll = -0x2000;
+        } else if (roll > 0x10000) {
+            target_roll = 0x2000;
+        } else {
+            target_roll = roll / 4;
+            if (target_roll < -0x2000)
+                target_roll = -0x2000;
+            else if (target_roll > 0x2000)
+                target_roll = 0x2000;
+        }
+        object->movement_lean_angle = SeekRot(object->movement_lean_angle, target_roll, 8.0f);
+    }
+    APIObjectVelocities(object);
+    GameObjectOrigin(object);
 }
 
-static __used__ void Punch_HitHold(GameObject_s *, GameObject_s *) {
-    STUBBED();
+static __used__ void Punch_HitHold(GameObject_s *attacker, GameObject_s *target) {
+    if (target != NULL && attacker != NULL &&
+        (target->id == id_IMPERIALGUARD || target->id == id_GAMORREANGUARD)) {
+        GameAudio_PlaySfx(0x4a, &target->apiobj.collision_position, 0, 0);
+    }
 }
 
-static __used__ i32 Punch_GetDamage_LSW(GameObject_s *, GameObject_s *) {
-    STUBBED();
-    return 0;
+static __used__ i32 Punch_GetDamage_LSW(GameObject_s *attacker, GameObject_s *target) {
+    if (attacker->apiobj.character_data->game_character->field275_0x116 == 7 && Cheat_IsOn(0x0c)) {
+        GameAudio_PlaySfx(0x4a, target != NULL ? &target->apiobj.collision_position :
+                                             &attacker->apiobj.collision_position, 0, 0);
+        GameCam_NewShake(NULL, 0.75f, 0.75f, 1.0f);
+        return -1;
+    }
+    if (target != NULL && (target->id == id_IMPERIALGUARD || target->id == id_GAMORREANGUARD) &&
+        (target->character_context == 0x18 || target->character_context == 0x0c)) {
+        GameAudio_PlaySfx(0x4a, &target->apiobj.collision_position, 0, 0);
+    }
+    return 1;
 }
 
-static __used__ void Punch_HitExtraCode_LSW(GameObject_s *, nuvec_s *) {
-    STUBBED();
+static __used__ void Punch_HitExtraCode_LSW(GameObject_s *object, nuvec_s *position) {
+    if (object->id == id_GAMORREANGUARD &&
+        ((object->character_context == 0x26 && object->context_animation == 0x56) ||
+         object->character_context == 0x0d)) {
+        NewRumbleAllPlayers(0.4f, 0.0f, 1, 0);
+        NewRumble(object->pad_gamepad->pad, 0.7f, 0);
+        GameCam_Judder(GameCam, 0.25f, 0, &object->apiobj.collision_position);
+        PlaySfx("fs_gamorr_land", &object->apiobj.lower_position);
+    } else if ((AnimMiscFlags(object->apiobj.character_model, object->context_animation) & 4) != 0) {
+        if (position != NULL)
+            PlaySfx("WhipHit", position);
+        else
+            PlaySfx("WhipNowt", &object->apiobj.collision_position);
+    }
 }
 
-static __used__ void TrenchKilledCallback(GameObject_s *) {
-    STUBBED();
+static __used__ void TrenchKilledCallback(GameObject_s *object) {
+    for (i32 i = 0; i < 3; ++i) {
+        if (trenchrun.objects[i] == object) {
+            trenchrun.objects[i] = NULL;
+            break;
+        }
+    }
 }
 
-static __used__ void SurfaceInfo_ExtraReflect(GameObject_s *) {
-    STUBBED();
+static __used__ void SurfaceInfo_ExtraReflect(GameObject_s *object) {
+    if (WORLD->current_level == CRUISERE_LDATA && object->field_0x1020 == 2000000.0f &&
+        object->apiobj.position.x < 11.0f) {
+        object->field_0x1087 = 3;
+        object->field_0x1020 = -39.2f;
+    }
+    if (WORLD->current_level == DEATHSTARRESCUED_LDATA) {
+        if (object->apiobj.position.z > 20.75f) {
+            object->field_0x1020 = 22.4f;
+            object->field_0x1087 = 3;
+        }
+        if (object->apiobj.position.x < -20.75f) {
+            object->field_0x1087 = 1;
+            object->field_0x1020 = -22.4f;
+        }
+    }
 }
 
 static __used__ void PauseGame_ExtraCode() {
-    STUBBED();
+    Hub_ResetPanel();
 }
 
-static __used__ i32 SpecialObjectFilter(void *) {
-    STUBBED();
-    return 0;
+static __used__ i32 SpecialObjectFilter(void *object) {
+    return theSceneObjectHelper.scene_id == static_cast<SpecialObject *>(object)->scene_id;
 }
 
-static __used__ void KilledTrooperCannon(GameObject_s *) {
-    STUBBED();
+static __used__ void KilledTrooperCannon(GameObject_s *object) {
+    if (netclient != 0)
+        return;
+    i32 i;
+    for (i = 0; i < 4; ++i) {
+        if (troopercannons[i].object == object)
+            break;
+    }
+    if (i < 4) {
+        TROOPERCANNON_s &cannon = troopercannons[i];
+        DeactivateCharacter(cannon.character_name);
+        GizBuildIt_SetToStart(cannon.buildit, 0, 0);
+        GIZMO *gizmo = GizmoFindByData(WORLD->gizmo_sys, gizbuildit_gizmotype_id, cannon.buildit);
+        GizmoActivate(WORLD->gizmo_sys, gizmo, 1, 1);
+        GizBuildit_SetVisibility(cannon.buildit, 1);
+        cannon.rebuilding = 1;
+        WORLD->level_progress->destroyed_trooper_cannon_mask |= 1u << i;
+    }
 }

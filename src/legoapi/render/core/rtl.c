@@ -2,11 +2,13 @@
 #include "decomp.h"
 #include "gameapi/edtools/edui.h"
 #include "gameapi/edtools/edfile.h"
+#include "gameapi/edtools/edcam.h"
 #include "gameapi/edtools/gameapi_edtools_types.h"
 #include "legoapi/render/core/rtl.h"
 #include "legoapi/render/core/render.h"
 #include "nu2api/nu3d/nuqfnt.h"
 #include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/numtl.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nucamera.h"
@@ -14,8 +16,10 @@
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nucore/nulst.h"
+#include "nu2api/numath/nurand.h"
 
 #include <math.h>
+#include <float.h>
 #include <string.h>
 
 struct nuqtdim_s;
@@ -42,18 +46,36 @@ struct NUFRUSTRUM;
 
 static NULSTHDR *rtl_dynamic_pool;
 static i32 rtl_dynamic_lights_enabled = 1;
+static f32 rtl_shadow_blend_rate = 2.0f;
+static NUVEC rtl_shadow_flicker = {0.1f, 0.1f, 0.1f};
 static i32 rtl_dynamic_max;
 static i32 rtl_dynamic_cnt;
+static f32 rtl_frametime;
 static i16 rtl_uid = 1;
 u16 rtltimer1 = 0;
 f32 edrtl_text_scale = 1.0f;
+static f32 default_modifiers = 1.0f;
+f32 *modifiers = &default_modifiers;
 i32 modifier_cnt = 1;
+extern char **modifier_names;
 static i32 curFogLoc = -1;
 f32 rtltimer1adv = 2500.0f;
 static i32 numsegs = 16;
+static i32 hide_types[9];
+f32 min_r = 1.0f;
+f32 def_fr = 2.0f;
+static i32 fogmode;
+static NUCAMERA *usr_cam;
+static NUMTL *mtls[3];
 
 extern "C" {
     rtlset *curr_set = NULL;
+    rtl_s *curr_rtl;
+    rtl_s *rtl_locked;
+    rtl_s *base_rtl;
+    i32 RTL_EditorActive;
+    extern rtlfog_s *curr_fog;
+    extern rtl_s clipboard_light;
 }
 
 extern "C" {
@@ -152,11 +174,15 @@ extern "C" {
         return -1;
     }
 
-    void rtlGetDirection(usize rtl_set, i32 id, void **out) {
-        STUBBED();
-        (void)rtl_set;
-        (void)id;
-        (void)out;
+    i32 rtlGetDirection(usize rtl_set, i32 id, void **out) {
+        if (rtl_set != 0 && out != NULL) {
+            rtlset *set = reinterpret_cast<rtlset *>(rtl_set);
+            if (id < 0 || id > 128)
+                return 0;
+            *out = &set->lights[id].direction;
+            return 1;
+        }
+        return 0;
     }
 
     i32 rtlDynamicAlloc(void) {
@@ -288,12 +314,21 @@ extern "C" {
         return previous;
     }
 
-    void rtlDynamicSetDirection(void) {
-        STUBBED();
+    i32 rtlDynamicSetDirection(i32 id, NUVEC *direction) {
+        if (rtl_dynamic_pool == NULL || id < 0 || id >= rtl_dynamic_max)
+            return 0;
+        rtl_s *light = reinterpret_cast<rtl_s *>(NuLstGetByIdx(rtl_dynamic_pool, id));
+        if (light != NULL && direction != NULL) {
+            light->direction = *direction;
+            return 1;
+        }
+        return 0;
     }
 
-    void rtlDynamicMasterEnable(i32 enabled) {
-        STUBBED();
+    i32 rtlDynamicMasterEnable(i32 enabled) {
+        i32 previous = rtl_dynamic_lights_enabled;
+        rtl_dynamic_lights_enabled = enabled;
+        return previous;
     }
 
     void rtlResetDynamic(void) {
@@ -315,12 +350,15 @@ extern "C" {
         return max_lights;
     }
 
-    void rtlSetShadowFlickerScale(void) {
-        STUBBED();
+    void rtlSetShadowFlickerScale(NUVEC *scale) {
+        rtl_shadow_flicker = *scale;
     }
 
-    void rtlSetShadowFlickerBlendTime(void) {
-        STUBBED();
+    void rtlSetShadowFlickerBlendTime(f32 time) {
+        if (time != 0.0f)
+            rtl_shadow_blend_rate = 1.0f / time;
+        else
+            rtl_shadow_blend_rate = 10000.0f;
     }
 }
 
@@ -358,12 +396,18 @@ extern "C" {
         return set;
     }
 
-    void rtlSaveSet(void) {
-        STUBBED();
+    void rtlSaveSet(char *path, rtlset *set) {
+        rtlSwapSetEndianess(set);
+        i32 file = NuFileOpen(path, NUFILE_WRITE);
+        if (file != 0) {
+            NuFileWrite(file, set, sizeof(rtlset));
+            NuFileClose(file);
+        }
+        rtlSwapSetEndianess(set);
     }
 
-    void rtlGetCurrentSet(void) {
-        STUBBED();
+    rtlset *rtlGetCurrentSet(void) {
+        return curr_set;
     }
 
     void rtlResetEx(rtldata_s *data, i32 reset_cached) {
@@ -403,8 +447,10 @@ static __used__ double ApplyAntilights(rtl_s *, rtlidata_s *, float) {
 }
 
 extern "C" {
-    void rtlSetModifiers(void) {
-        STUBBED();
+    void rtlSetModifiers(f32 *values, char **names, i32 count) {
+        modifiers = values;
+        modifier_names = names;
+        modifier_cnt = count < 32 ? count : 32;
     }
 
     void rtlSetLights(rtldata_s *data) {
@@ -593,16 +639,109 @@ extern "C" {
 
 } // extern "C"
 
-static __used__ void rtlApplyModifiersToChainLight(rtl_s *) {
-    STUBBED();
+static __used__ void rtlApplyModifiersToChainLight(rtl_s *light) {
+    const NUVEC zero = {0.0f, 0.0f, 0.0f};
+    if (light->field_7c != NULL && light->field_79 != -1) {
+        light->colour = zero;
+        light->secondary_colour = zero;
+        NuVecClear(&light->direction);
+        rtl_s *source = &light->field_7c[light->field_79];
+        for (;;) {
+            f32 scale = modifiers[source->field_7b];
+            light->colour.x += source->colour.x * scale;
+            light->colour.y += source->colour.y * scale;
+            light->colour.z += source->colour.z * scale;
+            light->secondary_colour.x += source->secondary_colour.x * scale;
+            light->secondary_colour.y += source->secondary_colour.y * scale;
+            light->secondary_colour.z += source->secondary_colour.z * scale;
+            light->direction.x += source->direction.x * scale;
+            light->direction.y += source->direction.y * scale;
+            light->direction.z += source->direction.z * scale;
+            if (source->field_79 == -1)
+                break;
+            source = &light->field_7c[source->field_79];
+        }
+        NuVecNorm(&light->direction, &light->direction);
+    }
 }
 
-static __used__ void rtlApplyModifiersToSingleLight(rtl_s *) {
-    STUBBED();
+static __used__ void rtlApplyModifiersToSingleLight(rtl_s *light) {
+    if (light->field_79 == -1 && light->field_7a == -1)
+        return;
+    f32 scale = modifiers[light->field_7b];
+    light->ambient.x += light->colour.x * scale;
+    light->ambient.y += light->colour.y * scale;
+    light->ambient.z += light->colour.z * scale;
 }
 
-static __used__ void rtlProcessLight(rtl_s *, f32) {
-    STUBBED();
+static __used__ void rtlProcessLight(rtl_s *light, f32 frame_time) {
+    f32 scale;
+    if (light->field_79 != -1 && light->field_7a == -1)
+        rtlApplyModifiersToChainLight(light);
+    switch (light->type) {
+        case 0:
+            return;
+        case 3:
+            if (light->parameter_54 >= 0.0f) {
+                light->parameter_54 -= frame_time;
+                light->ambient = light->colour;
+                if (light->parameter_54 <= 0.0f)
+                    light->parameter_54 = -light->parameters[2] - NuRandFloat() * light->parameters[3];
+            } else {
+                light->parameter_54 += frame_time;
+                light->ambient = light->secondary_colour;
+                if (light->parameter_54 >= 0.0f)
+                    light->parameter_54 = light->parameters[0] + NuRandFloat() * light->parameters[1];
+            }
+            break;
+        case 6:
+            if (light->field_64 == 0.0f) {
+                light->ambient.x = light->colour.x;
+                light->ambient.y = light->colour.y;
+                light->ambient.z = light->colour.z;
+            } else if (light->field_64 > 0.0f) {
+                light->parameter_54 += frame_time;
+                scale = MIN(1.0f, (MAX(0.0f, light->parameter_54 / light->field_64)));
+                light->ambient.x = light->colour.x * scale + (1.0f - scale) * light->secondary_colour.x;
+                light->ambient.y = light->colour.y * scale + (1.0f - scale) * light->secondary_colour.y;
+                light->ambient.z = light->colour.z * scale + (1.0f - scale) * light->secondary_colour.z;
+                if (light->parameter_54 >= light->field_64) {
+                    light->field_64 = -light->parameters[2] - NuRandFloat() * light->parameters[3];
+                    light->parameter_54 = 0.0f;
+                }
+            } else {
+                light->parameter_54 -= frame_time;
+                scale = MIN(1.0f, (MAX(0.0f, light->parameter_54 / light->field_64)));
+                light->ambient.x = light->secondary_colour.x * scale + (1.0f - scale) * light->colour.x;
+                light->ambient.y = light->secondary_colour.y * scale + (1.0f - scale) * light->colour.y;
+                light->ambient.z = light->secondary_colour.z * scale + (1.0f - scale) * light->colour.z;
+                if (light->parameter_54 <= light->field_64) {
+                    light->field_64 = light->parameters[0] + NuRandFloat() * light->parameters[1];
+                    light->parameter_54 = 0.0f;
+                }
+            }
+            break;
+        case 8:
+            light->ambient.x = light->secondary_colour.x * light->blend + (1.0f - light->blend) * light->colour.x;
+            light->ambient.y = light->secondary_colour.y * light->blend + (1.0f - light->blend) * light->colour.y;
+            light->ambient.z = light->secondary_colour.z * light->blend + (1.0f - light->blend) * light->colour.z;
+            light->blend += light->blend_rate * frame_time;
+            light->blend = MAX(0.0f, (MIN(1.0f, light->blend)));
+            light->parameter_54 -= frame_time;
+            if (light->parameter_54 <= 0.0f) {
+                light->parameter_54 = light->parameters[2];
+                if (light->blend_rate >= 0.0f)
+                    light->blend_rate = -(light->parameters[0] + NuRandFloat() * light->parameters[1]);
+                else
+                    light->blend_rate = light->parameters[0] + NuRandFloat() * light->parameters[1];
+            }
+            break;
+        default:
+            light->ambient = light->colour;
+            break;
+    }
+    if (light->field_79 == -1 && light->field_7a == -1)
+        rtlApplyModifiersToSingleLight(light);
 }
 
 extern "C" {
@@ -619,8 +758,29 @@ extern "C" {
         STUBBED();
     }
 
-    void rtlProcessLights(void *, f32) {
-        STUBBED();
+    void rtlProcessLights(void *set, f32 frame_time) {
+        rtl_s *light;
+        i32 i;
+        rtl_frametime = frame_time;
+        if (rtl_dynamic_pool != NULL) {
+            light = reinterpret_cast<rtl_s *>(NuLstGetNext(rtl_dynamic_pool, NULL));
+            while (light != NULL) {
+                rtlProcessLight(light, frame_time);
+                light = reinterpret_cast<rtl_s *>(
+                    NuLstGetNext(rtl_dynamic_pool, reinterpret_cast<NULNKHDR *>(light)));
+            }
+        }
+        if (set != NULL) {
+            rtlset *light_set = static_cast<rtlset *>(set);
+            light = light_set->lights;
+            for (i = 0; i < 128; ++i) {
+                if (light->type == 0)
+                    break;
+                if (light->field_7a == -1)
+                    rtlProcessLight(light, frame_time);
+                ++light;
+            }
+        }
     }
 
 } // extern "C"
@@ -641,38 +801,128 @@ static void edrtlInvalidateUndo() {
     STUBBED();
 }
 
-static __used__ i32 rtlCmp(rtl_s *, rtl_s *) {
-    STUBBED();
-    return 0;
+static __used__ i32 rtlCmp(rtl_s *first, rtl_s *second) {
+    i32 different = 0;
+    different |= memcmp(&first->position, &second->position, sizeof(NUVEC));
+    different |= memcmp(&first->direction, &second->direction, sizeof(NUVEC));
+    different |= memcmp(&first->colour, &second->colour, sizeof(NUVEC));
+    different |= memcmp(&first->secondary_colour, &second->secondary_colour, sizeof(NUVEC));
+    different |= first->inner_radius != second->inner_radius;
+    different |= first->outer_radius != second->outer_radius;
+    different |= first->parameters[0] != second->parameters[0];
+    different |= first->parameters[1] != second->parameters[1];
+    different |= first->parameters[2] != second->parameters[2];
+    different |= first->parameters[3] != second->parameters[3];
+    different |= first->type != second->type;
+    different |= first->disabled != second->disabled;
+    different |= first->pitch != second->pitch;
+    different |= first->yaw != second->yaw;
+    different |= first->field_5e != second->field_5e;
+    different |= first->field_60 != second->field_60;
+    different |= first->field_68 != second->field_68;
+    different |= first->intensity != second->intensity;
+    return different;
 }
 
 extern "C" {
-    void rtlSetMinR(void) {
-        STUBBED();
+    void rtlSetMinR(f32 radius) {
+        min_r = radius;
+        def_fr = min_r * 2.0f;
     }
 
     void rtlSetUndoBuffer(void) {
         STUBBED();
     }
 
-    void rtlAlloc(void) {
-        STUBBED();
+    rtl_s *rtlAlloc(void) {
+        if (curr_set != NULL) {
+            for (i32 i = 0; i < 128; ++i) {
+                if (curr_set->lights[i].type == 0)
+                    return &curr_set->lights[i];
+            }
+        }
+        return NULL;
     }
 
-    void rtlFree(void) {
-        STUBBED();
+    void rtlFree(rtl_s *light) {
+        if (light->field_79 != -1 && light->field_7a == -1) {
+            while (light->field_79 != -1)
+                rtlFree(&curr_set->lights[light->field_79]);
+        }
+        if (light->field_7a != -1) {
+            curr_set->lights[light->field_7a].field_79 = light->field_79;
+            if (light->field_79 != -1)
+                curr_set->lights[light->field_79].field_7a = light->field_7a;
+        }
+        i32 index = light - curr_set->lights;
+        for (rtl_s *entry = curr_set->lights; entry < &curr_set->lights[128]; ++entry) {
+            if (entry->field_79 >= index)
+                --entry->field_79;
+            if (entry->field_7a >= index)
+                --entry->field_7a;
+        }
+        rtl_s *next = light + 1;
+        while (light < &curr_set->lights[128] && light->type != 0) {
+            *light = *next;
+            ++light;
+            ++next;
+        }
+        --light;
+        light->type = 0;
     }
 
-    void fogAlloc(void) {
-        STUBBED();
+    rtlfog_s *fogAlloc(void) {
+        if (curr_set != NULL) {
+            for (i32 i = 0; i < 32; ++i) {
+                if (curr_set->fog[i].type == 0)
+                    return &curr_set->fog[i];
+            }
+        }
+        return NULL;
     }
 
-    void fogFree(void) {
-        STUBBED();
+    void fogFree(rtlfog_s *fog) {
+        rtlfog_s *next = fog + 1;
+        while (fog < &curr_set->fog[32] && fog->type != 0) {
+            *fog = *next;
+            ++fog;
+            ++next;
+        }
+        --fog;
+        fog->type = 0;
     }
 
-    void rtlGetFogSet(void) {
-        STUBBED();
+    rtlfog_s *rtlGetFogSet(rtlset *set, NUVEC *position) {
+        i32 i;
+        rtlset *fog_set = set;
+        i32 selected = -1;
+        if (fog_set != NULL) {
+            for (i = 0; i < 32; ++i) {
+                if (fog_set->fog[i].type == 0) {
+                    continue;
+                }
+                f32 distance_squared =
+                    (position->x - fog_set->fog[i].position.x) *
+                        (position->x - fog_set->fog[i].position.x) +
+                    (position->y - fog_set->fog[i].position.y) *
+                        (position->y - fog_set->fog[i].position.y) +
+                    (position->z - fog_set->fog[i].position.z) *
+                        (position->z - fog_set->fog[i].position.z);
+                if (distance_squared < fog_set->fog[i].radius * fog_set->fog[i].radius) {
+                    if (selected != -1) {
+                        if (fog_set->fog[i].radius < fog_set->fog[selected].radius) {
+                            selected = i;
+                        }
+                    } else {
+                        selected = i;
+                    }
+                }
+            }
+            if (selected != -1) {
+                return &fog_set->fog[selected];
+            }
+        }
+        return NULL;
     }
 
 } // extern "C"
@@ -685,8 +935,21 @@ struct numtx_s;
 
 typedef rtlfog_s EDRTLFOG_s;
 
+rtlfog_s *curr_fog;
+rtl_s clipboard_light;
+rtlfog_s clipboard_fog;
+extern f32 *modifiers;
+static f32 game_nearclip;
+static f32 game_farclip;
+static i32 rtl_zoff;
+static i32 ctl_ix = 1;
+static rtl_s menu_undo;
+static NUVEC pcpos;
+i32 delete_menu_active;
+
 extern NUQFNT *system_qfont;
 extern "C" {
+    void AddColourPick(eduimenu_s *, eduiitem_s *, f32 *, f32 *, f32 *, u32 *);
     void CreateColourPicker();
     void cbCancelSubMenu(eduimenu_s *, eduimenu_s *);
     void cbCancelSubMenuFromItem(eduimenu_s *, eduiitem_s *, u32);
@@ -786,8 +1049,14 @@ static void cbCancelMenu(eduimenu_s *, eduimenu_s *) {
 static void cbCancelDeleteMenu(eduimenu_s *, eduimenu_s *) {
     STUBBED();
 }
-static void cbDeleteYes(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbDeleteYes(eduimenu_s *, eduiitem_s *item, u32) {
+    if (curr_rtl) {
+        edrtlSaveUndo();
+        rtlFree(curr_rtl);
+        rtl_locked = NULL;
+    }
+    delete_menu_active = 0;
+    item->highlighted = 0;
 }
 static void cbDeleteNo(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
@@ -804,101 +1073,217 @@ static void cbLoad(eduimenu_s *, eduiitem_s *, u32) {
 static void cbSave(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
-static void cbMultiplier(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbMultiplier(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_rtl->intensity = slider->value;
 }
-static void cbGroupID(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbGroupID(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_rtl->group_id = static_cast<i32>(slider->value);
 }
-static void cbModifierType(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbModifierType(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    curr_rtl->field_7b = item->data;
+    RefreshUI();
 }
-extern "C" void cbModifierAdjust(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+extern "C" void cbModifierAdjust(eduimenu_s *, eduiitem_s *item, u32) {
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    modifiers[item->data] = slider->value;
 }
-static void cbToggleCastShadow(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbToggleCastShadow(eduimenu_s *, eduiitem_s *item, u32) {
+    curr_rtl->cast_shadow = item->highlighted;
 }
-static void cbToggleHasSpecular(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbToggleHasSpecular(eduimenu_s *, eduiitem_s *item, u32) {
+    curr_rtl->has_specular = item->highlighted;
 }
-static void cbHighColour(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbHighColour(eduimenu_s *menu, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    AddColourPick(menu, item, &curr_rtl->colour.x, &curr_rtl->colour.y, &curr_rtl->colour.z, NULL);
 }
-static void cbLowColour(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbLowColour(eduimenu_s *menu, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    AddColourPick(menu, item, &curr_rtl->secondary_colour.x, &curr_rtl->secondary_colour.y,
+                  &curr_rtl->secondary_colour.z, NULL);
 }
-static void cbHighTime(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbHighTime(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_rtl->parameters[0] = slider->value;
 }
-static void cbRHighTime(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbRHighTime(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_rtl->parameters[1] = slider->value;
 }
-static void cbLowTime(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbLowTime(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_rtl->parameters[2] = slider->value;
 }
-static void cbRLowTime(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbRLowTime(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_rtl->parameters[3] = slider->value;
 }
-static void cbLightType(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbLightType(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    curr_rtl->type = item->data;
+    RefreshUI();
 }
-static void cbAssocID(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbAssocID(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    curr_rtl->field_5e &= ~(1 << item->data);
+    if (item->highlighted)
+        curr_rtl->field_5e |= 1 << item->data;
+    curr_rtl->field_60 &= ~curr_rtl->field_5e;
+    RefreshUI();
 }
-static void cbExcludeID(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbExcludeID(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    curr_rtl->field_60 &= ~(1 << item->data);
+    if (item->highlighted)
+        curr_rtl->field_60 |= 1 << item->data;
+    curr_rtl->field_5e &= ~curr_rtl->field_60;
+    RefreshUI();
 }
-static void cbUserID(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbUserID(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_rtl)
+        return;
+    curr_rtl->field_68 = item->data;
+    RefreshUI();
 }
-static void cbFogColour(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogColour(eduimenu_s *menu, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    AddColourPick(menu, item, NULL, NULL, NULL, &curr_fog->colour);
 }
-static void cbHazeColour(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbHazeColour(eduimenu_s *menu, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    AddColourPick(menu, item, NULL, NULL, NULL, &curr_fog->low_quality_colour);
 }
-static void cbFogAlpha(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogAlpha(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->colour &= 0xffffff;
+    curr_fog->colour |= static_cast<i32>(slider->value) << 24;
 }
-static void cbFogDensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogDensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->density = slider->value;
 }
-static void cbFogDensityWii(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogDensityWii(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->density_wii = slider->value;
 }
-static void cbHazeDensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbHazeDensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->low_quality_colour &= 0xffffff;
+    curr_fog->low_quality_colour |= static_cast<i32>(slider->value) << 24;
 }
-static void cbBlurDensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbBlurDensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->low_quality_density = static_cast<i32>(slider->value * 128.0f);
 }
-static void cbFogStartPSP(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogStartPSP(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->start_psp = slider->value;
 }
-static void cbFogEndPSP(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogEndPSP(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->end_psp = slider->value;
 }
-static void cbFogStart(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogStart(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->start = slider->value;
 }
-static void cbFogEnd(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogEnd(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->end = slider->value;
 }
-static void cbFogAdjRng(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogAdjRng(eduimenu_s *, eduiitem_s *item, u32) {
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    f32 range = slider->value;
+    if (fogstart_item) {
+        static_cast<edui_slider_s *>(fogstart_item)->range = range;
+        eduiItemSliderSetValEx(static_cast<edui_slider_s *>(fogstart_item),
+                              static_cast<edui_slider_s *>(fogstart_item)->value, 0, 0);
+    }
+    if (fogend_item) {
+        static_cast<edui_slider_s *>(fogend_item)->range = range;
+        eduiItemSliderSetValEx(static_cast<edui_slider_s *>(fogend_item),
+                              static_cast<edui_slider_s *>(fogend_item)->value, 0, 0);
+    }
+    if (fogstartpsp_item) {
+        static_cast<edui_slider_s *>(fogstartpsp_item)->range = range;
+        eduiItemSliderSetValEx(static_cast<edui_slider_s *>(fogstartpsp_item),
+                              static_cast<edui_slider_s *>(fogstartpsp_item)->value, 0, 0);
+    }
+    if (fogendpsp_item) {
+        static_cast<edui_slider_s *>(fogendpsp_item)->range = range;
+        eduiItemSliderSetValEx(static_cast<edui_slider_s *>(fogendpsp_item),
+                              static_cast<edui_slider_s *>(fogendpsp_item)->value, 0, 0);
+    }
 }
-static void cbFogAdjNear(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogAdjNear(eduimenu_s *, eduiitem_s *item, u32) {
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    game_nearclip = slider->value;
+    if (fogadjfar_item) {
+        static_cast<edui_slider_s *>(fogadjfar_item)->minimum = game_nearclip * 2.0f;
+        game_farclip = game_farclip > game_nearclip + 1.0f ? game_farclip : game_nearclip + 1.0f;
+        eduiItemSliderSetValEx(static_cast<edui_slider_s *>(fogadjfar_item), game_farclip, 0, 0);
+    }
 }
-static void cbFogAdjFar(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbFogAdjFar(eduimenu_s *, eduiitem_s *item, u32) {
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    game_farclip = slider->value;
+    if (fogadjnear_item) {
+        static_cast<edui_slider_s *>(fogadjnear_item)->range =
+            game_farclip - static_cast<edui_slider_s *>(fogadjnear_item)->minimum;
+        game_nearclip = game_nearclip > game_farclip ? game_farclip : game_nearclip;
+        eduiItemSliderSetValEx(static_cast<edui_slider_s *>(fogadjnear_item), game_nearclip, 0, 0);
+    }
 }
-static void cbDOFFStop(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbDOFFStop(eduimenu_s *, eduiitem_s *item, u32) {
+    if (!curr_fog)
+        return;
+    edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+    curr_fog->depth_of_field_fstop = static_cast<i32>(slider->value * 10.0f);
 }
 static void cbCopyLight(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    if (curr_rtl)
+        clipboard_light = *curr_rtl;
 }
 static void cbPasteLight(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
@@ -907,46 +1292,103 @@ static void cbPasteIntoLight(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 static void cbCopyToGroup(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    i32 save_undo = 1;
+    if (curr_rtl && curr_rtl->group_id) {
+        for (i32 i = 0; i < 128; ++i) {
+            if (&curr_set->lights[i] == curr_rtl)
+                continue;
+            if (curr_set->lights[i].type && curr_set->lights[i].group_id == curr_rtl->group_id) {
+                if (save_undo) {
+                    edrtlSaveUndo();
+                    save_undo = 0;
+                }
+                NUVEC position = curr_set->lights[i].position;
+                i32 uid = static_cast<u16>(curr_set->lights[i].uid);
+                i32 user_id = curr_set->lights[i].field_68;
+                curr_set->lights[i] = *curr_rtl;
+                curr_set->lights[i].position = position;
+                curr_set->lights[i].uid = uid;
+                curr_set->lights[i].field_68 = user_id;
+            }
+        }
+    }
 }
 static void cbUndoLight(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    edrtlUndo();
 }
 static void cbRedoLight(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    edrtlRedo();
 }
 static void cbCopyFog(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    if (curr_fog)
+        clipboard_fog = *curr_fog;
 }
 static void cbPasteFog(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    if (clipboard_fog.type) {
+        curr_fog = fogAlloc();
+        if (curr_fog) {
+            *curr_fog = clipboard_fog;
+            curr_fog->position = pcpos;
+        }
+    }
 }
-static void cbPasteIntoFog(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbPasteIntoFog(eduimenu_s *menu, eduiitem_s *item, u32 flags) {
+    if (clipboard_fog.type) {
+        if (curr_fog) {
+            NUVEC position = curr_fog->position;
+            *curr_fog = clipboard_fog;
+            curr_fog->position = position;
+        } else {
+            cbPasteFog(menu, item, flags);
+        }
+    }
 }
-static void cbHideType(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbHideType(eduimenu_s *, eduiitem_s *item, u32) {
+    hide_types[item->data] = item->highlighted;
 }
-static void cbNoZBuffer(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbNoZBuffer(eduimenu_s *, eduiitem_s *item, u32) {
+    rtl_zoff = item->highlighted;
 }
-static void cbLightProperties(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbLightProperties(eduimenu_s *menu, eduiitem_s *item, u32 flags) {
+    menu_undo = *curr_rtl;
+    cbTriggerSubMenu(menu, item, flags);
 }
-static void cbCancelLightProperties(eduimenu_s *, eduimenu_s *) {
-    STUBBED();
+static void cbCancelLightProperties(eduimenu_s *menu, eduimenu_s *) {
+    if (rtlCmp(curr_rtl, &menu_undo)) {
+        rtl_s light = *curr_rtl;
+        *curr_rtl = menu_undo;
+        edrtlSaveUndo();
+        *curr_rtl = light;
+    }
+    eduiMenuDetach(menu);
 }
-static void cbSetControls(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbSetControls(eduimenu_s *, eduiitem_s *item, u32) {
+    ctl_ix = item->data;
 }
-static void cbScaleAllMultipliersUp(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbScaleAllMultipliersUp(eduimenu_s *menu, eduiitem_s *, u32) {
+    edrtlSaveUndo();
+    for (i32 i = 0; i < 128; ++i)
+        curr_set->lights[i].intensity = curr_set->lights[i].intensity *
+                                        static_cast<edui_slider_s *>(global_scale_item)->value;
+    eduiMenuAttach(menu, global_confirm_menu);
+    global_confirm_menu->x = menu->x + 10;
+    global_confirm_menu->y = menu->y + 10;
+    RefreshUI();
 }
-static void cbScaleAllMultipliersDown(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void cbScaleAllMultipliersDown(eduimenu_s *menu, eduiitem_s *, u32) {
+    edrtlSaveUndo();
+    for (i32 i = 0; i < 128; ++i)
+        curr_set->lights[i].intensity = curr_set->lights[i].intensity /
+                                        static_cast<edui_slider_s *>(global_scale_item)->value;
+    eduiMenuAttach(menu, global_confirm_menu);
+    global_confirm_menu->x = menu->x + 10;
+    global_confirm_menu->y = menu->y + 10;
+    RefreshUI();
 }
-extern "C" void rtlScaleSetMultipliers(void) {
-    STUBBED();
+extern "C" void rtlScaleSetMultipliers(f32 scale, rtlset *set_ptr) {
+    rtlset *set = set_ptr;
+    for (i32 i = 0; i < 128; ++i)
+        set->lights[i].intensity = set->lights[i].intensity * scale;
 }
 static __used__ void InitUI() {
     static i32 initialised;
@@ -1158,7 +1600,6 @@ static __used__ void InitUI() {
 // Burnset persistence and editing state from the same original RTL editor run.
 
 burnset_s *edrtl_edit_burnset;
-static NUVEC pcpos;
 
 i32 edrtlBurnoutSave(char *filename, burnset_s *set) {
     i32 i;
@@ -1345,72 +1786,121 @@ void edrtlPlaceBurnout(i32 index, nuvec_s *position) {
     edrtl_edit_burnset->burnouts[index].position = *position;
 }
 
-static void edrtlSetBurnoutStartAngle(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutStartAngle(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_04 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutMinIntensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutMinIntensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_08 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutEndAngle(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutEndAngle(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_0c = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutMaxIntensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutMaxIntensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_10 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutGlobalScale(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutGlobalScale(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_14 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutDispersion(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutDispersion(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_1c = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutFragmentGlowFactor(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutFragmentGlowFactor(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_20 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutThreshold(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutThreshold(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_24 = slider->value;
+    }
 }
 
 static void edrtlSetBurnoutSourceAvailable(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+    if (edrtl_edit_burnset)
+        edrtl_edit_burnset->parameters.field_28 = !edrtl_edit_burnset->parameters.field_28;
 }
 
-static void edrtlSetBurnoutSourceDirectionX(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceDirectionX(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_2c = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutSourceDirectionY(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceDirectionY(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_30 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutSourceDirectionZ(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceDirectionZ(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_34 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutSourceInnerRadius(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceInnerRadius(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_38 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutSourceInnerIntensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceInnerIntensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_3c = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutSourceOuterRadius(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceOuterRadius(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_40 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutSourceOuterIntensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceOuterIntensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_44 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutSourceFallOffPower(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutSourceFallOffPower(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->parameters.field_48 = slider->value;
+    }
 }
 
 static void edrtlCancelBurnDefaultsMenu(eduimenu_s *, eduimenu_s *) {
@@ -1421,28 +1911,46 @@ static void edrtlBurnDefaultsMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void edrtlSetBurnoutNormalRate(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutNormalRate(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_b8 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutOvershootRate(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutOvershootRate(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_bc = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutOvershootCutin(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutOvershootCutin(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_c0 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutOvershootAmount(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutOvershootAmount(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_c4 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutOverbrightCap(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutOverbrightCap(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_c8 = slider->value;
+    }
 }
 
-static void edrtlSetBurnoutOverdarkCap(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnoutOverdarkCap(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_cc = slider->value;
+    }
 }
 
 static void edrtlCancelBurnTransitionsMenu(eduimenu_s *, eduimenu_s *) {
@@ -1453,11 +1961,17 @@ static void edrtlBurnTransitionsMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
 
-static void edrtlSetBurnRadius(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnRadius(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_558 = slider->value;
+    }
 }
-static void edrtlSetBurnFalloff(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnFalloff(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->field_55c = slider->value;
+    }
 }
 static void edrtlCancelBurnRadiusMenu(eduimenu_s *, eduimenu_s *) {
     STUBBED();
@@ -1465,20 +1979,35 @@ static void edrtlCancelBurnRadiusMenu(eduimenu_s *, eduimenu_s *) {
 static void edrtlBurnRadiusMenu(eduimenu_s *, eduiitem_s *, u32) {
     STUBBED();
 }
-static void edrtlSetBurnsetThreshold(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnsetThreshold(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->burnouts[edrtl_edit_burnset->selected_index].field_10 = slider->value;
+    }
 }
-static void edrtlSetBurnsetIntensity(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnsetIntensity(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->burnouts[edrtl_edit_burnset->selected_index].field_14 = slider->value;
+    }
 }
-static void edrtlSetBurnsetFlare(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnsetFlare(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->burnouts[edrtl_edit_burnset->selected_index].field_18 = slider->value;
+    }
 }
-static void edrtlSetBurnsetRadius(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnsetRadius(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->burnouts[edrtl_edit_burnset->selected_index].field_1c = slider->value;
+    }
 }
-static void edrtlSetBurnsetFalloff(eduimenu_s *, eduiitem_s *, u32) {
-    STUBBED();
+static void edrtlSetBurnsetFalloff(eduimenu_s *, eduiitem_s *item, u32) {
+    if (edrtl_edit_burnset) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        edrtl_edit_burnset->burnouts[edrtl_edit_burnset->selected_index].field_20 = slider->value;
+    }
 }
 static void edrtlCancelBurnSetMenu(eduimenu_s *, eduimenu_s *) {
     STUBBED();
@@ -1499,7 +2028,27 @@ static void edrtlBurnMainMenu() {
     STUBBED();
 }
 static void edrtlInit() {
-    STUBBED();
+    usr_cam = NuCameraCreate();
+    clipboard_light.type = 0;
+    mtls[0] = NuMtlCreate3D(1);
+    if (mtls[0] != NULL) {
+        mtls[0]->attribs.z_mode = 0;
+        mtls[0]->attribs.alpha_mode = 0;
+        NuMtlUpdate(mtls[0]);
+    }
+    mtls[1] = NuMtlCreate3D(1);
+    if (mtls[1] != NULL) {
+        mtls[1]->attribs.z_mode = 3;
+        mtls[1]->attribs.alpha_mode = 0;
+        NuMtlUpdate(mtls[1]);
+    }
+    mtls[2] = NuMtlCreate3D(1);
+    if (mtls[2] != NULL) {
+        mtls[2]->attribs.z_mode = 3;
+        mtls[2]->attribs.alpha_mode = 1;
+        NuMtlUpdate(mtls[2]);
+    }
+    InitUI();
 }
 
 // RTL editor subsystem stubs (static, internal linkage).
@@ -1513,33 +2062,140 @@ static void edrtlEnter() {
 }
 
 static void edrtlLeave() {
-    STUBBED();
+    edmainExtCamera(NULL);
+    RTL_EditorActive = 0;
 }
 
-static __used__ int FindNearestRTL(nuvec_s *, int) {
-    STUBBED();
-    return 0;
+static __used__ rtl_s *FindNearestRTL(nuvec_s *position, int ignore_radius) {
+    i32 nearest = -1;
+    f32 nearest_distance = FLT_MAX;
+    i32 i;
+    f32 distance;
+    if (base_rtl != NULL) {
+        i = base_rtl->field_79;
+        while (i != -1) {
+            distance = (curr_set->lights[i].position.x - position->x) *
+                           (curr_set->lights[i].position.x - position->x) +
+                       (curr_set->lights[i].position.y - position->y) *
+                           (curr_set->lights[i].position.y - position->y) +
+                       (curr_set->lights[i].position.z - position->z) *
+                           (curr_set->lights[i].position.z - position->z);
+            if ((ignore_radius || distance < curr_set->lights[i].outer_radius * curr_set->lights[i].outer_radius) &&
+                distance < nearest_distance) {
+                nearest_distance = distance;
+                nearest = i;
+            }
+            i = curr_set->lights[i].field_79;
+        }
+    } else {
+        for (i = 0; i < 128; ++i) {
+            if (hide_types[curr_set->lights[i].type])
+                continue;
+            if (curr_set->lights[i].field_7a != -1)
+                continue;
+            distance = (curr_set->lights[i].position.x - position->x) *
+                           (curr_set->lights[i].position.x - position->x) +
+                       (curr_set->lights[i].position.y - position->y) *
+                           (curr_set->lights[i].position.y - position->y) +
+                       (curr_set->lights[i].position.z - position->z) *
+                           (curr_set->lights[i].position.z - position->z);
+            if ((ignore_radius || distance < curr_set->lights[i].outer_radius * curr_set->lights[i].outer_radius) &&
+                distance < nearest_distance) {
+                nearest_distance = distance;
+                nearest = i;
+            }
+        }
+    }
+    return nearest != -1 ? &curr_set->lights[nearest] : NULL;
 }
 
 void SelectNextRTL() {
-    STUBBED();
+    rtl_s *light;
+    if (base_rtl != NULL) {
+        if (curr_rtl->field_79 != -1) {
+            curr_rtl = &curr_set->lights[curr_rtl->field_79];
+        } else {
+            light = curr_rtl;
+            while (light->field_7a != -1) {
+                curr_rtl = light;
+                light = &curr_set->lights[light->field_7a];
+            }
+        }
+    } else {
+        i32 count = 0;
+        light = curr_rtl;
+        while (count < 128) {
+            ++light;
+            if (light >= &curr_set->lights[128])
+                light = curr_set->lights;
+            if (light->type != 0 && light->field_7a == -1)
+                break;
+            ++count;
+        }
+        curr_rtl = light;
+    }
 }
 
 void SelectPrevRTL() {
-    STUBBED();
+    rtl_s *light;
+    if (base_rtl != NULL) {
+        light = &curr_set->lights[curr_rtl->field_7a];
+        if (light->field_7a != -1) {
+            curr_rtl = light;
+        } else {
+            while (curr_rtl->field_79 != -1)
+                curr_rtl = &curr_set->lights[curr_rtl->field_79];
+        }
+    } else {
+        i32 count = 0;
+        light = curr_rtl;
+        while (count < 128) {
+            if (light == curr_set->lights)
+                light = &curr_set->lights[127];
+            else
+                --light;
+            if (light->type != 0 && light->field_7a == -1)
+                break;
+            ++count;
+        }
+        curr_rtl = light;
+    }
 }
 
 static void edrtlProcRTL(float, nupad_s *) {
     STUBBED();
 }
 
-static __used__ int FindNearestFog(nuvec_s *) {
-    STUBBED();
-    return 0;
+static __used__ EDRTLFOG_s *FindNearestFog(nuvec_s *position) {
+    i32 nearest = -1;
+    f32 nearest_distance = FLT_MAX;
+    i32 i;
+    f32 distance;
+    for (i = 0; i < 32; ++i) {
+        if (hide_types[curr_set->lights[i].type])
+            continue;
+        distance = (curr_set->fog[i].position.x - position->x) *
+                       (curr_set->fog[i].position.x - position->x) +
+                   (curr_set->fog[i].position.y - position->y) *
+                       (curr_set->fog[i].position.y - position->y) +
+                   (curr_set->fog[i].position.z - position->z) *
+                       (curr_set->fog[i].position.z - position->z);
+        if (distance < curr_set->fog[i].radius * curr_set->fog[i].radius && distance < nearest_distance) {
+            nearest_distance = distance;
+            nearest = i;
+        }
+    }
+    if (nearest != -1) {
+        curFogLoc = nearest;
+        return &curr_set->fog[nearest];
+    }
+    return NULL;
 }
 
-extern "C" void edrtlGetFogSet(void) {
-    STUBBED();
+extern "C" rtlfog_s *edrtlGetFogSet(void) {
+    if (fogmode == 0)
+        return curr_fog;
+    return FindNearestFog(NUMTX_GET_ROW_VEC(&global_camera.mtx, 3));
 }
 
 static EDRTLFOG_s *SelectPrevFog() {

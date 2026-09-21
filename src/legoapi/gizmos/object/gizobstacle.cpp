@@ -950,12 +950,20 @@ void GizObstacle_PlayBackwards(GIZOBSTACLE_s *obstacle) {
     }
 }
 
-void GizObstacle_SetPushControlled(GIZOBSTACLE_s *, GameObject_s *, float) {
-    STUBBED();
+void GizObstacle_SetPushControlled(GIZOBSTACLE_s *obstacle, GameObject_s *object, float speed) {
+    if (obstacle->state == 0 && obstacle->anim_set->state == GAMEANIMSET_STATE_AT_END &&
+        (obstacle->config_flags & 0x100) == 0) {
+        return;
+    }
+    obstacle->progress_push_control = 1;
+    obstacle->triggering_object = object;
+    obstacle->animation_speed = speed;
 }
 
-void GizObstacle_SetDefaultSFXFn_LSW(void *, GIZOBSTACLE_s *) {
-    STUBBED();
+void GizObstacle_SetDefaultSFXFn_LSW(void *, GIZOBSTACLE_s *obstacle) {
+    if (obstacle->mode == 2 && obstacle->trigger_radius < 0.25f) {
+        obstacle->start_sfx_id = static_cast<i16>(GetSfxId("SwPPad"));
+    }
 }
 
 void GizObstacle_SetTechnoControlled(GIZOBSTACLE_s *obstacle, float speed) {
@@ -983,9 +991,7 @@ void GizObstacle_EvalAveragePosAndRadius(GIZOBSTACLE_s *obstacle, i32 state) {
 
 // Obstacle modes dispatch through this exact eight-entry target table.
 
-static void GizObstacleUpdate_PushOnly(GIZOBSTACLE_s *) {
-    STUBBED();
-}
+static void GizObstacleUpdate_PushOnly(GIZOBSTACLE_s *) {}
 
 static void GizObstacleUpdate_AutoStart(GIZOBSTACLE_s *obstacle) {
     if ((obstacle->config_flags & GIZOBSTACLE_CONFIG_ALWAYS_RUN_PROXIMITY) != 0) {
@@ -1160,9 +1166,7 @@ static void GizObstacleUpdate_Proximity(GIZOBSTACLE_s *obstacle) {
     }
 }
 
-static void GizObstacleUpdate_TechnoOnly(GIZOBSTACLE_s *) {
-    STUBBED();
-}
+static void GizObstacleUpdate_TechnoOnly(GIZOBSTACLE_s *) {}
 
 static i32 GizObstacle_SatisfyingTerrainChecks(GIZOBSTACLE_s *obstacle, GameObject_s *object) {
     if (static_cast<i8>(obstacle->trigger_mode) < 0) {

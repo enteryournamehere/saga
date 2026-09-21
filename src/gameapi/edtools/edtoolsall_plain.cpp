@@ -2,6 +2,7 @@
 #include "gameapi/edtools/edanim_internal.h"
 #include "gameapi/edtools/edgra.h"
 #include "gameapi/edtools/edui.h"
+#include "gameapi/edtools/edui_colour.h"
 #include "nu2api/nucore/numemory.h"
 #include "nu2api/nucore/numouse.h"
 #include "nu2api/nucore/nukeyboard.h"
@@ -22,6 +23,9 @@
 #include "nu2api/nucore/nuthread.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/nuqfnt.h"
+#include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/android/nuobject_android.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nuvec.h"
@@ -42,10 +46,120 @@ static VARIPTR gra_ptr;
 static VARIPTR gra_end;
 static i32 editor_return;
 static i32 bShowCursor = 1;
-static i32 edui_font;
+static NUQFNT *edui_font;
+static i32 edui_donotdraw;
 static f32 edui_font_scale_x = 0.9f;
 static f32 edui_font_scale_y = 0.9f;
 static u32 edui_cursor_colour = 0xff000000;
+static char *edpp_save_names[6];
+static i32 edptl_count;
+static NUVEC entry_position;
+
+static inline i32 edppCurveSegment(const debris_float_key_s *keys, f32 time) {
+    if (time >= keys[0].time && time <= keys[1].time)
+        return 0;
+    if (time >= keys[1].time && time <= keys[2].time)
+        return 1;
+    if (time >= keys[2].time && time <= keys[3].time)
+        return 2;
+    if (time >= keys[3].time && time <= keys[4].time)
+        return 3;
+    if (time >= keys[4].time && time <= keys[5].time)
+        return 4;
+    if (time >= keys[5].time && time <= keys[6].time)
+        return 5;
+    if (time >= keys[6].time && time <= keys[7].time)
+        return 6;
+    return 7;
+}
+
+static inline f32 edppInterpolateTorusCurve(const debris_float_key_s *keys, f32 time) {
+    i32 index = edppCurveSegment(keys, time);
+    if (index == 7)
+        return 0.0f;
+    return ((time - keys[index].time) / (keys[index + 1].time - keys[index].time)) *
+               (keys[index + 1].value - keys[index].value) + keys[index].value;
+}
+
+void edppDoInput(nupad_s *pad);
+void edppDetermineNearest(f32 distance);
+void edppDrawCursor();
+void edppHighlightNearest();
+extern "C" void DebrisStatusNormal(i32 *handle);
+
+extern "C" {
+    extern numtl_s *uimtls[5];
+    extern i32 ui_bgmtl;
+    extern i32 ui_outmtl;
+    void NuRndrRect2di(i32 x, i32 y, i32 width, i32 height, i32 colour, numtl_s *material);
+    void NuRndrGradRect2di(i32 x, i32 y, i32 width, i32 height, i32 *colours, numtl_s *material);
+    void NuRndrLineRect2di(i32 x, i32 y, i32 width, i32 height, i32 colour, numtl_s *material);
+    void NuRndrLine2di(i32 x0, i32 y0, i32 x1, i32 y1, i32 colour, numtl_s *material);
+    void NuRndrLineStrip2di(i32 *points, f32 *uvs, i32 count, i32 colour, numtl_s *material);
+    void NuRndrTriStrip2di(i32 *points, f32 *uvs, i32 count, i32 colour, numtl_s *material);
+}
+
+// The original local font helpers read the same private draw state as the
+// editor callbacks, so they belong to this translation unit.
+static __used__ void eduiFntPrintEx(void *font, int x, int y, int alignment, char *format, ...) {
+    if (!edui_donotdraw) {
+        char text[1024];
+        NuQFntPushPrintMode(2);
+        va_list arguments;
+        va_start(arguments, format);
+        NuVSPrintf(text, format, arguments);
+        va_end(arguments);
+        i32 width = static_cast<i32>(NuQFntPrintLenU(font, text));
+        if (alignment == 32)
+            x -= width;
+        else if (alignment == 64)
+            x -= width / 2;
+        NuQFntMove(font, x, y, 0.0f);
+        NuQFntPrintU(font, text);
+        NuQFntPopPrintMode();
+    }
+}
+
+static __used__ void eduiFntPrintClipEx(void *font, float x, float y, int alignment, float clip_x,
+                                      float clip_width, char *format, ...) {
+    if (!edui_donotdraw) {
+        char text[1024];
+        i32 screen_x = static_cast<i32>(x * 16.0f);
+        i32 screen_y = static_cast<i32>(y * 8.0f);
+        i32 screen_clip_x = static_cast<i32>(clip_x * 16.0f);
+        i32 screen_clip_width = static_cast<i32>(clip_width * 16.0f);
+        NuQFntPushPrintMode(2);
+        va_list arguments;
+        va_start(arguments, format);
+        NuVSPrintf(text, format, arguments);
+        va_end(arguments);
+        i32 width = static_cast<i32>(NuQFntPrintLenU(font, text));
+        if (alignment == 32)
+            screen_x -= width;
+        else if (alignment == 64)
+            screen_x -= width / 2;
+        if (screen_x < screen_clip_x)
+            screen_x = screen_clip_x;
+        i32 length = NuStrLen(text);
+        if (width > screen_clip_width && length > 1) {
+            char *end = text + length - 1;
+            do {
+                *end-- = '\0';
+                width = static_cast<i32>(NuQFntPrintLenU(font, text));
+            } while (width > screen_clip_width && end != text);
+        }
+        NuQFntMove(font, screen_x, screen_y, 0.0f);
+        NuQFntPrintU(font, text);
+        NuQFntPopPrintMode();
+    }
+}
+static i32 show_x_scale_help;
+static i32 show_y_scale_help;
+
+extern "C" i32 nugraphAddPoint(nugraph_s *graph, f32 x, f32 y);
+extern "C" i32 nugraphDeletePoint(nugraph_s *graph, i32 index);
+extern "C" i32 nugraphCalcCurve(nugraph_s *graph, i32 point_count);
+extern "C" f32 nugraphGetYatX(nugraph_s *graph, f32 x, i32 mode);
 
 struct EDBITS_GAME_SOUND {
     char name[16];
@@ -75,6 +189,55 @@ static i32 edanimProc(f32 delta_time, nupad_s *pad);
 static void edanimRender();
 
 extern "C" {
+    void nugraphInit(nugraph_s *graph);
+    i32 nugraphCalcCurve(nugraph_s *graph, i32 point_count);
+    void eduicbItemDestroy(eduimenu_s *, eduiitem_s *);
+    void eduicbItemDestroyProp(eduimenu_s *, eduiitem_s *);
+    i32 eduicbInteractSlider(edui_interact_s *);
+    static i32 eduicbProcessSel(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessGradPick(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *);
+    static i32 eduicbProcessSlider(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessGraph(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessColourPick(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessGreyPick(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessTexturePick(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessColourSlider(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessExpander(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessFilter(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessFilePick(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessTextPick(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbProcessProp(eduimenu_s *, eduiitem_s *, f32, nupad_s *);
+    static i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderSelWithClipColour(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderGraph(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderColourPick(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderTexturePick(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderExpander(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderFilter(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderFilePick(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static i32 eduicbRenderProp(eduimenu_s *, eduiitem_s *, i32, i32, i32);
+    static void eduicbItemSliderDestroy(eduimenu_s *, eduiitem_s *);
+    static void eduicbItemFilePickDestroy(eduimenu_s *, eduiitem_s *);
+    static void eduicbItemTextPickDestroy(eduimenu_s *, eduiitem_s *);
+    static void eduicbItemDestroyExpander(eduimenu_s *, eduiitem_s *);
+    static void eduicbItemDestroyFilter(eduimenu_s *, eduiitem_s *);
+    static i32 eduicbInteractSel(edui_interact_s *);
+    static i32 eduicbInteractColourPick(edui_interact_s *);
+    static i32 eduicbInteractExpander(edui_interact_s *);
+    static i32 eduicbInteractFilter(edui_interact_s *);
+    static i32 eduicbInteractProp(edui_interact_s *);
     typedef void (*EDBITSPLAYSOUNDCALLBACK)(NUVEC *, i32);
     typedef i32 (*EDBITSREQUESTSOUNDCALLBACK)(char *);
 
@@ -96,6 +259,12 @@ extern "C" {
     i32 edptl_clipboard_entry = -1;
 
     eduimenu_s *edui_messagemenu;
+    u32 edblack[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+    u32 edgrey[4] = {0x80303030, 0x80303030, 0x80808080, 0x80808080};
+    u32 eddarkred[4] = {0x80000050, 0x80ff0000, 0x80808080, 0x80404040};
+    NUMTL *uimtls[5];
+    i32 ui_bgmtl;
+    i32 ui_outmtl;
 
     eduimenu_s *edgra_active_menu;
     eduimenu_s *edgra_options_menu;
@@ -161,7 +330,7 @@ extern "C" {
     NUMTL *edpp_mtl;
     NUMTL *edpp_boxmtl;
     i32 edpp_nearest;
-    edpp_particle_s *edpp_curr;
+    i32 edpp_curr;
     i32 edpp_snap_enabled;
     u8 edpp_effect_list;
     i32 edpp_instances_used;
@@ -172,7 +341,7 @@ extern "C" {
     i32 edpp_num_orphans;
     i32 edpp_showAllPlaced;
     i32 edpp_dpad_mode;
-    eduiitem_s *edpp_readout;
+    i32 edpp_readout;
     eduimenu_s *edpp_active_menu;
     eduimenu_s *ptltypemenu;
     eduimenu_s *ptloptmenu;
@@ -237,7 +406,7 @@ extern "C" {
     i32 edpp_emitrotx;
     i32 edpp_rotz;
     i32 edpp_roty;
-    i32 edpp_offset;
+    f32 edpp_offset;
     i32 edpp_refrotz;
     i32 edpp_refroty;
     i32 edpp_copyrotz;
@@ -274,24 +443,52 @@ static void edppInit() {
 }
 
 static void edppClose() {
-    STUBBED();
+    eduiMenuDestroy(ptloptmenu);
+    eduiMenuDestroy(ptlgcodemenu);
 }
 
 static void edppEnter() {
-    STUBBED();
+    NUVEC origin = {0.0f, 0.0f, 0.0f};
+    if (edmainQueryLocVec() != NULL) {
+        entry_position = *edmainQueryLocVec();
+    } else {
+        entry_position.x = global_camera.mtx.m30;
+        entry_position.y = global_camera.mtx.m31;
+        entry_position.z = global_camera.mtx.m32;
+    }
+    if (edpp_first_time_this_level != 0) {
+        if (edmainQueryLocVec() != NULL)
+            edcamSetPosAng(edmainQueryLocVec(), 0, 0);
+        else
+            edcamSetPosAng(&origin, 0, 0);
+        edpp_first_time_this_level = 0;
+    }
+    edpp_nearest = -1;
+    edpp_create_type = -1;
 }
 
 static void edppApply() {
-    STUBBED();
 }
 
-static i32 edppProc(f32, nupad_s *) {
-    STUBBED();
-    return 0;
+static i32 edppProc(f32 delta_time, nupad_s *pad) {
+    edptl_count += 5;
+    if (edpp_active_menu != NULL) {
+        eduiMenuProcess(edpp_active_menu, delta_time, pad);
+        return 0;
+    }
+    edppDoInput(pad);
+    edppDetermineNearest(1.0f);
+    if (edpp_nearest != -1)
+        DebrisStatusNormal(&edpp_ptls[edpp_nearest].instance_id);
+    return (pad->digital_buttons_pressed >> 11) & 1;
 }
 
 static void edppRender() {
-    STUBBED();
+    edcamSet();
+    edppDrawCursor();
+    edppHighlightNearest();
+    if (edpp_active_menu != NULL)
+        eduiMenuRender(edpp_active_menu);
 }
 
 static void edbriInit() {
@@ -590,11 +787,21 @@ void edbriBridgeDestroy(i32 index) {
 void edanimDetermineNearestAnim(f32);
 void edppDetermineNearest(float);
 void edppPtlDestroy(i32);
+void edppPtlShelve(i32);
 extern "C" {
     extern debkeydatatype_s *debkeydata;
     extern i32 maxdebkeys;
     void DebFreeOrphansInstantly(debinftype *);
     void DebFreeInstantly(i32 *);
+    void AddDebrisEffect(i32 *, i32, f32, f32, f32);
+    void DebrisOrientation(i32, i16, i16);
+    void DebrisEmitterOrientation(i32, i16, i16, i16);
+    void DebrisStartOffset(i32, f32);
+    void DebrisSetTrigger(i32, i32, i32, f32);
+    void DebrisReflectionOrientation(i32, i16, i16, f32, f32);
+    void DebrisSetFacing(i32, u8, i16, i16);
+    void DebrisSetGroupID(i32, i32);
+    void DebrisSetRoomID(i32, nugscn_s *);
 }
 
 extern "C" void do_Pad_Standard_camera(edcam_s *camera, f32 delta_time, nupad_s *pad);
@@ -649,6 +856,7 @@ static i32 edui_cursor_locked;
 static u32 edui_cursor_buttons;
 static u32 edui_cursor_buttons_old;
 static u32 edui_cursor_buttons_db;
+static f32 slider_acceleration;
 
 static i32 numInteracts;
 static eduimenu_s *ed_main_menu;
@@ -992,24 +1200,24 @@ extern "C" {
                        (maximum->y - minimum->y) * 0.5f, (maximum->z - minimum->z) * 0.5f, 0, 0, 0, 0, 0, colour,
                        material);
     }
-    void edbitsDrawOvalXY(NUVEC *, f32, f32, i32, i32);
-    void edbitsDrawCircleTilted(NUVEC *centre, f32 radius, i32 colour, i32 unused, i32 rotation_z, i32 rotation_y) {
-        edbitsDrawOvalTilted(centre, radius, radius, colour, unused, rotation_z, rotation_y);
+    void edbitsDrawOvalXY(NUVEC *, f32, f32, i32, NUMTL *);
+    void edbitsDrawCircleTilted(NUVEC *centre, f32 radius, i32 colour, NUMTL *material, i32 rotation_z, i32 rotation_y) {
+        edbitsDrawOvalTilted(centre, radius, radius, colour, material, rotation_z, rotation_y);
     }
-    void edbitsDrawCircleXY(NUVEC *centre, f32 radius, i32 colour, i32 unused) {
-        edbitsDrawOvalXY(centre, radius, radius, colour, unused);
+    void edbitsDrawCircleXY(NUVEC *centre, f32 radius, i32 colour, NUMTL *material) {
+        edbitsDrawOvalXY(centre, radius, radius, colour, material);
     }
-    void edbitsDrawOvalXY(NUVEC *centre, f32 radius_x, f32 radius_z, i32 colour, i32 unused) {
-        edbitsDrawOvalTilted(centre, radius_x, radius_z, colour, unused, 0, 0);
+    void edbitsDrawOvalXY(NUVEC *centre, f32 radius_x, f32 radius_z, i32 colour, NUMTL *material) {
+        edbitsDrawOvalTilted(centre, radius_x, radius_z, colour, material, 0, 0);
     }
-    void edbitsDrawSphere(NUVEC *centre, f32 radius, i32 colour, i32 unused) {
-        edbitsDrawCircleXY(centre, radius, colour, unused);
-        edbitsDrawCircleTilted(centre, radius, colour, unused, 0x2000, 0);
-        edbitsDrawCircleTilted(centre, radius, colour, unused, 0x4000, 0);
-        edbitsDrawCircleTilted(centre, radius, colour, unused, 0x6000, 0);
-        edbitsDrawCircleTilted(centre, radius, colour, unused, 0x4000, 0x2000);
-        edbitsDrawCircleTilted(centre, radius, colour, unused, 0x4000, 0x4000);
-        edbitsDrawCircleTilted(centre, radius, colour, unused, 0x4000, 0x6000);
+    void edbitsDrawSphere(NUVEC *centre, f32 radius, i32 colour, NUMTL *material) {
+        edbitsDrawCircleXY(centre, radius, colour, material);
+        edbitsDrawCircleTilted(centre, radius, colour, material, 0x2000, 0);
+        edbitsDrawCircleTilted(centre, radius, colour, material, 0x4000, 0);
+        edbitsDrawCircleTilted(centre, radius, colour, material, 0x6000, 0);
+        edbitsDrawCircleTilted(centre, radius, colour, material, 0x4000, 0x2000);
+        edbitsDrawCircleTilted(centre, radius, colour, material, 0x4000, 0x4000);
+        edbitsDrawCircleTilted(centre, radius, colour, material, 0x4000, 0x6000);
     }
     char *edbitsGetSoundName(i32) {
         STUBBED();
@@ -1628,19 +1836,85 @@ extern "C" {
         edppDetermineNearest(1.0f);
     }
     void edppDestroyAllEffects(void) {
-        STUBBED();
+        for (i32 index = 1; index < EDPP_MAX_TYPES; ++index)
+            debtab[index] = NULL;
+        edpp_types_used = 1;
     }
     void edppDestroyAllParticles(void) {
-        STUBBED();
+        for (i32 index = 0; index < 512; ++index)
+            edppPtlDestroy(index);
     }
-    void edppDrawSpheres(void) {
-        STUBBED();
+    extern f32 globaltime;
+
+    void edppDrawSpheres(debinftype *effect, i32 key_index) {
+        if (effect->process_spheres == 0)
+            return;
+        for (i32 sphere_index = 0; sphere_index < static_cast<i8>(effect->process_spheres); ++sphere_index) {
+            debris_process_sphere_s *sphere = &debkeydata[key_index].process_spheres[sphere_index];
+            f32 time = globaltime - sphere->time;
+            if (time >= 0.0f && time <= effect->particle_lifetime) {
+                NUVEC position;
+                position.x = sphere->position.x + sphere->momentum.x * time;
+                position.y = sphere->position.y + (sphere->momentum.y * time + time * time * effect->field_0a0);
+                position.z = sphere->position.z + sphere->momentum.z * time;
+                time /= effect->particle_lifetime;
+                i32 first = edppCurveSegment(effect->collision_keys, time);
+                f32 radius = ((time - effect->collision_keys[first].time) /
+                              (effect->collision_keys[first + 1].time - effect->collision_keys[first].time)) *
+                                 (effect->collision_keys[first + 1].value - effect->collision_keys[first].value) +
+                             effect->collision_keys[first].value;
+                edbitsDrawSphere(&position, radius, 0xffff0000, edpp_mtl);
+            }
+        }
     }
-    void edppDrawTorus(void) {
-        STUBBED();
+    void edppDrawTorus(debinftype *effect, i32 key_index) {
+        if (effect->torus_lifetime == 0.0f)
+            return;
+        debkeydatatype_s *key = &debkeydata[key_index];
+        f32 time;
+        if (globaltime > key->emission_time)
+            time = globaltime - key->emission_time;
+        else
+            time = globaltime - key->previous_emission_time;
+        if (time > 0.0f && time < effect->torus_lifetime) {
+            time /= effect->torus_lifetime;
+            f32 radius = edppInterpolateTorusCurve(effect->torus_keys1, time);
+            f32 radial_extent = edppInterpolateTorusCurve(effect->torus_keys2, time);
+            f32 vertical_extent = edppInterpolateTorusCurve(effect->torus_keys3, time);
+            NUVEC position = key->position;
+            edbitsDrawTorus(&position, radius * effect->torus_radius1, radial_extent * effect->torus_radius2,
+                            vertical_extent * effect->torus_radius2, 0xffff0000, edpp_mtl);
+        }
     }
-    void edppFindAllSounds(void) {
-        STUBBED();
+    i32 edppFindAllSounds(i32 page, NUVEC *positions, i32 (*sounds)[4], i32 capacity, i32 skip) {
+        i32 count = 0;
+        for (i32 index = 0; index < 512; ++index) {
+            edpp_particle_s *particle = &edpp_ptls[index];
+            if (page != -1 && particle->page != page)
+                continue;
+            if (particle->instance_id == 99999 || particle->instance_id == -1)
+                continue;
+            debkeydatatype_s *key = &debkeydata[particle->instance_id];
+            if (key->process_collision_sound == 0)
+                continue;
+            debinftype *effect = debtab[key->effect_index];
+            i32 output_index = count - skip;
+            if (output_index >= 0 && output_index < capacity) {
+                if (positions != NULL) {
+                    positions[output_index].x = key->position.x;
+                    positions[output_index].y = key->position.y;
+                    positions[output_index].z = key->position.z;
+                }
+                if (sounds != NULL) {
+                    sounds[output_index][0] = effect->sound_data[0];
+                    sounds[output_index][1] = effect->sound_data[3];
+                    sounds[output_index][2] = effect->sound_data[6];
+                    sounds[output_index][3] = effect->sound_data[9];
+                }
+            }
+            ++count;
+        }
+        return count - skip;
     }
     // Parts-page loader (edppLoadPage @0x36c630).  The normal general (0) and
     // character (5) pages only contain effect-type records; instance records
@@ -1720,13 +1994,66 @@ extern "C" {
         edmainRegisterLocVec(position);
     }
     void edppRestartAllEffectsInLevel(void) {
-        STUBBED();
+        for (i32 index = 0; index < 512; ++index) {
+            edpp_particle_s *particle = &edpp_ptls[index];
+            if (particle->instance_id == -1)
+                continue;
+            particle->instance_id = -1;
+            particle->effect_index = LookupDebrisEffect(particle->name);
+            AddDebrisEffect(&particle->instance_id, particle->effect_index, particle->position.x,
+                            particle->position.y, particle->position.z);
+            if (particle->instance_id != -1) {
+                debkeydata[particle->instance_id].field_2f9 = 0;
+                DebrisOrientation(particle->instance_id, particle->rotation_z, particle->rotation_y);
+                DebrisEmitterOrientation(particle->instance_id, particle->emitter_rotation_z,
+                                         particle->emitter_rotation_y, particle->emitter_rotation_x);
+                DebrisStartOffset(particle->instance_id, particle->start_offset);
+                DebrisSetTrigger(particle->instance_id, particle->switch_type, particle->switch_id,
+                                  particle->switch_variable);
+                DebrisReflectionOrientation(particle->instance_id, particle->reflection_rotation_z,
+                                            particle->reflection_rotation_y, particle->reflection_offset,
+                                            particle->reflection_bounce);
+                DebrisSetFacing(particle->instance_id, particle->facing_mode, particle->facing_rotation_x,
+                                 particle->facing_rotation_y);
+                DebrisSetGroupID(particle->instance_id, particle->render_group);
+                DebrisSetRoomID(particle->instance_id, reinterpret_cast<nugscn_s *>(edpp_page_scene[particle->page]));
+            } else {
+                particle->instance_id = 99999;
+            }
+            edpp_page_on[particle->page] = 1;
+        }
+        edpp_create_type = -1;
+        edppDetermineNearest(1.0f);
     }
-    void edppSetSaveName(void) {
-        STUBBED();
+    void edppSetSaveName(u32 page, char *name) {
+        if (page < 6)
+            edpp_save_names[page] = name;
     }
-    void edppStopPage(i32) {
-        STUBBED();
+    void edppStopPage(i32 page_id) {
+        i8 page = page_id;
+        edpp_page_on[page] = 0;
+        for (i32 index = 0; index < 512; ++index) {
+            edpp_particle_s *particle = &edpp_ptls[index];
+            if (particle->instance_id == 99999 || particle->instance_id == -1)
+                continue;
+            if (particle->page == page) {
+                edppPtlShelve(index);
+            } else if (particle->effect_index > 0 && debtab[particle->effect_index] != NULL &&
+                       debtab[particle->effect_index]->page == static_cast<u8>(page)) {
+                edppPtlDestroy(index);
+            }
+        }
+        for (i32 index = 1; index < EDPP_MAX_TYPES; ++index) {
+            if (debtab[index] == NULL || debtab[index]->page != static_cast<u8>(page))
+                continue;
+            for (i32 key = 0; key < maxdebkeys; ++key) {
+                if (debkeydata[key].effect_index == index) {
+                    i32 handle = key;
+                    DebFreeInstantly(&handle);
+                }
+            }
+            DebFreeOrphansInstantly(debtab[index]);
+        }
     }
     void edqrand(void) {
         STUBBED();
@@ -1766,8 +2093,20 @@ extern "C" {
         return edui_cursor_x >= menu->x && edui_cursor_y >= menu->y && edui_cursor_x < menu->x + menu->width &&
                edui_cursor_y < menu->y + menu->height;
     }
-    void cbInteractMenuTitle(void) {
-        STUBBED();
+    i32 cbInteractMenuTitle(edui_interact_s *interact) {
+        static f32 offsetx;
+        static f32 offsety;
+        i32 result = (edui_cursor_buttons & EDUI_CURSOR_PRIMARY) != 0;
+        eduimenu_s *menu = interact->menu;
+        if (!(menu->flags & 1)) {
+            if (!eduiInteractLocked) {
+                offsetx = 0.0f - menu->x;
+                offsety = 0.0f - menu->y;
+            }
+            menu->x = static_cast<i32>(0.0f - offsetx);
+            menu->y = static_cast<i32>(0.0f - offsety);
+        }
+        return result;
     }
     i32 cbInteractMenuScrollUp(edui_interact_s *interact) {
         eduimenu_s *menu = interact->menu;
@@ -1818,8 +2157,19 @@ extern "C" {
     eduimenu_s *eduiGetActiveMenuParent(void) {
         return eduiGetTopLevelParent(active_menu);
     }
-    void eduiGetAnalougePadValue(void) {
-        STUBBED();
+    f32 eduiGetAnalougePadValue(nupad_s *pad) {
+        f32 value = 0.0f;
+        if (pad && (pad->digital_buttons & EDUI_CURSOR_PRIMARY)) {
+            if (pad->analog_right_x > 192)
+                value = (pad->analog_right_y - 128.0f) * 0.01f;
+            else if (pad->analog_right_x < 64)
+                value = (128.0f - pad->analog_right_y) * -0.01f;
+            if (pad->analog_left_x > 192)
+                value = (pad->analog_left_y - 128.0f) * 0.001f;
+            else if (pad->analog_left_x < 64)
+                value = (128.0f - pad->analog_left_y) * -0.001f;
+        }
+        return value;
     }
     i32 eduiGetCameraEnabled(void) {
         return bCameraEnabled;
@@ -1842,102 +2192,428 @@ extern "C" {
     i32 eduiGetUsingMenuFocus(void) {
         return bUsingMenuFocus;
     }
-    void eduiGradPickRead(void) {
-        STUBBED();
+    i32 eduiGradPickRead(eduiitem_s *item, edui_gradient_stage_s *stages, i32 capacity) {
+        edui_gradient_node_s *node = static_cast<edui_gradient_pick_s *>(item)->first_stage;
+        f32 red, green, blue;
+        i32 count = 0;
+        for (; node; node = node->next, ++count) {
+            if (count < capacity) {
+                edui_gradient_stage_s *stage = &stages[count];
+                stage->time = node->time;
+                stage->hue = node->hue;
+                stage->saturation = node->saturation;
+                stage->value = node->value;
+                eduiHSVToRGB(node->hue, node->saturation, node->value, red, green, blue);
+                stage->red = red;
+                stage->green = green;
+                stage->blue = blue;
+                stage->colour = 0x80000000u + static_cast<i32>(red * 255.0f) +
+                                (static_cast<i32>(green * 255.0f) << 8) +
+                                (static_cast<i32>(blue * 255.0f) << 16);
+                stage->metadata = node->metadata;
+            }
+        }
+        return count;
     }
-    void eduiGradStageAdd(void) {
-        STUBBED();
+    edui_gradient_node_s *eduiGradStageAdd(edui_gradient_pick_s *item, f32 time, f32 hue, f32 saturation, f32 value) {
+        edui_gradient_node_s *stage = static_cast<edui_gradient_node_s *>(NU_ALLOC(sizeof(*stage), 4, 1, "", 0));
+        if (!stage)
+            return NULL;
+        memset(stage, 0, sizeof(*stage));
+        edui_gradient_node_s *previous = NULL;
+        edui_gradient_node_s *next = item->first_stage;
+        while (next && !(next->time > time)) {
+            previous = next;
+            next = next->next;
+        }
+        if (previous)
+            previous->next = stage;
+        else
+            item->first_stage = stage;
+        if (next)
+            next->previous = stage;
+        stage->previous = previous;
+        stage->time = time;
+        stage->next = next;
+        eduiGradStageSetHSV(stage, hue, saturation, value);
+        item->selected_stage = stage;
+        return stage;
     }
-    void eduiGradStageAddRGB(void) {
-        STUBBED();
+    edui_gradient_node_s *eduiGradStageAddRGB(edui_gradient_pick_s *item, f32 time, f32 red, f32 green, f32 blue) {
+        f32 hue = 0.0f, saturation = 0.0f, value;
+        eduiRGBToHSV(red, green, blue, hue, saturation, value);
+        return eduiGradStageAdd(item, time, hue, saturation, value);
     }
-    void eduiGradStageDelete(void) {
-        STUBBED();
+    void eduiGradStageDelete(edui_gradient_pick_s *item, edui_gradient_node_s *stage) {
+        edui_gradient_node_s *previous = stage->previous;
+        edui_gradient_node_s *next = stage->next;
+        if (previous)
+            previous->next = next;
+        else
+            item->first_stage = next;
+        if (next)
+            next->previous = previous;
+        item->selected_stage = next ? next : previous;
+        NU_FREE(stage);
     }
-    void eduiGradStageSetHSV(void) {
-        STUBBED();
+    void eduiGradStageSetHSV(edui_gradient_node_s *stage, f32 hue, f32 saturation, f32 value) {
+        f32 red = 0.0f, green = 0.0f, blue = 0.0f;
+        eduiHSVToRGB(hue, saturation, value, red, green, blue);
+        stage->hue = hue;
+        stage->saturation = saturation;
+        stage->value = value;
+        stage->colour = 0x80000000u | static_cast<u32>(static_cast<i32>(red * 255.0f)) |
+                        (static_cast<u32>(static_cast<i32>(green * 255.0f)) << 8) |
+                        (static_cast<u32>(static_cast<i32>(blue * 255.0f)) << 16);
     }
-    void eduiGradStageSetRGB(void) {
-        STUBBED();
+    void eduiGradStageSetRGB(edui_gradient_node_s *stage, f32 red, f32 green, f32 blue) {
+        f32 hue = 0.0f, saturation = 0.0f, value;
+        eduiRGBToHSV(red, green, blue, hue, saturation, value);
+        stage->hue = hue;
+        stage->saturation = saturation;
+        stage->value = value;
+        stage->colour = 0x80000000u | static_cast<u32>(static_cast<i32>(red)) |
+                        (static_cast<u32>(static_cast<i32>(green)) << 8) |
+                        (static_cast<u32>(static_cast<i32>(blue)) << 16);
     }
-    void eduiIitemExpanderSetDepth(void) {
-        STUBBED();
+    void eduiIitemExpanderSetDepth(edui_expander_s *item, i32 depth) {
+        item->depth = depth;
+        for (eduiitem_s *child = item->first_child; child; child = child->next) {
+            if (child->type == 19)
+                eduiIitemExpanderSetDepth(static_cast<edui_expander_s *>(child), depth + 1);
+            if (child->type == 17)
+                static_cast<edui_prop_s *>(child)->depth = depth + 1;
+            if (child == item->last_child)
+                break;
+        }
     }
     void eduiInit(void) {
         STUBBED();
     }
     void eduiInitMaterials(void) {
-        STUBBED();
+        uimtls[0] = NuMtlCreate(1);
+        uimtls[0]->opacity = 1.0f;
+        uimtls[0]->attribs.alpha_mode = 0;
+        uimtls[0]->attribs.cull_mode = 2;
+        uimtls[0]->attribs.z_mode = 3;
+        NuMtlUpdate(uimtls[0]);
+        uimtls[1] = NuMtlCreate(1);
+        uimtls[1]->opacity = 0.999f;
+        uimtls[1]->diffuse_color.r = 0.2f;
+        uimtls[1]->diffuse_color.g = 0.2f;
+        uimtls[1]->diffuse_color.b = 0.2f;
+        uimtls[1]->attribs.cull_mode = 2;
+        uimtls[1]->attribs.z_mode = 3;
+        uimtls[1]->attribs.alpha_mode = 3;
+        NuMtlUpdate(uimtls[1]);
+        uimtls[2] = NuMtlCreate(1);
+        uimtls[2]->opacity = 0.999f;
+        uimtls[2]->diffuse_color.r = 0.2f;
+        uimtls[2]->diffuse_color.g = 0.2f;
+        uimtls[2]->diffuse_color.b = 0.2f;
+        uimtls[2]->attribs.cull_mode = 2;
+        uimtls[2]->attribs.z_mode = 3;
+        uimtls[2]->attribs.alpha_mode = 2;
+        NuMtlUpdate(uimtls[2]);
+        uimtls[3] = NuMtlCreate(1);
+        uimtls[3]->opacity = 0.999f;
+        uimtls[3]->diffuse_color.r = 0.2f;
+        uimtls[3]->diffuse_color.g = 0.2f;
+        uimtls[3]->diffuse_color.b = 0.2f;
+        uimtls[3]->attribs.cull_mode = 2;
+        uimtls[3]->attribs.z_mode = 3;
+        uimtls[3]->attribs.alpha_mode = 1;
+        NuMtlUpdate(uimtls[3]);
     }
-    eduiitem_s *eduiItemCheckCreate(usize, const void *, i32, i32, EdUiItemCallback, char *) {
-        STUBBED();
-        return NULL;
+    eduiitem_s *eduiItemCheckCreate(usize data, const void *colours, i32 selected, i32 group,
+                                    EdUiItemCallback callback, char *text) {
+        eduiitem_s *item = eduiItemSelCreate(data, colours, selected, group, callback, text);
+        if (item) {
+            item->type = 2;
+            item->process = eduicbProcessSel;
+            item->render = eduicbRenderCheck;
+        }
+        return item;
     }
-    void eduiItemColourPickCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemColourPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text) {
+        edui_colour_pick_s *item = static_cast<edui_colour_pick_s *>(NU_ALLOC(sizeof(edui_colour_pick_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 10;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessColourPick;
+        item->render = eduicbRenderColourPick;
+        item->destroy = eduicbItemDestroy;
+        item->interact = eduicbInteractColourPick;
+        item->text_alignment = 0x40;
+        item->selection_group = 0;
+        eduiItemSetText(item, text);
+        item->cursor_x = 0.5f;
+        item->cursor_y = 0.5f;
+        item->hue = 180.0f;
+        item->value = 0.5f;
+        item->saturation = 1.0f;
+        item->changed = callback;
+        return item;
     }
-    void eduiItemColourPickSetHSV(void) {
-        STUBBED();
+    void eduiItemColourPickSetHSV(edui_colour_pick_s *item, f32 hue, f32 saturation, f32 value) {
+        item->hue = hue;
+        item->saturation = saturation;
+        item->value = value;
+        item->cursor_x = hue / 360.0f;
+        item->cursor_y = value;
     }
-    void eduiItemColourPickSetRGB(void) {
-        STUBBED();
+    void eduiItemColourPickSetRGB(edui_colour_pick_s *item, f32 red, f32 green, f32 blue) {
+        eduiRGBToHSV(red, green, blue, item->hue, item->saturation, item->value);
+        item->cursor_x = item->hue / 360.0f;
+        item->cursor_y = item->value;
     }
-    void eduiItemColourSliderCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemColourSliderCreate(usize data, const void *colours, i32 group, EdUiItemCallback callback,
+                                          f32 minimum, f32 range, f32 value, u8 red, u8 green, u8 blue, char *text) {
+        edui_colour_slider_s *item = static_cast<edui_colour_slider_s *>(NU_ALLOC(sizeof(edui_colour_slider_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 13;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessColourSlider;
+        item->render = eduicbRenderColourSlider;
+        item->destroy = eduicbItemSliderDestroy;
+        item->selection_group = group;
+        item->text_alignment = 0x40;
+        eduiItemSetText(item, text);
+        item->granularity = 1.0f;
+        item->format = NULL;
+        item->changed = callback;
+        item->minimum = minimum;
+        item->range = range;
+        item->red = red;
+        item->green = green;
+        item->blue = blue;
+        eduiItemSliderSetFmt(item, (char *)"(%d)");
+        eduiItemSliderSetVal(item, value);
+        return item;
     }
-    void eduiItemDataGradPickCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemDataGradPickCreate(usize data, const void *colours, EdUiItemCallback callback,
+                                         EdUiItemCallback press, EdUiItemCallback add, EdUiItemCallback remove,
+                                         EdUiItemCallback copy, EdUiItemCallback paste, char *text) {
+        edui_gradient_pick_s *item = static_cast<edui_gradient_pick_s *>(eduiItemGradPickCreate(data, colours, callback, text));
+        if (item) {
+            item->type = 9;
+            item->press = press;
+            item->add = add;
+            item->remove = remove;
+            item->copy = copy;
+            item->paste = paste;
+        }
+        return item;
     }
-    void eduiItemExpanderAddChild(void) {
-        STUBBED();
+    void eduiItemExpanderAddChild(edui_expander_s *item, eduiitem_s *child) {
+        child->previous = item->last_child;
+        if (item->last_child)
+            item->last_child->next = child;
+        item->last_child = child;
+        if (!item->first_child)
+            item->first_child = child;
+        child->next = NULL;
+        if (child->type == 19)
+            eduiIitemExpanderSetDepth(static_cast<edui_expander_s *>(child), item->depth + 1);
+        if (child->type == 17)
+            static_cast<edui_prop_s *>(child)->depth = item->depth + 1;
     }
-    void eduiItemExpanderCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemExpanderCreate(usize data, const void *colours, EdUiItemCallback callback, char *text) {
+        edui_expander_s *item = static_cast<edui_expander_s *>(NU_ALLOC(sizeof(edui_expander_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 19;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessExpander;
+        item->render = eduicbRenderExpander;
+        item->destroy = eduicbItemDestroyExpander;
+        item->interact = eduicbInteractExpander;
+        item->highlighted = 0;
+        item->text_alignment = 0x40;
+        item->selection_group = 0;
+        eduiItemSetText(item, text);
+        item->changed = callback;
+        return item;
     }
     void eduiItemFilePickCreate(void) {
         STUBBED();
     }
-    void eduiItemFilePickSetFmt(void) {
+    void eduiItemFilePickSetFmt(edui_file_pick_s *item, char *format) {
         STUBBED();
     }
-    void eduiItemFilterAddItem(void) {
-        STUBBED();
+    void eduiItemFilterAddItem(edui_filter_s *item, eduiitem_s *child) {
+        eduiitem_s *first = item->first_child;
+        child->previous = NULL;
+        child->next = first;
+        if (first)
+            first->previous = child;
+        item->first_child = child;
     }
-    void eduiItemFilterCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemFilterCreate(usize data, const void *colours, char *text, char *value) {
+        edui_filter_s *item = static_cast<edui_filter_s *>(NU_ALLOC(sizeof(edui_filter_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 20;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessFilter;
+        item->render = eduicbRenderFilter;
+        item->destroy = eduicbItemDestroyFilter;
+        item->interact = eduicbInteractFilter;
+        item->highlighted = 0;
+        item->text_alignment = 0x40;
+        item->selection_group = 0;
+        eduiItemSetText(item, text);
+        eduiItemPropSetText(item, value);
+        item->label_width = 50.0f;
+        return item;
     }
-    void eduiItemFilterRemoveItem(void) {
-        STUBBED();
+    void eduiItemFilterRemoveItem(edui_filter_s *item, eduiitem_s *child) {
+        if (item->first_child == child)
+            item->first_child = child->next;
+        if (child->next)
+            child->next->previous = child->previous;
+        if (child->previous)
+            child->previous->next = child->next;
+        child->next = NULL;
+        child->previous = NULL;
     }
-    void eduiItemGradPickCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemGradPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text) {
+        edui_gradient_pick_s *item = static_cast<edui_gradient_pick_s *>(NU_ALLOC(sizeof(edui_gradient_pick_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 7;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessGradPick;
+        item->render = eduicbRenderGradPick;
+        item->destroy = eduicbItemGradPickDestroy;
+        item->text_alignment = 0x40;
+        item->selection_group = 0;
+        eduiItemSetText(item, text);
+        item->change_timer = 0;
+        item->changed = callback;
+        return item;
     }
-    void eduiItemGraphAddOnionSkin(void) {
-        STUBBED();
+    void eduiItemGraphAddOnionSkin(edui_graph_s *item, nugraph_s *graph) {
+        if (item->type == 15) {
+            for (i32 i = 0; i < 8; ++i) {
+                if (!item->onion_skins[i]) {
+                    item->onion_skins[i] = graph;
+                    break;
+                }
+            }
+        }
     }
-    void eduiItemGraphCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemGraphCreate(usize data, const void *colours, EdUiItemCallback callback,
+                                   nugraph_s *graph, i32 width, i32 height) {
+        edui_graph_s *item = static_cast<edui_graph_s *>(NU_ALLOC(sizeof(edui_graph_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 15;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessGraph;
+        item->render = eduicbRenderGraph;
+        item->destroy = eduicbItemDestroy;
+        item->changed = callback;
+        item->graph = graph;
+        item->width = width;
+        item->height = height;
+        item->text_alignment = 0x40;
+        item->selection_group = 0;
+        item->selected_point = -1;
+        item->cursor_x = 0.5f;
+        item->cursor_y = 0.5f;
+        item->x_scale = 1.0f;
+        item->y_scale = 1.0f;
+        for (i32 i = 0; i != 8; ++i)
+            item->onion_skins[i] = NULL;
+        if (graph->point_count <= 1)
+            nugraphInit(graph);
+        nugraphCalcCurve(graph, 100);
+        return item;
     }
-    void eduiItemGraphSetCursor(void) {
-        STUBBED();
+    void eduiItemGraphSetCursor(edui_graph_s *item, f32 x, f32 y) {
+        if (item->type == 15) {
+            item->cursor_x = x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x);
+            item->cursor_y = y < 0.0f ? 0.0f : (y > 1.0f ? 1.0f : y);
+        }
     }
-    void eduiItemGraphSetLabels(void) {
-        STUBBED();
+    void eduiItemGraphSetLabels(edui_graph_s *item, char *x, char *y, char *title) {
+        if (item->type == 15) {
+            if (x)
+                NuStrCpy(item->x_label, x);
+            if (y)
+                NuStrCpy(item->y_label, y);
+            if (title)
+                NuStrCpy(item->title, title);
+        }
     }
-    void eduiItemGreyGradPickCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemGreyGradPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text) {
+        eduiitem_s *item = eduiItemGradPickCreate(data, colours, callback, text);
+        if (item)
+            item->type = 8;
+        return item;
     }
-    void eduiItemGreyPickCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemGreyPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text) {
+        eduiitem_s *item = eduiItemColourPickCreate(data, colours, callback, text);
+        if (item) {
+            item->type = 11;
+            item->process = eduicbProcessGreyPick;
+            item->render = eduicbRenderGreyPick;
+        }
+        return item;
     }
-    void eduiItemNumberCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemNumberCreate(usize data, const void *colours, i32 group, EdUiItemCallback callback,
+                                    f32 minimum, f32 range, f32 value, char *text) {
+        eduiitem_s *item = eduiItemSliderCreate(data, colours, group, callback, minimum, range, value, text);
+        if (item)
+            item->render = eduicbRenderNumber;
+        return item;
     }
-    void eduiItemPropCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemPropCreate(usize data, const void *colours, EdUiItemCallback selected,
+                                  EdUiItemCallback changed, EdUiItemCallback button, i32 button_type,
+                                  char *text, char *value) {
+        return eduiItemPropCreateEx(data, colours, selected, changed, button, button_type, text, value, 0);
     }
-    void eduiItemPropCreateEx(void) {
-        STUBBED();
+    eduiitem_s *eduiItemPropCreateEx(usize data, const void *colours, EdUiItemCallback selected,
+                                    EdUiItemCallback changed, EdUiItemCallback button, i32 button_type,
+                                    char *text, char *value, i32 extra_data) {
+        edui_prop_s *item = static_cast<edui_prop_s *>(NU_ALLOC(sizeof(edui_prop_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 17;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessProp;
+        item->render = eduicbRenderProp;
+        item->destroy = eduicbItemDestroyProp;
+        item->interact = eduicbInteractProp;
+        item->highlighted = 0;
+        item->text_alignment = 0x40;
+        item->selection_group = 0;
+        eduiItemSetText(item, text);
+        eduiItemPropSetText(item, value);
+        item->button_type = button_type;
+        item->label_width = 50.0f;
+        item->selected = selected;
+        item->changed = changed;
+        item->button = button;
+        item->extra_data = extra_data;
+        return item;
     }
     i32 eduiItemPropSetText(edui_prop_s *item, char *text) {
         if (item->property_text && NuStrLen(item->property_text) < NuStrLen(text)) {
@@ -1957,12 +2633,34 @@ extern "C" {
     void eduiItemRender(void) {
         STUBBED();
     }
-    eduiitem_s *eduiItemSelCreate(usize, const void *, i32, i32, EdUiItemCallback, char *) {
-        STUBBED();
-        return NULL;
+    eduiitem_s *eduiItemSelCreate(usize data, const void *colours, i32 selected, i32 group,
+                                 EdUiItemCallback callback, char *text) {
+        edui_sel_s *item = static_cast<edui_sel_s *>(NU_ALLOC(sizeof(edui_sel_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 0;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessSel;
+        item->render = eduicbRenderSel;
+        item->destroy = eduicbItemDestroy;
+        item->interact = eduicbInteractSel;
+        item->selection_group = group;
+        item->highlighted = selected;
+        item->text_alignment = 0x40;
+        item->text = NULL;
+        eduiItemSetText(item, text ? text : (char *)"<no name>");
+        item->selected = callback;
+        item->held = NULL;
+        return item;
     }
-    void eduiItemSelWithClipColourCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemSelWithClipColourCreate(usize data, const void *colours, i32 selected, i32 group,
+                                              EdUiItemCallback callback, char *text) {
+        eduiitem_s *item = eduiItemSelCreate(data, colours, selected, group, callback, text);
+        if (item)
+            item->render = eduicbRenderSelWithClipColour;
+        return item;
     }
     void eduiItemSeparatorCreate(void) {
         STUBBED();
@@ -1982,13 +2680,41 @@ extern "C" {
         }
         return 0;
     }
-    eduiitem_s *eduiItemSliderCreate(usize, const void *, i32, EdUiItemCallback, f32, f32, f32, char *) {
-        STUBBED();
-        return NULL;
+    eduiitem_s *eduiItemSliderCreate(usize data, const void *colours, i32 group, EdUiItemCallback callback,
+                                    f32 minimum, f32 range, f32 value, char *text) {
+        edui_slider_s *item = static_cast<edui_slider_s *>(NU_ALLOC(sizeof(edui_slider_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 6;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessSlider;
+        item->render = eduicbRenderSlider;
+        item->destroy = eduicbItemSliderDestroy;
+        item->interact = eduicbInteractSlider;
+        item->selection_group = group;
+        item->text_alignment = 0x40;
+        eduiItemSetText(item, text);
+        item->granularity = 0.001f;
+        item->changed = callback;
+        item->minimum = minimum;
+        item->range = range;
+        item->format = NULL;
+        eduiItemSliderSetFmt(item, (char *)"(%1.03f)");
+        eduiItemSliderSetVal(item, value);
+        return item;
     }
-    eduiitem_s *eduiItemSliderCreateInt(usize, const void *, i32, EdUiItemCallback, i32, i32, i32, char *) {
-        STUBBED();
-        return NULL;
+    eduiitem_s *eduiItemSliderCreateInt(usize data, const void *colours, i32 group, EdUiItemCallback callback,
+                                       i32 minimum, i32 range, i32 value, char *text) {
+        edui_slider_s *item = static_cast<edui_slider_s *>(
+            eduiItemSliderCreate(data, colours, group, callback, minimum, range, value, text));
+        if (item) {
+            eduiItemSliderSetFmt(item, (char *)"(%d)");
+            item->granularity = 1.0f;
+            item->render = eduicbRenderSliderInt;
+        }
+        return item;
     }
     void eduiItemSliderSetFmt(edui_slider_s *item, char *format) {
         if (!item->format) {
@@ -2019,18 +2745,67 @@ extern "C" {
         STUBBED();
         return NULL;
     }
-    void eduiItemTextPickSetFmt(void) {
+    void eduiItemTextPickSetFmt(edui_textpicker_s *item, char *format) {
         STUBBED();
     }
-    void eduiItemTextSelectorCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemTextSelectorCreate(usize data, const void *colours, i32 group,
+                                          EdUiItemCallback callback, i32 count, i32 selected,
+                                          char *text, char **options) {
+        edui_text_selector_s *item = static_cast<edui_text_selector_s *>(NU_ALLOC(sizeof(edui_text_selector_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 6;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessSlider;
+        item->render = eduicbRenderTextSelector;
+        item->destroy = eduicbItemSliderDestroy;
+        item->interact = eduicbInteractSlider;
+        item->selection_group = group;
+        item->text_alignment = 0x40;
+        eduiItemSetText(item, text);
+        item->format = NULL;
+        item->changed = callback;
+        item->minimum = 0.0f;
+        item->range = static_cast<f32>(count - 1);
+        item->granularity = 1.0f;
+        eduiItemSliderSetVal(item, static_cast<f32>(selected));
+        item->options = options;
+        return item;
     }
-    void eduiItemTexturePickCreate(void) {
-        STUBBED();
+    eduiitem_s *eduiItemTexturePickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text) {
+        edui_texture_pick_s *item = static_cast<edui_texture_pick_s *>(NU_ALLOC(sizeof(edui_texture_pick_s), 4, 1, "", 0));
+        if (!item)
+            return NULL;
+        memset(item, 0, sizeof(*item));
+        item->type = 12;
+        item->data = data;
+        memcpy(item->colours, colours, sizeof(item->colours));
+        item->process = eduicbProcessTexturePick;
+        item->render = eduicbRenderTexturePick;
+        item->destroy = eduicbItemDestroy;
+        item->text_alignment = 0x40;
+        item->selection_group = 0;
+        eduiItemSetText(item, text);
+        item->uv_x[0] = 0.4f;
+        item->uv_y[0] = 0.4f;
+        item->uv_x[1] = 0.5f;
+        item->uv_y[1] = 0.5f;
+        item->zoom = 1.0f;
+        item->selected_corner = 0;
+        item->changed = callback;
+        return item;
     }
-    eduiitem_s *eduiItemToggleCreate(usize, const void *, i32, i32, EdUiItemCallback, char *) {
-        STUBBED();
-        return NULL;
+    eduiitem_s *eduiItemToggleCreate(usize data, const void *colours, i32 selected, i32 group,
+                                    EdUiItemCallback callback, char *text) {
+        eduiitem_s *item = eduiItemSelCreate(data, colours, selected, group, callback, text);
+        if (item) {
+            item->type = 3;
+            item->process = eduicbProcessSel;
+            item->render = eduicbRenderCheck;
+        }
+        return item;
     }
     eduiitem_s *edui_last_item;
     eduiitem_s *eduiMenuAddItem(eduimenu_s *menu, eduiitem_s *item) {
@@ -2173,8 +2948,21 @@ extern "C" {
         if (!menu->selected)
             menu->selected = menu->first;
     }
-    void eduiMenuFitOnScreen(void) {
-        STUBBED();
+    void eduiMenuFitOnScreen(eduimenu_s *menu, i32 padding) {
+        if (menu->field_24 < 0) {
+            i32 saved = edui_donotdraw;
+            edui_donotdraw = 1;
+            eduiMenuRender(menu);
+            edui_donotdraw = saved;
+        }
+        if (menu->x + menu->field_24 > 640 - padding)
+            menu->x -= menu->field_24;
+        if (menu->x < padding)
+            menu->x = padding;
+        if (menu->y + menu->field_28 > 448 - padding)
+            menu->y -= menu->field_28;
+        if (menu->y < padding)
+            menu->y = padding;
     }
     void eduiMenuFitWidth(eduimenu_s *, i32) {
         STUBBED();
@@ -2268,8 +3056,114 @@ extern "C" {
         }
         return eduiProcessInteracts(menu, pad);
     }
-    void eduiMenuProcessInput(eduimenu_s *menu, f32 delta_time, nupad_s *pad, i32 item_result) {
-        STUBBED();
+    i32 eduiMenuProcessInput(eduimenu_s *menu, f32 delta_time, nupad_s *pad, i32 item_result) {
+        static f32 up_rept;
+        static f32 down_rept;
+        cbInteractMenuKeySelect(menu);
+        if (item_result || !pad)
+            return 0;
+        if (menu && menu->selected && menu->selected->input && !menu->selected->disabled &&
+            pad->digital_buttons) {
+            if (menu->selected->input(menu, menu->selected, pad->digital_buttons,
+                                      pad->digital_buttons_pressed))
+                return 0;
+        }
+        u32 buttons = pad->digital_buttons;
+        u32 pressed = pad->digital_buttons_pressed;
+        u32 up_button = (menu->flags & 2) ? 0x8000 : 0x1000;
+        u32 down_button = (menu->flags & 2) ? 0x2000 : 0x4000;
+        i32 up = 0;
+        if (pressed & up_button) {
+            up_rept = 1.0f / 3.0f;
+            up = 1;
+        }
+        if ((buttons & up_button) && up_rept > 0.0f) {
+            up_rept -= delta_time;
+            if (up_rept <= 0.0f) {
+                up_rept = 1.0f / 6.0f;
+                up = 1;
+            }
+        }
+        if (!(menu->flags & 6)) {
+            if ((buttons & 0x8000) && !(menu->flags & 1)) {
+                i32 distance = static_cast<i32>(delta_time * 1500.0f);
+                if (distance < 1)
+                    distance = 1;
+                menu->x -= distance;
+            }
+            if ((buttons & 0x2000) && !(menu->flags & 1)) {
+                i32 distance = static_cast<i32>(delta_time * 1500.0f);
+                if (distance < 1)
+                    distance = 1;
+                menu->x += distance;
+            }
+        }
+        i32 down = 0;
+        if (pressed & down_button) {
+            down_rept = 1.0f / 3.0f;
+            down = 1;
+        }
+        if ((buttons & down_button) && down_rept > 0.0f) {
+            down_rept -= delta_time;
+            if (down_rept <= 0.0f) {
+                down_rept = 1.0f / 6.0f;
+                down = 1;
+            }
+        }
+        i32 to_first = up && (buttons & 1);
+        i32 to_last = down && (buttons & 1);
+        i32 page_up = up && (buttons & 2);
+        i32 page_down = down && (buttons & 2);
+        if (page_down && menu->field_10) {
+            i32 count = 1;
+            for (eduiitem_s *item = menu->field_0c; item && item != menu->field_10; item = item->next)
+                ++count;
+            while (menu->selected->next && count--) {
+                menu->selected = menu->selected->next;
+            }
+            return 0;
+        }
+        if (page_up && menu->field_10) {
+            i32 count = 1;
+            for (eduiitem_s *item = menu->field_0c; item && item != menu->field_10; item = item->next)
+                ++count;
+            menu->selected = menu->field_0c;
+            while (menu->selected->previous && count--) {
+                menu->selected = menu->selected->previous;
+                menu->field_0c = menu->selected;
+            }
+            return 0;
+        }
+        if (up && menu->selected && menu->selected->previous) {
+            do {
+                if (menu->selected == menu->field_0c)
+                    menu->field_0c = menu->selected->previous;
+                eduiitem_s *item = menu->selected->previous;
+                while (item->type == 18)
+                    item = item->previous;
+                menu->selected = item;
+            } while (menu->selected->previous && to_first);
+            return 0;
+        }
+        if (down && menu->selected && menu->selected->next) {
+            do {
+                eduiitem_s *item = menu->selected->next;
+                while (item->type == 18)
+                    item = item->next;
+                menu->selected = item;
+            } while (menu->selected->next && to_last);
+            if (to_last) {
+                i32 count = 1;
+                for (eduiitem_s *item = menu->field_0c; item && item != menu->field_10; item = item->next)
+                    ++count;
+                menu->field_0c = menu->selected;
+                while (menu->field_0c->previous && count--)
+                    menu->field_0c = menu->field_0c->previous;
+            }
+            return 0;
+        }
+        eduiCheckForPadMenuCancel(menu, pad);
+        return 0;
     }
     i32 eduiMenuProcessSelectedItem(eduimenu_s *menu, f32 delta_time, nupad_s *pad) {
         if (menu && menu->selected && !(menu->selected->flags & EDUI_ITEM_DISABLED) && menu->selected->process)
@@ -2292,23 +3186,62 @@ extern "C" {
         item->next = NULL;
         item->previous = NULL;
     }
-    void eduiMenuRender(void) {
+    void eduiMenuRender(eduimenu_s *menu) {
         STUBBED();
     }
     void eduiMenuSelectFirstEntry(eduimenu_s *menu) {
         menu->selected = NULL;
     }
-    void eduiMenuSetAttr(void) {
-        STUBBED();
+    void eduiMenuSetAttr(eduimenu_s *menu, const u32 *colours) {
+        do {
+            for (eduiitem_s *item = menu->first; item; item = item->next) {
+                item->colours[0] = colours[0];
+                item->colours[1] = colours[1];
+                item->colours[2] = colours[2];
+                item->colours[3] = colours[3];
+            }
+            menu = menu->child;
+        } while (menu);
     }
-    void eduiMenuSetDisabled(void) {
-        STUBBED();
+    void eduiMenuSetDisabled(eduimenu_s *menu, i32 disabled) {
+        do {
+            for (eduiitem_s *item = menu->first; item; item = item->next)
+                item->disabled = disabled;
+            menu = menu->child;
+        } while (menu);
     }
-    void eduiMenuSetTransparency(void) {
-        STUBBED();
+    void eduiMenuSetTransparency(eduimenu_s *menu, const u32 *colours) {
+        for (eduiitem_s *item = menu->first; item; item = item->next) {
+            item->colours[0] &= 0xffffff;
+            item->colours[0] |= colours[0] & 0xff000000;
+            item->colours[1] &= 0xffffff;
+            item->colours[1] |= colours[1] & 0xff000000;
+            item->colours[2] &= 0xffffff;
+            item->colours[2] |= colours[2] & 0xff000000;
+            item->colours[3] &= 0xffffff;
+            item->colours[3] |= colours[3] & 0xff000000;
+        }
     }
-    void eduiMenuSortItemsByTxt(void) {
-        STUBBED();
+    void eduiMenuSortItemsByTxt(eduimenu_s *menu) {
+        eduiitem_s *first = menu->first;
+        if (first) {
+            i32 sorted;
+            do {
+                sorted = 1;
+                eduiitem_s *item = first;
+                while (item->next && item->text && item->next->text) {
+                    if (item->type != 20 &&
+                        (item->next->type == 20 || NuStrICmp(item->text, item->next->text) > 0)) {
+                        eduiMenuItemMoveDown(menu, item);
+                        if (item == first)
+                            first = item->previous;
+                        sorted = 0;
+                    } else {
+                        item = item->next;
+                    }
+                }
+            } while (!sorted);
+        }
     }
     void eduiProcessCursor(f32 delta_time, nupad_s *pad) {
         eduiProcessCursorDefault(delta_time, pad);
@@ -2409,18 +3342,25 @@ extern "C" {
     void eduiSetDefaultActiveMenu(eduimenu_s *menu) {
         default_active_menu = menu;
     }
-    void eduiSetFont(i32 font) {
+    void eduiSetFont(NUQFNT *font) {
         edui_font = font;
     }
     void eduiSetFontScale(f32 x, f32 y) {
         edui_font_scale_x = x;
         edui_font_scale_y = y;
     }
-    void eduiSetGlobalSliderAccel(void) {
-        STUBBED();
+    void eduiSetGlobalSliderAccel(f32 acceleration) {
+        if (acceleration < 0.0f)
+            acceleration = 0.0f;
+        else if (acceleration > 1.0f)
+            acceleration = 1.0f;
+        slider_acceleration = acceleration;
     }
-    void eduiSetRenderPlane(void) {
-        STUBBED();
+    void eduiSetRenderPlane(i8 plane) {
+        NuMtlSetRenderPlane(uimtls[0], plane);
+        NuMtlSetRenderPlane(uimtls[1], plane);
+        NuMtlSetRenderPlane(uimtls[2], plane);
+        NuMtlSetRenderPlane(uimtls[3], plane);
     }
     void eduiSetUsingMenuFocus(i32 enabled) {
         bUsingMenuFocus = enabled;
@@ -2481,25 +3421,92 @@ extern "C" {
 
     // The editor UI callbacks share this translation unit with their cursor,
     // menu, and interaction state in the original binary.
-    static __used__ void cbMMRegSel(void *, void *) {
-        STUBBED();
+
+    static __used__ void cbMMRegSel(void *, void *selected) {
+        ed_curr = static_cast<ed_module_s *>(static_cast<eduiitem_s *>(selected)->data_ptr);
+        if (!ed_curr->reserved) {
+            ed_module_active = 1;
+            if (ed_curr->activate)
+                ed_curr->activate();
+        }
     }
-    static __used__ void cbMMEditorConfig(void *) {
-        STUBBED();
+    static __used__ void cbMMEditorConfig(void *parent) {
+        eduimenu_s *menu = static_cast<eduimenu_s *>(parent);
+        ed_cfg_menu->x = menu->x + 10;
+        ed_cfg_menu->y = menu->y + 10;
+        eduiMenuAttach(menu, ed_cfg_menu);
     }
 
-    static __used__ void eduiRenderGraphLine(void) {
-        STUBBED();
+    static __used__ void eduiRenderGraphLine(nugraph_s *graph, i32 x, i32 y, i32 width, i32 height, u32 colour) {
+        i32 previous_x = 0;
+        i32 previous_y = height - static_cast<i32>(height * graph->y[0]);
+        f32 fraction = 0.0f;
+        for (i32 sample = 0; sample < 101; ++sample) {
+            i32 current_x = static_cast<i32>(width * fraction);
+            i32 current_y = height - static_cast<i32>(height * nugraphGetYatX(graph, fraction * graph->x_extent * graph->x_scale, 2));
+            if (!edui_donotdraw)
+                NuRndrLine2di((x + previous_x) << 4, (y + previous_y) << 3, (x + current_x) << 4,
+                             (y + current_y) << 3, colour, uimtls[0]);
+            previous_x = current_x;
+            previous_y = current_y;
+            fraction += 0.01f;
+        }
     }
 
-    static __used__ void eduicbDestroyDirectoryList(void) {
-        STUBBED();
+    static __used__ void eduicbDestroyDirectoryList(eduimenu_s *menu, eduimenu_s *) {
+        eduiMenuDetach(menu);
+        eduiMenuDestroy(menu);
     }
-    static __used__ void eduicbInteractColourPick(void) {
-        STUBBED();
+
+    static __used__ i32 eduicbInteractColourPick(edui_interact_s *interact) {
+        edui_colour_pick_s *pick = static_cast<edui_colour_pick_s *>(interact->item);
+        if (((edui_cursor_x >= interact->x && edui_cursor_y >= interact->y &&
+              edui_cursor_x < interact->x + interact->width &&
+              edui_cursor_y < interact->y + interact->height * 0.75f) ||
+             pick->dragging_colour) &&
+            !pick->dragging_saturation) {
+            pick->cursor_x = (edui_cursor_x - interact->x) / interact->width;
+            pick->cursor_y = (edui_cursor_y - interact->y) / (interact->height * 0.75f);
+            pick->dragging_colour = (edui_cursor_buttons & EDUI_CURSOR_PRIMARY) != 0;
+        }
+        if (((edui_cursor_x >= interact->x &&
+              edui_cursor_y >= interact->y + interact->height * 0.75f &&
+              edui_cursor_x < interact->x + interact->width &&
+              edui_cursor_y < interact->y + interact->height * 0.75f + interact->height * 0.125f) ||
+             pick->dragging_saturation) &&
+            !pick->dragging_colour) {
+            pick->saturation = (edui_cursor_x - interact->x) / interact->width;
+            pick->dragging_saturation = (edui_cursor_buttons & EDUI_CURSOR_PRIMARY) != 0;
+        }
+        if (pick->cursor_x > 1.0f)
+            pick->cursor_x = 1.0f;
+        else if (pick->cursor_x < 0.0f)
+            pick->cursor_x = 0.0f;
+        if (pick->cursor_y > 1.0f)
+            pick->cursor_y = 1.0f;
+        else if (pick->cursor_y < 0.0f)
+            pick->cursor_y = 0.0f;
+        if (pick->saturation > 1.0f)
+            pick->saturation = 1.0f;
+        else if (pick->saturation < 0.0f)
+            pick->saturation = 0.0f;
+        pick->hue = pick->cursor_x * 360.0f;
+        pick->value = pick->cursor_y;
+        eduiHSVToRGB(pick->hue, pick->saturation, pick->value, pick->red, pick->green, pick->blue);
+        if (edui_cursor_x >= interact->x &&
+            edui_cursor_y >= interact->y + interact->height * 0.75f + interact->height * 0.125f &&
+            edui_cursor_x < interact->x + interact->width &&
+            edui_cursor_y < interact->y + interact->height &&
+            (edui_cursor_buttons_db & EDUI_CURSOR_PRIMARY)) {
+            pick->dragging_colour = 0;
+            pick->dragging_saturation = 0;
+            pick->confirm = 1;
+        }
+        return pick->dragging_colour || pick->dragging_saturation;
     }
-    static __used__ void eduicbInteractExpander(void) {
+    static __used__ i32 eduicbInteractExpander(edui_interact_s *interact) {
         STUBBED();
+        return 0;
     }
     static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact) {
         STUBBED();
@@ -2508,100 +3515,634 @@ extern "C" {
     static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact) {
         return eduicbInteractProp(interact);
     }
-    static __used__ void eduicbInteractSel(void) {
-        STUBBED();
+    static __used__ i32 eduicbInteractSel(edui_interact_s *interact) {
+        eduimenu_s *menu = interact->menu;
+        edui_sel_s *item = static_cast<edui_sel_s *>(interact->item);
+        if (interact->callback) {
+            if (edui_cursor_buttons_db & EDUI_CURSOR_PRIMARY)
+                item->selected(menu, item, edui_cursor_buttons);
+            else if ((edui_cursor_buttons & EDUI_CURSOR_PRIMARY) && item->held)
+                item->held(menu, item, edui_cursor_buttons);
+        }
+        return 0;
     }
-    static __used__ void eduicbItemDestroyExpander(void) {
-        STUBBED();
+    static __used__ void eduicbItemDestroyExpander(eduimenu_s *menu, eduiitem_s *item) {
+        edui_expander_s *expander = static_cast<edui_expander_s *>(item);
+        if (expander->last_child)
+            expander->last_child->next = NULL;
+        while (expander->first_child) {
+            eduiitem_s *next = expander->first_child->next;
+            expander->first_child->destroy(menu, expander->first_child);
+            expander->first_child = next;
+        }
     }
-    static __used__ void eduicbItemDestroyFilter(void) {
-        STUBBED();
+    static __used__ void eduicbItemDestroyFilter(eduimenu_s *menu, eduiitem_s *item) {
+        edui_filter_s *filter = static_cast<edui_filter_s *>(item);
+        while (filter->first_child) {
+            eduiitem_s *next = filter->first_child->next;
+            filter->first_child->destroy(menu, filter->first_child);
+            filter->first_child = next;
+        }
+        eduicbItemDestroyProp(menu, item);
     }
-    static __used__ void eduicbItemFilePickDestroy(void) {
-        STUBBED();
+    static __used__ void eduicbItemFilePickDestroy(eduimenu_s *menu, eduiitem_s *item) {
+        edui_file_pick_s *file_pick = static_cast<edui_file_pick_s *>(item);
+        if (file_pick->format) {
+            NU_FREE(file_pick->format);
+            file_pick->format = NULL;
+        }
+        eduicbItemDestroy(menu, item);
     }
-    static __used__ void eduicbItemGradPickDestroy(void) {
-        STUBBED();
+    static __used__ void eduicbItemGradPickDestroy(eduimenu_s *, eduiitem_s *item) {
+        edui_gradient_pick_s *gradient = static_cast<edui_gradient_pick_s *>(item);
+        while (gradient->first_stage)
+            eduiGradStageDelete(gradient, gradient->first_stage);
+        NU_FREE(gradient);
     }
-    static __used__ void eduicbItemSliderDestroy(void) {
-        STUBBED();
+    static __used__ void eduicbItemSliderDestroy(eduimenu_s *menu, eduiitem_s *item) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        if (slider->format) {
+            NU_FREE(slider->format);
+            slider->format = NULL;
+        }
+        eduicbItemDestroy(menu, item);
     }
-    static __used__ void eduicbItemTextPickDestroy(void) {
-        STUBBED();
+    static __used__ void eduicbItemTextPickDestroy(eduimenu_s *menu, eduiitem_s *item) {
+        edui_textpicker_s *text_pick = static_cast<edui_textpicker_s *>(item);
+        if (text_pick->format) {
+            NU_FREE(text_pick->format);
+            text_pick->format = NULL;
+        }
+        eduicbItemDestroy(menu, item);
     }
-    static __used__ void eduicbPickCFGCancel(void) {
-        STUBBED();
+    static __used__ void eduicbPickCFGCancel(eduimenu_s *menu, eduimenu_s *) {
+        eduiMenuDestroy(menu);
     }
-    static __used__ void eduicbProcessColourPick(void) {
-        STUBBED();
+
+    static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad) {
+        edui_colour_pick_s *pick = static_cast<edui_colour_pick_s *>(item);
+        if (!edui_cursor_buttons) {
+            pick->dragging_colour = 0;
+            pick->dragging_saturation = 0;
+        }
+        f32 dx = NuPs2ApplyDeadZone(pad->analog_left_x, 32) * 0.001f;
+        f32 dy = NuPs2ApplyDeadZone(pad->analog_left_y, 32) * 0.001f;
+        pick->cursor_x += dx;
+        pick->cursor_y += dy;
+        if (pick->cursor_x < 0.0f)
+            pick->cursor_x = 0.0f;
+        else if (pick->cursor_x > 1.0f)
+            pick->cursor_x = 1.0f;
+        if (pick->cursor_y < 0.0f)
+            pick->cursor_y = 0.0f;
+        else if (pick->cursor_y > 1.0f)
+            pick->cursor_y = 1.0f;
+        if (pad->analog_l2) {
+            pick->saturation -= static_cast<u32>(pad->analog_l2) * delta_time * 0.005f;
+            if (pick->saturation < 0.0f)
+                pick->saturation = 0.0f;
+            return 1;
+        }
+        if (pad->analog_r2) {
+            pick->saturation += static_cast<u32>(pad->analog_r2) * delta_time * 0.005f;
+            if (pick->saturation > 1.0f)
+                pick->saturation = 1.0f;
+            return 1;
+        }
+        pick->hue = pick->cursor_x * 360.0f;
+        pick->value = pick->cursor_y;
+        eduiHSVToRGB(pick->hue, pick->saturation, pick->value, pick->red, pick->green, pick->blue);
+        if (((pad->digital_buttons_pressed & EDUI_CURSOR_PRIMARY) || pick->confirm) && pick->changed)
+            pick->changed(menu, item, pad->digital_buttons);
+        return 0;
     }
-    static __used__ void eduicbProcessColourSlider(void) {
-        STUBBED();
+    static __used__ i32 eduicbProcessColourSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad) {
+        static i32 rep_timer = 30;
+        static f32 dynascale;
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        if ((pad->digital_buttons & 0x0c) == 0x0c) {
+            if (slider && slider->minimum <= 0.0f && slider->minimum + slider->range >= 0.0f) {
+                slider->value = 0.0f;
+                slider->normalized_value = (slider->value - slider->minimum) / slider->range;
+                slider->change_timer = 60;
+                if (slider->changed)
+                    slider->changed(menu, item, pad->digital_buttons);
+            }
+            rep_timer = 30;
+        } else if ((pad->digital_buttons & 0x03) == 0x03) {
+            if (slider && slider->minimum <= 0.0f && slider->minimum + slider->range >= 255.0f) {
+                slider->value = 255.0f;
+                slider->normalized_value = (slider->value - slider->minimum) / slider->range;
+                slider->change_timer = 60;
+                if (slider->changed)
+                    slider->changed(menu, item, pad->digital_buttons);
+            }
+            rep_timer = 30;
+        } else if (pad->digital_buttons & 0x04) {
+            if (rep_timer > 0)
+                --rep_timer;
+            else
+                rep_timer = 0;
+            if (!rep_timer || (pad->digital_buttons_pressed & 0x04)) {
+                f32 value = slider->value - slider->granularity;
+                if (value < slider->minimum)
+                    value = slider->minimum;
+                f32 rounded = value > 0.0f ? value + slider->granularity * 0.5f : value - slider->granularity * 0.5f;
+                slider->value = static_cast<i32>(rounded / slider->granularity) * slider->granularity;
+                slider->normalized_value = (slider->value - slider->minimum) / slider->range;
+                slider->change_timer = 60;
+                if (slider->changed)
+                    slider->changed(menu, item, pad->digital_buttons);
+            }
+        } else if (pad->digital_buttons & 0x08) {
+            if (rep_timer > 0)
+                --rep_timer;
+            else
+                rep_timer = 0;
+            if (!rep_timer || (pad->digital_buttons_pressed & 0x08)) {
+                f32 value = slider->value + slider->granularity;
+                if (value > slider->minimum + slider->range)
+                    value = slider->minimum + slider->range;
+                f32 rounded = value > 0.0f ? value + slider->granularity * 0.5f : value - slider->granularity * 0.5f;
+                slider->value = static_cast<i32>(rounded / slider->granularity) * slider->granularity;
+                slider->normalized_value = (slider->value - slider->minimum) / slider->range;
+                slider->change_timer = 60;
+                if (slider->changed)
+                    slider->changed(menu, item, pad->digital_buttons);
+            }
+        } else {
+            rep_timer = 30;
+            if (pad->analog_l2) {
+                f32 scale;
+                if (pad->unknown_a9) {
+                    dynascale *= 1.05f;
+                    scale = dynascale;
+                } else {
+                    dynascale = 1.627604291343232e-7f;
+                    scale = 1.627604251552839e-5f;
+                }
+                f32 value = slider->normalized_value - static_cast<u32>(pad->analog_l2) * scale;
+                if (value < 0.0f)
+                    value = 0.0f;
+                slider->normalized_value = value;
+                slider->value = value * slider->range + slider->minimum;
+                slider->change_timer = 60;
+                if (slider->changed)
+                    slider->changed(menu, item, pad->digital_buttons);
+            } else if (pad->analog_r2) {
+                f32 scale;
+                if (pad->unknown_a9) {
+                    dynascale *= 1.05f;
+                    scale = dynascale;
+                } else {
+                    dynascale = 1.627604291343232e-7f;
+                    scale = 1.627604251552839e-5f;
+                }
+                f32 value = slider->normalized_value + static_cast<u32>(pad->analog_r2) * scale;
+                if (value > 1.0f)
+                    value = 1.0f;
+                slider->normalized_value = value;
+                slider->value = value * slider->range + slider->minimum;
+                slider->change_timer = 60;
+                if (slider->changed)
+                    slider->changed(menu, item, pad->digital_buttons);
+            } else {
+                dynascale = 1.627604291343232e-7f;
+            }
+        }
+        return 0;
     }
-    static __used__ void eduicbProcessExpander(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbProcessFilePick(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbProcessFilter(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbProcessGradPick(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbProcessGraph(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbProcessGreyPick(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbProcessProp(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbProcessSel(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbProcessSeparator(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbProcessSlider(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbProcessTextPick(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbProcessTexturePick(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbRenderCheck(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbRenderColourPick(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbRenderColourSlider(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbRenderExpander(void) {
-        STUBBED();
-    }
-    static __used__ void eduicbRenderFilePick(void) {
-        STUBBED();
-    }
-    static __used__ i32 eduicbRenderGradPick(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y,
-                                             i32 scale) {
+    static __used__ i32 eduicbProcessExpander(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad) {
         STUBBED();
         return 0;
     }
-    static __used__ void eduicbRenderGraph(void) {
+    static __used__ i32 eduicbProcessFilePick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad) {
         STUBBED();
+        return 0;
     }
-    static __used__ void eduicbRenderGreyPick(void) {
+    static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad) {
         STUBBED();
+        return 0;
     }
-    static __used__ void eduicbRenderNumber(void) {
+    static __used__ i32 eduicbProcessGradPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad) {
         STUBBED();
+        return 0;
+    }
+    static __used__ i32 eduicbProcessGraph(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad) {
+        edui_graph_s *graph_item = static_cast<edui_graph_s *>(item);
+        show_y_scale_help = show_y_scale_help > 0 ? show_y_scale_help - 1 : 0;
+        show_x_scale_help = show_x_scale_help > 0 ? show_x_scale_help - 1 : 0;
+        f32 x = NuPs2ApplyDeadZone(pad->analog_left_x, 32) * (1.0f / 8192.0f);
+        f32 y = -NuPs2ApplyDeadZone(pad->analog_left_y, 32) * (1.0f / 8192.0f);
+        x += graph_item->cursor_x;
+        y += graph_item->cursor_y;
+        if (x < 0.0f)
+            x = 0.0f;
+        else if (x > 1.0f)
+            x = 1.0f;
+        if (y < 0.0f)
+            y = 0.0f;
+        else if (y > 1.0f)
+            y = 1.0f;
+        graph_item->cursor_x = x;
+        graph_item->cursor_y = y;
+
+        u32 left = pad->analog_l2;
+        u32 right = pad->analog_r2;
+        if (left && right) {
+            graph_item->graph->x_scale = 1.0f;
+            show_x_scale_help = 60;
+            return 1;
+        }
+        if (left > 55) {
+            graph_item->graph->x_scale -= left * 0.02f / 255.0f;
+            if (graph_item->graph->x_scale < 0.01f)
+                graph_item->graph->x_scale = 0.01f;
+            show_x_scale_help = 60;
+            return 1;
+        }
+        if (right > 55) {
+            graph_item->graph->x_scale += right * 0.02f / 255.0f;
+            show_x_scale_help = 60;
+            return 1;
+        }
+
+        left = pad->analog_l1;
+        right = pad->analog_r1;
+        if (left && right) {
+            graph_item->graph->y_scale = 1.0f;
+            show_y_scale_help = 60;
+            return 1;
+        }
+        if (left) {
+            graph_item->graph->y_scale -= left * 0.02f / 255.0f;
+            if (graph_item->graph->y_scale < 0.01f)
+                graph_item->graph->y_scale = 0.01f;
+            show_y_scale_help = 60;
+            return 1;
+        }
+        if (right) {
+            graph_item->graph->y_scale += right * 0.02f / 255.0f;
+            show_y_scale_help = 60;
+            return 1;
+        }
+
+        u32 pressed = pad->digital_buttons_pressed;
+        if ((pressed & 0x80) && graph_item->selected_point >= 0) {
+            nugraphDeletePoint(graph_item->graph, graph_item->selected_point);
+            nugraphCalcCurve(graph_item->graph, 100);
+            return 1;
+        }
+        if (pressed & 0x20) {
+            nugraphAddPoint(graph_item->graph, graph_item->cursor_x, graph_item->cursor_y);
+            nugraphCalcCurve(graph_item->graph, 100);
+            return 1;
+        }
+        if ((pressed & 0x40) && graph_item->selected_point >= 0) {
+            graph_item->cursor_x = graph_item->graph->x[graph_item->selected_point];
+            graph_item->cursor_y = graph_item->graph->y[graph_item->selected_point];
+        }
+        if ((pad->digital_buttons & 0x40) && graph_item->selected_point >= 0) {
+            i32 index = graph_item->selected_point;
+            nugraph_s *graph = graph_item->graph;
+            graph->x[index] = graph_item->cursor_x;
+            graph->y[index] = graph_item->cursor_y;
+            if (index == 0) {
+                graph->x[index] = 0.0f;
+            } else if (index == graph->point_count - 1) {
+                graph->x[index] = 1.0f;
+            } else if (graph->x[index] <= graph->x[index - 1]) {
+                graph->x[index] = graph->x[index - 1] + 0.01f;
+            } else if (graph->x[index] >= graph->x[index + 1]) {
+                graph->x[index] = graph->x[index + 1] - 0.01f;
+            }
+            nugraphCalcCurve(graph, 100);
+            return 1;
+        }
+        if ((pressed & 0x10) && graph_item->changed)
+            graph_item->changed(menu, item, pressed);
+        return 0;
+    }
+    static __used__ i32 eduicbProcessGreyPick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad) {
+        edui_colour_pick_s *pick = static_cast<edui_colour_pick_s *>(item);
+        i32 left = pad->analog_l1 ? pad->analog_l1 : pad->analog_l2;
+        i32 right = pad->analog_r1 ? pad->analog_r1 : pad->analog_r2;
+        if (left) {
+            pick->value -= left / 4192.0f;
+            if (pick->value < 0.0f)
+                pick->value = 0.0f;
+            return 1;
+        }
+        if (right) {
+            pick->value += right / 4192.0f;
+            if (pick->value > 1.0f)
+                pick->value = 1.0f;
+            return 1;
+        }
+        pick->saturation = 0.0f;
+        pick->hue = 0.0f;
+        if ((pad->digital_buttons_pressed & 0x40) && pick->changed)
+            pick->changed(menu, item, pad->digital_buttons);
+        return 0;
+    }
+    static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad) {
+        STUBBED();
+        return 0;
+    }
+    static __used__ i32 eduicbProcessSel(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad) {
+        edui_sel_s *selection = static_cast<edui_sel_s *>(item);
+        if (pad->digital_buttons_pressed & EDUI_CURSOR_PRIMARY) {
+            eduiMenuHighlight(menu, item);
+            if (selection->selected)
+                selection->selected(menu, item, pad->digital_buttons);
+        } else if ((pad->digital_buttons & EDUI_CURSOR_PRIMARY) && selection->held) {
+            selection->held(menu, item, pad->digital_buttons);
+        }
+        return 0;
+    }
+    static __used__ i32 eduicbProcessSeparator(eduimenu_s *, eduiitem_s *, f32, nupad_s *) {
+        return 0;
+    }
+    static __used__ i32 eduicbProcessSlider(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad) {
+        static i32 rep_timer = 30;
+        static f32 accel = 1.0f;
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        if ((pad->digital_buttons & 0x0c) == 0x0c) {
+            f32 value;
+            if (slider->minimum <= 0.0f && slider->minimum + slider->range >= 0.0f)
+                value = 0.0f;
+            else if (slider->minimum <= 1.0f && slider->minimum + slider->range >= 1.0f)
+                value = 1.0f;
+            else {
+                rep_timer = 30;
+                return 0;
+            }
+            slider->value = value;
+            slider->normalized_value = (value - slider->minimum) / slider->range;
+            slider->change_timer = 60;
+            if (slider->changed)
+                slider->changed(menu, item, pad->digital_buttons);
+            rep_timer = 30;
+        } else if (pad->digital_buttons & 0x04) {
+            if (rep_timer > 0)
+                --rep_timer;
+            else
+                rep_timer = 0;
+            if (!rep_timer || (pad->digital_buttons_pressed & 0x04)) {
+                f32 step = slider->granularity * accel;
+                f32 value = slider->value - step;
+                if (value < slider->minimum)
+                    value = slider->minimum;
+                value = static_cast<i32>((value > 0.0f ? value + step * 0.5f : value - step * 0.5f) / step) * step;
+                slider->value = value;
+                slider->normalized_value = (value - slider->minimum) / slider->range;
+                slider->change_timer = 60;
+                if (slider->changed)
+                    slider->changed(menu, item, pad->digital_buttons);
+                accel += slider_acceleration;
+            }
+        } else if (pad->digital_buttons & 0x08) {
+            if (rep_timer > 0)
+                --rep_timer;
+            else
+                rep_timer = 0;
+            if (!rep_timer || (pad->digital_buttons_pressed & 0x08)) {
+                f32 step = slider->granularity * accel;
+                f32 value = slider->value + step;
+                if (value > slider->minimum + slider->range)
+                    value = slider->minimum + slider->range;
+                value = static_cast<i32>((value > 0.0f ? value + step * 0.5f : value - step * 0.5f) / step) * step;
+                slider->value = value;
+                slider->normalized_value = (value - slider->minimum) / slider->range;
+                slider->change_timer = 60;
+                if (slider->changed)
+                    slider->changed(menu, item, pad->digital_buttons);
+                accel += slider_acceleration;
+            }
+        } else {
+            rep_timer = 30;
+            accel = 1.0f;
+        }
+        return 0;
+    }
+    static __used__ i32 eduicbProcessTextPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad) {
+        STUBBED();
+        return 0;
+    }
+    static __used__ i32 eduicbProcessTexturePick(eduimenu_s *menu, eduiitem_s *item, f32, nupad_s *pad) {
+        edui_texture_pick_s *pick = static_cast<edui_texture_pick_s *>(item);
+        f32 x = NuPs2ApplyDeadZone(pad->analog_left_x, 32);
+        f32 y = NuPs2ApplyDeadZone(pad->analog_left_y, 32);
+        i32 corner = pick->selected_corner;
+        x = pick->uv_x[corner] + x / (8192.0f * pick->zoom);
+        y = pick->uv_y[corner] + y / (8192.0f * pick->zoom);
+        if (x < 0.0f)
+            x = 0.0f;
+        else if (x > 1.0f)
+            x = 1.0f;
+        if (y < 0.0f)
+            y = 0.0f;
+        else if (y > 1.0f)
+            y = 1.0f;
+        pick->uv_x[corner] = x;
+        pick->uv_y[corner] = y;
+        i32 left = pad->analog_l1 ? pad->analog_l1 : pad->analog_l2;
+        i32 right = pad->analog_r1 ? pad->analog_r1 : pad->analog_r2;
+        if (left) {
+            pick->zoom -= left / 4192.0f;
+            if (pick->zoom < 1.0f)
+                pick->zoom = 1.0f;
+            return 1;
+        }
+        if (right) {
+            pick->zoom += right / 4192.0f;
+            if (pick->zoom > 16.0f)
+                pick->zoom = 16.0f;
+            return 1;
+        }
+        if (pad->digital_buttons_pressed & 0x100) {
+            pick->uv_x[corner] = static_cast<i32>(pick->uv_x[corner] * 256.0f + 0.5f) * (1.0f / 256.0f);
+            pick->uv_y[corner] = static_cast<i32>(pick->uv_y[corner] * 256.0f + 0.5f) * (1.0f / 256.0f);
+        }
+        if (pad->digital_buttons_pressed & 0x80)
+            pick->selected_corner = corner != 1;
+        if ((pad->digital_buttons_pressed & 0x40) && pick->changed)
+            pick->changed(menu, item, pad->digital_buttons);
+        return 0;
+    }
+    static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width) {
+        i32 height = static_cast<i32>(NuQFntHeight(edui_font) * 1.25f) >> 3;
+        i32 baseline = static_cast<i32>(NuQFntHeight(edui_font) * 0.125f + NuQFntBaseline(edui_font));
+        item->x = x;
+        item->y = y;
+        if (!edui_donotdraw)
+            NuRndrRect2di(x << 4, y << 3, width << 4, height << 3, item->colours[2], uimtls[ui_bgmtl]);
+        if (!edui_donotdraw)
+            NuQFntSet(edui_font);
+        if (!edui_donotdraw)
+            NuQFntSetColour(edui_font, item->colours[item->highlighted]);
+        eduiFntPrintEx(edui_font, x << 4, (y << 3) + baseline, 16, item->text);
+
+        i32 left = ((x - height + width - 2) << 4) + 16;
+        i32 top = (y << 3) + 16;
+        i32 right = left + ((height - 2) << 4) - 16;
+        i32 bottom = top + ((height - 2) << 3) - 8;
+        i32 middle_y = (top + bottom) >> 1;
+        i32 quarter_x = (left + ((left + right) >> 1)) >> 1;
+        i32 lower_y = (bottom + middle_y) >> 1;
+        if (item->highlighted) {
+            i32 points[8] = {left, middle_y, quarter_x, lower_y, quarter_x, bottom, right, top};
+            if (!edui_donotdraw)
+                NuRndrTriStrip2di(points, NULL, 4, item->colours[0], uimtls[0]);
+        } else {
+            i32 points[10] = {left, middle_y, quarter_x, lower_y, right, top, quarter_x, bottom, left, middle_y};
+            if (!edui_donotdraw)
+                NuRndrLineStrip2di(points, NULL, 5, item->colours[0], uimtls[0]);
+        }
+        return height;
+    }
+    static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width) {
+        STUBBED();
+        return 0;
+    }
+    static __used__ i32 eduicbRenderColourSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width) {
+        edui_colour_slider_s *slider = static_cast<edui_colour_slider_s *>(item);
+        i32 height = static_cast<i32>(NuQFntHeight(edui_font) * 1.25f) >> 3;
+        i32 baseline = static_cast<i32>(NuQFntHeight(edui_font) * 0.125f + NuQFntBaseline(edui_font));
+        item->x = x;
+        item->y = y;
+        if (!edui_donotdraw)
+            NuRndrRect2di(x << 4, y << 3, width << 4, height << 4, item->colours[2 + item->highlighted], uimtls[0]);
+        if (!edui_donotdraw)
+            NuQFntSet(edui_font);
+        if (!edui_donotdraw)
+            NuQFntSetColour(edui_font, item->colours[item->highlighted]);
+        eduiFntPrintEx(edui_font, (x + 64) << 4, (y << 3) + baseline, 64, item->text);
+        eduiFntPrintEx(edui_font, (x + 116) << 4, (y << 3) + baseline, 64, slider->format,
+                       static_cast<i32>(slider->value));
+
+        i32 colour = slider->red + (slider->green << 8) + (slider->blue << 16);
+        i32 colours[4] = {static_cast<i32>(0xff000000), colour, static_cast<i32>(0xff000000), colour};
+        i32 top = (y + height) << 3;
+        if (!edui_donotdraw) {
+            i32 left = static_cast<i32>(0.0f * (width << 4));
+            i32 right = static_cast<i32>(1.0f * (width << 4));
+            NuRndrGradRect2di((x << 4) + left, top, right - left, height << 3, colours, uimtls[ui_bgmtl]);
+        }
+        i32 bottom = (y + height * 2 - 1) << 3;
+        if (!edui_donotdraw) {
+            i32 marker = static_cast<i32>((x + 1) + slider->normalized_value * width) << 4;
+            NuRndrLine2di(marker, top, marker, bottom, item->colours[item->highlighted], uimtls[0]);
+        }
+        if (!edui_donotdraw) {
+            i32 marker = static_cast<i32>(x + slider->normalized_value * width) << 4;
+            NuRndrLine2di(marker, top, marker, bottom, item->colours[item->highlighted], uimtls[0]);
+        }
+        if (!edui_donotdraw) {
+            i32 marker = static_cast<i32>((x - 1) + slider->normalized_value * width) << 4;
+            NuRndrLine2di(marker, top, marker, bottom, item->colours[item->highlighted], uimtls[0]);
+        }
+        return height * 2;
+    }
+    static __used__ i32 eduicbRenderExpander(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width) {
+        STUBBED();
+        return 0;
+    }
+    static __used__ i32 eduicbRenderFilePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width) {
+        STUBBED();
+        return 0;
+    }
+    static __used__ i32 eduicbRenderGradPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width) {
+        edui_gradient_pick_s *gradient = static_cast<edui_gradient_pick_s *>(item);
+        i32 height = static_cast<i32>(NuQFntHeight(edui_font) * 1.25f) >> 2;
+        i32 baseline = static_cast<i32>(NuQFntHeight(edui_font) * 0.125f + NuQFntBaseline(edui_font));
+        item->x = x;
+        item->y = y;
+        if (!edui_donotdraw)
+            NuRndrRect2di(x << 4, y << 3, width << 4, height << 3, item->colours[2 + item->highlighted],
+                         uimtls[ui_bgmtl]);
+        if (!edui_donotdraw)
+            NuQFntSet(edui_font);
+        if (!edui_donotdraw)
+            NuQFntSetColour(edui_font, item->colours[item->highlighted]);
+        if (gradient->change_timer && gradient->selected_stage) {
+            eduiFntPrintEx(edui_font, (width + x * 2) << 3, (y << 3) + baseline, 64, "%1.03f",
+                           gradient->selected_stage->time);
+            --gradient->change_timer;
+        } else
+            eduiFntPrintEx(edui_font, (width + x * 2) << 3, (y << 3) + baseline, 64, item->text);
+
+        i32 half_height = height >> 1;
+        for (edui_gradient_node_s *stage = gradient->first_stage; stage && stage->next; stage = stage->next) {
+            i32 colours[4] = {static_cast<i32>(stage->colour), static_cast<i32>(stage->next->colour),
+                              static_cast<i32>(stage->colour), static_cast<i32>(stage->next->colour)};
+            if (!edui_donotdraw) {
+                i32 left = static_cast<i32>((width << 4) * stage->time);
+                i32 right = static_cast<i32>((width << 4) * stage->next->time);
+                NuRndrGradRect2di((x << 4) + left, (y + half_height) << 3, right - left, half_height << 3,
+                                 colours, uimtls[ui_bgmtl]);
+            }
+        }
+        for (edui_gradient_node_s *stage = gradient->first_stage; stage; stage = stage->next) {
+            i32 marker_x = (x + static_cast<i32>(width * stage->time) - 2) << 4;
+            i32 marker_y = ((y + half_height) << 3) - 16;
+            i32 marker_height = (half_height << 3) + 16;
+            if (!edui_donotdraw)
+                NuRndrRect2di(marker_x, marker_y, 80, marker_height, stage->colour, uimtls[0]);
+            u32 outline = gradient->selected_stage == stage ? 0x80ffffff : 0x80000000;
+            if (!edui_donotdraw)
+                NuRndrLineRect2di(marker_x, marker_y, 80, marker_height, outline, uimtls[ui_outmtl]);
+        }
+        return height;
+    }
+    static __used__ i32 eduicbRenderGraph(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width) {
+        STUBBED();
+        return 0;
+    }
+    static __used__ i32 eduicbRenderGreyPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width) {
+        edui_colour_pick_s *pick = static_cast<edui_colour_pick_s *>(item);
+        i32 colours[4] = {static_cast<i32>(0x80000000), static_cast<i32>(0x80ffffff),
+                          static_cast<i32>(0x80000000), static_cast<i32>(0x80ffffff)};
+        i32 height = width / 4;
+        item->x = x;
+        item->y = y;
+        if (!edui_donotdraw) {
+            i32 left = static_cast<i32>(0.0f * (width << 4));
+            i32 right = static_cast<i32>(1.0f * (width << 4));
+            NuRndrGradRect2di((x << 4) + left, y << 3, right - left, height << 3, colours, uimtls[ui_bgmtl]);
+        }
+        for (i32 offset = 1; offset >= -1; --offset) {
+            i32 cursor_x = static_cast<i32>(x + offset + (width - 2) * pick->value) << 4;
+            if (!edui_donotdraw)
+                NuRndrLine2di(cursor_x, y << 3, cursor_x, (y + (height >> 1) - 1) << 3,
+                             0x80ffffff, uimtls[0]);
+        }
+        for (i32 offset = 1; offset >= -1; --offset) {
+            i32 cursor_x = static_cast<i32>(x + offset + (width - 2) * pick->value) << 4;
+            if (!edui_donotdraw)
+                NuRndrLine2di(cursor_x, (y + (height >> 1)) << 3, cursor_x, (y + height - 1) << 3,
+                             0x80000000, uimtls[0]);
+        }
+        return height;
+    }
+    static __used__ i32 eduicbRenderNumber(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width) {
+        edui_slider_s *number = static_cast<edui_slider_s *>(item);
+        i32 height = static_cast<i32>(NuQFntHeight(edui_font) * 1.25f) >> 3;
+        i32 baseline = static_cast<i32>(NuQFntHeight(edui_font) * 0.125f + NuQFntBaseline(edui_font));
+        item->x = x;
+        item->y = y;
+        if (!edui_donotdraw)
+            NuRndrRect2di(x << 4, y << 3, width << 4, height << 3, item->colours[2 + item->highlighted],
+                         uimtls[ui_bgmtl]);
+        if (!edui_donotdraw)
+            NuQFntSet(edui_font);
+        if (!edui_donotdraw)
+            NuQFntSetColour(edui_font, item->colours[item->highlighted]);
+        char format[512];
+        NuStrCpy(format, item->text);
+        NuStrCat(format, number->format);
+        eduiFntPrintEx(edui_font, x << 4, (y << 3) + baseline, 16, format, number->value);
+        return height;
     }
     static __used__ i32 eduicbRenderProp(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale) {
         STUBBED();
@@ -2610,34 +4151,139 @@ extern "C" {
     static __used__ i32 eduicbRenderFilter(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale) {
         return eduicbRenderProp(menu, item, x, y, scale);
     }
-    static __used__ void eduicbRenderSel(void) {
-        STUBBED();
+    static __used__ i32 eduicbRenderSel(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width) {
+        i32 height = static_cast<i32>(NuQFntHeight(edui_font) * 0.15625f);
+        i32 baseline = static_cast<i32>(NuQFntHeight(edui_font) * 0.125f + NuQFntBaseline(edui_font));
+        item->x = x;
+        item->y = y;
+        if (!edui_donotdraw)
+            NuRndrRect2di(x << 4, y << 3, width << 4, height << 3, item->colours[2 + item->highlighted],
+                         uimtls[ui_bgmtl]);
+        if (!edui_donotdraw)
+            NuQFntSet(edui_font);
+        if (!edui_donotdraw)
+            NuQFntSetColour(edui_font, item->colours[item->highlighted]);
+        if (item->text_alignment == 16)
+            eduiFntPrintEx(edui_font, x << 4, (y << 3) + baseline, 16, item->text);
+        else if (item->text_alignment == 32)
+            eduiFntPrintEx(edui_font, (x + width) << 4, (y << 3) + baseline, 32, item->text);
+        else
+            eduiFntPrintEx(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, item->text_alignment, item->text);
+        return height;
     }
-    static __used__ void eduicbRenderSelWithClipColour(void) {
+    static __used__ i32 eduicbRenderSelWithClipColour(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width) {
         STUBBED();
+        return 0;
     }
-    static __used__ void eduicbRenderSeparator(void) {
-        STUBBED();
+    static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width) {
+        NuQFntHeight(edui_font);
+        NuQFntBaseline(edui_font);
+        item->x = x;
+        item->y = y;
+        if (!edui_donotdraw)
+            NuRndrRect2di(x << 4, y << 3, width << 4, 64, item->colours[2 + item->highlighted], uimtls[ui_bgmtl]);
+        if (!edui_donotdraw)
+            NuRndrLine2di((x + 4) << 4, (y << 3) + 32, ((x + width) << 4) - 64, (y << 3) + 32,
+                         0xff000000, uimtls[ui_bgmtl]);
+        return 8;
     }
-    static __used__ void eduicbRenderSlider(void) {
-        STUBBED();
+    static __used__ i32 eduicbRenderSlider(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        i32 height = static_cast<i32>(NuQFntHeight(edui_font) * 1.25f) >> 3;
+        i32 baseline = static_cast<i32>(NuQFntHeight(edui_font) * 0.125f + NuQFntBaseline(edui_font));
+        item->x = x;
+        item->y = y;
+        if (!edui_donotdraw)
+            NuRndrRect2di(x << 4, y << 3, width << 4, height << 4, item->colours[2 + item->highlighted],
+                         uimtls[ui_bgmtl]);
+        if (!edui_donotdraw)
+            NuQFntSet(edui_font);
+        if (!edui_donotdraw)
+            NuQFntSetColour(edui_font, item->colours[item->highlighted]);
+        char format[512];
+        NuStrCpy(format, item->text);
+        NuStrCat(format, slider->format);
+        eduiFntPrintEx(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, 64, format, slider->value);
+        if (slider->normalized_value >= 0.0f && slider->normalized_value <= 1.0f) {
+            i32 top = (y + height) << 3;
+            i32 bottom = (y + height * 2 - 1) << 3;
+            f32 span = width - 2;
+            i32 marker_x = static_cast<i32>(x + 1 + slider->normalized_value * span) << 4;
+            if (!edui_donotdraw)
+                NuRndrLine2di(marker_x, top, marker_x, bottom, item->colours[item->highlighted], uimtls[0]);
+            marker_x = static_cast<i32>(x + slider->normalized_value * span) << 4;
+            if (!edui_donotdraw)
+                NuRndrLine2di(marker_x, top, marker_x, bottom, item->colours[item->highlighted], uimtls[0]);
+            marker_x = static_cast<i32>(x - 1 + slider->normalized_value * span) << 4;
+            if (!edui_donotdraw)
+                NuRndrLine2di(marker_x, top, marker_x, bottom, item->colours[item->highlighted], uimtls[0]);
+        }
+        return height * 2;
     }
-    static __used__ void eduicbRenderSliderInt(void) {
-        STUBBED();
+    static __used__ i32 eduicbRenderSliderInt(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width) {
+        edui_slider_s *slider = static_cast<edui_slider_s *>(item);
+        i32 height = static_cast<i32>(NuQFntHeight(edui_font) * 1.25f) >> 3;
+        i32 baseline = static_cast<i32>(NuQFntHeight(edui_font) * 0.125f + NuQFntBaseline(edui_font));
+        item->x = x;
+        item->y = y;
+        if (!edui_donotdraw)
+            NuRndrRect2di(x << 4, y << 3, width << 4, height << 4, item->colours[2 + item->highlighted], uimtls[0]);
+        if (!edui_donotdraw)
+            NuQFntSet(edui_font);
+        if (!edui_donotdraw)
+            NuQFntSetColour(edui_font, item->colours[item->highlighted]);
+        char format[512];
+        NuStrCpy(format, item->text);
+        NuStrCat(format, slider->format);
+        eduiFntPrintEx(edui_font, (x * 2 + width) << 3, (y << 3) + baseline, 64, format,
+                       static_cast<i32>(slider->value));
+        i32 top = (y + height) << 3;
+        i32 bottom = (y + height * 2 - 1) << 3;
+        f32 span = width;
+        i32 marker_x = static_cast<i32>(x + 1 + slider->normalized_value * span) << 4;
+        if (!edui_donotdraw)
+            NuRndrLine2di(marker_x, top, marker_x, bottom, item->colours[item->highlighted], uimtls[0]);
+        marker_x = static_cast<i32>(x + slider->normalized_value * span) << 4;
+        if (!edui_donotdraw)
+            NuRndrLine2di(marker_x, top, marker_x, bottom, item->colours[item->highlighted], uimtls[0]);
+        marker_x = static_cast<i32>(x - 1 + slider->normalized_value * span) << 4;
+        if (!edui_donotdraw)
+            NuRndrLine2di(marker_x, top, marker_x, bottom, item->colours[item->highlighted], uimtls[0]);
+        return height * 2;
     }
-    static __used__ void eduicbRenderTextPick(void) {
+    static __used__ i32 eduicbRenderTextPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width) {
         STUBBED();
+        return 0;
     }
-    static __used__ void eduicbRenderTextSelector(void) {
-        STUBBED();
+    static __used__ i32 eduicbRenderTextSelector(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width) {
+        edui_text_selector_s *selector = static_cast<edui_text_selector_s *>(item);
+        i32 height = static_cast<i32>(NuQFntHeight(edui_font) * 1.25f) >> 3;
+        i32 baseline = static_cast<i32>(NuQFntHeight(edui_font) * 0.125f + NuQFntBaseline(edui_font));
+        item->x = x;
+        item->y = y;
+        if (!edui_donotdraw)
+            NuRndrRect2di(x << 4, y << 3, width << 4, height << 3, item->colours[2 + item->highlighted],
+                         uimtls[ui_bgmtl]);
+        if (!edui_donotdraw)
+            NuQFntSet(edui_font);
+        if (!edui_donotdraw)
+            NuQFntSetColour(edui_font, item->colours[item->highlighted]);
+        char format[512];
+        NuStrCpy(format, item->text);
+        NuStrCat(format, ": %s");
+        eduiFntPrintEx(edui_font, x << 4, (y << 3) + baseline, 16, format,
+                       selector->options[static_cast<i32>(selector->value)]);
+        return height;
     }
-    static __used__ void eduicbRenderTexturePick(void) {
+    static __used__ i32 eduicbRenderTexturePick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width) {
         STUBBED();
+        return 0;
     }
     static __used__ void eduicbSelectDirectoryEntry(void) {
         STUBBED();
     }
-    static __used__ void eduicbSelectDirectoryExit(void) {
-        STUBBED();
+    static __used__ void eduicbSelectDirectoryExit(eduimenu_s *menu, eduiitem_s *, u32) {
+        eduiMenuDetach(menu);
+        eduiMenuDestroy(menu);
     }
 }

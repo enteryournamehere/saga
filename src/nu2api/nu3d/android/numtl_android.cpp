@@ -217,14 +217,7 @@ void NuIOS_SetCullMode(i32 mode) {
     s_prevCullMode = (i32)idx;
 }
 
-// Blend / alpha-test translation — original 0x29c1c0.
-enum : u32 {
-    kBlendOpaque = 0,
-    kBlendAlpha = 1,        // srcA * src + (1-srcA) * dst
-    kBlendAdd = 2,          // srcA * src + dst
-    kBlendMax = 3,          // GL_MAX per channel (glow)
-    kBlendAlphaTest10 = 10, // opaque + alpha-test (0x43 ref, func GEQUAL)
-};
+#include "nu2api/nu3d/android/nublend_internal.h"
 
 extern "C" void NuMtlSetRenderStatesPS(numtl_s *mtl) {
     bool isDebris = (mtl->shader_desc.vtx_desc.flags & 0x100000) != 0;
@@ -251,40 +244,8 @@ extern "C" void NuMtlSetRenderStatesPS(numtl_s *mtl) {
         g_alphaRef = 2;
     }
 
-    // ---- blend mode ----
     u32 blend = mtl->attribs.alpha_mode & 0xf; // bytes[0x40] & 0xf
-    switch (blend) {
-        case kBlendOpaque:
-            glDisable(GL_BLEND);
-            break;
-        case kBlendAlpha:
-            glEnable(GL_BLEND);
-            glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
-            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-            break;
-        case kBlendAdd:
-            glEnable(GL_BLEND);
-            glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
-            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_SRC_ALPHA, GL_ONE);
-            break;
-        case kBlendMax:
-            glEnable(GL_BLEND);
-            // 0x800b is GL_MAX on desktop GL; GLES2 exposes it via EXT.
-            glBlendEquationSeparate((GLenum)0x800b, GL_FUNC_ADD);
-            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ONE, GL_ONE);
-            break;
-        case kBlendAlphaTest10:
-            glDisable(GL_BLEND);
-            g_alphaTestEnabled = 1;
-            g_alphaFunc = 5;
-            g_alphaRef = mtl->attribs.alpha_ref;
-            break;
-        default:
-            break;
-    }
-
-    g_lastAlphaBlend = blend;
-    g_lastAlphaRef = mtl->attribs.alpha_ref;
+    NuSetBlendState(blend, [mtl]() { return mtl->attribs.alpha_ref; });
 
     NuIOS_SetCullMode(mtl->attribs.cull_mode);
 }

@@ -2,6 +2,7 @@
 #include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nu3d/android/nuptl_android.h"
 #include "nu2api/numath/nuvec.h"
+#include "nu2api/numath/nufloat.h"
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/actions/character/streaks.h"
 #include <string.h>
@@ -9,6 +10,7 @@
 #include <stdarg.h>
 #include "decomp.h"
 #include "nu2api/nucore/nustring.h"
+#include "nu2api/nucore/nuthread.h"
 #include "globals.h"
 #include "legoapi/core/input/qrand.h"
 #include "gameapi/ai/aisys/aisys.h"
@@ -264,8 +266,71 @@ void AddSlamDebris(GameObject_s *object) {
         explosion->field_0x32 = damage;
 }
 
-void CloakMovement(GameObject_s *) {
-    STUBBED();
+void CloakMovement(GameObject_s *object) {
+    const u8 index = object->field_0x1089;
+    if (index > 2) {
+        return;
+    }
+    GAMECHARACTERDATA_s *character = object->apiobj.character_data->game_character;
+    if (character->cloak_joint == -1) {
+        return;
+    }
+    u8 *state = reinterpret_cast<u8 *>(object) + index * 0x34;
+    f32 &value = *reinterpret_cast<f32 *>(state + 0xf50);
+    f32 phase = NuFsqrt((value - character->field_0x60) / (character->field_0x5c - character->field_0x60));
+    f32 high_weight;
+    f32 low_weight;
+    if (LEGOACT_FALL != -1) {
+        i16 animation;
+        if (object->apiobj.anim_packet.blending == 0) {
+            animation = object->apiobj.anim_packet.animation_index;
+        } else {
+            animation = object->apiobj.anim_packet.blend_animation_b;
+        }
+        if (animation == LEGOACT_FALL) {
+            phase = FRAMETIME + FRAMETIME + phase;
+            if (phase <= 1.0f) {
+                high_weight = phase * phase;
+                low_weight = 1.0f - high_weight;
+            } else {
+                high_weight = 1.0f;
+                low_weight = 0.0f;
+            }
+            goto apply_weights;
+        }
+    }
+
+    high_weight = 0.0f;
+    phase = phase - (FRAMETIME + FRAMETIME);
+    low_weight = 1.0f;
+    if (0.0f <= phase) {
+        high_weight = phase * phase;
+        low_weight = 1.0f - high_weight;
+    }
+
+apply_weights:
+    const u8 current_index = object->field_0x1089;
+    const u32 state_index = current_index;
+    state = reinterpret_cast<u8 *>(object) + state_index * 0x34;
+    CHARACTERDATA *character_data = object->apiobj.character_data;
+    state[0xf78] = static_cast<u8>(character_data->game_character->cloak_joint);
+    GAMECHARACTERDATA_s *current_character = character_data->game_character;
+    const f32 interpolated_value =
+        high_weight * current_character->field_0x5c + low_weight * current_character->field_0x60;
+    *reinterpret_cast<f32 *>(state + 0xf50) = interpolated_value;
+    if (interpolated_value == 0.0f) {
+        state[0xf79] = 0;
+    } else {
+        state[0xf79] = 0x21;
+        if (current_character->field_0x60 <= current_character->field_0x5c) {
+            *reinterpret_cast<i16 *>(state + 0xf70) = static_cast<i16>(current_character->field_0x5c * 32768.0f);
+            *reinterpret_cast<i16 *>(state + 0xf76) = static_cast<i16>(current_character->field_0x60 * 32768.0f);
+        } else {
+            *reinterpret_cast<i16 *>(state + 0xf70) = static_cast<i16>(current_character->field_0x60 * 32768.0f);
+            *reinterpret_cast<i16 *>(state + 0xf76) = static_cast<i16>(current_character->field_0x5c * 32768.0f);
+        }
+    }
+    object->field_0x1089 = current_index + 1;
 }
 
 void RndrTexQuad3D(VuMtx const &, i32, numtl_s *) {
@@ -794,12 +859,12 @@ void AddChunkToRenderStack(particlechunkrendertype_s *chunk, particlechunkrender
         const u16 priority = static_cast<u16>(chunk->render_priority);
         const u16 current_priority = static_cast<u16>(current->render_priority);
         if (priority <= current_priority &&
-            (priority != current_priority || current->effect->status < chunk->effect->status)) {
+            (priority != current_priority || current->effect->particle_type < chunk->effect->particle_type)) {
             particlechunkrendertype_s *next = current->next;
             while (next != NULL) {
                 const u16 next_priority = static_cast<u16>(next->render_priority);
                 if (next_priority <= priority &&
-                    (priority != next_priority || chunk->effect->status <= next->effect->status)) {
+                    (priority != next_priority || chunk->effect->particle_type <= next->effect->particle_type)) {
                     break;
                 }
                 current = next;
@@ -860,9 +925,6 @@ void DebrisReleaseControlStackLock(void);
 void RemoveChunkFromRenderStack(particlechunkrendertype_s *, particlechunkrendertype_s **);
 
 void DebFreeChunksInstantly(i32 *handle) {
-    if (handle == NULL || *handle == -1) {
-        return;
-    }
     debkeydatatype_s *key = &debkeydata[*handle];
     if (key->effect_index == 0 || key->allocated_chunk_count == 0) {
         return;
@@ -943,11 +1005,15 @@ void DebrisProcessAllocation() {
 }
 
 void DisplayListRenderBuffer() {
-    STUBBED();
 }
 
+static i32 control_stack_lock;
+
 void DebrisGetControlStackLock() {
-    STUBBED();
+    while (control_stack_lock != 0) {
+        NuThreadSleep(1);
+    }
+    control_stack_lock = 1;
 }
 
 static particlechunkrendertype_s *FindParticleRenderChunk(dma_particle_chunk_s *particle_chunk) {
@@ -1156,7 +1222,7 @@ void DebrisCleanUpDmaDebTypeTables() {
 }
 
 void DebrisReleaseControlStackLock() {
-    STUBBED();
+    control_stack_lock = 0;
 }
 
 void xxxNuDisplayListUpdateSpecial(nuhspecial_s *) {

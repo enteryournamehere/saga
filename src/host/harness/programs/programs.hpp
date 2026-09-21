@@ -22,5 +22,4 @@ struct HostWindowOptions {
     u64 timeout_ms = 0;
 };
 
-// Host harness command entry point.
 i32 host_run_window(const HostWindowOptions &options);

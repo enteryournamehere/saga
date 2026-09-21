@@ -13,7 +13,7 @@ i16 NetChangedReplicator::mCrc32Table[256];
 static i32 ForceDummySerialise;
 
 extern EdRegistry theRegistry;
-extern TTNetwork theNetwork;
+TTNetwork theNetwork;
 extern MemoryManager theMemoryManager;
 
 void NetRotator2::PredictValue(EdClass const *, void *, NetPredictor::PredictorTime *, NetPredictor::PredictorData **,

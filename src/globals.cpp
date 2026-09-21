@@ -18,7 +18,6 @@
 
 struct CUSTOMISER;
 struct GIZAIMESSAGESYS_s;
-TTNetwork theNetwork;
 char *ASCII_DOWN = const_cast<char *>("\xc2\xa3");
 // Original defaults: LEGOASCII_DOWN is null; txt_UNKNOWN points to "?".
 char *LEGOASCII_DOWN = NULL;

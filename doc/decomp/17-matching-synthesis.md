@@ -9,13 +9,13 @@ The original ELF SHA256 is
 
 | Whole-binary measure | Main | Reconstructed |
 | --- | ---: | ---: |
-| Overall matching | 46.241400% | 50.090286% |
+| Overall matching | 46.241400% | 50.109623% |
 | Exact functions | 4,796 | 5,292 |
 | Exact code bytes | 405,562 | 446,570 |
 | Original functions | 13,459 | 13,459 |
 | Original code bytes | 4,722,419 | 4,722,419 |
 
-The overall increase is 3.848886 percentage points. Comparisons preserve each
+The overall increase is 3.868223 percentage points. Comparisons preserve each
 original function's address as well as its name, including the 26 repeated
 names. The generated `matching.json` contains the complete comparison and
 source ownership map. Individual isolated worker scores can differ from the
@@ -53,3 +53,35 @@ translation-unit settings; their original ownership and registration groups
 remain to be reconstructed. The measured DookuC_Reset decline from 99.326% to
 83.093% is an instruction-order/register-allocation difference audited against
 the original behavior and field offsets.
+
+## Regression follow-up
+
+The follow-up raises the initial synthesis from 50.090286% to 50.109623%:
+three original functions improve, with no additional regressions.
+`GizmoBlowUpOpponent` rises from 0% to 64.756%, exceeding main's 55.184%.
+The original pointer walk, missing-array return, filter ordering, and ordered
+distance comparison are restored while retaining the managed forced target.
+
+`theNetwork` belongs to `Network.cpp`: the original
+`_GLOBAL__sub_I_Network.cpp` at `0xe2920` loads GOT slot `0x616564`, whose
+value is `theNetwork` at `0x133d140`, then constructs it and registers its
+destructor. Moving its definition from `globals.cpp` restores that ownership
+without changing compilation settings. The affected anonymous initializer
+recovers from 87.2% to 99.7%; network initialization rises from 20.870% to
+93.565%.
+
+The remaining anonymous-initializer decline, 99.7% to 93.125%, pairs original
+`numath_includes.c` code at `0x29098c` with the reconstructed
+`MechJumpAutopilotAddon.cpp` helper. Its extra constructor initializes
+`s_hashId`, as required by the original optimized Jump initializer at
+`0xdf9a0`: the string is at `0x573c1c`, and GOT slot `0x615ef0` identifies
+`s_hashId` at `0x12684f0`. This is duplicate pairing and translation-unit
+reconstruction debt, not missing original initialization behavior.
+
+`Push_AddGizmos` is the only function declining from exactly 100%, to
+99.651%. Its initial count load/test uses EDX instead of EAX; the remaining
+instructions match. Natural equivalent source forms did not recover this
+register choice or Dooku's instruction scheduling. The correct field layout
+and original reload behavior are preserved. Apart from Dooku and the duplicate
+initializer pairing, every decline from a previous score of at least 50% is
+under 1.8 percentage points.

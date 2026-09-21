@@ -30,6 +30,7 @@
 #include "legoapi/render/core/render.h"
 #include "legoapi/menus/core/panel.h"
 #include "legoapi/render/fx/parts.h"
+#include "legoapi/core/input/gamepads.h"
 #include "nu2api/numath/nuvec.h"
 
 void NarrowSockExceptions_Init(NARROWSOCKEXCEPTION *);
@@ -157,6 +158,7 @@ static i32 CutScenePlayer_Accept(CUTSCENEPLAYERCLIP *) {
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/characters/motion/gameanim.h"
 extern i16 id_THEEMPEROR;
+extern i16 id_GAMORREANGUARD;
 static void BigJump_EndOfLand(GameObject_s *object) {
     if (object->id == id_THEEMPEROR && LEGOACT_COMBOLAND != -1 && object->context_animation == LEGOACT_COMBOLAND &&
         ((object->field_0xe22 & 1) == 0 || object->field_0xe32 == 2))
@@ -214,8 +216,70 @@ static i32 Slam_GetDebris_Game(GameObject_s *object, i32 effect) {
     return effect == -1 ? 2 : effect;
 }
 
-static void GoThroughDoor_ExtraCode(WORLDINFO_s *, DOOR_s *) {
-    STUBBED();
+static void Punch_HitHold(GameObject_s *attacker, GameObject_s *target) {
+    if (target != NULL && attacker != NULL && (target->id == id_IMPERIALGUARD || target->id == id_GAMORREANGUARD)) {
+        GameAudio_PlaySfx(0x4a, &target->apiobj.collision_position, 0, 0);
+    }
+}
+
+static i32 Punch_GetDamage_LSW(GameObject_s *attacker, GameObject_s *target) {
+    if (attacker->apiobj.character_data->game_character->field275_0x116 == 7 && Cheat_IsOn(0x0c)) {
+        GameAudio_PlaySfx(
+            0x4a, target != NULL ? &target->apiobj.collision_position : &attacker->apiobj.collision_position, 0, 0);
+        GameCam_NewShake(NULL, 0.75f, 0.75f, 1.0f);
+        return -1;
+    }
+    if (target != NULL) {
+        if (target->id == id_IMPERIALGUARD || target->id == id_GAMORREANGUARD) {
+            if (target->character_context == 0x0c || target->character_context == 0x18) {
+                GameAudio_PlaySfx(0x4a, &target->apiobj.collision_position, 0, 0);
+            }
+        }
+    }
+    return 1;
+}
+
+static void Punch_HitExtraCode_LSW(GameObject_s *object, nuvec_s *position) {
+    if (object->id == id_GAMORREANGUARD && ((object->character_context == 0x26 && object->context_animation == 0x56) ||
+                                            object->character_context == 0x0d)) {
+        NewRumbleAllPlayers(0.4f, 0.0f, 1, 0);
+        NewRumble(object->pad_gamepad->pad, 0.7f, 0);
+        GameCam_Judder(GameCam, 0.25f, 0, &object->apiobj.collision_position);
+        PlaySfx("fs_gamorr_land", &object->apiobj.lower_position);
+    } else if ((AnimMiscFlags(object->apiobj.character_model, object->context_animation) & 4) != 0) {
+        if (position != NULL)
+            PlaySfx("WhipHit", position);
+        else
+            PlaySfx("WhipNowt", &object->apiobj.collision_position);
+    }
+}
+
+extern void (*Punch_HitHoldFn)(GameObject_s *, GameObject_s *);
+extern i32 (*Punch_GetDamageFn)(GameObject_s *, GameObject_s *);
+extern void (*Punch_HitExtraCodeFn)(GameObject_s *, nuvec_s *);
+
+f32 GetVehicleAreaRememberSpeed();
+void VaderA_GoneThroughDoor(WORLDINFO_s *, DOOR_s *);
+void PodRace_IncreaseLap();
+
+static void GoThroughDoor_ExtraCode(WORLDINFO_s *world, DOOR_s *door) {
+    VehicleAreaRememberSpeed = GetVehicleAreaRememberSpeed();
+    if (world->current_level == VADERA_LDATA) {
+        VaderA_GoneThroughDoor(world, door);
+    }
+    if (PODRACEB_LDATA != NULL && door->level == PODRACEB_LDATA->idx && world->current_level == PODRACEA_LDATA) {
+        if (Lap != 3) {
+            PodRace_IncreaseLap();
+        } else if (FreePlay == 0) {
+            NewLData = PODRACEOUTRO1_LDATA;
+            grab_screen_image = 1;
+            if (waiting_for_level != -1) {
+                waiting_for_new_level = 1;
+            }
+        } else {
+            CompleteLevel(world);
+        }
+    }
 }
 
 static i32 FindSlamOrigin_UseCPos(GameObject_s *object) {
@@ -982,9 +1046,9 @@ void InitGameAfterConfig(void) {
     //  REDBRICKPOS2X = 1.25;
     //  REDBRICKPOS2Y = 0.0;
     //  GameObjectDimensionsExtraFn = GameObjectDimensionsExtra_LSW;
-    //  Punch_GetDamageFn = Punch_GetDamage_LSW;
-    //  Punch_HitHoldFn = Punch_HitHold;
-    //  Punch_HitExtraCodeFn = Punch_HitExtraCode_LSW;
+    Punch_GetDamageFn = Punch_GetDamage_LSW;
+    Punch_HitHoldFn = Punch_HitHold;
+    Punch_HitExtraCodeFn = Punch_HitExtraCode_LSW;
     SetSoundFadeDistCallBackFn = SetSoundFadeDistCallBackFn_LSW;
     //  PlayerItemTypes_Init((PLAYERITEMTYPE_s *)PlayerItemType_INDY);
     DisguiseAdjustFn = DisguiseAdjust_LSW;

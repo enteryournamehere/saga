@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 51.218494,
+    "fuzzy_match_percent": 51.35363,
     "total_code": "4722419",
-    "matched_code": "450883",
-    "matched_code_percent": 9.547712,
+    "matched_code": "451834",
+    "matched_code_percent": 9.567851,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 5321,
-    "matched_functions_percent": 39.534885,
+    "matched_functions": 5348,
+    "matched_functions_percent": 39.735493,
     "total_units": 1
   },
   "text": {
@@ -35915,7 +35915,7 @@
           "address": 5428544,
           "offset": 4538576,
           "size": 76,
-          "match_percent": 32.666668
+          "match_percent": 99.44444
         },
         {
           "name": "_ZN13NetFtpManagerC2Ev",
@@ -35923,7 +35923,7 @@
           "address": 5428544,
           "offset": 4538576,
           "size": 76,
-          "match_percent": 32.666668
+          "match_percent": 99.44444
         },
         {
           "name": "_ZN13NetFtpManager4InitEv",
@@ -36156,6 +36156,110 @@
           "match_percent": 12.352942
         },
         {
+          "name": "_ZN20NetListenerInterfaceD1Ev",
+          "demangled_name": "NetListenerInterface::~NetListenerInterface()",
+          "address": 5430400,
+          "offset": 4540432,
+          "size": 29,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZN20NetListenerInterfaceD2Ev",
+          "demangled_name": "NetListenerInterface::~NetListenerInterface()",
+          "address": 5430400,
+          "offset": 4540432,
+          "size": 29,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZN20NetListenerInterface7ReceiveE10NetMessagehRK7NetPeer",
+          "demangled_name": "NetListenerInterface::Receive(NetMessage, unsigned char, NetPeer const&)",
+          "address": 5430432,
+          "offset": 4540464,
+          "size": 9,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZN20NetListenerInterface11PeerRequestERK7NetPeer",
+          "demangled_name": "NetListenerInterface::PeerRequest(NetPeer const&)",
+          "address": 5430448,
+          "offset": 4540480,
+          "size": 12,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZN20NetListenerInterface10PeerJoinedERK7NetPeer",
+          "demangled_name": "NetListenerInterface::PeerJoined(NetPeer const&)",
+          "address": 5430464,
+          "offset": 4540496,
+          "size": 9,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZN20NetListenerInterface8PeerLeftERK7NetPeer15ePeerLeftReason",
+          "demangled_name": "NetListenerInterface::PeerLeft(NetPeer const&, ePeerLeftReason)",
+          "address": 5430480,
+          "offset": 4540512,
+          "size": 9,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZN20NetListenerInterface8PeerDeadERK7NetPeer",
+          "demangled_name": "NetListenerInterface::PeerDead(NetPeer const&)",
+          "address": 5430496,
+          "offset": 4540528,
+          "size": 9,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZN20NetListenerInterface9FtpUploadEP7FtpFile",
+          "demangled_name": "NetListenerInterface::FtpUpload(FtpFile*)",
+          "address": 5430512,
+          "offset": 4540544,
+          "size": 9,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZN20NetListenerInterface11FtpDownloadEP7FtpFile",
+          "demangled_name": "NetListenerInterface::FtpDownload(FtpFile*)",
+          "address": 5430528,
+          "offset": 4540560,
+          "size": 9,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZN20NetListenerInterface11FtpCompleteEP7FtpFilei",
+          "demangled_name": "NetListenerInterface::FtpComplete(FtpFile*, int)",
+          "address": 5430544,
+          "offset": 4540576,
+          "size": 9,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZN20NetListenerInterface10NosAcquireEP13NetworkObjectRK7NetPeer",
+          "demangled_name": "NetListenerInterface::NosAcquire(NetworkObject*, NetPeer const&)",
+          "address": 5430560,
+          "offset": 4540592,
+          "size": 12,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZN20NetListenerInterface10NosAdoptedEP13NetworkObjectRK7NetPeer",
+          "demangled_name": "NetListenerInterface::NosAdopted(NetworkObject*, NetPeer const&)",
+          "address": 5430576,
+          "offset": 4540608,
+          "size": 9,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZN20NetListenerInterfaceD0Ev",
+          "demangled_name": "NetListenerInterface::~NetListenerInterface()",
+          "address": 5430592,
+          "offset": 4540624,
+          "size": 45,
+          "match_percent": 100.0
+        },
+        {
           "name": "_ZN12NetPredictor15StoreSampleDataEPK7EdClassPvPNS_13PredictorTimeEPPNS_13PredictorDataEPfi",
           "demangled_name": "NetPredictor::StoreSampleData(EdClass const*, void*, NetPredictor::PredictorTime*, NetPredictor::PredictorData**, float*, int)",
           "address": 5430640,
@@ -36177,7 +36281,7 @@
           "address": 5430944,
           "offset": 4540976,
           "size": 51,
-          "match_percent": 59.916668
+          "match_percent": 100.0
         },
         {
           "name": "_ZN20NetworkObjectManagerD2Ev",
@@ -36185,7 +36289,7 @@
           "address": 5430944,
           "offset": 4540976,
           "size": 51,
-          "match_percent": 59.916668
+          "match_percent": 100.0
         },
         {
           "name": "_ZN20NetworkObjectManagerD0Ev",
@@ -36353,7 +36457,7 @@
           "address": 5438096,
           "offset": 4548128,
           "size": 153,
-          "match_percent": 17.588236
+          "match_percent": 91.32353
         },
         {
           "name": "_ZN20NetworkObjectManagerC2Ev",
@@ -36361,7 +36465,7 @@
           "address": 5438096,
           "offset": 4548128,
           "size": 153,
-          "match_percent": 17.588236
+          "match_percent": 91.32353
         },
         {
           "name": "_ZN20NetworkObjectManager4InitEv",
@@ -36468,6 +36572,14 @@
           "match_percent": 24.84507
         },
         {
+          "name": "_ZL10NOSGetGuidv",
+          "demangled_name": "NOSGetGuid()",
+          "address": 5440688,
+          "offset": 4550720,
+          "size": 38,
+          "match_percent": 100.0
+        },
+        {
           "name": "_ZN20NetworkObjectManager20AddToLocalObjectListEP13NetworkObject",
           "demangled_name": "NetworkObjectManager::AddToLocalObjectList(NetworkObject*)",
           "address": 5440736,
@@ -36537,6 +36649,14 @@
           "address": 5443248,
           "offset": 4553280,
           "size": 65,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZThn4_N20NetworkObjectManager19NotifyDestroyObjectEPvP7EdClassii",
+          "demangled_name": "{virtual override thunk({offset(-4)}, NetworkObjectManager::NotifyDestroyObject(void*, EdClass*, int, int))}",
+          "address": 5443328,
+          "offset": 4553360,
+          "size": 7,
           "match_percent": 100.0
         },
         {
@@ -36673,6 +36793,14 @@
           "address": 5448032,
           "offset": 4558064,
           "size": 65,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZThn4_N20NetworkObjectManager18NotifyCreateObjectEPvP7EdClassS0_iii",
+          "demangled_name": "{virtual override thunk({offset(-4)}, NetworkObjectManager::NotifyCreateObject(void*, EdClass*, void*, int, int, int))}",
+          "address": 5448112,
+          "offset": 4558144,
+          "size": 7,
           "match_percent": 100.0
         },
         {
@@ -36865,7 +36993,7 @@
           "address": 5456832,
           "offset": 4566864,
           "size": 773,
-          "match_percent": 69.94536
+          "match_percent": 69.907104
         },
         {
           "name": "_ZN20NetworkObjectManager18ReceiveStopMessageER10NetMessageRK7NetPeer",
@@ -36898,6 +37026,38 @@
           "offset": 4569632,
           "size": 439,
           "match_percent": 57.929134
+        },
+        {
+          "name": "_ZN16EdObjectNotifier18NotifyCreateObjectEPvP7EdClassS0_iii",
+          "demangled_name": "EdObjectNotifier::NotifyCreateObject(void*, EdClass*, void*, int, int, int)",
+          "address": 5460048,
+          "offset": 4570080,
+          "size": 9,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZN16EdObjectNotifier19NotifyDestroyObjectEPvP7EdClassii",
+          "demangled_name": "EdObjectNotifier::NotifyDestroyObject(void*, EdClass*, int, int)",
+          "address": 5460064,
+          "offset": 4570096,
+          "size": 9,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZN16EdObjectNotifier19NotifyDefunctObjectEPvP7EdClassi",
+          "demangled_name": "EdObjectNotifier::NotifyDefunctObject(void*, EdClass*, int)",
+          "address": 5460080,
+          "offset": 4570112,
+          "size": 9,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZN16EdObjectNotifier18NotifyReviveObjectEPvP7EdClassi",
+          "demangled_name": "EdObjectNotifier::NotifyReviveObject(void*, EdClass*, int)",
+          "address": 5460096,
+          "offset": 4570128,
+          "size": 9,
+          "match_percent": 100.0
         },
         {
           "name": "_ZN13NetReplicator12DoPredictionEPK7EdClassPvR14ReplicatorDatai",
@@ -38884,7 +39044,7 @@
           "address": 5195376,
           "offset": 4305408,
           "size": 1185,
-          "match_percent": 1.627907
+          "match_percent": 71.434105
         }
       ]
     },
@@ -39690,7 +39850,7 @@
           "address": 5197280,
           "offset": 4307312,
           "size": 4501,
-          "match_percent": 6.295477
+          "match_percent": 6.720603
         },
         {
           "name": "_Z11ReleasePushP12GameObject_s",
@@ -39698,7 +39858,7 @@
           "address": 5202320,
           "offset": 4312352,
           "size": 142,
-          "match_percent": 70.4375
+          "match_percent": 99.6875
         },
         {
           "name": "_Z17ResetPushProgressP11WORLDINFO_sPv",
@@ -40390,7 +40550,7 @@
           "address": 1396960,
           "offset": 506992,
           "size": 1224,
-          "match_percent": 1.609195
+          "match_percent": 55.18774
         },
         {
           "name": "_Z14CheckPosAIAreaP8AIAREA_sP7nuvec_sf",
@@ -41442,7 +41602,7 @@
           "address": 1333968,
           "offset": 444000,
           "size": 12082,
-          "match_percent": 80.27392
+          "match_percent": 80.27199
         },
         {
           "name": "SOUND_SFXRequest_Table",
@@ -42503,7 +42663,7 @@
           "address": 1494192,
           "offset": 604224,
           "size": 869,
-          "match_percent": 0.0
+          "match_percent": 34.26943
         },
         {
           "name": "_Z33SetProtocolDroidDeactivatedActionP12GameObject_s",
@@ -42607,7 +42767,7 @@
           "address": 2034256,
           "offset": 1144288,
           "size": 321,
-          "match_percent": 99.97059
+          "match_percent": 99.89706
         },
         {
           "name": "_Z28TakeOverYodaSeekDistanceHackP12GameObject_sS0_P7nuvec_s",
@@ -42695,7 +42855,7 @@
           "address": 4588128,
           "offset": 3698160,
           "size": 108,
-          "match_percent": 45.22222
+          "match_percent": 45.63889
         },
         {
           "name": "_Z14CharScene_DrawP11WORLDINFO_siP7numtx_sS2_",
@@ -46631,7 +46791,7 @@
           "address": 1053472,
           "offset": 163504,
           "size": 1752,
-          "match_percent": 1.160221
+          "match_percent": 84.256905
         },
         {
           "name": "_Z10MovePlayerP12GameObject_s",
@@ -47191,7 +47351,7 @@
           "address": 1501888,
           "offset": 611920,
           "size": 476,
-          "match_percent": 81.818184
+          "match_percent": 81.77273
         },
         {
           "name": "_Z11Move_WEIRDOP12GameObject_s",
@@ -47247,7 +47407,7 @@
           "address": 1510928,
           "offset": 620960,
           "size": 2051,
-          "match_percent": 70.4267
+          "match_percent": 70.41576
         },
         {
           "name": "_Z11Move_WALKERP12GameObject_s",
@@ -48577,12 +48737,20 @@
           "match_percent": 3.589744
         },
         {
+          "name": "_ZThn16_N9TTNetwork7DisplayEP15ThingRenderData",
+          "demangled_name": "{virtual override thunk({offset(-16)}, TTNetwork::Display(ThingRenderData*))}",
+          "address": 5422416,
+          "offset": 4532448,
+          "size": 10,
+          "match_percent": 70.0
+        },
+        {
           "name": "_ZN9TTNetworkD1Ev",
           "demangled_name": "TTNetwork::~TTNetwork()",
           "address": 5422432,
           "offset": 4532464,
           "size": 248,
-          "match_percent": 29.5
+          "match_percent": 44.896553
         },
         {
           "name": "_ZN9TTNetworkD2Ev",
@@ -48590,7 +48758,15 @@
           "address": 5422432,
           "offset": 4532464,
           "size": 248,
-          "match_percent": 29.5
+          "match_percent": 44.896553
+        },
+        {
+          "name": "_ZThn16_N9TTNetworkD1Ev",
+          "demangled_name": "{virtual override thunk({offset(-16)}, TTNetwork::~TTNetwork())}",
+          "address": 5422688,
+          "offset": 4532720,
+          "size": 10,
+          "match_percent": 70.0
         },
         {
           "name": "_ZN9TTNetworkD0Ev",
@@ -48598,6 +48774,14 @@
           "address": 5422704,
           "offset": 4532736,
           "size": 56,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZThn16_N9TTNetworkD0Ev",
+          "demangled_name": "{virtual override thunk({offset(-16)}, TTNetwork::~TTNetwork())}",
+          "address": 5422768,
+          "offset": 4532800,
+          "size": 7,
           "match_percent": 100.0
         },
         {
@@ -48638,7 +48822,7 @@
           "address": 5424672,
           "offset": 4534704,
           "size": 233,
-          "match_percent": 30.613636
+          "match_percent": 99.97727
         },
         {
           "name": "_ZN9TTNetworkC2Ev",
@@ -48646,7 +48830,7 @@
           "address": 5424672,
           "offset": 4534704,
           "size": 233,
-          "match_percent": 30.613636
+          "match_percent": 99.97727
         },
         {
           "name": "_ZN9TTNetwork10InitialiseEv",
@@ -48729,12 +48913,28 @@
           "match_percent": 7.0
         },
         {
-          "name": "_ZL10NOSGetGuidv",
-          "demangled_name": "NOSGetGuid()",
-          "address": 5440688,
-          "offset": 4550720,
-          "size": 38,
-          "match_percent": 38.18182
+          "name": "_ZThn16_N9TTNetwork21ProcessEvenWhenPausedEP16ThingProcessData",
+          "demangled_name": "{virtual override thunk({offset(-16)}, TTNetwork::ProcessEvenWhenPaused(ThingProcessData*))}",
+          "address": 5425776,
+          "offset": 4535808,
+          "size": 10,
+          "match_percent": 70.0
+        },
+        {
+          "name": "_ZN9TTNetwork7GetNameEv",
+          "demangled_name": "TTNetwork::GetName()",
+          "address": 5425792,
+          "offset": 4535824,
+          "size": 22,
+          "match_percent": 98.75
+        },
+        {
+          "name": "_ZThn16_N9TTNetwork7GetNameEv",
+          "demangled_name": "{virtual override thunk({offset(-16)}, TTNetwork::GetName())}",
+          "address": 5425824,
+          "offset": 4535856,
+          "size": 7,
+          "match_percent": 100.0
         }
       ]
     },
@@ -53299,7 +53499,7 @@
           "address": 1239088,
           "offset": 349120,
           "size": 432,
-          "match_percent": 4.375
+          "match_percent": 60.916668
         },
         {
           "name": "_Z17Teleport_MoveCodeP12GameObject_si",
@@ -53307,7 +53507,7 @@
           "address": 1239520,
           "offset": 349552,
           "size": 3358,
-          "match_percent": 0.820793
+          "match_percent": 0.0
         },
         {
           "name": "_Z20Teleport_UpdateHintsP6HINT_s",
@@ -53315,7 +53515,7 @@
           "address": 1242880,
           "offset": 352912,
           "size": 349,
-          "match_percent": 43.116882
+          "match_percent": 43.506493
         }
       ]
     },
@@ -60042,7 +60242,7 @@
           "address": 1403456,
           "offset": 513488,
           "size": 147,
-          "match_percent": 13.125
+          "match_percent": 100.0
         },
         {
           "name": "_Z21GetFreePlayCollectioni",
@@ -60202,30 +60402,6 @@
           "offset": 268144,
           "size": 217,
           "match_percent": 99.91111
-        },
-        {
-          "name": "_ZL22Punch_HitExtraCode_LSWP12GameObject_sP7nuvec_s",
-          "demangled_name": "Punch_HitExtraCode_LSW(GameObject_s*, nuvec_s*)",
-          "address": 1160544,
-          "offset": 270576,
-          "size": 326,
-          "match_percent": 99.85714
-        },
-        {
-          "name": "_ZL13Punch_HitHoldP12GameObject_sS0_",
-          "demangled_name": "Punch_HitHold(GameObject_s*, GameObject_s*)",
-          "address": 1160880,
-          "offset": 270912,
-          "size": 113,
-          "match_percent": 99.51613
-        },
-        {
-          "name": "_ZL19Punch_GetDamage_LSWP12GameObject_sS0_",
-          "demangled_name": "Punch_GetDamage_LSW(GameObject_s*, GameObject_s*)",
-          "address": 1161008,
-          "offset": 271040,
-          "size": 288,
-          "match_percent": 93.85714
         },
         {
           "name": "_ZL20TrenchKilledCallbackP12GameObject_s",
@@ -70328,7 +70504,7 @@
           "address": 3469536,
           "offset": 2579568,
           "size": 127,
-          "match_percent": 10.0
+          "match_percent": 79.97619
         },
         {
           "name": "DebFreeInstantly",
@@ -70670,7 +70846,7 @@
           "address": 3468336,
           "offset": 2578368,
           "size": 755,
-          "match_percent": 40.251366
+          "match_percent": 41.202187
         },
         {
           "name": "_Z22AddDebrisEffectToStackP16debkeydatatype_s",
@@ -71139,7 +71315,7 @@
           "address": 4788224,
           "offset": 3898256,
           "size": 689,
-          "match_percent": 2.692308
+          "match_percent": 88.45192
         },
         {
           "name": "_Z25MatrixReflectionVU0_AXISYP7numtx_sffS0_",
@@ -71147,7 +71323,7 @@
           "address": 4788928,
           "offset": 3898960,
           "size": 291,
-          "match_percent": 5.116279
+          "match_percent": 67.62791
         },
         {
           "name": "_Z13LineCrossedXZffffffff",
@@ -74741,7 +74917,7 @@
           "address": 3847335,
           "offset": 2957367,
           "size": 547,
-          "match_percent": 20.350365
+          "match_percent": 93.824814
         },
         {
           "name": "rtlReset",
@@ -74773,7 +74949,7 @@
           "address": 3848400,
           "offset": 2958432,
           "size": 210,
-          "match_percent": 24.953846
+          "match_percent": 94.276924
         },
         {
           "name": "rtlSetModifiers",
@@ -74805,7 +74981,7 @@
           "address": 3848891,
           "offset": 2958923,
           "size": 2252,
-          "match_percent": 27.1116
+          "match_percent": 27.301027
         },
         {
           "name": "_ZL10GetNextRTLPvP5rtl_sPcPi",
@@ -79596,7 +79772,7 @@
           "address": 4321504,
           "offset": 3431536,
           "size": 2386,
-          "match_percent": 1.088435
+          "match_percent": 0.0
         },
         {
           "name": "_Z20edpartLoadSingleTypeP15part_typedesc_sii",
@@ -80861,7 +81037,7 @@
           "address": 5120432,
           "offset": 4230464,
           "size": 699,
-          "match_percent": 29.414474
+          "match_percent": 42.151318
         },
         {
           "name": "_Z14IntersectWaterP12GameObject_s",
@@ -86160,7 +86336,31 @@
           "address": 1159952,
           "offset": 269984,
           "size": 249,
-          "match_percent": 6.885246
+          "match_percent": 62.95082
+        },
+        {
+          "name": "_ZL22Punch_HitExtraCode_LSWP12GameObject_sP7nuvec_s",
+          "demangled_name": "Punch_HitExtraCode_LSW(GameObject_s*, nuvec_s*)",
+          "address": 1160544,
+          "offset": 270576,
+          "size": 326,
+          "match_percent": 99.85714
+        },
+        {
+          "name": "_ZL13Punch_HitHoldP12GameObject_sS0_",
+          "demangled_name": "Punch_HitHold(GameObject_s*, GameObject_s*)",
+          "address": 1160880,
+          "offset": 270912,
+          "size": 113,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_ZL19Punch_GetDamage_LSWP12GameObject_sS0_",
+          "demangled_name": "Punch_GetDamage_LSW(GameObject_s*, GameObject_s*)",
+          "address": 1161008,
+          "offset": 271040,
+          "size": 288,
+          "match_percent": 100.0
         },
         {
           "name": "_Z20InitGameBeforeConfigv",
@@ -86168,7 +86368,7 @@
           "address": 1161344,
           "offset": 271376,
           "size": 1077,
-          "match_percent": 87.921814
+          "match_percent": 88.045265
         },
         {
           "name": "_Z19InitGameAfterConfigv",
@@ -126379,206 +126579,6 @@
       "match_percent": 0.0
     },
     {
-      "name": "_ZThn16_N9TTNetwork7DisplayEP15ThingRenderData",
-      "demangled_name": "{virtual override thunk({offset(-16)}, TTNetwork::Display(ThingRenderData*))}",
-      "address": 5422416,
-      "offset": 4532448,
-      "size": 10,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZThn16_N9TTNetworkD1Ev",
-      "demangled_name": "{virtual override thunk({offset(-16)}, TTNetwork::~TTNetwork())}",
-      "address": 5422688,
-      "offset": 4532720,
-      "size": 10,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZThn16_N9TTNetworkD0Ev",
-      "demangled_name": "{virtual override thunk({offset(-16)}, TTNetwork::~TTNetwork())}",
-      "address": 5422768,
-      "offset": 4532800,
-      "size": 7,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZThn16_N9TTNetwork21ProcessEvenWhenPausedEP16ThingProcessData",
-      "demangled_name": "{virtual override thunk({offset(-16)}, TTNetwork::ProcessEvenWhenPaused(ThingProcessData*))}",
-      "address": 5425776,
-      "offset": 4535808,
-      "size": 10,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN9TTNetwork7GetNameEv",
-      "demangled_name": "TTNetwork::GetName()",
-      "address": 5425792,
-      "offset": 4535824,
-      "size": 22,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZThn16_N9TTNetwork7GetNameEv",
-      "demangled_name": "{virtual override thunk({offset(-16)}, TTNetwork::GetName())}",
-      "address": 5425824,
-      "offset": 4535856,
-      "size": 7,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN20NetListenerInterfaceD1Ev",
-      "demangled_name": "NetListenerInterface::~NetListenerInterface()",
-      "address": 5430400,
-      "offset": 4540432,
-      "size": 29,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN20NetListenerInterfaceD2Ev",
-      "demangled_name": "NetListenerInterface::~NetListenerInterface()",
-      "address": 5430400,
-      "offset": 4540432,
-      "size": 29,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN20NetListenerInterface7ReceiveE10NetMessagehRK7NetPeer",
-      "demangled_name": "NetListenerInterface::Receive(NetMessage, unsigned char, NetPeer const&)",
-      "address": 5430432,
-      "offset": 4540464,
-      "size": 9,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN20NetListenerInterface11PeerRequestERK7NetPeer",
-      "demangled_name": "NetListenerInterface::PeerRequest(NetPeer const&)",
-      "address": 5430448,
-      "offset": 4540480,
-      "size": 12,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN20NetListenerInterface10PeerJoinedERK7NetPeer",
-      "demangled_name": "NetListenerInterface::PeerJoined(NetPeer const&)",
-      "address": 5430464,
-      "offset": 4540496,
-      "size": 9,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN20NetListenerInterface8PeerLeftERK7NetPeer15ePeerLeftReason",
-      "demangled_name": "NetListenerInterface::PeerLeft(NetPeer const&, ePeerLeftReason)",
-      "address": 5430480,
-      "offset": 4540512,
-      "size": 9,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN20NetListenerInterface8PeerDeadERK7NetPeer",
-      "demangled_name": "NetListenerInterface::PeerDead(NetPeer const&)",
-      "address": 5430496,
-      "offset": 4540528,
-      "size": 9,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN20NetListenerInterface9FtpUploadEP7FtpFile",
-      "demangled_name": "NetListenerInterface::FtpUpload(FtpFile*)",
-      "address": 5430512,
-      "offset": 4540544,
-      "size": 9,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN20NetListenerInterface11FtpDownloadEP7FtpFile",
-      "demangled_name": "NetListenerInterface::FtpDownload(FtpFile*)",
-      "address": 5430528,
-      "offset": 4540560,
-      "size": 9,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN20NetListenerInterface11FtpCompleteEP7FtpFilei",
-      "demangled_name": "NetListenerInterface::FtpComplete(FtpFile*, int)",
-      "address": 5430544,
-      "offset": 4540576,
-      "size": 9,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN20NetListenerInterface10NosAcquireEP13NetworkObjectRK7NetPeer",
-      "demangled_name": "NetListenerInterface::NosAcquire(NetworkObject*, NetPeer const&)",
-      "address": 5430560,
-      "offset": 4540592,
-      "size": 12,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN20NetListenerInterface10NosAdoptedEP13NetworkObjectRK7NetPeer",
-      "demangled_name": "NetListenerInterface::NosAdopted(NetworkObject*, NetPeer const&)",
-      "address": 5430576,
-      "offset": 4540608,
-      "size": 9,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN20NetListenerInterfaceD0Ev",
-      "demangled_name": "NetListenerInterface::~NetListenerInterface()",
-      "address": 5430592,
-      "offset": 4540624,
-      "size": 45,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZThn4_N20NetworkObjectManager19NotifyDestroyObjectEPvP7EdClassii",
-      "demangled_name": "{virtual override thunk({offset(-4)}, NetworkObjectManager::NotifyDestroyObject(void*, EdClass*, int, int))}",
-      "address": 5443328,
-      "offset": 4553360,
-      "size": 7,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZThn4_N20NetworkObjectManager18NotifyCreateObjectEPvP7EdClassS0_iii",
-      "demangled_name": "{virtual override thunk({offset(-4)}, NetworkObjectManager::NotifyCreateObject(void*, EdClass*, void*, int, int, int))}",
-      "address": 5448112,
-      "offset": 4558144,
-      "size": 7,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN16EdObjectNotifier18NotifyCreateObjectEPvP7EdClassS0_iii",
-      "demangled_name": "EdObjectNotifier::NotifyCreateObject(void*, EdClass*, void*, int, int, int)",
-      "address": 5460048,
-      "offset": 4570080,
-      "size": 9,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN16EdObjectNotifier19NotifyDestroyObjectEPvP7EdClassii",
-      "demangled_name": "EdObjectNotifier::NotifyDestroyObject(void*, EdClass*, int, int)",
-      "address": 5460064,
-      "offset": 4570096,
-      "size": 9,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN16EdObjectNotifier19NotifyDefunctObjectEPvP7EdClassi",
-      "demangled_name": "EdObjectNotifier::NotifyDefunctObject(void*, EdClass*, int)",
-      "address": 5460080,
-      "offset": 4570112,
-      "size": 9,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_ZN16EdObjectNotifier18NotifyReviveObjectEPvP7EdClassi",
-      "demangled_name": "EdObjectNotifier::NotifyReviveObject(void*, EdClass*, int)",
-      "address": 5460096,
-      "offset": 4570128,
-      "size": 9,
-      "match_percent": 0.0
-    },
-    {
       "name": "_ZN16V2SessionManager4InitEPc",
       "demangled_name": "V2SessionManager::Init(char*)",
       "address": 5461600,
@@ -128222,8 +128222,8 @@
   "summary": {
     "bazel_units": 458,
     "functions": 13454,
-    "assigned_functions": 12475,
+    "assigned_functions": 12500,
     "ambiguous_functions": 214,
-    "unassigned_functions": 765
+    "unassigned_functions": 740
   }
 }

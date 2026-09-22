@@ -174,8 +174,14 @@ void KillRumble(GameObject_s *object) {
     }
 }
 
-void FloatRumble(GameObject_s *) {
-    STUBBED();
+void FloatRumble(GameObject_s *object) {
+    if (object != NULL && static_cast<i8>(object->apiobj.flags_low) < 0) {
+        const f32 strength = MIN(1.0f, NuFabs(object->apiobj.velocity.y) /
+                                               object->apiobj.character_data->game_character->movement_speed * 0.15f +
+                                           0.25f);
+        NewRumble(object->pad_gamepad->pad, strength, 0);
+        NewBuzzFrames(object->pad_gamepad->pad, 1, 0);
+    }
 }
 
 i16 InsideLineF(f32 point_u, f32 point_v, f32 line_start_u, f32 line_start_v, f32 line_end_u, f32 line_end_v) {
@@ -389,9 +395,49 @@ void CollideGameObjects(WORLDINFO_s *world) {
     APIObjectCollisions(collision_count, collision_objects, collision_minimums, collision_maximums, Collide2Objects);
 }
 
-bool CalculateRayBoxIntersection(VuVec const &, VuVec const &, VuVec const &, VuVec const &, float, float &) {
-    STUBBED();
-    return false;
+bool CalculateRayBoxIntersection(VuVec const &minimum, VuVec const &maximum, VuVec const &start, VuVec const &direction,
+                                 float maximum_distance, float &distance) {
+    f32 near_distance;
+    f32 far_distance;
+    if (direction.x >= 0.0f) {
+        near_distance = (minimum.x - start.x) / direction.x;
+        far_distance = (maximum.x - start.x) / direction.x;
+    } else {
+        near_distance = (maximum.x - start.x) / direction.x;
+        far_distance = (minimum.x - start.x) / direction.x;
+    }
+
+    f32 axis_near_distance;
+    f32 axis_far_distance;
+    if (direction.y >= 0.0f) {
+        axis_near_distance = (minimum.y - start.y) / direction.y;
+        axis_far_distance = (maximum.y - start.y) / direction.y;
+    } else {
+        axis_near_distance = (maximum.y - start.y) / direction.y;
+        axis_far_distance = (minimum.y - start.y) / direction.y;
+    }
+
+    if (near_distance > axis_far_distance || axis_near_distance > far_distance) {
+        return false;
+    }
+    near_distance = MAX(axis_near_distance, near_distance);
+    far_distance = MIN(axis_far_distance, far_distance);
+
+    if (direction.z >= 0.0f) {
+        axis_near_distance = (minimum.z - start.z) / direction.z;
+        axis_far_distance = (maximum.z - start.z) / direction.z;
+    } else {
+        axis_near_distance = (maximum.z - start.z) / direction.z;
+        axis_far_distance = (minimum.z - start.z) / direction.z;
+    }
+
+    if (near_distance > axis_far_distance || axis_near_distance > far_distance) {
+        return false;
+    }
+    far_distance = MIN(axis_far_distance, far_distance);
+    near_distance = MAX(axis_near_distance, near_distance);
+    distance = near_distance;
+    return maximum_distance > near_distance && far_distance > 0.0f;
 }
 
 f32 CalcCapsuleIntersectDistance(VuVec const &start, VuVec const &direction, f32 maximum_distance, VuVec const &centre,
@@ -412,12 +458,16 @@ f32 CalcCapsuleIntersectDistance(VuVec const &start, VuVec const &direction, f32
 }
 
 i32 CheckCol(nutex_s *, i32, i32, i32, i32) {
-    STUBBED();
     return true;
 }
 
-void HitRumble(GameObject_s *) {
-    STUBBED();
+void HitRumble(GameObject_s *object) {
+    if (object != NULL) {
+        if (object->apiobj.player_controlled) {
+            NewRumble(object->pad_gamepad->pad, 0.5f, 0);
+            NewBuzzFrames(object->pad_gamepad->pad, 2, 0);
+        }
+    }
 }
 
 i32 ObjHitObj(GameObject_s *attacker, GameObject_s *target, i32 damage, u16 flags, i32 probe, i32) {

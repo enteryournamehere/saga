@@ -27,7 +27,7 @@ extern i16 id_CATWOMAN;
 void NewRumble(nupad_s *, f32, i32);
 void NewBuzzFrames(nupad_s *, i32, i32);
 void GameCam_HitJudder();
-void StunGameObject(GameObject_s *, GameObject_s *, f32, i32);
+i32 StunGameObject(GameObject_s *, GameObject_s *, f32, i32);
 void Detonator_Detonate(DETONATOR_s *);
 i32 GizmoBlowupBlowup(GIZMOBLOWUP_s *, i32, i32, i32, GameObject_s *, i32);
 i32 TerrainPlatId();
@@ -328,31 +328,36 @@ i32 Batarang_SeekToTarget(BATARANG_s *batarang) {
 }
 
 void Batarangs_CheckLostData(void *data) {
-    for (i32 i = 0; i < 8; ++i) {
-        BATARANG_s *batarang = &Batarang[i];
+    BATARANG_s *batarang = Batarang;
+    BATARANG_s *end = Batarang + 8;
+    do {
         if (batarang->owner == data) {
+        reset:
             batarang->field_0x7d = 0;
             batarang->active = 0;
             batarang->owner = NULL;
             batarang->cooldown = 0x32;
-            continue;
+        } else {
+            BATARANG_TARGET_s *target_data = batarang->targets;
+            for (i32 target = 0; target < batarang->active; ++target, ++target_data) {
+                if (target_data->object != data) {
+                    continue;
+                }
+                if (batarang->owner == data) {
+                    goto reset;
+                }
+                if (batarang->field_0x7d != 0) {
+                    target_data->lost = 1;
+                    continue;
+                }
+                for (i32 move = target + 1; move < batarang->active; ++move) {
+                    batarang->targets[move - 1] = batarang->targets[move];
+                }
+                --batarang->active;
+            }
         }
-        for (i32 target = 0; target < batarang->active;) {
-            if (batarang->targets[target].object != data) {
-                ++target;
-                continue;
-            }
-            if (batarang->field_0x7d != 0) {
-                batarang->targets[target].lost = 1;
-                ++target;
-                continue;
-            }
-            for (i32 move = target + 1; move < batarang->active; ++move) {
-                batarang->targets[move - 1] = batarang->targets[move];
-            }
-            --batarang->active;
-        }
-    }
+        ++batarang;
+    } while (batarang != end);
 }
 
 i32 Batarang_StartTargetting(GameObject_s *object) {

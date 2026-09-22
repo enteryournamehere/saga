@@ -147,8 +147,7 @@ void BobaRocket_Kill(PART_s *part, i32) {
     EXPLOSION *explosion = Detonate(&part->position, 0);
     if (explosion != NULL && Arcade != 0 && part->owner != NULL &&
         (Player[0] == part->owner || Player[1] == part->owner) &&
-        (part->owner->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
-        static_cast<u8>(part->owner->apiobj.field_0x27c) <= 1) {
+        (part->owner->apiobj.field_0x1f8 & 0x1001) == 0x1001 && static_cast<u8>(part->owner->apiobj.field_0x27c) <= 1) {
         explosion->field_0x24 |= 0x10000;
         explosion->object = part->owner;
     }
@@ -330,10 +329,6 @@ void HothEscapeD_Update(WORLDINFO_s *world) {
     UpdateTrooperCannons(world);
 }
 
-void InitTrooperCannons(WORLDINFO_s *) {
-    STUBBED();
-}
-
 void CloudCityTrapA_Init(WORLDINFO_s *) {
     STUBBED();
 }
@@ -358,10 +353,6 @@ void CloudCityTrapC_Panel(WORLDINFO_s *) {
 }
 
 void CloudCityTrapC_Reset(WORLDINFO_s *) {
-    STUBBED();
-}
-
-void InitMiniSnowTroopers(WORLDINFO_s *, i32, i32, i32) {
     STUBBED();
 }
 

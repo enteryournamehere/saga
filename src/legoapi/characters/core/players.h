@@ -107,6 +107,9 @@ extern "C" void APIObjectRegisterAnimRedirect(ANIMREDIRECTFN fn, void *list, cha
 extern "C" void APIResetCharacterRemap(void);
 
 i32 PlayersDropInOut();
+i32 GetNumLocalPlayers();
+void SetPlayerGroupPosition(f32 x, f32 y, f32 z);
+GameObject_s *Player_FindByID(i32 id);
 
 extern "C" APICHARACTERMODEL *APICharacterLoaded(i32 character_id);
 extern "C" void APICharacterModelReset(APICHARACTERMODEL *model);
@@ -130,6 +133,8 @@ i32 AvailableToPlayer(u32 character_flags, i32 character_id, i32 context, i32 re
 i32 ActivePlayerInRange(nuvec_s *position, f32 range_squared, f32 *distance_squared);
 bool FindNearestPlayerToVec(NUVEC *position, GameObject_s **nearest_player, f32 &distance_squared,
                             bool require_character_flags, u32 character_flags);
+bool FindFurthestPlayerFromVec(NUVEC *position, GameObject_s **furthest_player, f32 &distance_squared,
+                               bool require_character_flags, u32 character_flags);
 void SetHitPoints(GameObject_s *obj, i32 hp);
 void RememberPlayerIDs(i32 a, i32 b, i32 c);
 void Player_CopyEssentials(GameObject_s *source, GameObject_s *destination);
@@ -139,6 +144,9 @@ i32 CanPullLevers(i32 character_id);
 struct WORLDINFO_s;
 void Players_InitPositions(struct WORLDINFO_s *world);
 void PlayerItemTypes_Reset(struct WORLDINFO_s *world);
+void PlayerItemTypes_Init(PLAYERITEMTYPE_s *types);
+PLAYERITEMTYPE_s *PlayerItemType_Find(i32 id);
+void PlayerItem_Set(PLAYERITEM_s *item, PLAYERITEMTYPE_s *type);
 
 void Players_Init(void);
 i32 Players_AveragePos(NUVEC *position, SOCKPOSITION_s *socket_position);
@@ -167,4 +175,4 @@ extern "C" void ComplexSockPosition(SOCKSYS *sock_sys, NUVEC *position, i32 prio
                                     SOCKPOSITION *result);
 void *CutScenePlayer_Available(void);
 
-void KillPlayer(GameObject_s *player, i32 cause, i32 unknown, struct nuvec_s *);
+i32 KillPlayer(GameObject_s *player, i32 cause, i32 unknown, struct nuvec_s *);

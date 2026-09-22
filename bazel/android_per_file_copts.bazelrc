@@ -35,6 +35,9 @@ build:target --per_file_copt=^src/gamelib/util/CRC16\.cpp$@-O3
 build:target --per_file_copt=^src/gamelib/util/Network_stubs\.cpp$@-O3
 build:target --per_file_copt=^src/gamelib/util/Message\.cpp$@-O3
 build:target --per_file_copt=^src/gamelib/util/Stats\.cpp$@-O3
+# Listener-list registration in the original is optimized, including direct
+# pool allocation and compact intrusive-list insertion/removal paths.
+build:target --per_file_copt=^src/gamelib/util/Transporter\.cpp$@-O3
 # Recovered stub-only device units: -O3 reproduces FileSize exactly and the
 # APK constructor/CreateNuFile and SetCurrentDir bodies apart from relocation.
 build:target --per_file_copt=^src/nu2api/nufile/nufiledevice\.cpp$@-O3
@@ -59,6 +62,7 @@ build:target --per_file_copt=^src/legoapi/menus/core/gamehint\.cpp$@-O2
 build:target --per_file_copt=^src/legoapi/menus/core/hint\.cpp$@-O2
 build:target --per_file_copt=^src/legoapi/menus/screens/gamestatus_lsw\.cpp$@-O2
 build:target --per_file_copt=^src/legoapi/menus/screens/gamemenuall\.cpp$@-O3
+build:target --per_file_copt=^src/legoapi/menus/screens/movies\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/menus/screens/menus\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/menus/screens/shop\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/menus/screens/gamestructure\.cpp$@-O3
@@ -85,6 +89,9 @@ build:target --per_file_copt=^src/legoapi/actions/character/snake\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/actions/character/suit\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/actions/combat/hits\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/actions/combat/fighting\.cpp$@-O3
+# Whip action dispatch is optimized in the target, including its animation
+# state transitions and target-selection fallbacks.
+build:target --per_file_copt=^src/legoapi/actions/combat/whip\.cpp$@-O3
 # The rope material setup is optimized in the target: its local buffer clear,
 # material bitfield initialization, and success/failure paths are folded.
 build:target --per_file_copt=^src/legoapi/actions/combat/rope\.cpp$@-O3
@@ -101,6 +108,9 @@ build:target --per_file_copt=^src/legoapi/render/core/screen\.cpp$@-O2
 # Shader material filters use optimized switch lowering and leaf epilogues.
 build:target --per_file_copt=^src/legoapi/render/core/shader\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/render/fx/edsplines\.cpp$@-O3
+# The RefPack encoder uses the original vectorized table initialization and
+# optimized match-search loops.
+build:target --per_file_copt=^src/legoapi/render/fx/inflate\.cpp$@-O3
 # The HTML plotting helpers keep their original optimized codegen after
 # moving out of the mixed spline source.
 build:target --per_file_copt=^src/nu2api/nucore/nuhtml\.cpp$@-O3
@@ -116,7 +126,8 @@ build:target --per_file_copt=^src/legoapi/gizmo/base/gizmo_sys\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/world/level\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/core/input/qrand\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/characters/core/players\.cpp$@-O2
-build:target --per_file_copt=^src/legoapi/characters/core/characters\.cpp$@-O2
+# FinishWeirdoNames uses GCC's -O3 vectorized variable-length fill in the original.
+build:target --per_file_copt=^src/legoapi/characters/core/characters\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/characters/core/character\.cpp$@-O2
 build:target --per_file_copt=^src/legoapi/characters/motion/gameanim\.cpp$@-O2
 build:target --per_file_copt=^src/legoapi/characters/motion/animation\.cpp$@-O2
@@ -353,6 +364,7 @@ build:target --per_file_copt=^src/MechInputTouch/MechAutoJumpManager\.cpp$@-O3
 build:target --per_file_copt=^src/MechInputTouch/MechInputTouch\.cpp$@-O3
 build:target --per_file_copt=^src/MechInputTouch/MechInputTouchMainController\.cpp$@-O2
 build:target --per_file_copt=^src/MechInputTouch/MechInputTouchGestureBasedController\.cpp$@-O2
+build:target --per_file_copt=^src/MechInputTouch/MechInputTouchGestureTracker\.cpp$@-O3
 build:target --per_file_copt=^src/MechInputTouch/MechSystems\.cpp$@-O2
 build:target --per_file_copt=^src/MechInputTouch/MechAutofireAddon\.cpp$@-O2
 build:target --per_file_copt=^src/MechInputTouch/MechTouchUIElements\.cpp$@-O3

@@ -62,12 +62,16 @@ extern void CurrentStart(GameObject_s *obj, i32 mode, i32 start);
 extern void InitSurfaceInfo(GameObject_s *obj);
 extern i32 SetObjOnSurface(GameObject_s *obj, i32 mode);
 extern void GizForce_ResetLOS(GameObject_s *obj);
+void Arcade_PlayerKilled(i32 player, i32 active);
 void ResetPlayerAI(GameObject_s *obj);
 void ResetPlayerMoves(GameObject_s *obj);
 void SetProtocolDroidDeactivatedAction(GameObject_s *);
 i32 TagCharacter(GameObject_s *source, GameObject_s *target, i32 mode);
 void NewBuzz(nupad_s *, f32, i32);
 void GameAudio_PlaySfxById(i32 sfx_id, nuvec_s *position, i32 flags, i32 volume);
+f32 VehicleTurnOrLoopOffset(GameObject_s *object);
+void Player_ClearContext(GameObject_s *object, i32 mode);
+void Player_ResetContexts(PLAYERPACKET_s *packet);
 extern "C" f32 chattersfxwait;
 
 void Players_Init(void) {
@@ -387,16 +391,7 @@ void Players_InitPositions(WORLDINFO *world) {
     }
 }
 
-typedef struct {
-    i32 field_0;
-    char *name;
-    u8 field_0x8;
-    u8 field_0x9;
-    u8 field_0xa;
-    u8 field_0xb;
-} PlayerItemTypeEntry;
-
-static PlayerItemTypeEntry *PlayerItemType = NULL;
+static PLAYERITEMTYPE_s *PlayerItemType = NULL;
 static i32 PLAYERITEMTYPECOUNT = 0;
 
 extern i8 BoltType_FindIDByName(char *name, WORLDINFO *world);
@@ -720,20 +715,118 @@ void DrawOffsetCode(GameObject_s *obj, i32 param) {
 }
 
 float GetHoverPosY(GameObject_s *obj) {
-    (void)obj;
-    return 0.0f;
+    if ((obj->apiobj.character_data->model_flags & 0x2000) == 0 ||
+        (WorldInfo_CurrentlyActive()->current_level->flags & LEVEL_IN_SPACE) != 0) {
+        return 0.0f;
+    }
+
+    const f32 vehicle_offset = VehicleTurnOrLoopOffset(obj);
+    if (obj->apiobj.field_0x27f == 7 || obj->apiobj.field_0x27f == 0x10)
+        return obj->apiobj.water_height + vehicle_offset;
+
+    f32 height = obj->apiobj.field_0x218;
+    if (height == 0.0f)
+        return 0.0f;
+    if (obj->apiobj.water_height != 0.0f)
+        height = MAX(obj->apiobj.water_height, height);
+
+    f32 hover_height = WORLD->current_level->hover_height;
+    if (hover_height == 2000000.0f)
+        hover_height = static_cast<GAMECHARACTERDATA *>(obj->apiobj.character_data->field11_0x24)->field_0x28;
+    return height + hover_height + vehicle_offset;
 }
 
-void PlayerTakeHit(GameObject_s *, GameObject_s *) {
-    STUBBED();
+void PlayerTakeHit(GameObject_s *object, GameObject_s *attacker) {
+    if (object->apiobj.field_0x27c != -1)
+        return;
+
+    const u8 state = object->field_0xe31;
+    i32 animation;
+    if (state != 1) {
+        animation = 0x3d;
+        if (object->apiobj.character_model->model_data_b[0x3d] == NULL) {
+            if ((object->field_0xefb & 8) != 0) {
+                ResetAnimPacket(&object->apiobj.anim_packet, -1);
+                Player_ClearContext(object, 1);
+                Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
+            }
+            return;
+        }
+    } else {
+        animation = 0x3e;
+        if (object->apiobj.character_model->model_data_b[0x3e] == NULL) {
+            if ((object->field_0xefb & 8) != 0) {
+                ResetAnimPacket(&object->apiobj.anim_packet, -1);
+                Player_ClearContext(object, 1);
+                Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
+            }
+            return;
+        }
+    }
+
+    if (object->field_0x7a5 == 0x1b && object->field_0x780 != NULL) {
+        GameObject_s *partner = static_cast<GameObject_s *>(object->field_0x780);
+        if (partner->field_0x7a5 == 0x1c)
+            partner->field_0x7a5 = 0xff;
+    }
+
+    object->context_animation = animation;
+    ResetAnimPacket(&object->apiobj.anim_packet, -1);
+    Player_ClearContext(object, 1);
+    Player_ResetContexts(reinterpret_cast<PLAYERPACKET_s *>(object->player_packet));
+    object->field_0x7a5 = 0x15;
+
+    const f32 duration = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 1);
+    object->field_0xe31 = state;
+    object->context_animation_timer = duration <= 0.0f ? 1.0f : duration;
+    SetFlicker(object, 0.4f);
+
+    if (attacker != NULL) {
+        const u16 angle = NuAtan2D(attacker->apiobj.collision_position.x - object->apiobj.collision_position.x,
+                                   attacker->apiobj.collision_position.z - object->apiobj.collision_position.z);
+        object->apiobj.field_0x276 = angle;
+        object->apiobj.movement_facing_angle = angle;
+        object->apiobj.facing_angle = angle;
+    }
 }
 
-void PlayerItem_Set(PLAYERITEM_s *, PLAYERITEMTYPE_s *) {
-    STUBBED();
+void PlayerItem_Set(PLAYERITEM_s *item, PLAYERITEMTYPE_s *type) {
+    item->type = type;
+    if (type != NULL) {
+        item->ammunition = type->field_0x2;
+        item->field_0x5 = type->field_0x3;
+    } else {
+        item->ammunition = 0;
+        item->field_0x5 = 0;
+    }
 }
 
-void Player_FindByID(i32) {
-    STUBBED();
+GameObject_s *Player_FindByID(i32 id) {
+    GameObject_s *object = Player[0];
+    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
+        return object;
+    object = Player[1];
+    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
+        return object;
+    object = Player[2];
+    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
+        return object;
+    object = Player[3];
+    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
+        return object;
+    object = Player[4];
+    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
+        return object;
+    object = Player[5];
+    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
+        return object;
+    object = Player[6];
+    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
+        return object;
+    object = Player[7];
+    if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->id == id)
+        return object;
+    return NULL;
 }
 
 NUVEC *Player_StartPos(GameObject_s *obj) {
@@ -751,7 +844,7 @@ i32 PlayersDropInOut() {
 }
 
 i32 PlayerItem_GotAmmo(PLAYERITEM_s *item) {
-    if (item != NULL && item->type != NULL && item->type[8] == 2)
+    if (item != NULL && item->type != NULL && item->type->field_0x8 == 2)
         return item->ammunition != 0;
     return 1;
 }
@@ -788,8 +881,17 @@ i32 Players_BothActive() {
            static_cast<i8>(Player[1]->apiobj.field_0x1f8) < 0;
 }
 
-void PlayerItemType_Find(i32) {
-    STUBBED();
+PLAYERITEMTYPE_s *PlayerItemType_Find(i32 id) {
+    if (PlayerItemType != NULL && PLAYERITEMTYPECOUNT > 0) {
+        i32 i = 0;
+        while (PlayerItemType[i].id != id) {
+            i++;
+            if (i == PLAYERITEMTYPECOUNT)
+                return NULL;
+        }
+        return &PlayerItemType[i];
+    }
+    return NULL;
 }
 
 void (*Player_ClearContextFn)(GameObject_s *, i32);
@@ -809,8 +911,24 @@ i32 Player_HasFastBuild(GameObject_s *player) {
     return Cheats_CheckFlags(0x4000) != 0 || (player != NULL && player->field_0xdec > 0.0f);
 }
 
-void PlayerItemTypes_Init(PLAYERITEMTYPE_s *) {
-    STUBBED();
+void PlayerItemTypes_Init(PLAYERITEMTYPE_s *types) {
+    PlayerItemType = NULL;
+    PLAYERITEMTYPECOUNT = 0;
+    if (types == NULL)
+        return;
+
+    PlayerItemType = types;
+    if (types->id == -1) {
+        PlayerItemType = NULL;
+        return;
+    }
+
+    i32 count = 0;
+    do {
+        types++;
+        count++;
+    } while (types->id != -1);
+    PLAYERITEMTYPECOUNT = count;
 }
 
 void Player_ResetContexts(PLAYERPACKET_s *packet) {
@@ -1093,14 +1211,32 @@ void PlayerButton_OnClick_Callback_NextButton(MechTouchUIElement &element, Touch
     }
 }
 
-static __used__ void Player_ClearContext_Game(GameObject_s *, i32) {
-    STUBBED();
-}
-
 u32 (*CanPushObstaclesFn)(GameObject_s *) = NULL;
 
-void KillPlayer(GameObject_s *, i32, i32, nuvec_s *) {
-    STUBBED();
+i32 KillPlayer(GameObject_s *object, i32 reason, i32 ignore_spawn_protection, nuvec_s *) {
+    if (object->apiobj.field_0x287 != 0)
+        return 0;
+
+    if (ignore_spawn_protection != 0)
+        object->spawn_protection_timer = 0.0f;
+    else if (object->spawn_protection_timer > 0.0f)
+        return 0;
+
+    if (Arcade != 0) {
+        i32 other_player = 1;
+        if (object->apiobj.field_0x27c != 0) {
+            if (object->apiobj.field_0x27c != 1)
+                return KillGameObject(object, reason, 0);
+            other_player = 0;
+        }
+
+        i32 active = 0;
+        if (Player[other_player] != NULL)
+            active = (Player[other_player]->apiobj.field_0x1f4 >> 18) & 1;
+        Arcade_PlayerKilled(other_player, active);
+    }
+
+    return KillGameObject(object, reason, 0);
 }
 
 namespace {
@@ -1563,8 +1699,13 @@ i32 AvailableToPlayer(u32 character_flags, i32 weapon_action, i32 context, i32 r
     return 0;
 }
 
-void GetNumLocalPlayers() {
-    STUBBED();
+i32 GetNumLocalPlayers() {
+    i32 count = 0;
+    if (Player[0] != NULL)
+        count = static_cast<i8>(Player[0]->apiobj.field_0x1f8) < 0;
+    if (Player[1] != NULL && (Player[1]->apiobj.field_0x1f8 & 0x80) != 0)
+        count++;
+    return count;
 }
 
 i32 UnderPlayerControl(GameObject_s *object) {
@@ -1777,8 +1918,14 @@ bool FindNearestPlayerToVec(nuvec_s *position, GameObject_s **nearest_player, fl
     return *nearest_player != NULL;
 }
 
-void SetPlayerGroupPosition(float, float, float) {
-    STUBBED();
+void SetPlayerGroupPosition(f32 x, f32 y, f32 z) {
+    NUVEC offset = {0.0f, 0.0f, 0.2f};
+    for (i32 i = 0; i < PLAYERCOUNT; i++) {
+        NUVEC position = {x, y, z};
+        NuVecAdd(&position, &position, &offset);
+        ResetPlayer(Player[i], 1, &position, 1);
+        NuVecRotateY(&offset, &offset, 0x2000);
+    }
 }
 
 i32 (*LastSafePosExtraFn)(GameObject_s *) = NULL;
@@ -1805,8 +1952,30 @@ void CheckForPlayersTurnedOff() {
     }
 }
 
-void FindFurthestPlayerFromVec(nuvec_s *, GameObject_s **, float &, bool, u32) {
-    STUBBED();
+bool FindFurthestPlayerFromVec(nuvec_s *position, GameObject_s **furthest_player, float &distance_squared,
+                               bool require_character_flags, u32 character_flags) {
+    *furthest_player = NULL;
+    distance_squared = 0.0f;
+
+    for (i32 index = 0; index < 8; ++index) {
+        GameObject_s *candidate = Player[index];
+        if (candidate == NULL || static_cast<i8>(candidate->apiobj.flags_low) >= 0)
+            continue;
+
+        const f32 candidate_distance = NuVecDistSqr(&candidate->apiobj.position, position, NULL);
+        if (*furthest_player != NULL && candidate_distance <= distance_squared)
+            continue;
+
+        if (require_character_flags &&
+            (candidate->apiobj.character_data->game_character->flags_090 & character_flags) == 0) {
+            continue;
+        }
+
+        distance_squared = candidate_distance;
+        *furthest_player = candidate;
+    }
+
+    return *furthest_player != NULL;
 }
 
 void AveragePlayerCurrentSpeedMul() {

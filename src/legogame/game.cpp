@@ -73,6 +73,15 @@ f32 minikittime;
 extern f32 (*Hint_AlphaTargetFn)();
 extern i32 (*Hub_PanelBusyFn)();
 i32 Hub_PanelBusy();
+static PLAYERITEMTYPE_s PlayerItemType_INDY[] = {
+    {15, 6, 0, const_cast<char *>("blue"), 2, 0, 0, 0},
+    {-1, 0, 0, NULL, 0, 0, 0, 0},
+};
+extern void (*Player_ClearContextFn)(GameObject_s *, i32);
+void ReleaseForce(GameObject_s *object, i32 mode);
+void ReleaseEat(GameObject_s *object);
+void ReleasePush(GameObject_s *object);
+void ReleaseTakeOver(GameObject_s *object, i32 immediate);
 static f32 Hint_AlphaTarget() {
     if (minikittime > 0.0f && ChallengeMode == 0)
         return 0.0f;
@@ -90,6 +99,15 @@ static i32 GizBuildit_AutoBuildPos_Game(void *context, NUVEC *position, NUVEC *r
     if (angle != NULL)
         *angle = attracto->angle;
     return 1;
+}
+
+static void Player_ClearContext_Game(GameObject_s *object, i32 release_takeover) {
+    ReleaseForce(object, 0);
+    ReleaseEat(object);
+    ReleaseBuildIt(object, 0);
+    ReleasePush(object);
+    if (release_takeover != 0)
+        ReleaseTakeOver(object, 1);
 }
 
 static i32 GizBuildIt_CanStartBuildingFn_Game(GIZBUILDIT_s *buildit, GameObject_s *) {
@@ -1023,10 +1041,10 @@ void InitGameAfterConfig(void) {
     KITPOS2X = 0;
     //  CONVERTOLDPICKUPS = 1;
     //  GrabScreenWhenFading = 1;
-    //  troopers_gdeb._0_4_ = 0x83;
-    //  troopers_gdeb._4_4_ = 0x49;
-    //  troopers_gdeb._8_4_ = 0x4a;
-    //  troopers_gdeb._12_4_ = 0x4b;
+    troopers_gdeb[0] = 0x83;
+    troopers_gdeb[1] = 0x49;
+    troopers_gdeb[2] = 0x4a;
+    troopers_gdeb[3] = 0x4b;
     //  LEGOHINT_SHOOTCAMERAS = 0x266;
     extern i32 LEGOHINT_PUSHBLOCKS;
     LEGOHINT_PUSHBLOCKS = 0x267;
@@ -1050,7 +1068,7 @@ void InitGameAfterConfig(void) {
     Punch_HitHoldFn = Punch_HitHold;
     Punch_HitExtraCodeFn = Punch_HitExtraCode_LSW;
     SetSoundFadeDistCallBackFn = SetSoundFadeDistCallBackFn_LSW;
-    //  PlayerItemTypes_Init((PLAYERITEMTYPE_s *)PlayerItemType_INDY);
+    PlayerItemTypes_Init(PlayerItemType_INDY);
     DisguiseAdjustFn = DisguiseAdjust_LSW;
     //  SUPERCARRY_THROWSPEED_XZ = 0x40000000;
     //  SUPERCARRY_THROWSPEED_Y = 0x3fc00000;
@@ -1246,7 +1264,7 @@ void InitGameAfterConfig(void) {
     CanGlideFn = CanGlide_Game;
     UsingExtraActionsFn = UsingExtraActions_Game;
     CanStartHoldFn = CanStartHold_Game;
-    //  Player_ClearContextFn = Player_ClearContext_Game;
+    Player_ClearContextFn = Player_ClearContext_Game;
     //  LEGOTHINGSSCENE_TER_SPINBASE = 0;
     //  LEGOTHINGSSCENE_TER_SPINARM = 1;
     GizBuildit_AutoBuildPosFn = GizBuildit_AutoBuildPos_Game;

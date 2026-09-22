@@ -1,8 +1,11 @@
 #include "decomp.h"
+#include "gamelib/util/NetInputStream.h"
+#include "gamelib/util/NetOutputStream.h"
 #include "gamelib_util_types.h"
 #include "gamelib/util/Utilities.h"
 #include "gameapi/edtools/gameapi_edtools_types.h"
 #include "legoapi/legoapi_types.h"
+#include "nu2api/nucore/NuNetEmu.h"
 #include <string.h>
 #include <new>
 NetSession *theSession;
@@ -20,52 +23,285 @@ static __used__ i32 NOSGetGuid() {
     return theNos->GetNextGuid();
 }
 
-void NetRotator2::PredictValue(EdClass const *, void *, NetPredictor::PredictorTime *, NetPredictor::PredictorData **,
-                               float *, i32) {
-    STUBBED();
+static f32 NetworkFrameTime() {
+    u32 time = UtilGetFrameStartTime();
+    return static_cast<f32>(time & 0xffff) + static_cast<f32>(time >> 16) * 65536.0f;
 }
 
-bool NetPredictor::AllowPush(EdClass const *, void const *, ReplicatorData &, i32, i32) {
-    STUBBED();
-    return false;
+static f32 ClampPrediction(NetPredictor const *predictor, f32 value) {
+    if ((predictor->replication_group & 0x10) != 0 && value < predictor->minimum_value) {
+        value = predictor->minimum_value;
+    }
+    if ((predictor->replication_group & 0x20) != 0 && value > predictor->maximum_value) {
+        value = predictor->maximum_value;
+    }
+    return value;
 }
 
-void NetPredictor::CheckPredictionError(EdClass const *, void *, float *, float *, i32) {
-    STUBBED();
+void NetRotator2::PredictValue(EdClass const *, void *, NetPredictor::PredictorTime *time,
+                               NetPredictor::PredictorData **samples, float *values, i32 count) {
+    f32 interval_scale = 1.0f / (time->values[2] - time->values[1]);
+    f32 elapsed = NetworkFrameTime() - time->values[2];
+    for (i32 i = 0; i < count; i++) {
+        i32 delta = (static_cast<i32>(samples[i]->values[2]) - static_cast<i32>(samples[i]->values[1])) & 0xffff;
+        if (delta >= 0x8000) {
+            delta -= 0x10000;
+        }
+        f32 predicted = samples[i]->values[2] + static_cast<f32>(delta) * interval_scale * elapsed;
+        values[i] = ClampPrediction(this, predicted);
+    }
 }
 
-void NetPredictor::DoPrediction(EdClass const *, void *, ReplicatorData &, NetPredictor::PredictorTime *, i32) {
-    STUBBED();
+bool NetPredictor::AllowPush(EdClass const *object_class, void const *object, ReplicatorData &data, i32 force, i32) {
+    u32 *last_push = reinterpret_cast<u32 *>((reinterpret_cast<uintptr_t>(data.cursor) + 3) & ~3u);
+    u32 *failed_predictions = last_push + 1;
+    data.cursor = reinterpret_cast<u8 *>(failed_predictions + 1);
+
+    u32 now = UtilGetFrameStartTime();
+    if (force != 0) {
+        *last_push = now;
+        return true;
+    }
+    if (now - *last_push <= minimum_interval) {
+        return false;
+    }
+
+    ReplicatorData prediction_data = data;
+    if (DoPrediction(object_class, const_cast<void *>(object), prediction_data, 1) != 0) {
+        *failed_predictions = 0;
+        replication_group |= 1;
+    } else {
+        if (*failed_predictions > 2) {
+            return false;
+        }
+        ++*failed_predictions;
+        replication_group &= ~1;
+    }
+    *last_push = now;
+    return true;
 }
 
-i32 NetPredictor::DoPrediction(EdClass const *, void *, ReplicatorData &, i32) {
-    STUBBED();
+i32 NetPredictor::CheckPredictionError(EdClass const *, void *, float *actual, float *predicted, i32 count) {
+    for (i32 i = 0; i < count; i++) {
+        f32 error = actual[i] - predicted[i];
+        if (error > maximum_prediction_error || error < -maximum_prediction_error) {
+            return 1;
+        }
+    }
     return 0;
 }
 
-void NetPredictor::SerialiseObject(EdStream &, NetPeer *, EdClass const *, void *, ReplicatorData &,
-                                   NetPredictor::PredictorTime *, i16 *) {
-    STUBBED();
+static i32 PredictorValues(EdRef *member, u8 *member_data, f32 *converted, f32 *&values) {
+    if (member->type_id == EdType_Float) {
+        values = reinterpret_cast<f32 *>(member_data);
+        return 1;
+    }
+    if (member->type_id == EdType_VuVec || member->type_id == EdType_NuVec) {
+        values = reinterpret_cast<f32 *>(member_data);
+        return 3;
+    }
+    if (member->type_id == EdType_Char) {
+        converted[0] = static_cast<f32>(*reinterpret_cast<i8 *>(member_data));
+    } else if (member->type_id == EdType_Short) {
+        converted[0] = static_cast<f32>(*reinterpret_cast<i16 *>(member_data));
+    } else if (member->type_id == EdType_Int) {
+        converted[0] = static_cast<f32>(*reinterpret_cast<i32 *>(member_data));
+    }
+    values = converted;
+    return 1;
 }
 
-i32 NetPredictor::SerialiseObject(EdStream &, NetPeer *, EdClass const *, void *, ReplicatorData &, i16 *) {
-    STUBBED();
-    return 0;
+static void StorePredictedValues(EdRef *member, u8 *member_data, f32 const *values) {
+    if (member->type_id == EdType_Char) {
+        *reinterpret_cast<i8 *>(member_data) = static_cast<i8>(values[0]);
+    } else if (member->type_id == EdType_Short) {
+        *reinterpret_cast<i16 *>(member_data) = static_cast<i16>(values[0]);
+    } else if (member->type_id == EdType_Int) {
+        *reinterpret_cast<i32 *>(member_data) = static_cast<i32>(values[0]);
+    }
 }
 
-void NetPredictor::StoreSampleData(EdClass const *, void *, NetPredictor::PredictorTime *,
-                                   NetPredictor::PredictorData **, float *, i32) {
-    STUBBED();
+static NetPredictor::PredictorData *AllocatePredictorData(ReplicatorData &data) {
+    uintptr_t cursor = (reinterpret_cast<uintptr_t>(data.cursor) + 3) & ~3u;
+    NetPredictor::PredictorData *sample = reinterpret_cast<NetPredictor::PredictorData *>(cursor);
+    data.cursor = reinterpret_cast<u8 *>(sample + 1);
+    return sample;
 }
 
-void NetPredictor2::PredictValue(EdClass const *, void *, NetPredictor::PredictorTime *, NetPredictor::PredictorData **,
-                                 float *, i32) {
-    STUBBED();
+void NetPredictor::StoreSampleData(EdClass const *, void *, NetPredictor::PredictorTime *time,
+                                   NetPredictor::PredictorData **samples, float *values, i32 count) {
+    for (i32 i = 0; i < count; i++) {
+        samples[i]->values[0] = samples[i]->values[1];
+        samples[i]->values[1] = samples[i]->values[2];
+        samples[i]->values[2] = values[i];
+        if (maximum_sample_delta > 0.0f && samples[i]->values[2] - samples[i]->values[1] > maximum_sample_delta) {
+            time->sample_count = 0;
+        }
+    }
 }
 
-void NetPredictor3::PredictValue(EdClass const *, void *, NetPredictor::PredictorTime *, NetPredictor::PredictorData **,
-                                 float *, i32) {
-    STUBBED();
+void NetPredictor2::PredictValue(EdClass const *, void *, NetPredictor::PredictorTime *time,
+                                 NetPredictor::PredictorData **samples, float *values, i32 count) {
+    f32 interval_scale = 1.0f / (time->values[2] - time->values[1]);
+    f32 elapsed = NetworkFrameTime() - time->values[2];
+    for (i32 i = 0; i < count; i++) {
+        f32 predicted =
+            samples[i]->values[2] + (samples[i]->values[2] - samples[i]->values[1]) * interval_scale * elapsed;
+        predicted = ClampPrediction(this, predicted);
+        values[i] = values[i] * 0.8f + predicted * 0.2f;
+    }
+}
+
+void NetPredictor3::PredictValue(EdClass const *, void *, NetPredictor::PredictorTime *time,
+                                 NetPredictor::PredictorData **samples, float *values, i32 count) {
+    f32 now = NetworkFrameTime();
+    for (i32 i = 0; i < count; i++) {
+        f32 predicted = samples[i]->values[0] * (now - time->values[1]) * (now - time->values[2]) * time->factors[0] +
+                        samples[i]->values[1] * (now - time->values[0]) * (now - time->values[2]) * time->factors[1] +
+                        samples[i]->values[2] * (now - time->values[0]) * (now - time->values[1]) * time->factors[2];
+        predicted = ClampPrediction(this, predicted);
+        values[i] = values[i] * 0.8f + predicted * 0.2f;
+    }
+}
+
+i32 NetPredictor::SerialiseObject(EdStream &stream, NetPeer *peer, EdClass const *object_class, void *object,
+                                  ReplicatorData &data, NetPredictor::PredictorTime *time, i16 *class_mapping) {
+    u8 member_data[256];
+    for (EdRef *member = object_class->members; member != NULL; member = member->next) {
+        if (member->attributes < 0) {
+            EdClass *member_class = theRegistry.GetClass(member->type_id);
+            void *member_object = member->GetMemberObject(object);
+            if (ForceDummySerialise != 0 && member_object == NULL) {
+                member_object = object;
+            }
+            if (member_class->SerialiseObjectHeader(stream, member_object) != 0) {
+                SerialiseObject(stream, peer, member_class, member_object, data, time, class_mapping);
+            }
+        } else if (member->replication_group == id) {
+            EdType *type = theRegistry.GetType(member->type_id);
+            i32 size = member->size;
+            if (size <= 0) {
+                size = type->size;
+            }
+            if (object == NULL) {
+                stream.Eat(size, 1);
+                continue;
+            }
+
+            if (stream.mode == 2) {
+                member->GetMemberData(object, member->type_id, member_data, sizeof(member_data));
+            }
+            type->serialise(stream, member_data, size);
+            if (stream.mode == 1 && time->sample_count <= 2 && (replication_group & 8) == 0) {
+                member->SetMemberData(object, member->type_id, member_data, sizeof(member_data), class_mapping);
+            }
+
+            f32 converted[1];
+            f32 *values;
+            i32 count = PredictorValues(member, member_data, converted, values);
+            NetPredictor::PredictorData *samples[3];
+            for (i32 i = 0; i < count; i++) {
+                samples[i] = AllocatePredictorData(data);
+            }
+            StoreSampleData(object_class, object, time, samples, values, count);
+        }
+    }
+    return 1;
+}
+
+i32 NetPredictor::SerialiseObject(EdStream &stream, NetPeer *peer, EdClass const *object_class, void *object,
+                                  ReplicatorData &data, i16 *class_mapping) {
+    uintptr_t cursor = (reinterpret_cast<uintptr_t>(data.cursor) + 3) & ~3u;
+    NetPredictor::PredictorTime *time = reinterpret_cast<NetPredictor::PredictorTime *>(cursor);
+    data.cursor = reinterpret_cast<u8 *>(time + 1);
+
+    u8 continuity_break = (replication_group & 8) != 0;
+    UtilGetFrameStartTime();
+    stream.SerialiseBuffer(&continuity_break, 1, 1);
+    if (continuity_break != 0) {
+        time->sample_count = 0;
+    }
+
+    time->values[0] = time->values[1];
+    time->values[1] = time->values[2];
+    if (stream.mode == 2) {
+        time->values[2] = NetworkFrameTime();
+    } else {
+        stream.SerialiseBuffer(&time->values[2], 4, 1);
+        if (stream.mode == 1) {
+            UtilGetFrameStartTime();
+            time->values[2] = static_cast<f32>(static_cast<i32>(time->values[2]) + peer->time_offset);
+        }
+    }
+
+    if (time->values[1] >= time->values[2]) {
+        time->sample_count = 1;
+    } else if (time->sample_count <= 2) {
+        ++time->sample_count;
+        if (time->sample_count == 3) {
+            f32 t0 = time->values[0];
+            f32 t1 = time->values[1];
+            f32 t2 = time->values[2];
+            time->factors[0] = 1.0f / ((t0 - t2) * (t0 - t1));
+            time->factors[1] = 1.0f / ((t1 - t0) * (t1 - t2));
+            time->factors[2] = 1.0f / ((t2 - t0) * (t2 - t1));
+        }
+    }
+
+    SerialiseObject(stream, peer, object_class, object, data, time, class_mapping);
+    if (continuity_break != 0) {
+        replication_group &= ~8;
+    }
+    return 1;
+}
+
+i32 NetPredictor::DoPrediction(EdClass const *object_class, void *object, ReplicatorData &data,
+                               NetPredictor::PredictorTime *time, i32 check_only) {
+    i32 result = 0;
+    u8 member_data[256];
+    for (EdRef *member = object_class->members; member != NULL; member = member->next) {
+        if (member->attributes < 0) {
+            EdClass *member_class = theRegistry.GetClass(member->type_id);
+            void *member_object = member->GetMemberObject(object);
+            result |= DoPrediction(member_class, member_object, data, time, check_only);
+        } else if (member->replication_group == id) {
+            member->GetMemberData(object, member->type_id, member_data, sizeof(member_data));
+
+            f32 converted[1];
+            f32 *values;
+            i32 count = PredictorValues(member, member_data, converted, values);
+            f32 actual[3];
+            memcpy(actual, values, static_cast<u32>(count) * sizeof(f32));
+
+            NetPredictor::PredictorData *samples[3];
+            for (i32 i = 0; i < count; i++) {
+                samples[i] = AllocatePredictorData(data);
+            }
+            PredictValue(object_class, object, time, samples, values, count);
+
+            if (check_only != 0) {
+                result |= CheckPredictionError(object_class, object, actual, values, count);
+            } else {
+                StorePredictedValues(member, member_data, values);
+                member->SetMemberData(object, member->type_id, member_data, sizeof(member_data), NULL);
+            }
+        }
+    }
+    return result;
+}
+
+i32 NetPredictor::DoPrediction(EdClass const *object_class, void *object, ReplicatorData &data, i32 check_only) {
+    uintptr_t cursor = (reinterpret_cast<uintptr_t>(data.cursor) + 3) & ~3u;
+    NetPredictor::PredictorTime *time = reinterpret_cast<NetPredictor::PredictorTime *>(cursor);
+    data.cursor = reinterpret_cast<u8 *>(time + 1);
+
+    if (time->sample_count <= 2) {
+        return 1;
+    }
+    if (check_only == 0 && (time->values[0] >= time->values[1] || time->values[1] >= time->values[2])) {
+        return 1;
+    }
+    return DoPrediction(object_class, object, data, time, check_only);
 }
 
 NetReplicator::NetReplicator(i32 group, float minimum_seconds, float maximum_seconds) {
@@ -150,10 +386,6 @@ void NetworkObject::Initialise(i32 guid, void *new_object, EdClass *new_class, N
     }
 }
 
-void NetListenerList::Find(NetListenerBinding *) {
-    STUBBED();
-}
-
 bool NetConstReplicator::AllowPush(EdClass const *, void const *, ReplicatorData &data, i32 force, i32) {
     u32 *last_push = reinterpret_cast<u32 *>((reinterpret_cast<uintptr_t>(data.cursor) + 3) & ~3u);
     data.cursor = reinterpret_cast<u8 *>(last_push + 1);
@@ -164,18 +396,6 @@ bool NetConstReplicator::AllowPush(EdClass const *, void const *, ReplicatorData
     }
     *last_push = now;
     return true;
-}
-
-NetListenerBinding::NetListenerBinding(NetListenerInterface *, unsigned char, char *) {
-    STUBBED();
-}
-
-void NetListenerBinding::operator=(NetListenerBinding const &) {
-    STUBBED();
-}
-
-void NetListenerBinding::operator==(NetListenerBinding const &) {
-    STUBBED();
 }
 
 bool NetSimpleReplicator::AllowPush(EdClass const *, void const *, ReplicatorData &data, i32 force, i32) {
@@ -268,8 +488,48 @@ void NetChangedReplicator::InitTable() {
     }
 }
 
-void NetworkObjectManager::Acquire(i32) {
-    STUBBED();
+i32 NetworkObjectManager::Acquire(i32 id) {
+    if (id == 0) {
+        return -1;
+    }
+
+    NetworkObject *object = FindNetworkObject(id);
+    if (object == NULL) {
+        return -1;
+    }
+    if (object->owner->local != 0) {
+        return 1;
+    }
+    if ((object->flags & 8) == 0) {
+        return 0;
+    }
+    if (IsPeerReady(*object->owner) == 0) {
+        return -1;
+    }
+    if ((object->flags & 0x20) != 0) {
+        return 0;
+    }
+
+    PendingObject *pending = FindPendingObject(object);
+    if (pending == NULL) {
+        pending = FindPendingObject(NULL);
+        if (pending == NULL) {
+            pending = StealPendingObject();
+        }
+        if (pending == NULL) {
+            return 0;
+        }
+    }
+
+    u32 now = UtilGetFrameStartTime();
+    if (now <= pending->field_04) {
+        return 0;
+    }
+    pending->field_00 = 1;
+    pending->field_04 = now + 250;
+    pending->object = object;
+    SendAcquireMessage(object);
+    return 0;
 }
 
 void NetworkObjectManager::AddToLocalObjectList(NetworkObject *object) {
@@ -316,8 +576,25 @@ void NetworkObjectManager::BindReplicator(NetReplicator *replicator, EdClass con
     replicator->message_size = static_cast<u16>(message_size);
 }
 
-void NetworkObjectManager::CalcReplicatorDataSize(NetReplicator *, EdClass const *, i32 &, i32 &) {
-    STUBBED();
+void NetworkObjectManager::CalcReplicatorDataSize(NetReplicator *replicator, EdClass const *object_class,
+                                                  i32 &data_size, i32 &message_size) {
+    u8 data_memory[0x1400] = {};
+    u8 object_memory[0x1400] = {};
+    ReplicatorData data;
+    data.start = data_memory;
+    data.end = data_memory + 0x100;
+    data.cursor = data_memory;
+    replicator->AllowPush(object_class, object_memory, data, 1, 1);
+
+    NetOutputStream stream;
+    NetMessage message;
+    i16 flags = 0x10;
+    ForceDummySerialise = 1;
+    stream.message = &message;
+    replicator->SerialiseObject(stream, NULL, object_class, object_memory, data, &flags);
+    data_size = data.cursor - data.start;
+    ForceDummySerialise = 0;
+    message_size = message.data != NULL ? message.write_offset - message.read_offset : 0;
 }
 
 void NetworkObjectManager::ChangeContext(NOSContext &new_context) {
@@ -340,8 +617,26 @@ void NetworkObjectManager::ConstructObject(NetworkObject *object, NetworkObjectM
     }
 }
 
-void NetworkObjectManager::ContinuityBreak(i32, float) {
-    STUBBED();
+void NetworkObjectManager::ContinuityBreak(i32 id, float) {
+    if (id == 0) {
+        return;
+    }
+    NetworkObject *object = FindNetworkObject(id);
+    if (object == NULL) {
+        return;
+    }
+    object->flags |= 2;
+    if (object->owner->local == 0) {
+        return;
+    }
+
+    NetMessage message;
+    i16 object_id = object->id;
+    i32 class_id = theRegistry.GetClassId(object->object_class);
+    message.Write8(12);
+    message.Write16(object_id);
+    message.Write16(class_id);
+    theNetwork.ReliableBroadcast(message, 3);
 }
 
 NetworkObject *NetworkObjectManager::FindNetworkObject(void *object) {
@@ -356,8 +651,23 @@ NetworkObject *NetworkObjectManager::FindNetworkObject(void *object) {
     return NULL;
 }
 
-void NetworkObjectManager::FlushObjects(i32) {
-    STUBBED();
+void NetworkObjectManager::FlushObjects(i32 flush_level_editor) {
+    NetworkObject *object = objects;
+    NetworkObject *end = objects + 2048;
+    while (end != object) {
+        if (object->id != 0) {
+            EdClassInterface *interface = object->object_class->interface;
+            interface->vtable->set_object_guid(interface, object->object, 0);
+            object->Destroy();
+        }
+        ++object;
+    }
+    memset(local_objects, 0, sizeof(local_objects));
+    local_object_count = 0;
+    memset(objects, 0, sizeof(objects));
+    if (flush_level_editor != 0) {
+        theLevelEditor.Flush();
+    }
 }
 
 i32 NetworkObjectManager::GetNextGuid() {
@@ -407,11 +717,36 @@ i32 NetworkObjectManager::GetPeerStatus() {
 }
 
 void NetworkObjectManager::ImportObjects() {
-    STUBBED();
+    i32 class_count = theRegistry.class_count;
+    for (i32 class_index = 0; class_index < class_count; ++class_index) {
+        EdClass *object_class = theRegistry.GetClass(class_index);
+        if (object_class == NULL || object_class->interface == NULL) {
+            continue;
+        }
+
+        void *object = object_class->interface->vtable->get_next_object(object_class->interface, NULL);
+        while (object != NULL) {
+            i32 guid = object_class->interface->vtable->get_object_guid(object_class->interface, object);
+            if (guid == 0) {
+                guid = GetNextGuid();
+                object_class->interface->vtable->set_object_guid(object_class->interface, object, guid);
+            }
+            RegisterObject(object, object_class, guid);
+            object = object_class->interface->vtable->get_next_object(object_class->interface, object);
+        }
+    }
 }
 
 void NetworkObjectManager::Init() {
-    STUBBED();
+    guid_peers[0] = NULL;
+    guid_peers[1] = NULL;
+    memset(objects, 0, sizeof(objects));
+    memset(local_objects, 0, sizeof(local_objects));
+    theNetwork.AddListener(this, 3, const_cast<char *>("NOS"));
+    theRegistry.AddObjectNotifier(this);
+    guid_group = 0;
+    guid_peers[0] = reinterpret_cast<NetPeer const *>(-1);
+    field_d96c = 1;
 }
 
 void NetworkObjectManager::InitClassStats() {
@@ -484,16 +819,72 @@ void NetworkObjectManager::NotifyDestroyObject(void *object, EdClass *object_cla
     }
 }
 
-void NetworkObjectManager::ObjectCall(void *, i32, NetMessage, NetPeer const *) {
-    STUBBED();
+static NetMessage MakeObjectCallMessage(NetMessage const &message, i32 call_id, NetworkObject const *object) {
+    NetMessage outgoing(message);
+    if (outgoing.data != NULL) {
+        i16 class_id = static_cast<i16>(theRegistry.GetClassId(object->object_class));
+        i16 object_id = object->id;
+        outgoing.read_offset -= 2;
+        memcpy(outgoing.data->bytes + outgoing.read_offset, &class_id, sizeof(class_id));
+        if (outgoing.swap_endianness != 0) {
+            EdFileSwapEndianess16(outgoing.data->bytes + outgoing.read_offset);
+        }
+        outgoing.read_offset -= 2;
+        memcpy(outgoing.data->bytes + outgoing.read_offset, &object_id, sizeof(object_id));
+        if (outgoing.swap_endianness != 0) {
+            EdFileSwapEndianess16(outgoing.data->bytes + outgoing.read_offset);
+        }
+        outgoing.data->bytes[--outgoing.read_offset] = static_cast<u8>(call_id);
+        outgoing.data->bytes[--outgoing.read_offset] = 8;
+    }
+    return outgoing;
 }
 
-void NetworkObjectManager::ObjectOtherCall(void *, i32, NetMessage) {
-    STUBBED();
+i32 NetworkObjectManager::ObjectCall(void *instance, i32 call_id, NetMessage message, NetPeer const *peer) {
+    NetworkObject *object = FindNetworkObject(instance);
+    if (object == NULL) {
+        return 0;
+    }
+
+    NetMessage outgoing = MakeObjectCallMessage(message, call_id, object);
+    if (peer == NULL) {
+        theNetwork.ReliableBroadcast(outgoing, 3);
+        reinterpret_cast<void (*)(void *, NetMessage &)>(registered_calls[call_id - 1].callback)(instance, message);
+    } else if (peer->local != 0) {
+        reinterpret_cast<void (*)(void *, NetMessage &)>(registered_calls[call_id - 1].callback)(instance, message);
+    } else {
+        theNetwork.ReliableSend(outgoing, 3, *const_cast<NetPeer *>(peer), NULL, 0);
+    }
+    return 1;
 }
 
-void NetworkObjectManager::ObjectOwnerCall(void *, i32, NetMessage) {
-    STUBBED();
+i32 NetworkObjectManager::ObjectOtherCall(void *instance, i32 call_id, NetMessage message) {
+    NetworkObject *object = FindNetworkObject(instance);
+    if (object == NULL) {
+        return 0;
+    }
+    if (object->owner->local == 0) {
+        return 1;
+    }
+
+    NetMessage outgoing = MakeObjectCallMessage(message, call_id, object);
+    theNetwork.ReliableBroadcast(outgoing, 3);
+    return 1;
+}
+
+i32 NetworkObjectManager::ObjectOwnerCall(void *instance, i32 call_id, NetMessage message) {
+    NetworkObject *object = FindNetworkObject(instance);
+    if (object == NULL) {
+        return 0;
+    }
+    if (object->owner->local != 0) {
+        reinterpret_cast<void (*)(void *, NetMessage &)>(registered_calls[call_id - 1].callback)(instance, message);
+        return 1;
+    }
+
+    NetMessage outgoing = MakeObjectCallMessage(message, call_id, object);
+    theNetwork.ReliableSend(outgoing, 3, *const_cast<NetPeer *>(object->owner), NULL, 0);
+    return 1;
 }
 
 NetPeer const *NetworkObjectManager::Owner(i32 id) {
@@ -561,17 +952,193 @@ void NetworkObjectManager::PeerLeft(NetPeer const &peer, ePeerLeftReason) {
     }
 }
 
-void NetworkObjectManager::Push(NetworkObject const *, NetReplicator *, ReplicatorData &,
-                                NetworkObjectManager::NetPeerPush *) {
-    STUBBED();
+i32 NetworkObjectManager::Push(NetworkObject const *object, NetReplicator *replicator, ReplicatorData &data,
+                               NetworkObjectManager::NetPeerPush *peer_push) {
+    if (peer_push == NULL) {
+        peer_push = &default_push;
+    }
+
+    i32 required_size = replicator->message_size + 10;
+    NetMessage *message;
+    if ((replicator->replication_group & 1) != 0) {
+        message = peer_push->GetMessage(required_size);
+    } else {
+        message = peer_push->GetReliableMessage(required_size);
+    }
+
+    NetOutputStream stream;
+    i16 object_id = object->id;
+    i32 class_id = theRegistry.GetClassId(object->object_class);
+    i16 flags = object->flags;
+    message->Write8(2);
+    message->Write16(object_id);
+    message->Write16(static_cast<i16>(class_id));
+    message->Write16(replicator->id);
+    message->Write16(flags);
+
+    i32 initial_size = message->data != NULL ? message->write_offset - message->read_offset : 0;
+    stream.message = message;
+    if (replicator->SerialiseObject(stream, NULL, object->object_class, object->object, data, &flags) == 0 &&
+        message->data != NULL) {
+        message->write_offset -= 9;
+    }
+
+    if (class_stats[class_id] != NULL) {
+        i32 final_size = message->data != NULL ? message->write_offset - message->read_offset : 0;
+        class_stats[class_id]->total.values[0] += final_size - initial_size;
+    }
+    return 1;
 }
 
-void NetworkObjectManager::PushObject(NetworkObject *, NetworkObjectManager::NetPeerPush *, i32) {
-    STUBBED();
+i32 NetworkObjectManager::PushObject(NetworkObject *object, NetworkObjectManager::NetPeerPush *peer_push, i32 force) {
+    if (peer_push == NULL) {
+        peer_push = &default_push;
+        object->flags &= ~4;
+    } else if (peer_push->stage == 1 || peer_push->stage == 2) {
+        object->flags |= 4;
+    } else {
+        object->flags &= ~4;
+    }
+
+    i32 class_id = theRegistry.GetClassId(object->object_class);
+    i32 allowed = 1;
+    NOSFilter *filter = filters[class_id];
+    if (filter != NULL && force == 0) {
+        allowed = filter->AllowPush(object->object_class, object->object);
+    }
+
+    i32 message_limit = theNuNetEmu.field_1c;
+    if (theNuNetEmu.packet_stats.pack_ratio > 0.0f) {
+        message_limit = static_cast<i32>(message_limit * theNuNetEmu.packet_stats.pack_ratio);
+    }
+
+    i32 result = 1;
+    if ((allowed | force) != 0) {
+        NetReplicator *replicator = replicators[class_id].head;
+        if (replicator != NULL) {
+            i32 data_offset = 0;
+            i32 permit_push = 1;
+            do {
+                if ((object->flags & 2) != 0) {
+                    replicator->replication_group |= 8;
+                }
+
+                ReplicatorData data;
+                data.start = static_cast<u8 *>(object->replicator_data) + data_offset;
+                data.end = data.start + replicator->data_size;
+                data.cursor = data.start;
+                data_offset += replicator->data_size;
+
+                if (theNuNetEmu.field_00 < message_limit && (replicator->replication_group & 0x40) == 0) {
+                    permit_push = 0;
+                }
+                if ((permit_push | force) != 0 &&
+                    replicator->AllowPush(object->object_class, object->object, data, force, 0) != 0 &&
+                    Push(object, replicator, data, peer_push) == 0) {
+                    result = 0;
+                }
+                replicator = replicator->next;
+            } while (replicator != NULL);
+        }
+    }
+
+    if ((object->flags & 2) != 0) {
+        object->flags &= ~2;
+    }
+    return result;
 }
 
-void NetworkObjectManager::Receive(NetMessage, unsigned char, NetPeer const &) {
-    STUBBED();
+void NetworkObjectManager::Receive(NetMessage message, unsigned char, NetPeer const &peer) {
+    u8 type;
+    i32 stop;
+    do {
+        message.Read8(type);
+        stop = 0;
+        switch (type) {
+            case 0:
+                if (active != 0 && IsPeerReady(peer) != 0) {
+                    message.Read32(guid_group);
+                } else {
+                    stop = 1;
+                }
+                break;
+            case 1:
+                if (active != 0 && IsPeerStarted(peer) != 0) {
+                    ReceiveConstructorMessage(message, peer);
+                } else {
+                    stop = 1;
+                }
+                break;
+            case 2:
+                if (active != 0 && IsPeerStarted(peer) != 0) {
+                    ReceiveReplicaMessage(message, peer);
+                } else {
+                    stop = 1;
+                }
+                break;
+            case 3:
+                if (active != 0 && IsPeerReady(peer) != 0) {
+                    ReceiveAcquireMessage(message, peer);
+                } else {
+                    stop = 1;
+                }
+                break;
+            case 4:
+                if (active != 0 && IsPeerReady(peer) != 0) {
+                    ReceiveAcquiredMessage(message, peer);
+                } else {
+                    stop = 1;
+                }
+                break;
+            case 5:
+                if (active != 0 && IsPeerReady(peer) != 0) {
+                    ReceiveAdoptedMessage(message, peer);
+                } else {
+                    stop = 1;
+                }
+                break;
+            case 6:
+                if (active != 0 && IsPeerReady(peer) != 0) {
+                    ReceiveReleaseMessage(message, peer);
+                } else {
+                    stop = 1;
+                }
+                break;
+            case 7:
+                if (active != 0 && IsPeerReady(peer) != 0) {
+                    ReceiveRemoteCallMessage(message, peer);
+                } else {
+                    stop = 1;
+                }
+                break;
+            case 8:
+                if (active != 0 && IsPeerReady(peer) != 0) {
+                    ReceiveObjectCallMessage(message, peer);
+                } else {
+                    stop = 1;
+                }
+                break;
+            case 9:
+                ReceiveStartMessage(message, peer);
+                break;
+            case 10:
+                ReceiveStopMessage(message, peer);
+                break;
+            case 11:
+                ReceiveStatusMessage(message, peer);
+                break;
+            case 12:
+                if (active != 0 && IsPeerReady(peer) != 0) {
+                    ReceiveContinuityBreak(message, peer);
+                } else {
+                    stop = 1;
+                }
+                break;
+            default:
+                stop = 1;
+                break;
+        }
+    } while (message.data != NULL && static_cast<i32>(message.write_offset - message.read_offset) > 0 && stop == 0);
 }
 
 void NetworkObjectManager::ReceiveAcquireMessage(NetMessage &message, NetPeer const &peer) {
@@ -689,8 +1256,47 @@ void NetworkObjectManager::ReceiveRemoteCallMessage(NetMessage &message, NetPeer
     }
 }
 
-void NetworkObjectManager::ReceiveReplicaMessage(NetMessage &, NetPeer const &) {
-    STUBBED();
+void NetworkObjectManager::ReceiveReplicaMessage(NetMessage &message, NetPeer const &peer) {
+    NetInputStream stream;
+    i16 id;
+    i16 class_id;
+    i16 replicator_id;
+    i16 flags;
+    message.Read16(id);
+    message.Read16(class_id);
+    message.Read16(replicator_id);
+    message.Read16(flags);
+
+    EdClass *object_class = theRegistry.GetClass(class_id);
+    NetworkObject *object = &objects[id];
+    object->flags = static_cast<u16>(flags | 8);
+
+    NetReplicator *replicator = replicators[class_id].head;
+    i32 data_offset = 0;
+    while (replicator != NULL && replicator->id != replicator_id) {
+        data_offset += replicator->data_size;
+        replicator = replicator->next;
+    }
+
+    if (object->object == NULL || object->object_class != object_class) {
+        if (message.data != NULL) {
+            message.read_offset += replicator->message_size;
+        }
+        return;
+    }
+
+    if ((flags & 2) != 0) {
+        replicator->replication_group |= 8;
+    }
+
+    ReplicatorData data;
+    data.start = static_cast<u8 *>(object->replicator_data) + data_offset;
+    data.end = data.start + replicator->data_size;
+    data.cursor = data.start;
+    replicator->AllowPush(object_class, object->object, data, 1, 0);
+    stream.message = &message;
+    replicator->SerialiseObject(stream, const_cast<NetPeer *>(&peer), object_class, object->object, data,
+                                reinterpret_cast<i16 *>(object));
 }
 
 void NetworkObjectManager::ReceiveStartMessage(NetMessage &message, NetPeer const &peer) {
@@ -744,12 +1350,37 @@ void NetworkObjectManager::ReceiveStopMessage(NetMessage &, NetPeer const &peer)
     }
 }
 
-void NetworkObjectManager::Recover(NetworkObject *) {
-    STUBBED();
+void NetworkObjectManager::Recover(NetworkObject *object) {
+    if (object != NULL) {
+        object->owner = theSession->local_peer;
+        AddToLocalObjectList(object);
+        SendAdoptedMessage(object->id);
+        theNetwork.NosAdopted(object, *object->owner);
+    }
 }
 
-void NetworkObjectManager::RegisterObject(void *, EdClass *, i32) {
-    STUBBED();
+i32 NetworkObjectManager::RegisterObject(void *object, EdClass *object_class, i32 guid) {
+    if (guid == 0) {
+        guid = GetNextGuid();
+    }
+    if (guid <= 0) {
+        return guid;
+    }
+
+    for (i32 i = 0; i < 2048; ++i) {
+        if (objects[i].object == object && field_d96c == 0) {
+            return 0;
+        }
+    }
+
+    NetworkObject *network_object = &objects[guid];
+    network_object->Initialise(guid, object, object_class, *theSession->local_peer, 1);
+    AddToLocalObjectList(network_object);
+    if (active != 0) {
+        ConstructObject(network_object, &default_push);
+        default_push.FlushMessages();
+    }
+    return guid;
 }
 
 i32 NetworkObjectManager::RegisterObjectCall(void (*callback)(void *, NetMessage &), i32 flags) {
@@ -772,12 +1403,51 @@ i32 NetworkObjectManager::RegisterRemoteCall(void (*callback)(NetMessage &), i32
     return 0;
 }
 
-void NetworkObjectManager::ReleaseObject(void *, EdClass *, i32) {
-    STUBBED();
+i32 NetworkObjectManager::ReleaseObject(void *object, EdClass *, i32 guid) {
+    if (object == NULL) {
+        return 1;
+    }
+
+    NetworkObject *network_object;
+    if (guid != 0) {
+        network_object = FindNetworkObject(guid);
+    } else {
+        network_object = FindNetworkObject(object);
+    }
+    if (network_object == NULL) {
+        return 1;
+    }
+
+    RemoveFromLocalObjectList(network_object);
+    if (active != 0) {
+        i16 id = network_object->id;
+        i32 class_id = theRegistry.GetClassId(network_object->object_class);
+        NetMessage message;
+        message.Write8(6);
+        message.Write16(id);
+        message.Write16(class_id);
+        theNetwork.ReliableBroadcast(message, 3);
+    }
+    network_object->Destroy();
+    return 1;
 }
 
-void NetworkObjectManager::RemoteCall(i32, NetMessage, NetPeer const *) {
-    STUBBED();
+i32 NetworkObjectManager::RemoteCall(i32 call_id, NetMessage message, NetPeer const *peer) {
+    NetMessage outgoing(message);
+    if (outgoing.data != NULL) {
+        outgoing.data->bytes[--outgoing.read_offset] = static_cast<u8>(call_id);
+        outgoing.data->bytes[--outgoing.read_offset] = 7;
+    }
+
+    if (peer == NULL) {
+        theNetwork.ReliableBroadcast(outgoing, 3);
+        reinterpret_cast<void (*)(NetMessage &)>(registered_calls[call_id - 1].callback)(message);
+    } else if (peer->local != 0) {
+        reinterpret_cast<void (*)(NetMessage &)>(registered_calls[call_id - 1].callback)(message);
+    } else {
+        theNetwork.ReliableSend(outgoing, 3, *const_cast<NetPeer *>(peer), NULL, 0);
+    }
+    return 1;
 }
 
 void NetworkObjectManager::RemoveFromLocalObjectList(NetworkObject *object) {
@@ -802,16 +1472,25 @@ void NetworkObjectManager::RemovePendingObject(NetworkObject *object) {
 void NetworkObjectManager::Reset() {
 }
 
-void NetworkObjectManager::SendAcquireMessage(NetworkObject *) {
-    STUBBED();
+void NetworkObjectManager::SendAcquireMessage(NetworkObject *object) {
+    NetMessage message;
+    message.Write8(3);
+    message.Write16(object->id);
+    theNetwork.Send(message, 3, *const_cast<NetPeer *>(object->owner));
 }
 
-void NetworkObjectManager::SendAcquiredMessage(i16, NetPeer const &) {
-    STUBBED();
+void NetworkObjectManager::SendAcquiredMessage(i16 id, NetPeer const &peer) {
+    NetMessage message;
+    message.Write8(4);
+    message.Write16(id);
+    theNetwork.ReliableSend(message, 3, const_cast<NetPeer &>(peer), NULL, 0);
 }
 
-void NetworkObjectManager::SendAdoptedMessage(i16) {
-    STUBBED();
+void NetworkObjectManager::SendAdoptedMessage(i16 id) {
+    NetMessage message;
+    message.Write8(5);
+    message.Write16(id);
+    theNetwork.ReliableBroadcast(message, 3);
 }
 
 i32 NetworkObjectManager::SendPushMessage(NetMessage *message, NetPeerPush const *push, i32 flags) {
@@ -884,15 +1563,99 @@ void NetworkObjectManager::Stop() {
 }
 
 void NetworkObjectManager::Term() {
-    STUBBED();
+    Reset();
+    theNetwork.RemoveListener(this, 3);
 }
 
 void NetworkObjectManager::Update() {
-    STUBBED();
+    for (i32 i = 0; i < 2048; i++) {
+        NetworkObject *object = &objects[i];
+        if (object->id == 0) {
+            continue;
+        }
+
+        if (object->owner->local != 0) {
+            PushObject(object, NULL, 0);
+            continue;
+        }
+        if ((object->flags & 2) != 0) {
+            continue;
+        }
+
+        i32 class_id = theRegistry.GetClassId(object->object_class);
+        NetReplicator *replicator = replicators[class_id].head;
+        i32 data_offset = 0;
+        while (replicator != NULL) {
+            i32 data_size = replicator->data_size;
+            if ((replicator->replication_group & 4) != 0) {
+                ReplicatorData data;
+                data.start = static_cast<u8 *>(object->replicator_data) + data_offset;
+                data.end = data.start + data_size;
+                data.cursor = data.start;
+                replicator->AllowPush(object->object_class, object->object, data, 0, 0);
+                replicator->DoPrediction(object->object_class, object->object, data, 0);
+            }
+            data_offset += data_size;
+            replicator = replicator->next;
+        }
+    }
+
+    for (i32 i = 0; i < 8; i++) {
+        NetPeerPush *push = &peer_push[i];
+        if (push->peer == NULL) {
+            continue;
+        }
+        if (push->stage == 1 || push->stage == 2) {
+            i32 object_index = push->field_10;
+            i32 object_count = local_object_count;
+            i32 message_limit = theNuNetEmu.field_1c;
+            if (theNuNetEmu.packet_stats.pack_ratio > 0.0f) {
+                message_limit = static_cast<i32>(message_limit * theNuNetEmu.packet_stats.pack_ratio);
+            }
+
+            while (object_index < object_count && message_limit < theNuNetEmu.field_00) {
+                NetworkObject *object = local_objects[object_index++];
+                if (object == NULL || object->object == NULL) {
+                    continue;
+                }
+
+                if (push->stage == 1) {
+                    ConstructObject(object, push);
+                }
+                if (push->stage == 2) {
+                    PushObject(object, push, 1);
+                }
+
+                NetPeer *peer = const_cast<NetPeer *>(push->peer);
+                if (peer->vtable->get_available_messages(peer) <= 15) {
+                    break;
+                }
+
+                message_limit = theNuNetEmu.field_1c;
+                if (theNuNetEmu.packet_stats.pack_ratio > 0.0f) {
+                    message_limit = static_cast<i32>(message_limit * theNuNetEmu.packet_stats.pack_ratio);
+                }
+                object_count = local_object_count;
+            }
+
+            if (object_index >= local_object_count) {
+                push->NextStage();
+            } else {
+                push->field_10 = object_index;
+            }
+        }
+        push->FlushMessages();
+    }
+
+    default_push.FlushMessages();
+    for (i32 i = 0; i < 32; i++) {
+        if (class_stats[i] != NULL) {
+            class_stats[i]->Update();
+        }
+    }
 }
 
 void NetworkObjectManager::UpdateLocalObjectList() {
-    STUBBED();
 }
 
 NetworkObjectManager::~NetworkObjectManager() {

@@ -363,10 +363,13 @@ struct ADDGAMEMSG {
         nuvec_s *extra_position;
         nuhspecial_s *special;
     }; // 0x28
-    u32 score;                          // 0x2c
-    f32 field_0x30;                     // 0x30
-    f32 field_0x34;                     // 0x34
-    f32 field_0x38;                     // 0x38
+    u32 score;      // 0x2c
+    f32 field_0x30; // 0x30
+    f32 field_0x34; // 0x34
+    union {
+        f32 field_0x38;
+        void (*delay_fn)(GAMEMESSAGE_s *);
+    }; // 0x38
     f32 field_0x3c;                     // 0x3c
     void (*update_fn)(GAMEMESSAGE_s *); // 0x40
     void *field_0x44;                   // 0x44
@@ -1401,29 +1404,64 @@ DECOMP_ASSERT(sizeof(GAMECUTSCENES_s) == 0x28, "GAMECUTSCENES_s size");
 DECOMP_ASSERT(offsetof(GAMECUTSCENES_s, cutscene) == 0x1c, "GAMECUTSCENES_s active cutscene offset");
 
 struct GAMEMESSAGE_s {
-    char pad_0x00[0x88];
+    char *text;
+    char text_buffer[0x78];
+    NUVEC position_a; // 0x7c
     NUVEC target_position;
-    char pad_0x94[0xe2 - 0x94];
-    u16 rotation_y; // 0xe2
-    char pad_0xe4[2];
-    u16 icon;   // 0xe6
-    u32 color1; // 0xe8
-    u32 color2; // 0xec
-    u32 color3; // 0xf0
-    char pad_0xf4[0xf7 - 0xf4];
-    u8 alpha;  // 0xf7
-    u8 active; // 0xf8
-    u8 pad_0xf9[4];
+    NUVEC position;
+    NUVEC start_position;
+    f32 field_0xac;
+    f32 target_scale;
+    f32 field_0xb4;
+    f32 field_0xb8;
+    f32 elapsed;
+    f32 duration;
+    f32 field_0xc4;
+    f32 field_0xc8;
+    f32 field_0xcc;
+    f32 field_0xd0;
+    f32 field_0xd4;
+    u32 flags;
+    u32 score;
+    u16 field_0xe0;
+    u16 rotation_y;
+    u16 field_0xe4;
+    u16 icon;
+    union {
+        NUVEC color;
+        struct {
+            u32 color1;
+            u32 color2;
+            u32 color3;
+        };
+    };
+    u8 red;
+    u8 green;
+    u8 blue;
+    u8 alpha;
+    u8 active;
+    u8 field_0xf9;
+    u8 field_0xfa;
+    u8 field_0xfb;
+    u8 field_0xfc;
     i8 player_index;
-    u8 target_type; // 0xfe
-    u8 pad_0xff[0x10c - 0xff];
-    void (*draw_callback)(GAMEMESSAGE_s *, NUVEC *, f32); // 0x10c
-    u8 pad_0x110[4];
+    union {
+        u8 field_0xfe;
+        u8 target_type;
+    };
+    u8 field_0xff;
+    u32 field_0x100;
+    u32 field_0x104;
+    void (*update_fn)(GAMEMESSAGE_s *);
+    void (*draw_callback)(GAMEMESSAGE_s *, NUVEC *, f32);
+    void (*end_fn)(GAMEMESSAGE_s *);
 };
 DECOMP_ASSERT(sizeof(GAMEMESSAGE_s) == 0x114, "GAMEMESSAGE_s size");
-static_assert(offsetof(GAMEMESSAGE_s, target_position) == 0x88, "game message target position offset");
+DECOMP_ASSERT(offsetof(GAMEMESSAGE_s, position_a) == 0x7c, "game message initial position offset");
+DECOMP_ASSERT(offsetof(GAMEMESSAGE_s, target_position) == 0x88, "game message target position offset");
+DECOMP_ASSERT(offsetof(GAMEMESSAGE_s, position) == 0x94, "game message current position offset");
 DECOMP_ASSERT(offsetof(GAMEMESSAGE_s, rotation_y) == 0xe2, "game message rotation offset");
-static_assert(offsetof(GAMEMESSAGE_s, player_index) == 0xfd, "game message player index offset");
+DECOMP_ASSERT(offsetof(GAMEMESSAGE_s, player_index) == 0xfd, "game message player index offset");
 // Rumble state packet embedded in GAMEPAD_s (20 bytes; floats driven by
 // NuSound3UpdateRumble / UpdateRumble).
 struct RUMBLEPACKET {
@@ -2131,11 +2169,22 @@ struct PLATSKINMEMINFO {
     u8 reserved_06[2];
 };
 DECOMP_ASSERT(sizeof(PLATSKINMEMINFO) == 8, "PLATSKINMEMINFO ABI");
-struct PLAYERITEMTYPE_s {};
+struct PLAYERITEMTYPE_s {
+    i16 id;
+    u8 field_0x2;
+    u8 field_0x3;
+    char *name;
+    u8 field_0x8;
+    u8 field_0x9;
+    u8 field_0xa;
+    u8 field_0xb;
+};
+DECOMP_ASSERT(sizeof(PLAYERITEMTYPE_s) == 0xc, "PLAYERITEMTYPE size");
 struct PLAYERITEM_s {
-    u8 *type;
+    PLAYERITEMTYPE_s *type;
     u8 ammunition;
-    u8 reserved[3];
+    u8 field_0x5;
+    u8 reserved[2];
 };
 DECOMP_ASSERT(sizeof(PLAYERITEM_s) == 8, "PLAYERITEM size");
 
@@ -3288,8 +3337,57 @@ struct flightspline_s {};
 struct instNUGCUTLOOKAT_s {};
 struct instNUGCUTSCENE_s;
 struct mdct_lookup {};
-struct minisnowtrooper_s {};
-struct minitrooperteam_s {};
+struct minisnowtrooper_s {
+    u8 formation_index;
+    u8 state_flags;
+    u8 reserved_002;
+    u8 speed_divisor;
+    u16 rotation;
+    u16 target_rotation;
+    f32 timer;
+    f32 formation_x;
+    f32 formation_z;
+    NUVEC shot_position;
+};
+DECOMP_ASSERT(offsetof(minisnowtrooper_s, rotation) == 0x04, "Mini snowtrooper rotation offset");
+DECOMP_ASSERT(offsetof(minisnowtrooper_s, formation_x) == 0x0c, "Mini snowtrooper formation X offset");
+DECOMP_ASSERT(offsetof(minisnowtrooper_s, shot_position) == 0x14, "Mini snowtrooper shot position offset");
+DECOMP_ASSERT(sizeof(minisnowtrooper_s) == 0x20, "Mini snowtrooper size");
+
+struct minitrooperteam_s {
+    f32 origin_x;
+    f32 origin_z;
+    f32 height;
+    f32 formation_width;
+    f32 formation_depth;
+    u16 facing_angle;
+    u8 formation_state;
+    u8 route_state;
+    u8 waypoint_state;
+    u8 team_flags; // 0x19, bit 1 selects the opposing team
+    u8 trooper_count;
+    u8 reserved_01b;
+    u32 state_flags; // 0x1c, bit 0 marks an active team
+    f32 state_timer;
+    f32 debris_timer;
+    f32 fire_timer;
+    f32 reserved_02c;
+    i32 bolt_type; // 0x30
+    NUVEC *route_point;
+    struct nugspline_s *path;
+    minisnowtrooper_s *troopers; // 0x3c
+    NUVEC position;              // 0x40
+    i32 target_index;            // 0x4c
+};
+DECOMP_ASSERT(offsetof(minitrooperteam_s, height) == 0x08, "Mini trooper team height offset");
+DECOMP_ASSERT(offsetof(minitrooperteam_s, facing_angle) == 0x14, "Mini trooper team angle offset");
+DECOMP_ASSERT(offsetof(minitrooperteam_s, team_flags) == 0x19, "Mini trooper team flags offset");
+DECOMP_ASSERT(offsetof(minitrooperteam_s, state_flags) == 0x1c, "Mini trooper state flags offset");
+DECOMP_ASSERT(offsetof(minitrooperteam_s, bolt_type) == 0x30, "Mini trooper bolt type offset");
+DECOMP_ASSERT(offsetof(minitrooperteam_s, troopers) == 0x3c, "Mini trooper array offset");
+DECOMP_ASSERT(offsetof(minitrooperteam_s, position) == 0x40, "Mini trooper team position offset");
+DECOMP_ASSERT(offsetof(minitrooperteam_s, target_index) == 0x4c, "Mini trooper target offset");
+DECOMP_ASSERT(sizeof(minitrooperteam_s) == 0x50, "Mini trooper team size");
 struct nuanimbuff_s;
 struct nucolour3_s;
 struct nudisplaylistitem_s;
@@ -3384,7 +3482,24 @@ DECOMP_ASSERT(offsetof(nunativedebrisdata_s, first_vertex) == 0x08, "native debr
 DECOMP_ASSERT(offsetof(nunativedebrisdata_s, vertex_count) == 0x0c, "native debris vertex count offset");
 DECOMP_ASSERT(offsetof(nunativedebrisdata_s, material) == 0x10, "native debris material offset");
 DECOMP_ASSERT(sizeof(nunativedebrisdata_s) == 0x14, "native debris packet size");
-struct nuoctreenode_s {};
+struct nuoctreenode_s {
+    NUVEC minimum;                  // 0x00
+    u32 field_0c;                   // 0x0c
+    NUVEC maximum;                  // 0x10
+    u32 field_1c;                   // 0x1c
+    nuoctreenode_s *children[8];    // 0x20
+    i32 child_count;                // 0x40
+    i32 fully_visible_count;        // 0x44
+    i32 *fully_visible_indices;     // 0x48
+    i32 partially_visible_count;    // 0x4c
+    i32 *partially_visible_indices; // 0x50
+    u32 field_54;                   // 0x54
+    f32 far_clip;                   // 0x58
+};
+DECOMP_ASSERT(sizeof(nuoctreenode_s) == 0x5c, "nuoctreenode_s size");
+DECOMP_ASSERT(offsetof(nuoctreenode_s, children) == 0x20, "nuoctreenode_s children offset");
+DECOMP_ASSERT(offsetof(nuoctreenode_s, child_count) == 0x40, "nuoctreenode_s child count offset");
+DECOMP_ASSERT(offsetof(nuoctreenode_s, far_clip) == 0x58, "nuoctreenode_s far clip offset");
 struct nupad_s;
 struct nushadermtldesc_s;
 struct nusound_filename_info_s;
@@ -5555,10 +5670,14 @@ struct TTNetwork : NetTransporter, BaseThing {
   private:
     i32 field_20;
     u8 field_24;
-    u8 reserved_25[0x2117];
+    u8 reserved_25[0x210f];
+    i32 field_2134;
+    i32 field_2138;
     i32 field_213c;
     i32 field_2140;
-    u8 reserved_2144[0xc];
+    i32 field_2144;
+    i32 field_2148;
+    i32 field_214c;
     i32 field_2150;
     f32 field_2154;
     f32 field_2158;
@@ -5572,6 +5691,7 @@ struct TTNetwork : NetTransporter, BaseThing {
 
   public:
     NetworkObjectManager network_objects;
+    NetSession *session;
     void Broadcast(NetMessage, unsigned char);
     void ClearMyHostAddress();
     void Display(ThingRenderData *);
@@ -5592,6 +5712,7 @@ struct TTNetwork : NetTransporter, BaseThing {
     virtual ~TTNetwork();
 };
 DECOMP_ASSERT(offsetof(TTNetwork, network_objects) == 0x3780, "TTNetwork object manager offset");
+DECOMP_ASSERT(offsetof(TTNetwork, session) == 0x110f0, "TTNetwork session offset");
 // All ThingManager methods are virtual in the original: its vtable order is
 // D2, D0, AddThing, AddThingAfterThis, RemoveTemporaryThings,
 // RemoveDependanciesThings, ResetThings, EnterLevelThings, ExitLevelThings,

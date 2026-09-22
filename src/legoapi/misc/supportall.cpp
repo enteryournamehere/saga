@@ -1,8 +1,10 @@
 #include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nuprim_internal.h"
 #include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nu3d/android/nuptl_android.h"
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/nutrig.h"
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/actions/character/streaks.h"
 #include "legoapi/actions/combat/hits.h"
@@ -12,6 +14,7 @@
 #include "decomp.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nucore/nuthread.h"
+#include "nu2api/nucore/bgproc.h"
 #include "globals.h"
 #include "legoapi/core/input/qrand.h"
 #include "gameapi/ai/aisys/aisys.h"
@@ -279,7 +282,6 @@ i32 SuperWeirdo(GameObject_s *object) {
 }
 
 void bgProcClose() {
-    STUBBED();
 }
 
 extern "C" void edrtlCalculateBurnoutEx(burnset_s *set, NuBloomParameters *parameters, NUVEC *camera_position,
@@ -298,7 +300,6 @@ void BurnoutApply(i32 paused) {
 }
 
 void bgprocFreeze() {
-    STUBBED();
 }
 
 void FindSlamOrigin(GameObject_s *, NUVEC *, NUVEC *);
@@ -685,11 +686,9 @@ void CheckResetBits() {
 }
 
 void bgProcAbortAll() {
-    STUBBED();
 }
 
 void bgprocUnFreeze() {
-    STUBBED();
 }
 
 extern AREADATA_s *PODRACE_ADATA;
@@ -773,8 +772,11 @@ void AddSurfaceDebris(GameObject_s *object) {
     } while (--count != 0);
 }
 
-void bgprocIsFreezing() {
-    STUBBED();
+i32 bgprocIsFreezing() {
+    i32 freezing = 1;
+    if (bgproc_frozen == 0)
+        freezing = bgproc_freeze != 0;
+    return freezing;
 }
 
 extern "C" void DebFree(i32 *);
@@ -809,8 +811,44 @@ void DebrisKillPlayers() {
     }
 }
 
-void RndrUnfilledCircle(float, float, float, float, float, i32, float, float, numtl_s *) {
-    STUBBED();
+i32 RndrUnfilledCircle(f32 x, f32 y, f32 radius, f32 border_width, f32 aspect, i32 colour, f32 progress, f32 z,
+                       numtl_s *material) {
+    NuPrim2DBegin(1, 7, material);
+
+    radius *= 0.5f;
+    const f32 inner_radius = radius - border_width * 0.5f;
+
+    NuRndrPrimSetColour(colour);
+    NuRndrPrimUV(0.0f, 1.0f);
+    NuPrim2DAddXYZ(static_cast<f32>(PS2_VREZ_W) * x, static_cast<f32>(PS2_VREZ_H) * (y - radius), z);
+
+    NuRndrPrimSetColour(colour);
+    NuRndrPrimUV(0.0f, 0.0f);
+    NuPrim2DAddXYZ(static_cast<f32>(PS2_VREZ_W) * x, static_cast<f32>(PS2_VREZ_H) * (y - inner_radius), z);
+
+    const i32 segment_count = static_cast<i32>(progress * 360.0f);
+    if (segment_count >= 0) {
+        f32 angle = 0.0f;
+        for (i32 segment = 0; segment <= segment_count; ++segment, angle += 0.017455555f) {
+            const f32 sine = NuSinf(angle);
+            const f32 negative_cosine = -NuCosf(angle);
+            const f32 outer_x = radius * sine * aspect + x;
+            const f32 outer_y = radius * negative_cosine + y;
+            const f32 inner_x = inner_radius * sine * aspect + x;
+            const f32 inner_y = inner_radius * negative_cosine + y;
+
+            NuRndrPrimSetColour(colour);
+            NuRndrPrimUV(0.0f, 1.0f);
+            NuPrim2DAddXYZ(static_cast<f32>(PS2_VREZ_W) * outer_x, static_cast<f32>(PS2_VREZ_H) * outer_y, z);
+
+            NuRndrPrimSetColour(colour);
+            NuRndrPrimUV(0.0f, 0.0f);
+            NuPrim2DAddXYZ(static_cast<f32>(PS2_VREZ_W) * inner_x, static_cast<f32>(PS2_VREZ_H) * inner_y, z);
+        }
+    }
+
+    NuPrim2DEnd();
+    return 1;
 }
 
 void DebrisProcessSpheres(uv1deb *data, float time, debinftype *effect, debkeydatatype_s *key, i32 finite) {
@@ -1228,7 +1266,7 @@ void DebrisProcessControlChunks(i32 panel_time) {
             --key->controlled_chunk_count;
             --key->allocated_chunk_count;
 
-            if (key->allocated_chunk_count == 0) {
+            if (key->allocated_chunk_count <= 0) {
                 key->particle_count = 0;
                 key->previous_particle_count = 0;
                 for (i32 slot = 0; slot < 8; ++slot) {
@@ -1452,8 +1490,52 @@ i32 DebrisSingleTorusCollisionCheckScaleYFlag(i32 key_index, NUVEC *position, f3
     return combined_radius * combined_radius > dx * dx + dy * dy + dz * dz;
 }
 
-void unref(unsigned char *, unsigned char *) {
-    STUBBED();
+i32 unref(unsigned char *source, unsigned char *destination) {
+    unsigned char *output_start = destination;
+    for (;;) {
+        const u32 control = *source++;
+        u32 literal_count;
+        u32 match_offset;
+        u32 match_length;
+
+        if (control < 0x80) {
+            literal_count = control & 3;
+            match_offset = ((control & 0x60) << 3) + source[0] + 1;
+            match_length = ((control & 0x1c) >> 2) + 3;
+            source += 1;
+        } else if (control < 0xc0) {
+            literal_count = source[0] >> 6;
+            match_offset = ((source[0] & 0x3f) << 8) + source[1] + 1;
+            match_length = (control & 0x3f) + 4;
+            source += 2;
+        } else if (control < 0xe0) {
+            literal_count = control & 3;
+            match_offset = ((control & 0x10) << 12) + (source[0] << 8) + source[1] + 1;
+            match_length = ((control & 0x0c) << 6) + source[2] + 5;
+            source += 3;
+        } else {
+            literal_count = ((control & 0x1f) << 2) + 4;
+            if (literal_count > 0x70) {
+                literal_count = control & 3;
+                for (u32 index = 0; index < literal_count; ++index) {
+                    *destination++ = *source++;
+                }
+                return destination - output_start;
+            }
+            for (u32 index = 0; index < literal_count; ++index) {
+                *destination++ = *source++;
+            }
+            continue;
+        }
+
+        for (u32 index = 0; index < literal_count; ++index) {
+            *destination++ = *source++;
+        }
+        unsigned char *match = destination - match_offset;
+        for (u32 index = 0; index < match_length; ++index) {
+            *destination++ = *match++;
+        }
+    }
 }
 
 void TBRESET() {

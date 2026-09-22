@@ -1,5 +1,7 @@
 #include "decomp.h"
 #include "gameapi/gui/apimenu_internal.h"
+#include "legoapi/core/input/gamepads.h"
+#include "legoapi/core/input/timer.h"
 #include "legoapi/menus/core/text.h"
 char *ASCII_UP = "\xc2\xac";
 #include "legoapi/legoapi_types.h"
@@ -8,6 +10,7 @@ char *ASCII_UP = "\xc2\xac";
 #include "legoapi/world/levels/episode.h"
 #include "legoapi/world/mission.h"
 #include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nuqfnt.h"
 #include "nu2api/nu3d/nuprim.h"
 #include "nu2api/nu3d/nurndr.h"
@@ -15,6 +18,7 @@ char *ASCII_UP = "\xc2\xac";
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
 #include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/nutrig.h"
 #include <stdio.h>
 #include <string.h>
 extern char **TTab;
@@ -47,12 +51,31 @@ extern "C" {
     VUFNT *LoadGameFont(char *, char *, variptr_u *, variptr_u *, i32);
     VUFNT *LoadButtonFont(char *, char *, variptr_u *, variptr_u *, i32);
     void NuLanguageSet(i32 language);
+    void NuQFntDestroy(VUFNT *font);
+    i32 NuRndrBeginScene(i32 flags);
+    void NuRndrRect2di(i32 x, i32 y, i32 width, i32 height, i32 colour, numtl_s *material);
 }
 void (*Text_GameSetLanguageFn)(i32);
 char *Text_GetLanguagePath(i32 language);
 void Text_LoadAndFixUpStrings(unsigned char *filename, unsigned char **buffer, char **table, i32 count);
 void IntroText_SetTextID(i32 id);
 void Text_InsertCommasIntoNumber(char *number, char *text, i32 length);
+void GameDrawMenuEntry(MENU *menu, char *text);
+extern "C" void BackupMenu(void);
+extern "C" {
+    extern u8 MENUFLASH1R;
+    extern u8 MENUFLASH1G;
+    extern u8 MENUFLASH1B;
+    extern u8 MENUFLASH0R;
+    extern u8 MENUFLASH0G;
+    extern u8 MENUFLASH0B;
+    extern u8 MENUENTRYR;
+    extern u8 MENUENTRYG;
+    extern u8 MENUENTRYB;
+    extern u8 MENUNORMALR;
+    extern u8 MENUNORMALG;
+    extern u8 MENUNORMALB;
+}
 static VUFNT *app_fnt;
 void Text_LoadFont(char *path, variptr_u *buf, variptr_u *buf_end) {
     create_qfont3dz = 1;
@@ -67,6 +90,8 @@ extern "C" {
     void NuMtxTranslate(NUMTX *mtx, NUVEC *vec);
 }
 void Text3DStringEncodeFont(unsigned char *src, u16 *dst, void *font);
+void MatrixTextStringEncode(void *font, unsigned char *source, u16 *destination);
+i32 SplitTextFindNextWS(unsigned char *text, i32 position);
 extern "C" void TextDecode(char *source, unsigned char *dest);
 extern "C" void Text3DEx(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment, u8 red,
                          u8 green, u8 blue, i32 alpha);
@@ -296,8 +321,22 @@ void TextCrawl_Draw(float dt, i32 paragraphs, float alpha, char *text) {
     }
     NuQFntPopPrintMode();
 }
-void TextPulseTimer(float) {
-    STUBBED();
+f32 TextPulseTimer(f32 delay) {
+    if (TestForController()) {
+        return 1.0f;
+    }
+
+    f32 elapsed = GlobalTimer.time_elapsed - (LastTouchTime + delay * 4.0f);
+    if (elapsed > 4.0f) {
+        elapsed = NuFmod(elapsed, 4.0f);
+        const i32 angle = static_cast<i32>(elapsed * 0.25f * 65536.0f);
+        f32 pulse = NuTrigTable[(angle >> 1) & 0x7fff] - 0.8f;
+        if (0.0f > pulse) {
+            return 1.0f;
+        }
+        return pulse + 1.0f;
+    }
+    return 1.0f;
 }
 static char **TTab_Original;
 static i32 Text_MaxOverallStrings;
@@ -372,8 +411,90 @@ void Text_SetLanguage(i32 language) {
 void *Text_IsFontLoaded() {
     return app_fnt;
 }
-void TextDecodeCodeword(char *, char *) {
-    STUBBED();
+void TextDecodeCodeword(char *source, char *destination) {
+    if (buttonmapfn != nullptr)
+        buttonmapfn(source, source);
+
+    if (NuStrICmp(source, "accept") == 0)
+        NuStrCpy(source, "cross");
+    if (NuStrICmp(source, "back") == 0)
+        NuStrCpy(source, "triangle");
+    if (NuStrICmp(source, "wii") == 0)
+        NuStrCpy(source, "logo");
+    if (NuStrICmp(source, "playstation") == 0)
+        NuStrCpy(source, "logo");
+
+    NuStrCpy(destination, source);
+    if (NuStrICmp(source, "cross") == 0)
+        NuStrCpy(destination, "~0\xd4\xb1~~");
+    if (NuStrICmp(source, "circle") == 0)
+        NuStrCpy(destination, "~0\xd4\xb2~~");
+    if (NuStrICmp(source, "square") == 0)
+        NuStrCpy(destination, "~0\xd4\xb3~~");
+    if (NuStrICmp(source, "triangle") == 0)
+        NuStrCpy(destination, "~0\xd4\xb4~~");
+    if (NuStrICmp(source, "l1") == 0)
+        NuStrCpy(destination, "~0\xd4\xb5~~");
+    if (NuStrICmp(source, "r1") == 0)
+        NuStrCpy(destination, "~0\xd4\xb6~~");
+    if (NuStrICmp(source, "l2") == 0)
+        NuStrCpy(destination, "~0\xd4\xb7~~");
+    if (NuStrICmp(source, "r2") == 0)
+        NuStrCpy(destination, "~0\xd4\xb8~~");
+    if (NuStrICmp(source, "select") == 0)
+        NuStrCpy(destination, "~0\xd4\xbd~~");
+    if (NuStrICmp(source, "start") == 0)
+        NuStrCpy(destination, "~0\xd4\xbe~~");
+    if (NuStrICmp(source, "home") == 0)
+        NuStrCpy(destination, "~0\xd4\xbf~~");
+    if (NuStrICmp(source, "a") == 0)
+        NuStrCpy(destination, "~0\xd4\xb1~~");
+    if (NuStrICmp(source, "b") == 0)
+        NuStrCpy(destination, "~0\xd4\xb2~~");
+    if (NuStrICmp(source, "x") == 0)
+        NuStrCpy(destination, "~0\xd4\xb3~~");
+    if (NuStrICmp(source, "y") == 0)
+        NuStrCpy(destination, "~0\xd4\xb4~~");
+    if (NuStrICmp(source, "lb") == 0)
+        NuStrCpy(destination, "~0\xd4\xb5~~");
+    if (NuStrICmp(source, "rb") == 0)
+        NuStrCpy(destination, "~0\xd4\xb6~~");
+    if (NuStrICmp(source, "lt") == 0)
+        NuStrCpy(destination, "~0\xd4\xb7~~");
+    if (NuStrICmp(source, "rt") == 0)
+        NuStrCpy(destination, "~0\xd4\xb8~~");
+    if (NuStrICmp(source, "back") == 0)
+        NuStrCpy(destination, "~0\xd4\xbd~~");
+    if (NuStrICmp(source, "guide") == 0)
+        NuStrCpy(destination, "~0\xd4\xbf~~");
+    if (NuStrICmp(source, "xboxguide") == 0)
+        NuStrCpy(destination, "~0\xd4\xbf~~");
+    if (NuStrICmp(source, "xbox guide") == 0)
+        NuStrCpy(destination, "~0\xd4\xbf~~");
+    if (NuStrICmp(source, "xbox") == 0)
+        NuStrCpy(destination, "~0\xd4\xbf~~");
+    if (NuStrICmp(source, "1") == 0)
+        NuStrCpy(destination, "~0\xd4\xb3~~");
+    if (NuStrICmp(source, "2") == 0)
+        NuStrCpy(destination, "~0\xd4\xb4~~");
+    if (NuStrICmp(source, "c") == 0)
+        NuStrCpy(destination, "~0\xd4\xb5~~");
+    if (NuStrICmp(source, "z") == 0)
+        NuStrCpy(destination, "~0\xd4\xb6~~");
+    if (NuStrICmp(source, "-") == 0)
+        NuStrCpy(destination, "~0\xd4\xbd~~");
+    if (NuStrICmp(source, "+") == 0)
+        NuStrCpy(destination, "~0\xd4\xbe~~");
+    if (NuStrICmp(source, "paddown") == 0)
+        NuStrCpy(destination, "~0\xd4\xb9~~");
+    if (NuStrICmp(source, "padright") == 0)
+        NuStrCpy(destination, "~0\xd4\xba~~");
+    if (NuStrICmp(source, "padleft") == 0)
+        NuStrCpy(destination, "~0\xd4\xbb~~");
+    if (NuStrICmp(source, "padup") == 0)
+        NuStrCpy(destination, "~0\xd4\xbc~~");
+    if (NuStrICmp(source, "logo") == 0)
+        NuStrCpy(destination, "\xd5\x80");
 }
 static f32 QFONTSCALEX = 1.0f;
 static f32 QFONTSCALEY = 1.0f;
@@ -629,7 +750,6 @@ void Text_ExpandAllButtonStrings(char *input, char *output) {
     *output = '\0';
 }
 void Text_FillInExtendedSaveInfo() {
-    STUBBED();
 }
 void Text_InsertCommasIntoNumber(char *number, char *text, i32 length) {
     char separator;
@@ -655,16 +775,105 @@ void Text_InsertCommasIntoNumber(char *number, char *text, i32 length) {
     }
     text[output] = '\0';
 }
+NUMTL *MessageMtl;
+i32 MessageMtlInit;
+
 extern "C" void MessageBoxInitMtl(void) {
-    STUBBED();
+    MessageMtl = NuMtlCreate(1);
+    MessageMtl->attribs.z_mode = 3;
+    MessageMtl->attribs.alpha_mode = 1;
+    MessageMtl->attribs.unknown_2_1_2 = 2;
+    MessageMtl->attribs.unknown_1_1_2 = 1;
+    MessageMtl->attribs.unknown_1_4_8 = 1;
+    MessageMtl->attribs.unknown_2_4 = 1;
+    MessageMtl->attribs.filter_mode = 1;
+    NuMtlUpdate(MessageMtl);
+    MessageMtlInit = 1;
 }
 
-void DrawMessageBoxRGBA(float, float, float, float, u32, u32, u32, u32, numtl_s *, i32, float) {
-    STUBBED();
+void DrawMessageBoxRGBA(f32 x, f32 y, f32 width, f32 height, u32 blue, u32 green, u32 red, u32 alpha, numtl_s *material,
+                        i32 alignment, f32 scale) {
+    const f32 scaled_width = width * scale;
+    const f32 scaled_height = height * scale;
+
+    f32 pulse = 1.0f;
+    if (pulsetimerfn != NULL) {
+        pulse = (pulsetimerfn((1.0f - y) * 0.5f) - 1.0f) * 4.0f + 1.0f;
+    }
+
+    i32 opacity = static_cast<i32>((static_cast<f32>(static_cast<i32>(alpha >> 16)) * 65536.0f +
+                                    static_cast<f32>(static_cast<i32>(alpha & 0xffff))) *
+                                   pulse);
+
+    const i32 box_width = static_cast<i32>(scaled_width * 10240.0f * QFONTSCALEX);
+    const i32 box_height = static_cast<i32>(scaled_height * 3584.0f * QFONTSCALEY);
+    const i32 edge_width = static_cast<i32>(204.79999f * QFONTSCALEX * 0.75f);
+    const i32 edge_height = static_cast<i32>(71.68f * QFONTSCALEY);
+    const i32 corner_width = static_cast<i32>(40.960003f * QFONTSCALEX * 0.75f);
+    const i32 corner_height = static_cast<i32>(14.336f * QFONTSCALEY);
+
+    if ((alignment & 5) == 4) {
+        y += scaled_height;
+    } else if ((alignment & 5) == 0) {
+        y += scaled_height * 0.5f;
+    }
+    if ((alignment & 10) == 8) {
+        x -= scaled_width;
+    } else if ((alignment & 10) == 0) {
+        x -= scaled_width * 0.5f;
+    }
+
+    i32 screen_x = static_cast<i32>((x + 1.0f) * 0.5f * 10240.0f * QFONTSCALEX);
+    i32 screen_y = static_cast<i32>((2.0f - (y + 1.0f)) * 0.5f * 3584.0f * QFONTSCALEY);
+    const u32 colour = (static_cast<u32>(opacity) << 24) | ((red & 0xff) << 16) | ((green & 0xff) << 8) | (blue & 0xff);
+    const u32 edge_colour = (static_cast<u32>(opacity) << 25) | 0xffffff;
+
+    NuRndrRect2di(screen_x, screen_y, box_width, box_height, colour, material);
+    NuRndrRect2di(screen_x, screen_y, edge_width, corner_height, edge_colour, material);
+    NuRndrRect2di(screen_x, screen_y, corner_width, edge_height, edge_colour, material);
+    screen_x += box_width;
+    screen_y += box_height;
+    NuRndrRect2di(screen_x, screen_y, -edge_width, -corner_height, edge_colour, material);
+    NuRndrRect2di(screen_x, screen_y, -corner_width, -edge_height, edge_colour, material);
 }
 
-void DrawMessageBox(i32, float, float, float, float) {
-    STUBBED();
+void DrawMessageBox(i32, f32 x, f32 y, f32 width, f32 height) {
+    if (MessageMtlInit == 0) {
+        MessageBoxInitMtl();
+    }
+
+    if (NuRndrBeginScene(-1) != 0) {
+        const i32 box_width = static_cast<i32>(width * 10240.0f * 0.5f);
+        const i32 box_height = static_cast<i32>(height * 3584.0f * 0.5f);
+        const i32 screen_x = static_cast<i32>((x + 1.0f) * 0.5f * 10240.0f) - box_width / 2;
+        const i32 screen_y = static_cast<i32>((y + 1.0f) * 0.5f * 3584.0f) - box_height / 2;
+
+        NuRndrRect2di(screen_x, screen_y, box_width, box_height, 0x80808080, MessageMtl);
+
+        u32 colours[4] = {0x00808080, 0x80808080, 0x00808080, 0x80808080};
+        NuRndrGradRectUV2di(screen_x - 30, screen_y, 60, box_height, 0.0f, 0.0f, 0.0f, 1.0f, colours, MessageMtl);
+
+        colours[0] = 0x80808080;
+        colours[1] = 0x00808080;
+        colours[2] = 0x80808080;
+        colours[3] = 0x00808080;
+        NuRndrGradRectUV2di(screen_x + box_width, screen_y, 60, box_height, 1.0f, 0.0f, 1.0f, 1.0f, colours,
+                            MessageMtl);
+
+        colours[0] = 0x00808080;
+        colours[1] = 0x00808080;
+        colours[2] = 0x80808080;
+        colours[3] = 0x80808080;
+        NuRndrGradRectUV2di(screen_x, screen_y - 7, box_width, 30, 0.0f, 0.0f, 1.0f, 0.0f, colours, MessageMtl);
+
+        colours[0] = 0x80808080;
+        colours[1] = 0x80808080;
+        colours[2] = 0x00808080;
+        colours[3] = 0x00808080;
+        NuRndrGradRectUV2di(screen_x, screen_y + box_height - 15, box_width, 30, 0.0f, 1.0f, 1.0f, 1.0f, colours,
+                            MessageMtl);
+        NuRndrEndScene();
+    }
 }
 
 extern "C" {
@@ -715,8 +924,53 @@ extern "C" {
         }
         return QFont2D;
     }
-    void MatrixText(void) {
-        STUBBED();
+    void MatrixText(VUFNT *font, unsigned char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, u32 alignment,
+                    u32 colour, NUMTX *matrix, i32 camera_relative) {
+        if (text == nullptr || text[0] == '\0' || MenuStopDraw != 0)
+            return;
+        if (font == nullptr)
+            font = QFont3DZ;
+        if (font == nullptr)
+            return;
+
+        NuQFntPushPrintMode(4);
+        NuQFntPushCoordinateSystem(NUQFNT_CSMODE_ABSOLUTE);
+        NuQFntSet(font);
+
+        u16 encoded[512];
+        MatrixTextStringEncode(font, text, encoded);
+        NuQFntSetScale(font, x_scale * 0.004f, y_scale * 0.004f);
+        const f32 width = NuQFntPrintLenW(font, encoded);
+        const f32 height = NuQFntHeight(font);
+
+        y -= height * 0.5f;
+        if ((alignment & 4) != 0) {
+            y -= height * 0.5f;
+        } else if ((alignment & 1) != 0) {
+            y += height * 0.5f;
+        }
+
+        if ((alignment & 2) == 0) {
+            if ((alignment & 8) != 0) {
+                x -= width;
+            } else {
+                x -= width * 0.5f;
+            }
+        }
+
+        NUMTX draw_matrix;
+        if (camera_relative == 0) {
+            draw_matrix = *matrix;
+        } else {
+            NuMtxMul(&draw_matrix, matrix, NuCameraGetMtx());
+        }
+        NuQFntSetMtx(font, &draw_matrix);
+        NuQFntSetColour(font, colour);
+        NuQFntSetICGap(font, 2.0f);
+        NuQFntMove(font, x, y, z);
+        NuQFntPrintW(font, encoded);
+        NuQFntPopCoordinateSystem();
+        NuQFntPopPrintMode();
     }
     void MenuSmartTextEx(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment, u8 red,
                          u8 green, u8 blue, f32 max_width, i32 max_lines, void *message_box, i32 suppress_draw,
@@ -742,8 +996,10 @@ extern "C" {
     void SetGameFont(VUFNT *font) {
         QFont2D = font;
     }
-    void SmartText(void) {
-        STUBBED();
+    void SmartText(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment, u8 red,
+                   u8 green, u8 blue, f32 max_width, i32 max_lines) {
+        SmartTextEx(text, x, y, z, x_scale, y_scale, z_scale, alignment, red, green, blue, max_width, max_lines, NULL,
+                    0, 0x80);
     }
     void SmartTextEx(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment, u8 red,
                      u8 green, u8 blue, f32 max_width, i32 max_lines, void *message_box, i32 suppress_draw, u32 alpha) {
@@ -870,8 +1126,13 @@ extern "C" {
                     message_box, suppress_draw, alpha);
         SmartTextFont = saved_font;
     }
-    void SmartTextExDrop(void) {
-        STUBBED();
+    void SmartTextExDrop(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment, u32 red,
+                         u32 green, u32 blue, f32 max_width, i32 max_lines, void *message_box, i32 suppress_draw,
+                         u32 alpha) {
+        SmartTextEx2(text, x - x_scale * 0.007f, y - y_scale * 0.01f, z, x_scale, y_scale, z_scale, alignment, 0, 0, 0,
+                     max_width, max_lines, message_box, suppress_draw, alpha);
+        SmartTextEx(text, x, y, z, x_scale, y_scale, z_scale, alignment, red & 0xff, green & 0xff, blue & 0xff,
+                    max_width, max_lines, message_box, suppress_draw, alpha);
     }
     void SmartTextGetWidescreen(f32 *font_scale_x, f32 *coordinate_scale) {
         if (font_scale_x != nullptr)
@@ -890,8 +1151,58 @@ extern "C" {
         QFONTSCALEY = 1.0f / QFONTSCALEX;
         STCOORDSCALE = coordinate_scale;
     }
-    void SplitText(void) {
-        STUBBED();
+    i32 SplitText(unsigned char *text, f32 max_width) {
+        if (max_width <= 0.0f)
+            return -1;
+
+        i32 line_count = 1;
+        i32 line_start = 0;
+        i32 position = 0;
+        unsigned char substring[512];
+        unsigned char decoded[512];
+        u16 encoded[512];
+
+        while (max_width > 0.0f) {
+            i32 previous_break = position;
+            unsigned char *line = text + line_start;
+
+            for (;;) {
+                const i32 next_break = SplitTextFindNextWS(text, position);
+                i32 length = next_break - line_start;
+                if (length > 511)
+                    length = 511;
+                memcpy(substring, line, length);
+                substring[length] = '\0';
+                TextDecode(reinterpret_cast<char *>(substring), decoded);
+                Text3DStringEncode(reinterpret_cast<char *>(decoded), encoded);
+                const f32 width = NuQFntPrintLenW(QFont2D, encoded);
+
+                position = next_break;
+                while (text[position] == ' ')
+                    ++position;
+
+                if (text[position] == '\0')
+                    return line_count;
+
+                if (text[position] == '\\' && text[position + 1] == 'n') {
+                    previous_break = position + 1;
+                    text[previous_break] = ' ';
+                } else if (max_width > width) {
+                    previous_break = position;
+                    continue;
+                } else if (previous_break == line_start) {
+                    previous_break = position;
+                }
+
+                text[previous_break - 1] = '\n';
+                ++line_count;
+                line_start = previous_break;
+                break;
+            }
+        }
+
+        text[line_start - 1] = '\n';
+        return line_count + 1;
     }
     void Text3D(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment, u8 red, u8 green,
                 u8 blue) {
@@ -982,28 +1293,209 @@ extern "C" {
         }
     }
     void UnloadGameFont(void) {
-        STUBBED();
+        if (QFont2DLower != NULL) {
+            NuQFntDestroy(QFont2DLower);
+            QFont2DLower = NULL;
+        }
+        if (QFont2DZ != NULL) {
+            NuQFntDestroy(QFont2DZ);
+            QFont2DZ = NULL;
+        }
+        if (QFont3D != NULL) {
+            NuQFntDestroy(QFont3D);
+            QFont3D = NULL;
+        }
+        if (QFont3DZ != NULL) {
+            NuQFntDestroy(QFont3DZ);
+            QFont3DZ = NULL;
+        }
+        NuQFntDestroy(QFont2D);
     }
 }
-void MenuUpdateViewTextStrings(MENU_s *) {
-    STUBBED();
+void MenuUpdateViewTextStrings(MENU_s *menu) {
+    if (menu->cancel_pressed != 0) {
+        BackupMenu();
+        return;
+    }
+
+    if ((Player[0] == nullptr || (Player[0]->pad_gamepad->buttons_held & GAMEPAD_MENUSELECT) == 0) &&
+        (Player[1] == nullptr || (Player[1]->pad_gamepad->buttons_held & GAMEPAD_MENUSELECT) == 0)) {
+        return;
+    }
+
+    if (menu->up_held != 0) {
+        menu->selected_row -= 5;
+        if (menu->selected_row < menu->first_row) {
+            menu->selected_row = menu->last_row;
+        }
+        menu->selected_item = menu->selected_row - menu->first_row;
+    } else if (menu->down_held != 0) {
+        menu->selected_row += 5;
+        if (menu->selected_row > menu->last_row) {
+            menu->selected_row = menu->first_row;
+        }
+        menu->selected_item = menu->selected_row - menu->first_row;
+    }
 }
 
-void MenuDrawViewTextStrings(MENU_s *) {
-    STUBBED();
+static inline u8 Text_MenuColourLerp(u8 first, u8 second, f32 amount) {
+    return static_cast<u8>(
+        static_cast<i32>(static_cast<f32>(first) * amount + static_cast<f32>(second) * (1.0f - amount)));
 }
 
-void GetMatchLength(unsigned char *, unsigned char *, abi_ulong) {
-    STUBBED();
+void MenuDrawViewTextStrings(MENU_s *menu) {
+    menu->item_scale = 2.0f;
+    menu->centre_offset = MENUDY * 2.0f;
+    menu->draw_x = -0.75f;
+    menu->draw_y = static_cast<f32>(-menu->selected_row) * menu->centre_offset;
+
+    char text[2048];
+    for (i32 i = 0; i < Text_MaxOverallStrings; ++i) {
+        dme_sx = 0.6f;
+        dme_sy = menu->item_scale;
+        dme_align = 0;
+        GameDrawMenuEntry(menu, const_cast<char *>(" "));
+
+        const f32 y = menu->draw_y - menu->centre_offset;
+        if (MenuStopDraw != 0 || y < -1.25f || y >= 1.25f) {
+            continue;
+        }
+
+        const bool registered = (Text_StringBits[i >> 5] & (1U << (i & 0x1f))) != 0;
+        i32 red;
+        i32 green;
+        i32 blue;
+        if (registered) {
+            if (menu->selected_item == i) {
+                if (TestForController()) {
+                    if (menu_pulsate > 0.0f) {
+                        red = Text_MenuColourLerp(MENUFLASH0R, MENUFLASH1R, menu_pulsate);
+                        green = Text_MenuColourLerp(MENUFLASH0G, MENUFLASH1G, menu_pulsate);
+                        blue = Text_MenuColourLerp(MENUFLASH0B, MENUFLASH1B, menu_pulsate);
+                    } else if (menu_flash != 0) {
+                        red = MENUFLASH0R;
+                        green = MENUFLASH0G;
+                        blue = MENUFLASH0B;
+                    } else {
+                        red = MENUFLASH1R;
+                        green = MENUFLASH1G;
+                        blue = MENUFLASH1B;
+                    }
+                } else if (menu_pulse > 0.0f) {
+                    red = Text_MenuColourLerp(MENUFLASH0R, MENUNORMALR, menu_pulse);
+                    green = Text_MenuColourLerp(MENUFLASH0G, MENUNORMALG, menu_pulse);
+                    blue = Text_MenuColourLerp(MENUFLASH0B, MENUNORMALB, menu_pulse);
+                } else {
+                    red = MENUENTRYR;
+                    green = MENUENTRYG;
+                    blue = MENUENTRYB;
+                }
+            } else {
+                if (menu_pulse > 0.0f) {
+                    red = Text_MenuColourLerp(MENUFLASH0R, MENUNORMALR, menu_pulse);
+                    green = Text_MenuColourLerp(MENUFLASH0G, MENUNORMALG, menu_pulse);
+                    blue = Text_MenuColourLerp(MENUFLASH0B, MENUNORMALB, menu_pulse);
+                } else {
+                    red = MENUENTRYR;
+                    green = MENUENTRYG;
+                    blue = MENUENTRYB;
+                }
+            }
+        } else {
+            if (menu->selected_item == i) {
+                red = 255;
+                if (menu_flash < 1) {
+                    green = 191;
+                    blue = 0;
+                } else {
+                    green = 255;
+                    blue = 255;
+                }
+            } else {
+                red = 255;
+                green = 0;
+                blue = 0;
+            }
+        }
+
+        dme_r = static_cast<u8>(red);
+        dme_g = static_cast<u8>(green);
+        dme_b = static_cast<u8>(blue);
+        dme_rgb = 1;
+        sprintf(text, "%i", i);
+        SmartTextEx(text, -0.76f, y, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 8, static_cast<u8>(red),
+                    static_cast<u8>(green), static_cast<u8>(blue), 0.09000003f, 1, nullptr, 0, MenuA);
+
+        if (TTab[i] != nullptr) {
+            dme_rgb = 1;
+            Text_ExpandAllButtonStrings(TTab[i], text);
+            SmartTextEx(text, -0.74f, y, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 2, static_cast<u8>(red),
+                        static_cast<u8>(green), static_cast<u8>(blue), 1.59f, 2, nullptr, 0, MenuA);
+        }
+    }
 }
-void SplitTextFindNextWS(unsigned char *, i32) {
-    STUBBED();
+
+abi_ulong GetMatchLength(unsigned char *first, unsigned char *second, abi_ulong maximum) {
+    abi_ulong length = 0;
+    if (maximum != 0 && *first == *second) {
+        do {
+            ++length;
+        } while (length != maximum && first[length] == second[length]);
+    }
+    return length;
 }
-void MatrixTextStringEncode(void *, unsigned char *, u16 *) {
-    STUBBED();
+i32 SplitTextFindNextWS(unsigned char *text, i32 position) {
+    unsigned char character = text[position];
+check_character:
+    if (character == ' ') {
+        const unsigned char next = text[position + 1];
+        if (next == '?')
+            goto next_character;
+        if (next == '!')
+            goto next_character;
+        if (next == ';')
+            goto next_character;
+        if (next == ':')
+            goto next_character;
+        return position;
+    }
+    if (character == '\0') {
+        return position;
+    }
+    if (character == '\\' && text[position + 1] == 'n') {
+        return position;
+    }
+
+next_character:
+    do {
+        ++position;
+        character = text[position];
+    } while (static_cast<u8>(character - 0x80) <= 0x3f);
+    goto check_character;
 }
-void GetLineW(u16 *, i32) {
-    STUBBED();
+void MatrixTextStringEncode(void *font, unsigned char *source, u16 *destination) {
+    u16 character;
+    while (*source != '\0') {
+        source = NuUnicodeCharFromUTF8(&character, source);
+        if (character == '~') {
+            if (*source == '\0') {
+                break;
+            }
+            source = NuUnicodeCharFromUTF8(&character, source);
+            continue;
+        }
+
+        *destination = NuQFntEncodeUnicodeChar(font, character);
+        if (*destination == 0xffff) {
+            NuUnicodeCharFromUTF8(&character, reinterpret_cast<unsigned char *>(const_cast<char *>("\xe2\x96\xa1")));
+            *destination = NuQFntEncodeUnicodeChar(font, character);
+            if (*destination == 0xffff) {
+                *destination = NuQFntEncodeUnicodeChar(font, '?');
+            }
+        }
+        ++destination;
+    }
+    *destination = 0;
 }
 extern "C" void Text3DStringEncode(char *src, u16 *dst) {
     VUFNT *font = SmartTextFont;

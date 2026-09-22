@@ -19,6 +19,7 @@ struct FtpFile;
 struct GIZFORCE_s;
 struct GIZMOBLOWUP_s;
 struct GameObject_s;
+struct NetHost;
 struct MechObjectInterface;
 struct NOSContext;
 struct NOSFilter;
@@ -66,17 +67,73 @@ struct NOSContext {
         u32 words[4];
     };
 };
-struct NOSFilter {};
+struct NOSFilter {
+    virtual i32 AllowPush(EdClass const *, void *) = 0;
+};
 struct NetAddress {
     u32 value;
 };
+struct NetSample {
+    u32 values[4];
+
+    NetSample() {
+        values[0] = 0;
+        values[1] = 0;
+        values[2] = 0;
+        values[3] = 0;
+    }
+
+    void Max(NetSample const &);
+    void Reset();
+    void operator+=(NetSample const &);
+    void operator-=(NetSample const &);
+};
+struct NetSmallStats {
+    enum eInfo {};
+
+    explicit NetSmallStats(char const *stat_name) : name(stat_name) {
+    }
+    virtual void Update() {
+    }
+    virtual void Draw(float, float, float, float, NetSmallStats::eInfo) const;
+
+    char const *name;
+    NetSample total;
+};
+struct NetStats : NetSmallStats {
+    explicit NetStats(char const *stat_name) : NetSmallStats(stat_name), sample_index(0), sample_time(0) {
+    }
+    void Update() override;
+    void Draw(float, float, float, float, NetSmallStats::eInfo) const override;
+
+    i32 sample_index;
+    u32 sample_time;
+    NetSample maximum;
+    NetSample previous;
+    NetSample samples[30];
+};
+DECOMP_ASSERT(sizeof(NetSmallStats) == 0x18, "NetSmallStats size");
+DECOMP_ASSERT(offsetof(NetSmallStats, total) == 8, "NetSmallStats total offset");
+DECOMP_ASSERT(sizeof(NetStats) == 0x220, "NetStats size");
+DECOMP_ASSERT(offsetof(NetStats, sample_index) == 0x18, "NetStats sample index offset");
+DECOMP_ASSERT(offsetof(NetStats, samples) == 0x40, "NetStats sample history offset");
 struct NetPeer {
     struct Vtable {
-        void *reserved_00[6];
+        void *reserved_00;
+        void (*destroy)(NetPeer *);
+        void (*disconnect)(NetPeer *);
+        void (*send)(NetPeer *, NetMessage);
+        void (*reliable_send)(NetPeer *, NetMessage, char const *, u32);
+        void *reserved_14;
         i32 (*get_available_messages)(NetPeer *);
     } *vtable;
-    u8 reserved_04[8];
+    NetPeer *next;
+    NetPeer *previous;
     u8 local;
+    u8 reserved_0d[3];
+    NetStats stats;
+    u8 reserved_230[0x29c - 0x230];
+    i32 time_offset;
 };
 struct ReplicatorData {
     u8 *start;
@@ -87,6 +144,9 @@ DECOMP_ASSERT(sizeof(ReplicatorData) == 0xc, "ReplicatorData ABI");
 DECOMP_ASSERT(offsetof(ReplicatorData, cursor) == 8, "ReplicatorData cursor offset");
 struct WORLDINFO_s;
 struct ePeerLeftReason {};
+struct eHostVisibility {
+    i32 value;
+};
 
 struct NuFileDeviceAndroidOBBType {
     enum T { NONE = 0, MAIN = 1, PATCH = 2 };
@@ -100,25 +160,36 @@ struct AndroidOBBUtils {
     static i32 OpenFile(char const *);
 };
 struct FtpFile {
-    u8 reserved_00[8];
+    NetAddress address;
+    i32 direction;
     i32 accepted;
-    u8 reserved_0c[0x94];
+    char name[0x80];
+    i32 size;
+    void *buffer;
+    i32 capacity;
+    i32 transferred;
+    i32 message_swap_endianness;
     struct TransferReference {
         u8 reserved_00[0x4b0];
-        i32 reference_count;
+        u32 reference_count;
     };
-    TransferReference *network_object; // 0xa0
-    u8 reserved_a4[0x8];
-    void *transfer; // 0xac
+    TransferReference *message_data;
+    u32 message_read_offset;
+    u32 message_write_offset;
+    void *transfer;
     i32 Accept();
-    void Accept(i32);
-    void Accept(i32, void *);
+    i32 Accept(i32);
+    i32 Accept(i32, void *);
     void Init(i32, char const *, i32, NetAddress const &, void *, i32);
     void RecvData(NetMessage &);
     void SendData();
     void Term();
     void Update();
 };
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(FtpFile) == 0xb0, "FtpFile 32-bit size");
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(FtpFile, name) == 0xc, "FtpFile name 32-bit offset");
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(FtpFile, message_data) == 0xa0, "FtpFile message data 32-bit offset");
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(FtpFile, transfer) == 0xac, "FtpFile transfer 32-bit offset");
 struct NetReplicator {
     static i16 smNextId;
 
@@ -147,32 +218,6 @@ struct NetChangedReplicator : NetReplicator {
 };
 struct NetConstReplicator : NetReplicator {
     bool AllowPush(EdClass const *, void const *, ReplicatorData &, i32, i32) override;
-};
-struct NetFtpManager {
-    FtpFile files[32];
-    i32 field_1604;
-    i32 Abort(char const *, NetAddress const &, i32, i32);
-    void FindTransfer(char const *, NetAddress const &, i32);
-    void FindTransfer(char const *, NetAddress const &, i32) const;
-    i32 Get(char const *, void *, i32, NetAddress const &);
-    FtpFile const *GetTransfers() const;
-    void Init();
-    NetFtpManager();
-    void PeerLeft(NetAddress const &, ePeerLeftReason);
-    void Receive(NetMessage, unsigned char, NetAddress const &);
-    void Reset();
-    i32 Send(char const *, void const *, i32, NetAddress const &);
-    void Term();
-    void Update();
-    virtual ~NetFtpManager();
-};
-struct NetListenerBinding {
-    NetListenerBinding(NetListenerInterface *, unsigned char, char *);
-    void operator=(NetListenerBinding const &);
-    void operator==(NetListenerBinding const &);
-};
-struct NetListenerList {
-    void Find(NetListenerBinding *);
 };
 struct NetMessage {
     struct MessageData {
@@ -308,6 +353,28 @@ struct NetListenerInterface {
     virtual void NosAdopted(NetworkObject *, NetPeer const &) {
     }
 };
+struct NetFtpManager : NetListenerInterface {
+    FtpFile files[32];
+    i32 field_1604;
+    i32 Abort(char const *, NetAddress const &, i32, i32);
+    FtpFile *FindTransfer(char const *, NetAddress const &, i32);
+    FtpFile const *FindTransfer(char const *, NetAddress const &, i32) const;
+    i32 Get(char const *, void *, i32, NetAddress const &);
+    FtpFile const *GetTransfers() const;
+    void Init();
+    NetFtpManager();
+    virtual void PeerLeft(NetAddress const &, ePeerLeftReason);
+    virtual void Receive(NetMessage, unsigned char, NetAddress const &);
+    void Reset();
+    i32 Send(char const *, void const *, i32, NetAddress const &);
+    void Term();
+    void Update();
+    ~NetFtpManager() override;
+};
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(NetFtpManager) == 0x1608, "NetFtpManager 32-bit size");
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetFtpManager, files) == 4, "NetFtpManager files 32-bit offset");
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetFtpManager, field_1604) == 0x1604,
+              "NetFtpManager trailing field 32-bit offset");
 struct NetSession {
     u8 reserved_00[4];
     i32 status;
@@ -324,80 +391,78 @@ DECOMP_ASSERT(offsetof(NetMessage, write_offset) == 12, "NetMessage write cursor
 static_assert(sizeof(NetMessage::MessageData) == 0x4b4, "NetMessage pool entry size");
 static_assert(offsetof(NetMessage::MessageData, references) == 0x4b0, "NetMessage pool reference offset");
 struct NetPredictor : NetReplicator {
-    struct PredictorData {};
-    struct PredictorTime {};
+    struct PredictorData {
+        f32 values[3];
+    };
+    struct PredictorTime {
+        i32 sample_count;
+        f32 values[3];
+        f32 factors[3];
+    };
+
+    f32 maximum_prediction_error;
+    f32 maximum_sample_delta;
+    f32 minimum_value;
+    f32 maximum_value;
+
     bool AllowPush(EdClass const *, void const *, ReplicatorData &, i32, i32) override;
-    void CheckPredictionError(EdClass const *, void *, float *, float *, i32);
-    void DoPrediction(EdClass const *, void *, ReplicatorData &, NetPredictor::PredictorTime *, i32);
+    virtual i32 CheckPredictionError(EdClass const *, void *, float *, float *, i32);
+    i32 DoPrediction(EdClass const *, void *, ReplicatorData &, NetPredictor::PredictorTime *, i32);
     i32 DoPrediction(EdClass const *, void *, ReplicatorData &, i32) override;
-    void SerialiseObject(EdStream &, NetPeer *, EdClass const *, void *, ReplicatorData &,
-                         NetPredictor::PredictorTime *, i16 *);
+    i32 SerialiseObject(EdStream &, NetPeer *, EdClass const *, void *, ReplicatorData &, NetPredictor::PredictorTime *,
+                        i16 *);
     i32 SerialiseObject(EdStream &, NetPeer *, EdClass const *, void *, ReplicatorData &, i16 *) override;
-    void StoreSampleData(EdClass const *, void *, NetPredictor::PredictorTime *, NetPredictor::PredictorData **,
-                         float *, i32);
+    virtual void StoreSampleData(EdClass const *, void *, NetPredictor::PredictorTime *, NetPredictor::PredictorData **,
+                                 float *, i32);
+    virtual void PredictValue(EdClass const *, void *, NetPredictor::PredictorTime *, NetPredictor::PredictorData **,
+                              float *, i32) = 0;
 };
-struct NetPredictor2 {
+struct NetPredictor2 : NetPredictor {
     void PredictValue(EdClass const *, void *, NetPredictor::PredictorTime *, NetPredictor::PredictorData **, float *,
-                      i32);
+                      i32) override;
 };
-struct NetPredictor3 {
+struct NetPredictor3 : NetPredictor {
     void PredictValue(EdClass const *, void *, NetPredictor::PredictorTime *, NetPredictor::PredictorData **, float *,
-                      i32);
+                      i32) override;
 };
-struct NetRotator2 {
+struct NetRotator2 : NetPredictor {
     void PredictValue(EdClass const *, void *, NetPredictor::PredictorTime *, NetPredictor::PredictorData **, float *,
-                      i32);
+                      i32) override;
 };
-struct NetSample {
-    u32 values[4];
-
-    NetSample() {
-        values[0] = 0;
-        values[1] = 0;
-        values[2] = 0;
-        values[3] = 0;
-    }
-
-    void Max(NetSample const &);
-    void Reset();
-    void operator+=(NetSample const &);
-    void operator-=(NetSample const &);
-};
+static_assert(sizeof(void *) != 4 || sizeof(NetPredictor::PredictorData) == 0xc,
+              "NetPredictor::PredictorData 32-bit size");
+static_assert(sizeof(void *) != 4 || sizeof(NetPredictor::PredictorTime) == 0x1c,
+              "NetPredictor::PredictorTime 32-bit size");
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(NetPredictor) == 0x28, "NetPredictor 32-bit size");
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetPeer, time_offset) == 0x29c, "NetPeer::time_offset 32-bit offset");
+DECOMP_ASSERT(offsetof(NetPeer, stats) == 0x10, "NetPeer stats offset");
 struct NetSimpleReplicator : NetReplicator {
     bool AllowPush(EdClass const *, void const *, ReplicatorData &, i32, i32) override;
 };
-static_assert(sizeof(void *) != 4 || sizeof(NetReplicator) == 0x18, "NetReplicator 32-bit size");
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(NetReplicator) == 0x18, "NetReplicator 32-bit size");
 DECOMP_ASSERT(offsetof(NetReplicator, next) == 4, "NetReplicator next offset");
 DECOMP_ASSERT(offsetof(NetReplicator, data_size) == 0x14, "NetReplicator data size offset");
-struct NetSmallStats {
-    enum eInfo {};
+struct NetListenerBinding {
+    NetListenerBinding *next;
+    NetListenerBinding *previous;
+    NetListenerInterface *listener;
+    u8 channel;
+    char name[0x23];
+    NetStats stats;
 
-    explicit NetSmallStats(char const *stat_name) : name(stat_name) {
-    }
-    virtual void Update() {
-    }
-    virtual void Draw(float, float, float, float, NetSmallStats::eInfo) const;
-
-    char const *name;
-    NetSample total;
+    NetListenerBinding(NetListenerInterface *, unsigned char, char *);
+    void operator=(NetListenerBinding const &);
+    bool operator==(NetListenerBinding const &);
 };
-struct NetStats : NetSmallStats {
-    explicit NetStats(char const *stat_name) : NetSmallStats(stat_name), sample_index(0), sample_time(0) {
-    }
-    void Update() override;
-    void Draw(float, float, float, float, NetSmallStats::eInfo) const override;
+struct NetListenerList {
+    NetListenerBinding *first;
 
-    i32 sample_index;
-    u32 sample_time;
-    NetSample maximum;
-    NetSample previous;
-    NetSample samples[30];
+    NetListenerBinding *Find(NetListenerBinding *);
 };
-DECOMP_ASSERT(sizeof(NetSmallStats) == 0x18, "NetSmallStats size");
-DECOMP_ASSERT(offsetof(NetSmallStats, total) == 8, "NetSmallStats total offset");
-DECOMP_ASSERT(sizeof(NetStats) == 0x220, "NetStats size");
-DECOMP_ASSERT(offsetof(NetStats, sample_index) == 0x18, "NetStats sample index offset");
-DECOMP_ASSERT(offsetof(NetStats, samples) == 0x40, "NetStats sample history offset");
+DECOMP_ASSERT(sizeof(NetListenerBinding) == 0x250, "NetListenerBinding size");
+DECOMP_ASSERT(offsetof(NetListenerBinding, listener) == 8, "NetListenerBinding listener offset");
+DECOMP_ASSERT(offsetof(NetListenerBinding, channel) == 0xc, "NetListenerBinding channel offset");
+DECOMP_ASSERT(offsetof(NetListenerBinding, stats) == 0x30, "NetListenerBinding stats offset");
 struct NetTransporter {
     NetListenerBinding *first_listener;
     NetListenerBinding *last_listener;
@@ -418,7 +483,7 @@ struct NetTransporter {
     void PeerDead(NetPeer const &) const;
     void PeerJoined(NetPeer const &) const;
     void PeerLeft(NetPeer const &, ePeerLeftReason) const;
-    void PeerRequest(NetPeer const &) const;
+    i32 PeerRequest(NetPeer const &) const;
     virtual void RemoveListener(NetListenerInterface *, unsigned char);
     virtual ~NetTransporter() {
     }
@@ -438,7 +503,7 @@ struct NetworkObject {
     void Destroy();
     void Initialise(i32, void *, EdClass *, NetPeer const &, i32);
 };
-static_assert(sizeof(void *) != 4 || sizeof(NetworkObject) == 0x18, "NetworkObject 32-bit size");
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(NetworkObject) == 0x18, "NetworkObject 32-bit size");
 struct NetworkObjectManager : NetListenerInterface, EdObjectNotifier {
     // The manager reset routine is an intentional no-op in the original.
     struct NetPeerPush {
@@ -455,7 +520,7 @@ struct NetworkObjectManager : NetListenerInterface, EdObjectNotifier {
         void Stop();
         void Sync();
     };
-    void Acquire(i32);
+    i32 Acquire(i32);
     void AddToLocalObjectList(NetworkObject *);
     void BindFilter(NOSFilter *, EdClass const *);
     void BindReplicator(NetReplicator *, EdClass const *);
@@ -486,14 +551,14 @@ struct NetworkObjectManager : NetListenerInterface, EdObjectNotifier {
     NetworkObjectManager();
     void NotifyCreateObject(void *, EdClass *, void *, i32, i32, i32) override;
     void NotifyDestroyObject(void *, EdClass *, i32, i32) override;
-    void ObjectCall(void *, i32, NetMessage, NetPeer const *);
-    void ObjectOtherCall(void *, i32, NetMessage);
-    void ObjectOwnerCall(void *, i32, NetMessage);
+    i32 ObjectCall(void *, i32, NetMessage, NetPeer const *);
+    i32 ObjectOtherCall(void *, i32, NetMessage);
+    i32 ObjectOwnerCall(void *, i32, NetMessage);
     NetPeer const *Owner(i32);
     void PeerJoined(NetPeer const &) override;
     void PeerLeft(NetPeer const &, ePeerLeftReason) override;
-    void Push(NetworkObject const *, NetReplicator *, ReplicatorData &, NetworkObjectManager::NetPeerPush *);
-    void PushObject(NetworkObject *, NetworkObjectManager::NetPeerPush *, i32);
+    i32 Push(NetworkObject const *, NetReplicator *, ReplicatorData &, NetworkObjectManager::NetPeerPush *);
+    i32 PushObject(NetworkObject *, NetworkObjectManager::NetPeerPush *, i32);
     void Receive(NetMessage, unsigned char, NetPeer const &) override;
     void ReceiveAcquireMessage(NetMessage &, NetPeer const &);
     void ReceiveAcquiredMessage(NetMessage &, NetPeer const &);
@@ -508,11 +573,11 @@ struct NetworkObjectManager : NetListenerInterface, EdObjectNotifier {
     void ReceiveStatusMessage(NetMessage &, NetPeer const &);
     void ReceiveStopMessage(NetMessage &, NetPeer const &);
     void Recover(NetworkObject *);
-    void RegisterObject(void *, EdClass *, i32);
+    i32 RegisterObject(void *, EdClass *, i32);
     i32 RegisterObjectCall(void (*)(void *, NetMessage &), i32);
     i32 RegisterRemoteCall(void (*)(NetMessage &), i32);
-    void ReleaseObject(void *, EdClass *, i32);
-    void RemoteCall(i32, NetMessage, NetPeer const *);
+    i32 ReleaseObject(void *, EdClass *, i32);
+    i32 RemoteCall(i32, NetMessage, NetPeer const *);
     void RemoveFromLocalObjectList(NetworkObject *);
     void RemovePendingObject(NetworkObject *);
     void Reset();
@@ -528,7 +593,7 @@ struct NetworkObjectManager : NetListenerInterface, EdObjectNotifier {
     void UpdateLocalObjectList();
     ~NetworkObjectManager() override;
 
-    u8 reserved_08[4];
+    i32 field_08;
     i32 active;
     NOSContext context;
     NetPeer const *guid_peers[2];
@@ -556,37 +621,37 @@ struct NetworkObjectManager : NetListenerInterface, EdObjectNotifier {
     NetStats *class_stats[32];
     u8 field_d96c;
 };
-static_assert(sizeof(void *) != 4 || offsetof(NetSession, local_peer) == 0x84, "NetSession local peer offset");
-static_assert(sizeof(void *) != 4 || sizeof(NetworkObjectManager::NetPeerPush) == 0x14,
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetSession, local_peer) == 0x84, "NetSession local peer offset");
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(NetworkObjectManager::NetPeerPush) == 0x14,
               "NetworkObjectManager::NetPeerPush 32-bit size");
-static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, active) == 0xc,
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetworkObjectManager, active) == 0xc,
               "NetworkObjectManager::active 32-bit offset");
-static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, guid_peers) == 0x20,
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetworkObjectManager, guid_peers) == 0x20,
               "NetworkObjectManager::guid_peers 32-bit offset");
-static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, peer_push) == 0xd838,
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetworkObjectManager, peer_push) == 0xd838,
               "NetworkObjectManager::peer_push 32-bit offset");
-static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, default_push) == 0xd8d8,
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetworkObjectManager, default_push) == 0xd8d8,
               "NetworkObjectManager::default_push 32-bit offset");
-static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, class_stats) == 0xd8ec,
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetworkObjectManager, class_stats) == 0xd8ec,
               "NetworkObjectManager::class_stats 32-bit offset");
-static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, field_d96c) == 0xd96c,
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetworkObjectManager, field_d96c) == 0xd96c,
               "NetworkObjectManager::field_d96c 32-bit offset");
-static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, objects) == 0x30,
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetworkObjectManager, objects) == 0x30,
               "NetworkObjectManager::objects 32-bit offset");
-static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, local_object_count) == 0xc030,
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetworkObjectManager, local_object_count) == 0xc030,
               "NetworkObjectManager::local_object_count 32-bit offset");
-static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, local_objects) == 0xc034,
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetworkObjectManager, local_objects) == 0xc034,
               "NetworkObjectManager::local_objects 32-bit offset");
-static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, pending_objects) == 0xd034,
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetworkObjectManager, pending_objects) == 0xd034,
               "NetworkObjectManager::pending_objects 32-bit offset");
 DECOMP_ASSERT(offsetof(NetworkObjectManager, replicators) == 0xd1b4, "NetworkObjectManager replicator lists");
 DECOMP_ASSERT(offsetof(NetworkObjectManager, replicator_data_sizes) == 0xd4b4,
               "NetworkObjectManager replicator data sizes");
-static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, filters) == 0xd5b4,
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetworkObjectManager, filters) == 0xd5b4,
               "NetworkObjectManager::filters 32-bit offset");
-static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, registered_calls) == 0xd6b4,
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetworkObjectManager, registered_calls) == 0xd6b4,
               "NetworkObjectManager::registered_calls 32-bit offset");
-static_assert(sizeof(void *) != 4 || offsetof(NetworkObjectManager, registered_call_count) == 0xd834,
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(NetworkObjectManager, registered_call_count) == 0xd834,
               "NetworkObjectManager::registered_call_count 32-bit offset");
 DECOMP_ASSERT(offsetof(NetworkObjectManager::RegisteredCall, flags) == 4, "RegisteredCall flags offset");
 DECOMP_ASSERT(offsetof(NetworkObjectManager::RegisteredCall, callback) == 8, "RegisteredCall callback offset");
@@ -601,14 +666,14 @@ struct TouchHacks {
         ~TintStack();
     };
     static bool AiPlayerTakeDamageOnKillRescue(GameObject_s &);
-    void CalculateJumpVelToHitPoint(GameObject_s &, VuVec const &);
-    void CalculateJumpVelToHitPointDblJump(GameObject_s &, VuVec const &);
-    void CalculateXZVelForArcToHitPoint(VuVec const &, VuVec const &, float, float);
+    static VuVec CalculateJumpVelToHitPoint(GameObject_s &, VuVec const &);
+    static VuVec CalculateJumpVelToHitPointDblJump(GameObject_s &, VuVec const &);
+    static VuVec CalculateXZVelForArcToHitPoint(VuVec const &, VuVec const &, float, float);
     static i32 CanBlowupBeBlownUp(GIZMOBLOWUP_s &, i32);
-    void CanForceTargetObj(GameObject_s &, GameObject_s &);
+    static bool CanForceTargetObj(GameObject_s &, GameObject_s &);
     static bool CanJump(GameObject_s &);
-    void CanJumpToPoint(GameObject_s &, AIPATHNODE_s const &);
-    void CanJumpToPoint(GameObject_s &, VuVec const &);
+    static bool CanJumpToPoint(GameObject_s &, AIPATHNODE_s const &);
+    static bool CanJumpToPoint(GameObject_s &, VuVec const &);
     static bool CanLunge(GameObject_s &);
     static bool CanPoo(GameObject_s &);
     static bool CanShoot(GameObject_s &);
@@ -626,15 +691,15 @@ struct TouchHacks {
     static bool CanUseVehicleSmartBomb(GameObject_s &);
     static bool CanUseZipup(GameObject_s &);
     static bool CheckForAboutToRunIntoKillTerrain(GameObject_s &, float);
-    void CheckForAboutToRunOffAnEdge(GameObject_s &, float);
-    void CheckJumpForLandingSpot(GameObject_s &, float);
+    static bool CheckForAboutToRunOffAnEdge(GameObject_s &, float);
+    static bool CheckJumpForLandingSpot(GameObject_s &, float);
     static void CleanupAllMechObjectInterfaces(WORLDINFO_s *);
     static MechObjectInterface *FindBombTarget(GameObject_s &);
     static nucolour3_s *GetFlashColour();
     static float GetIncomingPartRange();
     static i32 GetLoseStudsDieValue();
     static i32 GetLoseStudsFallValue();
-    bool InParty(GameObject_s &);
+    static bool InParty(GameObject_s &);
     static void PlaySmartBombBuildupEffects(GameObject_s &, float, float);
     static bool ShouldAutoGrabDragBomb(GameObject_s &);
     static bool ShouldBlock(GameObject_s &);
@@ -642,35 +707,99 @@ struct TouchHacks {
     static bool ShouldFlash(float);
     static bool ShouldKeepWeaponOut(GameObject_s &);
     static bool ShouldPutWeaponAway(GameObject_s &);
-    bool SolveRoot(float, float, float, float &, float &);
+    static bool SolveRoot(float, float, float, float &, float &);
     static void TriggerVehicleSmartBomb(GameObject_s &);
 };
 struct V2SessionManager {
-    u8 reserved_00[0x4];
+    static V2SessionManager *mpSessionManager;
+    static char mLogFilename[32];
+    static i32 mLogHandle;
+
     i32 field_04;
-    u8 reserved_08[0x2c - 0x8];
-    i32 field_2c;
-    u8 reserved_30[0x34 - 0x30];
+    u8 reserved_08[0x14 - 0x8];
+    char name[0x20];
     i32 field_34;
-    u8 reserved_38[0x44 - 0x38];
+    i32 host_visibility;
+    i32 num_local_players;
+    i32 field_40;
     i32 fields_44[9];
     i32 field_68;
     i32 field_6c;
     u8 reserved_70[0x74 - 0x70];
     i32 field_74;
-    u8 reserved_78[0x90 - 0x78];
+    u8 field_78;
+    u8 reserved_79[3];
+    i32 field_7c;
+    i32 field_80;
+    NetPeer *local_peer;
+    i32 field_88;
+    i32 field_8c;
     i32 field_90;
-    u8 reserved_94[0x9c - 0x94];
-    i32 field_9c;
+    NetPeer *first_peer;
+    NetPeer *last_peer;
+    i32 peer_count;
+    NetStats stats;
+
+    virtual void Init(char *) {
+    }
+    virtual void Start() {
+    }
+    virtual void Update();
+    virtual void Leave() {
+    }
+    virtual void Close() {
+    }
+    virtual i32 SignIn() {
+        return 0;
+    }
+    virtual void RemovePeer(NetPeer *, ePeerLeftReason);
+    virtual void Render() {
+    }
+    virtual i32 IsChatRestricted() {
+        return 0;
+    }
+    virtual i32 IsAgeRestricted() {
+        return 0;
+    }
+    virtual void GetLocalAddress(NetAddress *) {
+    }
+    virtual i32 IsSearchingForHosts() {
+        return 0;
+    }
+    virtual void Join(NetHost *) {
+    }
+    virtual void Host(eHostVisibility) {
+    }
+    virtual void SearchForHosts(i32, i32 *) {
+    }
+    virtual void SetHostVisibility(eHostVisibility visibility) {
+        host_visibility = visibility.value;
+    }
+    virtual void SetNumLocalPlayers(i32 count) {
+        num_local_players = count;
+    }
+    virtual void RemoveRemotePlayer(NetPeer &) {
+    }
+    virtual void AcceptInvitation() {
+    }
+    virtual void SendInvitation(char *) {
+    }
+    virtual void ViewInvitations() {
+    }
+    virtual i32 VerifyStrings(char **, char **, i32, char *);
+
     void Log(char *, ...);
     void RemoveAllPeers(ePeerLeftReason);
-    void RemovePeer(NetPeer *, ePeerLeftReason);
     void Reset();
     void SetHostGameData(i32 *, i32);
-    void Update();
     V2SessionManager(char *);
-    void VerifyStrings(char **, char **, i32, char *);
 };
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(V2SessionManager) == 0x2c0, "V2SessionManager 32-bit size");
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(V2SessionManager, local_peer) == 0x84,
+              "V2SessionManager local peer 32-bit offset");
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(V2SessionManager, first_peer) == 0x94,
+              "V2SessionManager first peer 32-bit offset");
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(V2SessionManager, stats) == 0xa0, "V2SessionManager stats 32-bit offset");
 struct VirtualStackAllocator {
     u8 owns_memory;
     u8 *cursor;

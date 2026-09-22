@@ -240,6 +240,7 @@ u8 g_forceSysMemVbs = 0;
 i32 Reflections_On = 1;
 i32 (*MatrixReflection_CanOverrideFn)(f32) = NULL;
 i32 disable_narrow_socks = 0;
+i32 set_speedermode = 0;
 nugspline_s *script_spline_selected = NULL;
 f32 CutBorderScale = 0.0f;
 i32 LEGOCAMMODE_DOORCUT = -1;
@@ -741,9 +742,10 @@ i32 LevSafePlatID[2] = {0};
 // Network / multiplayer (podrace, gunship, mines)
 // ------------------------------------------------------------------------
 RETAKEGNETPACKET_s *retakeg_netpacket = NULL;
-i16 trooper_boltid = 0;
-i8 trooper_side[3] = {0};
+i16 trooper_boltid[2] = {0};
+i8 trooper_side[10] = {0};
 nuhspecial_s *hothtroopers = NULL;
+i32 troopers_gdeb[4] = {0};
 i32 TimingBarSet = 0;
 u32 client_mines[0x200] = {0};
 MINESYS_s minesys;

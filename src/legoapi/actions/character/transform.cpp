@@ -217,9 +217,16 @@ void Transform_DrawTarget(nuvec_s *position, float radius, float alpha) {
     }
 }
 
-i32 Transform_TargettedByObj(void *) {
-    STUBBED();
-    return 0;
+GameObject_s *Transform_TargettedByObj(void *target) {
+    GameObject_s *object = Obj;
+    for (i32 index = 0; index < HIGHGAMEOBJECT; ++index, ++object) {
+        if ((object->apiobj.field_0x1f8 & 0x1001) == 0x1001 && object->apiobj.field_0x287 == 0 &&
+            (object->apiobj.character_data->game_character->flags_090 & 0x01000000) != 0 &&
+            object->field_0xd80 > 0.0f && object->field_0xd8c > 0.0f && object->force_glow_object == target) {
+            return object;
+        }
+    }
+    return NULL;
 }
 
 void GizmoBlowup_TransformDraw_Game(GIZMOBLOWUP_s *blowup) {
@@ -230,8 +237,13 @@ void GizmoBlowup_TransformDraw_Game(GIZMOBLOWUP_s *blowup) {
     Transform_DrawTarget(&blowup->mid_position, 1.4f * blowup->target_scale, 0.4f);
 }
 
-void InterpolateRotationMatrix(numtx_s *, numtx_s *, numtx_s *, float) {
-    STUBBED();
+void InterpolateRotationMatrix(numtx_s *result, numtx_s *first, numtx_s *second, float fraction) {
+    SeekVec(NUMTX_GET_ROW_VEC(result, 0), NUMTX_GET_ROW_VEC(first, 0), NUMTX_GET_ROW_VEC(second, 0), fraction);
+    SeekVec(NUMTX_GET_ROW_VEC(result, 1), NUMTX_GET_ROW_VEC(first, 1), NUMTX_GET_ROW_VEC(second, 1), fraction);
+    SeekVec(NUMTX_GET_ROW_VEC(result, 2), NUMTX_GET_ROW_VEC(first, 2), NUMTX_GET_ROW_VEC(second, 2), fraction);
+    NuVecNorm(NUMTX_GET_ROW_VEC(result, 0), NUMTX_GET_ROW_VEC(result, 0));
+    NuVecNorm(NUMTX_GET_ROW_VEC(result, 1), NUMTX_GET_ROW_VEC(result, 1));
+    NuVecNorm(NUMTX_GET_ROW_VEC(result, 2), NUMTX_GET_ROW_VEC(result, 2));
 }
 
 void QuatInterpolateRotationMatrix(NUMTX *result, NUMTX *first, NUMTX *second, f32 fraction) {

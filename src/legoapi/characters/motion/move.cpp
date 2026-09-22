@@ -60,7 +60,9 @@ static f32 ForceBackRadius2 = 0.0f;
 #include "nu2api/nucore/nupad.h"
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/nulgtlaser.h"
 #include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nurand.h"
 #include "nu2api/numath/nuang.h"
@@ -5756,8 +5758,68 @@ static void DeactivatedCode(GameObject_s *object) {
     }
 }
 
-static void DrawLightningBolts(GameObject_s *, GameObject_s *, i32) {
-    STUBBED();
+static void DrawLightningBolts(GameObject_s *object, GameObject_s *target, i32 lightning_index) {
+    NUVEC primary;
+    NUVEC secondary;
+    NUVEC target_position;
+    NUVEC delta;
+    ForceLightning_Origin(object, &primary, &secondary);
+
+    if (primary.y != 1000000000.0f) {
+        target_position.x = target->apiobj.collision_position.x;
+        target_position.z = target->apiobj.collision_position.z;
+        f32 height = target->apiobj.field_0x194 - target->apiobj.lower_position.y;
+        target_position.y =
+            target->apiobj.lower_position.y + height * 0.25f + height * (1.0f / 17.0f) * qrand() * 1.5259022e-05f;
+        f32 distance = NuVecDist(&target_position, &primary, &delta);
+        NuLgtLaser(lightning_type, lightning_sizew[lightning_index], lightning_sizel[lightning_index],
+                   lightning_sizewab[lightning_index], &primary, &delta, lightning_col[lightning_index],
+                   lightning_endw[lightning_index], distance);
+        PlaySfx("ForceLightningLp", &target->apiobj.collision_position);
+
+        if (object->field_0x1088 != 0 && object->field_0x1087 == 2 && NuIOS_IsLowEndDevice() == 0 &&
+            lightning_type != 0) {
+            NUVEC reflected_origin = primary;
+            NUVEC reflected_target = target_position;
+            f32 plane = WORLD->current_level->unknown_0cc;
+            if (plane == 2000000.0f)
+                plane = object->field_0x1020;
+            reflected_origin.y = plane - (reflected_origin.y - plane);
+            reflected_target.y = plane - (reflected_target.y - plane);
+            distance = NuVecDist(&reflected_target, &reflected_origin, &delta);
+            NuLgtLaser(lightning_type, lightning_sizew[lightning_index], lightning_sizel[lightning_index],
+                       lightning_sizewab[lightning_index], &reflected_origin, &delta, lightning_col[lightning_index],
+                       lightning_endw[lightning_index], distance);
+        }
+    }
+
+    if (secondary.y != 1000000000.0f) {
+        target_position.x = target->apiobj.collision_position.x;
+        target_position.z = target->apiobj.collision_position.z;
+        f32 height = target->apiobj.field_0x194 - target->apiobj.lower_position.y;
+        target_position.y =
+            target->apiobj.lower_position.y + height * 0.25f + height * (1.0f / 17.0f) * qrand() * 1.5259022e-05f;
+        f32 distance = NuVecDist(&target_position, &secondary, &delta);
+        NuLgtLaser(lightning_type, lightning_sizew[lightning_index], lightning_sizel[lightning_index],
+                   lightning_sizewab[lightning_index], &secondary, &delta, lightning_col[lightning_index],
+                   lightning_endw[lightning_index], distance);
+        PlaySfx("ForceLightningLp", &target->apiobj.collision_position);
+
+        if (object->field_0x1088 != 0 && object->field_0x1087 == 2 && NuIOS_IsLowEndDevice() == 0 &&
+            lightning_type != 0) {
+            NUVEC reflected_origin = secondary;
+            NUVEC reflected_target = target_position;
+            f32 plane = WORLD->current_level->unknown_0cc;
+            if (plane == 2000000.0f)
+                plane = object->field_0x1020;
+            reflected_origin.y = plane - (reflected_origin.y - plane);
+            reflected_target.y = plane - (reflected_target.y - plane);
+            distance = NuVecDist(&reflected_target, &reflected_origin, &delta);
+            NuLgtLaser(lightning_type, lightning_sizew[lightning_index], lightning_sizel[lightning_index],
+                       lightning_sizewab[lightning_index], &reflected_origin, &delta, lightning_col[lightning_index],
+                       lightning_endw[lightning_index], distance);
+        }
+    }
 }
 
 static void ForcePushCode(GameObject_s *object, i32 held, i32) {
@@ -9884,8 +9946,103 @@ finish:
     return 1;
 }
 
-static __used__ void DodgeCode(GameObject_s *, i32, i32) {
-    STUBBED();
+static void DodgeCode(GameObject_s *object, i32 action_pressed, i32 jump_pressed) {
+    if (object->character_context == 0x25) {
+        if (jump_pressed != 0) {
+            object->landing_followup = 2;
+        } else if (action_pressed != 0 && object->context_animation == 0x58) {
+            object->landing_followup = 1;
+        }
+
+        if (AnimPlaying(&object->apiobj.anim_packet, object->context_animation, 1, 0) == NULL) {
+            return;
+        }
+        object->context_animation_timer -= FRAMETIME;
+        if (object->context_animation_timer > 0.0f) {
+            return;
+        }
+
+        object->character_context = -1;
+        ResetAnimPacket(&object->apiobj.anim_packet, -1);
+        object->apiobj.velocity.x = 0.0f;
+        object->apiobj.velocity.z = 0.0f;
+        if (FaceOpponent(object, NULL) != 0) {
+            object->apiobj.facing_angle = object->apiobj.movement_facing_angle;
+            object->apiobj.field_0x276 = object->apiobj.movement_facing_angle;
+        }
+
+        if (object->landing_followup == 2) {
+            if (PlayerItem_GotAmmo(reinterpret_cast<PLAYERITEM_s *>(&object->field_0x7e4)) != 0) {
+                if (object->context_animation == 0x58 && object->pad_gamepad->input_magnitude > 0.0f) {
+                    SetWeaponOut(object);
+                    i32 bolt_id = BoltType_FindIDByCreature(object, 0);
+                    ShootThisFrame(object, bolt_id, 3);
+                } else {
+                    StartQuickShoot(object, 0x16);
+                }
+                object->quick_shoot_timer = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 1);
+            }
+        } else if (object->landing_followup == 1) {
+            StartJump(object, 0);
+        }
+        return;
+    }
+
+    if (static_cast<i8>(object->apiobj.flags_low) >= 0 || object->apiobj.field_0x27d == 0 ||
+        (object->character_context != -1 && (object->character_context != 0x0a || object->context_animation == 0x57))) {
+        return;
+    }
+
+    GAMECHARACTERDATA *data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
+    if ((data->walk_speed + data->movement_speed) * 0.5f < object->pad_gamepad->input_magnitude) {
+        return;
+    }
+
+    BOLT_s *bolt = FindIncomingBolt(object, 1, 1);
+    object->incoming_bolt = bolt;
+    if (bolt == NULL || jump_pressed == 0) {
+        return;
+    }
+
+    const i16 previous_animation = object->context_animation;
+    NUVEC dodge_direction = bolt->field_0xac;
+    NuVecRotateY(&dodge_direction, &dodge_direction, 0x4000);
+
+    i16 animation;
+    if ((object->field_0xe21 & 0x20) != 0) {
+        animation = object->field_0xe12 == 0x26 ? 0x4f : 0x26;
+    } else {
+        const f32 side = (object->apiobj.collision_position.x - bolt->position.x) * dodge_direction.x +
+                         (object->apiobj.collision_position.z - bolt->position.z) * dodge_direction.z;
+        animation = side >= 0.0f ? 0x26 : 0x4f;
+    }
+    object->context_animation = animation;
+    object->field_0xe12 = animation;
+
+    if (object->apiobj.character_model->model_data_b[animation] != NULL) {
+        object->context_animation_timer = AnimDuration(object->id, animation, 0.0f, 0.0f, 0);
+        if (object->context_animation_timer > 0.0f) {
+            object->character_context = 0x25;
+            object->blowup_target = NULL;
+            object->landing_followup = 2;
+            ResetAnimPacket(&object->apiobj.anim_packet, -1);
+            if (object->context_animation == 0x58 && object->pad_gamepad->input_magnitude > 0.0f) {
+                object->force_target = NULL;
+            } else {
+                object->force_target = bolt->owner;
+                if (FaceOpponent(object, NULL) != 0) {
+                    object->apiobj.facing_angle = object->apiobj.movement_facing_angle;
+                    object->apiobj.field_0x276 = object->apiobj.movement_facing_angle;
+                }
+            }
+            if (static_cast<i8>(object->apiobj.flags_low) < 0) {
+                Hint_SetComplete(0x265);
+            }
+        }
+    }
+    if (object->character_context != 0x25) {
+        object->context_animation = previous_animation;
+    }
 }
 
 extern i16 id_EWOK;

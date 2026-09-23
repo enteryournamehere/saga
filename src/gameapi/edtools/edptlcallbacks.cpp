@@ -7,6 +7,9 @@
 #include "nu2api/nu3d/numtl.h"
 #include <stdio.h>
 #include <string.h>
+#if defined(__SSE__)
+#include <xmmintrin.h>
+#endif
 
 extern "C" {
     extern debkeydatatype_s *debkeydata;
@@ -1287,10 +1290,15 @@ static void cbPtlCopyEffect(eduimenu_s *menu, eduiitem_s *, u32) {
             *effect = *debtab[edpp_create_type];
             effect->native_data = NULL;
             effect->last_render_time = 0.0f;
-            char short_name[13];
-            memcpy(short_name, debtab[edpp_create_type]->name, 12);
-            short_name[12] = '\0';
-            sprintf(effect->name, "%s%03d", short_name, index);
+            const char *source_name = debtab[edpp_create_type]->name;
+            char short_name[32];
+            size_t name_length = strlen(source_name);
+            if (name_length > 12) {
+                memcpy(short_name, source_name, name_length + 1);
+                short_name[12] = '\0';
+                source_name = short_name;
+            }
+            sprintf(effect->name, "%s%03d", source_name, index);
             ++edpp_types_used;
             edpp_create_type = index;
         }
@@ -1916,10 +1924,44 @@ static void cbPtlDefaultCollEnv(eduimenu_s *menu, eduiitem_s *, u32) {
         i32 instance = edpp_ptls[edpp_nearest].instance_id;
         if (instance != -1) {
             debinftype *effect = debtab[debkeydata[instance].effect_index];
+#if defined(__SSE__)
+            const __m128 scale = _mm_set1_ps(10000.0f);
+            {
+                const __m64 *width = reinterpret_cast<const __m64 *>(&effect->width_keys[0]);
+                __m64 *collision = reinterpret_cast<__m64 *>(&effect->collision_keys[0]);
+                __m128 first = _mm_loadh_pi(_mm_loadl_pi(_mm_setzero_ps(), width), width + 1);
+                __m128 second = _mm_loadh_pi(_mm_loadl_pi(_mm_setzero_ps(), width + 2), width + 3);
+                __m128 times = _mm_shuffle_ps(first, second, _MM_SHUFFLE(2, 0, 2, 0));
+                __m128 values = _mm_shuffle_ps(first, second, _MM_SHUFFLE(3, 1, 3, 1));
+                values = _mm_div_ps(values, scale);
+                __m128 lower = _mm_unpacklo_ps(times, values);
+                __m128 upper = _mm_unpackhi_ps(times, values);
+                _mm_storel_pi(collision, lower);
+                _mm_storeh_pi(collision + 1, lower);
+                _mm_storel_pi(collision + 2, upper);
+                _mm_storeh_pi(collision + 3, upper);
+            }
+            {
+                const __m64 *width = reinterpret_cast<const __m64 *>(&effect->width_keys[4]);
+                __m64 *collision = reinterpret_cast<__m64 *>(&effect->collision_keys[4]);
+                __m128 first = _mm_loadh_pi(_mm_loadl_pi(_mm_setzero_ps(), width), width + 1);
+                __m128 second = _mm_loadh_pi(_mm_loadl_pi(_mm_setzero_ps(), width + 2), width + 3);
+                __m128 times = _mm_shuffle_ps(first, second, _MM_SHUFFLE(2, 0, 2, 0));
+                __m128 values = _mm_shuffle_ps(first, second, _MM_SHUFFLE(3, 1, 3, 1));
+                values = _mm_div_ps(values, scale);
+                __m128 lower = _mm_unpacklo_ps(times, values);
+                __m128 upper = _mm_unpackhi_ps(times, values);
+                _mm_storel_pi(collision, lower);
+                _mm_storeh_pi(collision + 1, lower);
+                _mm_storel_pi(collision + 2, upper);
+                _mm_storeh_pi(collision + 3, upper);
+            }
+#else
             for (i32 i = 0; i < 8; ++i) {
                 effect->collision_keys[i].time = effect->width_keys[i].time;
                 effect->collision_keys[i].value = effect->width_keys[i].value / 10000.0f;
             }
+#endif
         }
     }
     eduimenu_s *parent = menu->parent;

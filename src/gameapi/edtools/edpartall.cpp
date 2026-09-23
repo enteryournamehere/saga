@@ -134,7 +134,8 @@ extern "C" {
     eduimenu_s *edpart_type_menu;
 }
 
-static inline void edpartRemoveInstance(part_typedesc_s *type, i32 index) {
+static __attribute__((always_inline, optimize("O3"))) inline void edpartRemoveInstance(part_typedesc_s *type,
+                                                                                       i32 index) {
     for (i32 next = index; next < 7; ++next) {
         type->effect_ids[next] = type->effect_ids[next + 1];
         type->effect_pages[next] = type->effect_pages[next + 1];
@@ -1089,9 +1090,25 @@ static inline void edpartSavePath(char *path, char *backup, bool level) {
     char *save_directory = level ? edbits_level_save_directory : edbits_general_save_directory;
     char *save_name = level ? edbits_level_save_name : edbits_general_save_name;
     char *save_extension = level ? edbits_level_save_extension : edbits_general_save_extension;
-    strcpy(directory, save_directory[0] ? save_directory : ".");
-    strcpy(name, save_name[0] ? save_name : "part");
-    strcpy(extension, save_extension[0] ? save_extension : "par");
+    if (save_directory[0])
+        strcpy(directory, save_directory);
+    else {
+        directory[0] = '.';
+        directory[1] = '\0';
+    }
+    if (save_name[0])
+        strcpy(name, save_name);
+    else {
+        name[0] = 'p';
+        name[1] = 'a';
+        name[2] = 'r';
+        name[3] = 't';
+        name[4] = '\0';
+    }
+    if (save_extension[0])
+        strcpy(extension, save_extension);
+    else
+        __builtin_memcpy(extension, "par", 4);
     sprintf(path, "%s\\%s.%s", directory, name, extension);
     sprintf(backup, "%s\\%s.%s.bak", directory, name, extension);
 }
@@ -1109,10 +1126,53 @@ static inline void edpartSaveMessage(eduimenu_s *parent, const char *message, bo
 
 static void edpartFileSaveEffects(eduimenu_s *parent, eduiitem_s *, u32) {
     char path[256], backup[256];
-    edpartSavePath(path, backup, false);
+    char general_directory[256], general_name[256], general_extension[256];
+    char level_directory[256], level_name[256], level_extension[256];
+    if (edbits_general_save_directory[0])
+        strcpy(general_directory, edbits_general_save_directory);
+    else {
+        general_directory[0] = '.';
+        general_directory[1] = '\0';
+    }
+    if (edbits_general_save_name[0])
+        strcpy(general_name, edbits_general_save_name);
+    else {
+        general_name[0] = 'p';
+        general_name[1] = 'a';
+        general_name[2] = 'r';
+        general_name[3] = 't';
+        general_name[4] = '\0';
+    }
+    if (edbits_general_save_extension[0])
+        strcpy(general_extension, edbits_general_save_extension);
+    else
+        __builtin_memcpy(general_extension, "par", 4);
+    if (edbits_level_save_directory[0])
+        strcpy(level_directory, edbits_level_save_directory);
+    else {
+        level_directory[0] = '.';
+        level_directory[1] = '\0';
+    }
+    if (edbits_level_save_name[0])
+        strcpy(level_name, edbits_level_save_name);
+    else {
+        level_name[0] = 'p';
+        level_name[1] = 'a';
+        level_name[2] = 'r';
+        level_name[3] = 't';
+        level_name[4] = '\0';
+    }
+    if (edbits_level_save_extension[0])
+        strcpy(level_extension, edbits_level_save_extension);
+    else
+        __builtin_memcpy(level_extension, "par", 4);
+
+    sprintf(path, "%s\\%s.%s", general_directory, general_name, general_extension);
+    sprintf(backup, "%s\\%s.%s.bak", general_directory, general_name, general_extension);
     bool general_backup = edbits_override_backups || EdFileBackup(path, backup);
     bool general_saved = edpartSaveEffects(path, 0) != 0;
-    edpartSavePath(path, backup, true);
+    sprintf(path, "%s\\%s.%s", level_directory, level_name, level_extension);
+    sprintf(backup, "%s\\%s.%s.bak", level_directory, level_name, level_extension);
     bool level_backup = edbits_override_backups || EdFileBackup(path, backup);
     bool level_saved = edpartSaveEffects(path, 1) != 0;
     const char *message;
@@ -1863,7 +1923,7 @@ static void edpartChangeInstanceVarRot(eduimenu_s *, eduiitem_s *item, u32) {
     }
 }
 
-static void edpartDeleteInstanceOrphan(eduimenu_s *menu, eduiitem_s *item, u32) {
+static __attribute__((optimize("O3"))) void edpartDeleteInstanceOrphan(eduimenu_s *menu, eduiitem_s *item, u32) {
     edpartRemoveInstance(edpart_nearest_type, item->data);
     --edpart_nearest_orphans;
     edpartFinishMenu(menu);
@@ -2055,7 +2115,7 @@ static void edpartCancelThingsInstanceMenu(eduimenu_s *, eduimenu_s *) {
     edpart_thingsinstance_menu = NULL;
 }
 
-static void edpartDeleteAllInstanceOrphans(eduimenu_s *menu, eduiitem_s *, u32) {
+static __attribute__((optimize("O3"))) void edpartDeleteAllInstanceOrphans(eduimenu_s *menu, eduiitem_s *, u32) {
     for (i32 index = 0; index < 8; ++index) {
         if (edpart_nearest_type->effect_ids[index] == 9998) {
             edpartRemoveInstance(edpart_nearest_type, index);
@@ -2084,7 +2144,7 @@ static void edpartCancelInstanceSettingsMenu(eduimenu_s *, eduimenu_s *) {
     edpart_instancesettings_menu = NULL;
 }
 
-static void edpartDeleteAllInstanceDuplicates(eduimenu_s *menu, eduiitem_s *, u32) {
+static __attribute__((optimize("O3"))) void edpartDeleteAllInstanceDuplicates(eduimenu_s *menu, eduiitem_s *, u32) {
     for (i32 index = 0; index < 8; ++index) {
         i16 effect = edpart_nearest_type->effect_ids[index];
         if (effect == 9999 || effect == -1 || effect == 9998)
@@ -2149,31 +2209,36 @@ void edpartDoInput(nupad_s *pad) {
             if (edpart_opt_menu != NULL) {
                 eduiMenuAddItem(edpart_opt_menu,
                                 eduiItemSelCreate(1, edblack, 0, 0, edpartTypeMenu, "Emitter Type..."));
-                bool has_emitter = edpart_nearest != -1;
-                eduiMenuAddItem(edpart_opt_menu,
-                                eduiItemSelCreate(1, has_emitter ? edblack : edgrey, 0, 0,
-                                                  has_emitter ? edpartInstanceMenu : NULL, "Instance Select..."));
-                eduiMenuAddItem(edpart_opt_menu, eduiItemSelCreate(1, has_emitter ? edblack : edgrey, 0, 0,
-                                                                   has_emitter ? edpartInstanceSettingsMenu : NULL,
-                                                                   "Instance Settings..."));
-                eduiMenuAddItem(edpart_opt_menu,
-                                eduiItemSelCreate(1, has_emitter ? edblack : edgrey, 0, 0,
-                                                  has_emitter ? edpartEmitMenu : NULL, "Emitter Settings..."));
-                eduiMenuAddItem(edpart_opt_menu,
-                                eduiItemSelCreate(1, has_emitter ? edblack : edgrey, 0, 0,
-                                                  has_emitter ? edpartDebrisSettingsMenu : NULL, "Debris Settings..."));
-                eduiMenuAddItem(edpart_opt_menu,
-                                eduiItemSelCreate(1, has_emitter ? edblack : edgrey, 0, 0,
-                                                  has_emitter ? edpartSoundsMenu : NULL, "Attached Sounds..."));
-                eduiMenuAddItem(edpart_opt_menu,
-                                eduiItemSelCreate(1, has_emitter ? edblack : edgrey, 0, 0,
-                                                  has_emitter ? edpartSwitchMenu : NULL, "Switch Menu..."));
-                eduiMenuAddItem(edpart_opt_menu,
-                                eduiItemSelCreate(1, has_emitter ? edblack : edgrey, 0, 0,
-                                                  has_emitter ? edpartScaleTypeMenu : NULL, "Scale Type..."));
-                eduiMenuAddItem(edpart_opt_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartDataMenu, "Data Menu..."));
-                eduiMenuAddItem(edpart_opt_menu,
-                                eduiItemSelCreate(1, edblack, 0, 0, edpartSScaleMenu, "Super Scale..."));
+                if (edpart_nearest != -1) {
+                    eduiMenuAddItem(edpart_opt_menu,
+                                    eduiItemSelCreate(1, edblack, 0, 0, edpartInstanceMenu, "Instance Select..."));
+                    eduiMenuAddItem(edpart_opt_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartInstanceSettingsMenu,
+                                                                       "Instance Settings..."));
+                    eduiMenuAddItem(edpart_opt_menu,
+                                    eduiItemSelCreate(1, edblack, 0, 0, edpartEmitMenu, "Emitter Settings..."));
+                    eduiMenuAddItem(edpart_opt_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartDebrisSettingsMenu,
+                                                                       "Debris Settings..."));
+                    eduiMenuAddItem(edpart_opt_menu,
+                                    eduiItemSelCreate(1, edblack, 0, 0, edpartSoundsMenu, "Attached Sounds..."));
+                    eduiMenuAddItem(edpart_opt_menu,
+                                    eduiItemSelCreate(1, edblack, 0, 0, edpartSwitchMenu, "Switch Menu..."));
+                    eduiMenuAddItem(edpart_opt_menu,
+                                    eduiItemSelCreate(1, edblack, 0, 0, edpartScaleTypeMenu, "Scale Type..."));
+                    eduiMenuAddItem(edpart_opt_menu,
+                                    eduiItemSelCreate(1, edblack, 0, 0, edpartDataMenu, "Data Menu..."));
+                    eduiMenuAddItem(edpart_opt_menu,
+                                    eduiItemSelCreate(1, edblack, 0, 0, edpartSScaleMenu, "Super Scale..."));
+                } else {
+                    eduiMenuAddItem(edpart_opt_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Instance Select..."));
+                    eduiMenuAddItem(edpart_opt_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Instance Settings..."));
+                    eduiMenuAddItem(edpart_opt_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Emitter Settings..."));
+                    eduiMenuAddItem(edpart_opt_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Debris Settings..."));
+                    eduiMenuAddItem(edpart_opt_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Attached Sounds..."));
+                    eduiMenuAddItem(edpart_opt_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Switch Menu..."));
+                    eduiMenuAddItem(edpart_opt_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Scale Type..."));
+                    eduiMenuAddItem(edpart_opt_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Data Menu..."));
+                    eduiMenuAddItem(edpart_opt_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Super Scale..."));
+                }
                 eduiMenuAddItem(edpart_opt_menu, eduiItemToggleCreate(1, edblack, edpart_filter, 1, edpartToggleFilter,
                                                                       "Instance Filter"));
                 eduiMenuAddItem(edpart_opt_menu,

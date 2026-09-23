@@ -6,6 +6,9 @@
 #include "nu2api/nu3d/nuspline.h"
 #include "nu2api/nucore/nustring.h"
 #include <new>
+#if defined(__i386__) && defined(__SSE__)
+#include <xmmintrin.h>
+#endif
 
 // EdClassInterface's field-based representation preserves the original ABI for
 // the rest of the editor.  These two objects are its original Itanium vtables:
@@ -366,15 +369,21 @@ void KnotHelper::Render(void *object, i32) {
 }
 
 void SplineKnot::Smooth() {
-    VuVec before = previous != NULL ? previous->position : position;
-    VuVec after = next != NULL ? next->position : position;
+    VuVec before = position;
+    VuVec after = position;
+    if (previous != NULL)
+        before = previous->position;
+    if (next != NULL)
+        after = next->position;
     if (previous == NULL && next == NULL) {
         before = VuVec{0.0f, 0.0f, 0.0f, 0.0f};
         after = before;
     }
-    VuVec delta{(after.x - before.x) * 0.1f, (after.y - before.y) * 0.1f, (after.z - before.z) * 0.1f, 0.0f};
-    VuVec in{position.x - delta.x, position.y - delta.y, position.z - delta.z, 0.0f};
-    VuVec out{position.x + delta.x, position.y + delta.y, position.z + delta.z, 0.0f};
+    f32 dx = (after.x - before.x) * 0.1f;
+    f32 dy = (after.y - before.y) * 0.1f;
+    f32 dz = (after.z - before.z) * 0.1f;
+    VuVec out{position.x + dx, position.y + dy, position.z + dz, 0.0f};
+    VuVec in{position.x - dx, position.y - dy, position.z - dz, 0.0f};
     if (spline != NULL) {
         spline->DropPoint(out);
         spline->DropPoint(in);
@@ -410,8 +419,8 @@ void SplineHelper::AddMenuItems(eduimenu_s *menu) {
 void SplineHelper::ClearLevel(i32 level) {
     if (level == -1)
         return;
-    for (SplineObject *spline = first_object; spline != NULL;) {
-        SplineObject *next = spline->next;
+    for (SplineObject *spline = static_cast<SplineObject *>(GetNextObject(NULL)); spline != NULL;) {
+        SplineObject *next = static_cast<SplineObject *>(GetNextObject(spline));
         if (spline->led_file == level)
             DestroyObject(spline, 0);
         spline = next;
@@ -631,21 +640,39 @@ inline SplineObject::SplineObject()
     : next(NULL), previous(NULL), knots{}, points{}, led_file(Placeable::CurrentLedFile) {
 }
 
-SplineObject::~SplineObject() {
-    while (points.first != NULL) {
-        SplinePointBlock *block = points.first;
-        points.first = block->next;
+inline SplineObject::~SplineObject() {
+    SplinePointList *point_list = &points;
+    while (point_list->first != NULL) {
+        SplinePointBlock *block = point_list->first;
+        if (block->next != NULL)
+            block->next->previous = block->previous;
+        else
+            point_list->last = block->previous;
+        if (block->previous != NULL)
+            block->previous->next = block->next;
+        else
+            point_list->first = block->next;
+        block->next = NULL;
+        block->previous = NULL;
+        --point_list->block_count;
         delete block;
     }
-    points.last = NULL;
-    points.block_count = 0;
-    while (knots.first != NULL) {
-        SplineKnot *knot = knots.first;
-        knots.first = knot->next;
+    SplineKnotList *knot_list = &knots;
+    while (knot_list->first != NULL) {
+        SplineKnot *knot = knot_list->first;
+        if (knot->next != NULL)
+            knot->next->previous = knot->previous;
+        else
+            knot_list->last = knot->previous;
+        if (knot->previous != NULL)
+            knot->previous->next = knot->next;
+        else
+            knot_list->first = knot->next;
+        knot->next = NULL;
+        knot->previous = NULL;
+        --knot_list->count;
         theMemoryManager.FreePool(knot, sizeof(SplineKnot));
     }
-    knots.last = NULL;
-    knots.count = 0;
 }
 
 inline void SplineObject::operator delete(void *memory) {
@@ -657,10 +684,7 @@ SplineObject *SplineObject::Clone() {
     NuStrCpy(clone->name, name);
     SplineKnot *source = knots.first;
     for (i32 index = 0; index < knots.count; ++index) {
-        SplineKnot *knot = static_cast<SplineKnot *>(theMemoryManager.AllocPool(sizeof(SplineKnot), 1));
-        knot->position = source->position;
-        knot->in_tangent = source->in_tangent;
-        knot->out_tangent = source->out_tangent;
+        SplineKnot *knot = new (theMemoryManager.AllocPool(sizeof(SplineKnot), 1)) SplineKnot();
         knot->next = NULL;
         knot->previous = clone->knots.last;
         knot->spline = clone;
@@ -671,6 +695,18 @@ SplineObject *SplineObject::Clone() {
             clone->knots.first = knot;
         clone->knots.last = knot;
         ++clone->knots.count;
+        knot->position.x = source->position.x;
+        knot->position.y = source->position.y;
+        knot->position.z = source->position.z;
+        knot->position.w = source->position.w;
+        knot->in_tangent.x = source->in_tangent.x;
+        knot->in_tangent.y = source->in_tangent.y;
+        knot->in_tangent.z = source->in_tangent.z;
+        knot->in_tangent.w = source->in_tangent.w;
+        knot->out_tangent.x = source->out_tangent.x;
+        knot->out_tangent.y = source->out_tangent.y;
+        knot->out_tangent.z = source->out_tangent.z;
+        knot->out_tangent.w = source->out_tangent.w;
         source = source->next;
     }
     clone->step = step;
@@ -801,9 +837,9 @@ void SplineObject::SmoothKnots() {
         knot->Smooth();
 }
 
-i32 SplineKnotList::GetPoint(i32 index, VuVec &point) {
+__attribute__((force_align_arg_pointer)) i32 SplineKnotList::GetPoint(i32 index, VuVec &point) {
     SplineKnot *knot = first;
-    while (knot != NULL && index != 0) {
+    while (index != 0 && knot != NULL) {
         knot = knot->next;
         index--;
     }
@@ -812,7 +848,14 @@ i32 SplineKnotList::GetPoint(i32 index, VuVec &point) {
         return false;
     }
 
+#if defined(__i386__) && defined(__SSE__)
+    __m128 lanes = _mm_loadl_pi(_mm_setzero_ps(), reinterpret_cast<const __m64 *>(&knot->position));
+    lanes = _mm_loadh_pi(lanes, reinterpret_cast<const __m64 *>(&knot->position.z));
+    _mm_storel_pi(reinterpret_cast<__m64 *>(&point), lanes);
+    _mm_storeh_pi(reinterpret_cast<__m64 *>(&point.z), lanes);
+#else
     point = knot->position;
+#endif
     return true;
 }
 
@@ -875,17 +918,27 @@ i32 SplinePointList::GetNumPoints() {
     return point_count;
 }
 
-i32 SplinePointList::GetPoint(i32 index, VuVec &point) {
+__attribute__((force_align_arg_pointer)) i32 SplinePointList::GetPoint(i32 index, VuVec &point) {
     SplinePointBlock *block = first;
-    while (block != NULL && index >= block->point_count) {
-        block = block->next;
-    }
-
-    if (block == NULL) {
+    if (block == NULL)
         return false;
+    if (index >= block->point_count) {
+        do {
+            block = block->next;
+            if (block == NULL)
+                return false;
+        } while (index >= block->point_count);
     }
 
+#if defined(__i386__) && defined(__SSE__)
+    const VuVec &source = block->points[index];
+    __m128 lanes = _mm_loadl_pi(_mm_setzero_ps(), reinterpret_cast<const __m64 *>(&source));
+    lanes = _mm_loadh_pi(lanes, reinterpret_cast<const __m64 *>(&source.z));
+    _mm_storel_pi(reinterpret_cast<__m64 *>(&point), lanes);
+    _mm_storeh_pi(reinterpret_cast<__m64 *>(&point.z), lanes);
+#else
     point = block->points[index];
+#endif
     return true;
 }
 

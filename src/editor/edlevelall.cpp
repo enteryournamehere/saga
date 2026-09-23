@@ -18,6 +18,9 @@
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/nugscn.h"
 #include "nu2api/nucore/NuDynamicLight.h"
+#if defined(__i386__) && defined(__SSE__)
+#include <xmmintrin.h>
+#endif
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/nurand.h"
 #include "nu2api/nufile/nufile.h"
@@ -2700,11 +2703,10 @@ i32 PropertyTool::ProcessMenu(EdInputContext &input) {
         menu->order = order++;
     }
     for (ClassObjectListEntry *entry = theClassEditor.selected_objects.first; entry != NULL; entry = entry->next) {
-        ClassObject &object = *reinterpret_cast<ClassObject *>(&entry->ed_class);
         PropertyMenu *menu = FindItemMenu(active_menu, reinterpret_cast<ClassItem *>(entry));
         if (menu != NULL) {
             menu->ClearObjecs();
-            menu->AddObject(object);
+            menu->AddObject(*reinterpret_cast<ClassObject *>(&entry->ed_class));
             if (menu->next != NULL) {
                 menu->next->previous = menu->previous;
             } else {
@@ -2721,13 +2723,14 @@ i32 PropertyTool::ProcessMenu(EdInputContext &input) {
         } else {
             menu = FindItemMenu(rebuilt.first, reinterpret_cast<ClassItem *>(entry));
             if (menu != NULL) {
-                menu->AddObject(object);
+                menu->AddObject(*reinterpret_cast<ClassObject *>(&entry->ed_class));
                 continue;
             }
             for (PropertyMenu *other = active_menu; other != NULL; other = other->next) {
                 ediMenuStoreMetrics(other->menu);
             }
-            menu = RetrievePropertyMenu(&object, reinterpret_cast<PropertyMenuList *>(&active_menu));
+            menu = RetrievePropertyMenu(reinterpret_cast<ClassObject *>(&entry->ed_class),
+                                        reinterpret_cast<PropertyMenuList *>(&active_menu));
             ediMenuRetrieveMetrics(menu->menu);
             menu->order = -1;
         }
@@ -2737,30 +2740,43 @@ i32 PropertyTool::ProcessMenu(EdInputContext &input) {
             while (position != NULL && position->order < 0) {
                 position = position->next;
             }
+            if (position != NULL) {
+                menu->next = position;
+                menu->previous = position->previous;
+                if (position->previous != NULL) {
+                    position->previous->next = menu;
+                } else {
+                    rebuilt.first = menu;
+                }
+                position->previous = menu;
+                ++rebuilt.count;
+                continue;
+            }
         } else {
             while (position != NULL && position->order <= menu->order) {
                 position = position->next;
             }
-        }
-        if (position != NULL) {
-            menu->next = position->next;
-            menu->previous = position;
-            if (position->next != NULL) {
-                position->next->previous = menu;
-            } else {
-                rebuilt.last = menu;
+            if (position != NULL) {
+                menu->next = position;
+                menu->previous = position->previous;
+                if (position->previous != NULL) {
+                    position->previous->next = menu;
+                } else {
+                    rebuilt.first = menu;
+                }
+                position->previous = menu;
+                ++rebuilt.count;
+                continue;
             }
-            position->next = menu;
+        }
+        menu->next = NULL;
+        menu->previous = rebuilt.last;
+        if (rebuilt.last != NULL) {
+            rebuilt.last->next = menu;
         } else {
-            menu->next = NULL;
-            menu->previous = rebuilt.last;
-            if (rebuilt.last != NULL) {
-                rebuilt.last->next = menu;
-            } else {
-                rebuilt.first = menu;
-            }
-            rebuilt.last = menu;
+            rebuilt.first = menu;
         }
+        rebuilt.last = menu;
         ++rebuilt.count;
     }
     for (PropertyMenu *menu = active_menu; menu != NULL;) {
@@ -2936,7 +2952,7 @@ void PropertyTool::ediMenuStoreMetrics(eduimenu_s *menu) {
 }
 
 i32 ClassObjectList::GetAveragePosition(VuVec &average) {
-    average = VuVec_Zero;
+    average = VuVec(0.0f, 0.0f, 0.0f, 1.0f);
     i32 position_count = 0;
     for (ClassObjectListEntry *entry = first; entry != NULL; entry = entry->next) {
         VuVec position;
@@ -2958,7 +2974,7 @@ i32 ClassObjectList::GetAveragePosition(VuVec &average) {
 }
 
 i32 ClassObjectList::GetAveragePosition(VuVec &average, float &radius) {
-    average = VuVec_Zero;
+    average = VuVec(0.0f, 0.0f, 0.0f, 1.0f);
     i32 position_count = 0;
     VuVec positions[64];
     float radii[64];
@@ -3480,13 +3496,20 @@ void ClassEditor::RegisterTool(EdTool &tool) {
     ++tool_count;
 }
 
-void ClassEditor::UpdateSnapRay(VuVec &position) {
+__attribute__((force_align_arg_pointer)) void ClassEditor::UpdateSnapRay(VuVec &position) {
     if (snap_mode == 1) {
         snap_ray.x = 0.0f;
         snap_ray.y = -1000.0f;
         snap_ray.z = 0.0f;
     } else if (snap_mode == 2) {
+#if defined(__i386__) && defined(__SSE__)
+        __m128 lanes = _mm_loadl_pi(_mm_setzero_ps(), reinterpret_cast<const __m64 *>(&position));
+        lanes = _mm_loadh_pi(lanes, reinterpret_cast<const __m64 *>(&position.z));
+        _mm_storel_pi(reinterpret_cast<__m64 *>(&snap_ray), lanes);
+        _mm_storeh_pi(reinterpret_cast<__m64 *>(&snap_ray.z), lanes);
+#else
         snap_ray = position;
+#endif
     }
 }
 

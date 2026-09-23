@@ -209,11 +209,12 @@ struct edui_file_pick_s : eduiitem_s {
     i32 (*interact)(edui_interact_s *);
     EdUiItemCallback changed;
     char *format;
-    u8 unknown_54[4];
+    u16 reserved_54;
+    u16 reopen_directory;
     char name[0x40];
     char directory[0x100];
     char filename[0x108];
-    void *directory_list;
+    i32 (*compare_entries)(const void *, const void *);
 };
 
 struct edui_prop_s : eduiitem_s {
@@ -223,7 +224,9 @@ struct edui_prop_s : eduiitem_s {
     u16 remaining_property_flags : 7;
     u8 unknown_4e[6];
     f32 label_width;
-    u8 unknown_58[0xc];
+    f32 button_size;
+    f32 button_x;
+    f32 button_y;
     char *property_text;
     u8 unknown_68[4];
     i32 depth;
@@ -306,7 +309,6 @@ DECOMP_ASSERT(sizeof(edui_gradient_stage_s) == 0x24, "edui_gradient_stage_s ABI"
 DECOMP_ASSERT(sizeof(edui_gradient_node_s) == 0x20, "edui_gradient_node_s ABI");
 DECOMP_ASSERT(sizeof(edui_gradient_pick_s) == 0x70, "edui_gradient_pick_s ABI");
 
-
 struct edui_interact_s {
     f32 x, y, width, height;
     eduimenu_s *menu;
@@ -317,10 +319,25 @@ struct edui_interact_s {
 };
 
 extern "C" {
+    extern i32 eduiPropTextPos;
     extern ed_module_s edptldesc;
     extern ed_module_s edgradesc;
     extern ed_module_s edbridesc;
     extern ed_module_s edanimdesc;
+    extern ed_module_s edrtldesc;
+    extern ed_module_s edpartdesc;
+    extern ed_module_s edTimingDesc;
+    void edmainInit(void *font, char *configuration_file);
+    void edmainInitEx(void *font, char *configuration_file, eduiiattr_s *colours, i32 x, i32 y, i32 width, i32 height);
+    i32 edmainProcess(f32 delta_time, nupad_s *pad);
+    void edmainRender(void);
+    f32 edmainSetMainMenuScale(f32 scale);
+    void edmainSetCursorEnabled(i32 enabled);
+    void eduiInit(void);
+    void eduiInitMaterials(void);
+    void eduiRenderCursor(void);
+    void eduiRenderInteracts(void);
+    void eduiSetFont(void *font);
     i32 edmainActivate(ed_module_s *module, i32 notify);
     ed_module_s *edmainCurrent(void);
     i32 edmainRegister(ed_module_s *module);
@@ -334,6 +351,7 @@ extern "C" {
     i32 eduiUsedAlgPad(nupad_s *pad);
     extern i32 bUsingMenuFocus;
     i32 eduiGetUsingMenuFocus(void);
+    i32 eduiGetCameraEnabled(void);
     void eduiSetUsingMenuFocus(i32 enabled);
     eduimenu_s *eduiGetActiveMenu(void);
     eduimenu_s *eduiGetActiveMenuParent(void);
@@ -350,8 +368,11 @@ extern "C" {
     void eduiMenuHighlight(eduimenu_s *menu, eduiitem_s *item);
     eduiitem_s *eduiItemSelCreate(usize data, const void *colours, i32 selected, i32 group, EdUiItemCallback callback,
                                   char *text);
+    eduiitem_s *eduiItemSeparatorCreate(usize data, const void *colours);
+    eduiitem_s *eduiItemExpanderCreate(usize data, const void *colours, EdUiItemCallback callback, char *text);
     eduiitem_s *eduiItemCheckCreate(usize data, const void *colours, i32 selected, i32 group, EdUiItemCallback callback,
                                     char *text);
+    eduiitem_s *eduiItemFilterCreate(usize data, const void *colours, char *text, char *value);
     eduiitem_s *eduiItemToggleCreate(usize data, const void *colours, i32 selected, i32 group,
                                      EdUiItemCallback callback, char *text);
     eduiitem_s *eduiItemSliderCreate(usize data, const void *colours, i32 group, EdUiItemCallback callback, f32 minimum,
@@ -390,6 +411,7 @@ extern "C" {
     void eduiMenuAddItemAfter(eduimenu_s *menu, eduiitem_s *item, eduiitem_s *after);
     void eduiMenuAddItemBefore(eduimenu_s *menu, eduiitem_s *item, eduiitem_s *before);
     void eduiMenuRemoveItem(eduimenu_s *menu, eduiitem_s *item);
+    i32 eduiItemRender(eduiitem_s *item, eduimenu_s *menu, i32 x, i32 y, i32 width, i32 selected);
     i32 eduiMenuItemMoveUp(eduimenu_s *menu, eduiitem_s *item);
     i32 eduiMenuItemMoveDown(eduimenu_s *menu, eduiitem_s *item);
     void eduiMenuRender(eduimenu_s *menu);
@@ -402,6 +424,7 @@ extern "C" {
     void eduiSetGlobalSliderAccel(f32 acceleration);
     i32 eduiGradPickRead(eduiitem_s *item, edui_gradient_stage_s *stages, i32 count);
     void eduiItemTextPickSetFmt(edui_textpicker_s *item, char *format);
+    eduiitem_s *eduiItemFilePickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text);
     void eduiItemFilePickSetFmt(edui_file_pick_s *item, char *format);
     void eduiItemGraphAddOnionSkin(edui_graph_s *item, nugraph_s *graph);
     void eduiItemGraphSetCursor(edui_graph_s *item, f32 x, f32 y);
@@ -419,9 +442,11 @@ extern "C" {
     eduiitem_s *eduiItemTexturePickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text);
     eduiitem_s *eduiItemGreyGradPickCreate(usize data, const void *colours, EdUiItemCallback callback, char *text);
     eduiitem_s *eduiItemDataGradPickCreate(usize data, const void *colours, EdUiItemCallback callback,
-                                         EdUiItemCallback press, EdUiItemCallback add, EdUiItemCallback remove,
-                                         EdUiItemCallback copy, EdUiItemCallback paste, char *text);
+                                           EdUiItemCallback press, EdUiItemCallback add, EdUiItemCallback remove,
+                                           EdUiItemCallback copy, EdUiItemCallback paste, char *text);
     eduiitem_s *eduiItemPropCreateEx(usize data, const void *colours, EdUiItemCallback selected,
-                                    EdUiItemCallback changed, EdUiItemCallback button, i32 button_type,
-                                    char *text, char *value, i32 extra_data);
+                                     EdUiItemCallback changed, EdUiItemCallback button, i32 button_type, char *text,
+                                     char *value, i32 extra_data);
+    eduiitem_s *eduiItemPropCreate(usize data, const void *colours, EdUiItemCallback selected, EdUiItemCallback changed,
+                                   EdUiItemCallback button, i32 button_type, char *text, char *value);
 }

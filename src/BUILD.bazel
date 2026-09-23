@@ -43,6 +43,12 @@ _ENGINE_ROOT_SRCS = [
 _ENGINE_SRCS = _ENGINE_ROOT_SRCS + glob(
     [directory + "/**/*.c" for directory in _ENGINE_DIRS] +
     [directory + "/**/*.cpp" for directory in _ENGINE_DIRS],
+    exclude = [
+        "gameapi/edtools/edanimall.cpp",
+        "gameapi/edtools/edmenucallbacks.cpp",
+        "gameapi/edtools/edptlall.cpp",
+        "gameapi/edtools/edptlcallbacks.cpp",
+    ],
     allow_empty = True,
 )
 
@@ -58,7 +64,9 @@ _HOST_COMMON_SRCS = [source for source in _ENGINE_SRCS if source not in _HOST_EX
     "host/platform/postresource_create.cpp",
     "java/jni_stub.cpp",
     "host/harness/fixture.cpp",
+    "host/harness/frame_hook.cpp",
     "host/harness/main.cpp",
+    "host/harness/programs/editor.cpp",
     "host/harness/programs/window.cpp",
     "host/harness/startup.cpp",
     "host/platform/compressed_texture.cpp",
@@ -69,6 +77,8 @@ _HOST_COMMON_SRCS = [source for source in _ENGINE_SRCS if source not in _HOST_EX
     "host/platform/free_camera.cpp",
     "host/platform/free_camera_culling.cpp",
     "host/platform/input.cpp",
+    "host/platform/keyboard.cpp",
+    "host/platform/mouse.cpp",
     "host/platform/opensl.cpp",
     "host/platform/runtime.cpp",
 ]
@@ -109,6 +119,10 @@ _PUBLIC_HEADERS = glob(
 )
 
 _TEXTUAL_HEADERS = [
+    "gameapi/edtools/edanimall.cpp",
+    "gameapi/edtools/edmenucallbacks.cpp",
+    "gameapi/edtools/edptlall.cpp",
+    "gameapi/edtools/edptlcallbacks.cpp",
     "legoapi/items/collect/bolttypes_lsw.inc",
     "legoapi/menus/core/lsw_text_data.inc",
     "nu2api/nu3d/android/nuios_shader_sources.inc",
@@ -246,7 +260,10 @@ cc_library(
     ],
     includes = ["."],
     linkopts = select({
-        "//bazel/platforms:linux": ["-Wl,--wrap=MenuInMemoryCard"],
+        "//bazel/platforms:linux": [
+            "-Wl,--wrap=MenuInMemoryCard",
+            "-Wl,--wrap=edcamMove",
+        ],
         "//conditions:default": [],
     }),
     linkstatic = True,
@@ -278,6 +295,16 @@ cc_binary(
         "//bazel/platforms:linux": [
             "-m32",
             "-Wl,--wrap=NuFrameEnd",
+            "-Wl,--wrap=NuKeyboard",
+            "-Wl,--wrap=NuKeyGet",
+            "-Wl,--wrap=NuKeyFlush",
+            "-Wl,--wrap=NuMouseReadXVel",
+            "-Wl,--wrap=NuMouseReadYVel",
+            "-Wl,--wrap=NuMouseReadZVel",
+            "-Wl,--wrap=NuMouseReadXRel",
+            "-Wl,--wrap=NuMouseReadYRel",
+            "-Wl,--wrap=NuMouseReadZRel",
+            "-Wl,--wrap=NuMouseReadButtons",
         ],
         "//bazel/platforms:macos": [
             "-framework",
@@ -320,6 +347,16 @@ cc_binary(
         "-Wl,--wrap=_Z8LoadPermv",
         "-Wl,--wrap=NuFrameBegin",
         "-Wl,--wrap=NuFrameEnd",
+        "-Wl,--wrap=NuKeyboard",
+        "-Wl,--wrap=NuKeyGet",
+        "-Wl,--wrap=NuKeyFlush",
+        "-Wl,--wrap=NuMouseReadXVel",
+        "-Wl,--wrap=NuMouseReadYVel",
+        "-Wl,--wrap=NuMouseReadZVel",
+        "-Wl,--wrap=NuMouseReadXRel",
+        "-Wl,--wrap=NuMouseReadYRel",
+        "-Wl,--wrap=NuMouseReadZRel",
+        "-Wl,--wrap=NuMouseReadButtons",
     ] + select({
         ":native_linux_debug": ["-fsanitize=address,undefined"],
         "//conditions:default": [],

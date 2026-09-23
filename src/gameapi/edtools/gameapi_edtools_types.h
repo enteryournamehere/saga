@@ -152,13 +152,6 @@ struct edanim_param_s {
 };
 static_assert(sizeof(edanim_param_s) == 0x2d4, "edanim_param_s size");
 
-struct EdBitControl {
-    void AddMenuItem(eduimenu_s *, EdRef *, void *);
-    void Refresh();
-    void cbButton(eduimenu_s *, eduiitem_s *, u32);
-    void cbChanged(eduimenu_s *, eduiitem_s *, u32);
-    void cbSelectItem(eduimenu_s *, eduiitem_s *, u32);
-};
 struct EdClass {
     char *name;
     i32 flags;
@@ -218,30 +211,36 @@ struct EdClassInterface {
     EdClassInterfaceVTable *vtable;
     EdClass *object_class;
 
-    void DistanceToObject(VuVec &, VuVec &, void *, EdRef **);
-    void DistanceToObject(VuVec &, void *, EdRef **);
-    void GetNextObject(void *, i32 (*)(void *));
+    void ClearLevel(i32);
+    void DefunctObject(void *);
+    void ReviveObject(void *);
+    void SetObjectGuid(void *, i32);
+    i32 GetObjectGuid(void *);
+    i32 GetConstructorData(void *, void *, i32);
+    void Construct(void *, void *);
+    void Process(void *, EdInputContext &);
+    void Render(void *, i32);
+    void EnterEditor();
+    void ExitEditor();
+    void EnterLevel();
+    void ExitLevel();
+    void UpdateLists(MemoryBuffer *, MemoryBuffer *);
+    void PreLoadInitialisation(MemoryBuffer *, MemoryBuffer *);
+    void PostLoadInitialisation(MemoryBuffer *, MemoryBuffer *);
+    void PreSaveInitialisation();
+    void PostSaveInitialisation();
+    void SerialiseObject(EdStream &, void *);
+    void AddMenuItems(eduimenu_s *);
+    void Import();
+    f32 DistanceToObject(VuVec &, VuVec &, void *, EdRef **);
+    f32 DistanceToObject(VuVec &, void *, EdRef **);
+    void *GetNextObject(void *, i32 (*)(void *));
 };
-struct EdClassObjectNameControl {
-    void AddMenuItem(eduimenu_s *, EdRef *, void *);
-    EdClassObjectNameControl();
-    void Process(EdInputContext &);
-    void Render();
-    void cbButton(eduimenu_s *, eduiitem_s *, u32);
-    void cbChanged(eduimenu_s *, eduiitem_s *, u32);
-    void cbSelectClass(eduimenu_s *, eduiitem_s *, u32);
-    void cbSelectObject(eduimenu_s *, eduiitem_s *, u32);
-};
-struct EdColourControl {
-    void AddMenuItem(eduimenu_s *, EdRef *, void *);
-    EdColourControl();
-    void Refresh();
-    void cbButton(eduimenu_s *, eduiitem_s *, u32);
-    void cbChanged(eduimenu_s *, eduiitem_s *, u32);
-    void cbColourSelected(eduimenu_s *, eduiitem_s *, u32);
-};
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(EdClassInterface) == 0x8, "EdClassInterface size");
 struct EdControl {
+    static EdInputContext *Input;
     virtual ~EdControl();
+    static void operator delete(void *);
     virtual void Refresh();
     virtual void Process(EdInputContext &);
     virtual void Render();
@@ -252,9 +251,43 @@ struct EdControl {
     EdRef *reference;
     void *object;
 
-    void SelectSubObject();
-    void cbSelected(eduimenu_s *, eduiitem_s *, u32);
+    i32 SelectSubObject();
+    static void cbSelected(eduimenu_s *, eduiitem_s *, u32);
 };
+struct EdColourControl : EdControl {
+    EdColourControl();
+    void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
+    void Refresh() override;
+    static void cbButton(eduimenu_s *, eduiitem_s *, u32);
+    static void cbChanged(eduimenu_s *, eduiitem_s *, u32);
+    static void cbColourSelected(eduimenu_s *, eduiitem_s *, u32);
+};
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(EdColourControl) == 0x10, "EdColourControl 32-bit size");
+template <typename T> struct EdValueControl : EdControl {
+    i32 value_type;
+    char *format;
+    T minimum;
+    T maximum;
+
+    ~EdValueControl() override;
+    static void operator delete(void *);
+    void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
+    void Refresh() override;
+    static void cbButton(eduimenu_s *, eduiitem_s *, u32);
+    static void cbChanged(eduimenu_s *, eduiitem_s *, u32);
+    static f32 MouseScale;
+};
+struct EdFloatControl : EdValueControl<f32> {
+    ~EdFloatControl() override;
+    static void operator delete(void *);
+};
+template <> void EdValueControl<f32>::AddMenuItem(eduimenu_s *, EdRef *, void *);
+template <> EdValueControl<f32>::~EdValueControl();
+template <> void EdValueControl<f32>::operator delete(void *);
+template <> void EdValueControl<f32>::Refresh();
+template <> void EdValueControl<f32>::cbButton(eduimenu_s *, eduiitem_s *, u32);
+template <> void EdValueControl<f32>::cbChanged(eduimenu_s *, eduiitem_s *, u32);
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(EdFloatControl) == 0x20, "EdFloatControl 32-bit size");
 struct EdDefunctListEntry {
     EdDefunctListEntry *next;
     EdDefunctListEntry *previous;
@@ -272,15 +305,34 @@ struct EdDefunctList {
 
     void ReviveAll(i32);
 };
-struct EdEnumControl {
-    void AddMenuItem(eduimenu_s *, EdRef *, void *);
-    void GetEnumString(i32);
-    void GetEnumValue(char *);
-    void Refresh();
-    void cbButton(eduimenu_s *, eduiitem_s *, u32);
-    void cbChanged(eduimenu_s *, eduiitem_s *, u32);
-    void cbSelectItem(eduimenu_s *, eduiitem_s *, u32);
+struct EdEnumControl : EdControl {
+    struct Item {
+        char *name;
+        i32 value;
+    };
+    Item *items;
+
+    void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
+    char *GetEnumString(i32);
+    i32 GetEnumValue(char *);
+    void Refresh() override;
+    static void cbButton(eduimenu_s *, eduiitem_s *, u32);
+    static void cbChanged(eduimenu_s *, eduiitem_s *, u32);
+    static void cbSelectItem(eduimenu_s *, eduiitem_s *, u32);
+    static Item OpenClosedItems[];
+    static Item OnOffItems[];
+    static Item YesNoItems[];
 };
+struct EdBitControl : EdEnumControl {
+    u32 bit_mask;
+
+    void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
+    void Refresh() override;
+    static void cbButton(eduimenu_s *, eduiitem_s *, u32);
+    static void cbChanged(eduimenu_s *, eduiitem_s *, u32);
+    static void cbSelectItem(eduimenu_s *, eduiitem_s *, u32);
+};
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(EdBitControl) == 0x18, "EdBitControl 32-bit size");
 struct MemoryBuffer {
     variptr_u *position;
     variptr_u *end;
@@ -323,6 +375,10 @@ struct EdStream {
     EdStream(MemoryBuffer *, MemoryBuffer *);
 };
 struct EdInputStream : EdStream {
+    EdInputStream() : EdStream() {
+    }
+    EdInputStream(MemoryBuffer *buffer, MemoryBuffer *secondary) : EdStream(buffer, secondary) {
+    }
     virtual ~EdInputStream() {
     }
     virtual i32 SerialiseString(char **);
@@ -337,6 +393,20 @@ struct EdOutputStream : EdStream {
     virtual i32 SerialiseString(char *, i32);
 };
 struct EdFileInputStream : EdInputStream {
+    EdFileInputStream() : EdInputStream() {
+        mode = 1;
+        block_count = 0;
+        name_length = 0;
+        pending = 0;
+        file = 0;
+    }
+    EdFileInputStream(MemoryBuffer *buffer, MemoryBuffer *secondary) : EdInputStream(buffer, secondary) {
+        mode = 1;
+        block_count = 0;
+        name_length = 0;
+        pending = 0;
+        file = 0;
+    }
     struct Block {
         i32 position;
         i32 size;
@@ -362,6 +432,12 @@ struct EdFileOutputStream : EdOutputStream {
     i32 block_positions[8];
     i32 block_count;
     i32 file;
+
+    EdFileOutputStream() {
+        mode = 2;
+        block_count = 0;
+        file = 0;
+    }
 
     virtual ~EdFileOutputStream() {
     }
@@ -389,7 +465,9 @@ DECOMP_ASSERT(offsetof(EdFileOutputStream, block_count) == 0x40, "EdFileOutputSt
 DECOMP_ASSERT(offsetof(EdFileOutputStream, file) == 0x44, "EdFileOutputStream file offset");
 DECOMP_ASSERT(sizeof(EdFileOutputStream) == 0x48, "EdFileOutputStream size");
 struct EdInputContext {
-    u8 reserved_00[0x48];
+    u8 reserved_00[0x40];
+    nupad_s *pad;
+    f32 delta_time;
     f32 current_time;
     f32 repeat_window;
     u8 held[40];
@@ -410,43 +488,48 @@ struct EdInputContext {
     void Set(i32, float, float);
     void Update(nucamera_s *, nupad_s *, float, bool);
 };
-struct EdManMove {
-    EdManMove();
-    void Process(EdInputContext &, ClassObjectList &);
-    void Render(ClassObjectList &);
-};
-struct EdManRotate {
-    EdManRotate();
-    void Process(EdInputContext &, ClassObjectList &);
-    void Render(ClassObjectList &);
-    void RotateItem(EdInputContext &, ClassObjectList &, i32, i32);
-};
-struct EdManScale {
-    EdManScale();
-    void Process(EdInputContext &, ClassObjectList &);
-    void Render(ClassObjectList &);
-};
 struct EdManipulator {
-    u8 reserved[0x6c];
+    i32 selected_attribute;
+    u8 reserved_0x08[0x64];
     static f32 Scale;
+    static i32 AxisColour[8];
 
     void DrawAxis(VuVec &, VuMtx *);
     void DrawRotator(VuVec &);
     void GetAxisLocators(VuVec &, VuVec *, VuMtx *);
-    void Process(EdInputContext &, ClassObjectList &);
-    void Render(ClassObjectList &);
-    void SelectAxis(EdInputContext &, VuVec &, VuVec &, VuVec &, VuMtx *);
-    void SelectRotator(EdInputContext &, VuVec &, VuVec &);
+    virtual i32 Process(EdInputContext &, ClassObjectList &);
+    virtual void Render(ClassObjectList &);
+    i32 SelectAxis(EdInputContext &, VuVec &, VuVec &, VuVec &, VuMtx *);
+    i32 SelectRotator(EdInputContext &, VuVec &, VuVec &);
 };
-struct EdMatrixControl {
-    void AddMenuItem(eduimenu_s *, EdRef *, void *);
+struct EdManMove : EdManipulator {
+    EdManMove();
+    i32 Process(EdInputContext &, ClassObjectList &) override;
+    void Render(ClassObjectList &) override;
+};
+struct EdManRotate : EdManipulator {
+    EdManRotate();
+    i32 Process(EdInputContext &, ClassObjectList &) override;
+    void Render(ClassObjectList &) override;
+    i32 RotateItem(EdInputContext &, ClassObjectList &, i32, i32);
+};
+struct EdManScale : EdManipulator {
+    EdManScale();
+    i32 Process(EdInputContext &, ClassObjectList &) override;
+    void Render(ClassObjectList &) override;
+};
+struct EdMatrixControl : EdControl {
+    eduiitem_s *components[9];
+    void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
     void Destroy();
     EdMatrixControl();
-    void Refresh();
-    void SetMenuItemAttr(i32, eduiitem_s *, eduiiattr_s *, eduiiattr_s *);
-    void cbButton(eduimenu_s *, eduiitem_s *, u32);
-    void cbChanged(eduimenu_s *, eduiitem_s *, u32);
-    void cbSelected(eduimenu_s *, eduiitem_s *, u32);
+    ~EdMatrixControl() override;
+    static void operator delete(void *);
+    void Refresh() override;
+    void SetMenuItemAttr(i32, eduiitem_s *, eduiiattr_s *, eduiiattr_s *) override;
+    static void cbButton(eduimenu_s *, eduiitem_s *, u32);
+    static void cbChanged(eduimenu_s *, eduiitem_s *, u32);
+    static void cbSelected(eduimenu_s *, eduiitem_s *, u32);
 };
 struct EdRef {
     virtual void *GetMemberObject(void *);
@@ -544,21 +627,15 @@ struct EdRegistry {
     void Serialise(EdStream &);
     void SerialiseObjects(EdStream &, EdRegistry *);
 };
-struct EdSfxNameControl {
-    void AddMenuItem(eduimenu_s *, EdRef *, void *);
-    EdSfxNameControl();
-    void cbButton(eduimenu_s *, eduiitem_s *, u32);
-    void cbChanged(eduimenu_s *, eduiitem_s *, u32);
-    void cbSelectSfx(eduimenu_s *, eduiitem_s *, u32);
-};
-struct EdSpecialObjectControl {
+struct EdSpecialObjectControl : EdControl {
+    eduimenu_s *menu;
     EdSpecialObjectControl();
-    void AddMenuItem(eduimenu_s *, EdRef *, void *);
-    void Process(EdInputContext &);
-    void Render();
-    void cbButton(eduimenu_s *, eduiitem_s *, u32);
-    void cbChanged(eduimenu_s *, eduiitem_s *, u32);
-    void cbSelectObject(eduimenu_s *, eduiitem_s *, u32);
+    void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
+    void Process(EdInputContext &) override;
+    void Render() override;
+    static void cbButton(eduimenu_s *, eduiitem_s *, u32);
+    static void cbChanged(eduimenu_s *, eduiitem_s *, u32);
+    static void cbSelectObject(eduimenu_s *, eduiitem_s *, u32);
 };
 struct EdString {
     char *data;
@@ -568,15 +645,43 @@ struct EdString {
 };
 DECOMP_ASSERT(sizeof(EdString) == 4, "EdString size");
 DECOMP_ASSERT(offsetof(EdString, data) == 0, "EdString data offset");
-struct EdStringControl {
-    void AddMenuItem(eduimenu_s *, EdRef *, void *);
+struct EdStringControl : EdControl {
+    void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
     EdStringControl();
+    ~EdStringControl() override;
+    static void operator delete(void *);
     void GetVal(char *, i32);
-    void Refresh();
+    void Refresh() override;
     void SetVal(char const *);
-    void cbChanged(eduimenu_s *, eduiitem_s *, u32);
-    void cbPress(eduimenu_s *, eduiitem_s *, u32);
+    static void cbChanged(eduimenu_s *, eduiitem_s *, u32);
+    static void cbPress(eduimenu_s *, eduiitem_s *, u32);
 };
+struct EdSfxNameControl : EdStringControl {
+    EdSfxNameControl();
+    void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
+    static void cbButton(eduimenu_s *, eduiitem_s *, u32);
+    static void cbChanged(eduimenu_s *, eduiitem_s *, u32);
+    static void cbSelectSfx(eduimenu_s *, eduiitem_s *, u32);
+};
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(EdSfxNameControl) == 0x10, "EdSfxNameControl ABI");
+struct EdClassObjectNameControl : EdStringControl {
+    EdClass *selected_class;
+    void *selected_object;
+    EdRef *selected_reference;
+
+    EdClassObjectNameControl();
+    ~EdClassObjectNameControl() override;
+    static void operator delete(void *);
+    void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
+    void Process(EdInputContext &) override;
+    void Render() override;
+    static void cbButton(eduimenu_s *, eduiitem_s *, u32);
+    static void cbChanged(eduimenu_s *, eduiitem_s *, u32);
+    static void cbSelectClass(eduimenu_s *, eduiitem_s *, u32);
+    static void cbSelectObject(eduimenu_s *, eduiitem_s *, u32);
+};
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(EdClassObjectNameControl) == 0x1c,
+              "EdClassObjectNameControl original size");
 struct EdSystem {
     EdSubSystem *first_subsystem;
     EdSubSystem *last_subsystem;
@@ -588,6 +693,7 @@ struct EdSystem {
     void Render();
     void Reset();
 };
+extern EdSystem theEdSystem;
 struct EdType {
     char *name;
     i32 size;
@@ -629,14 +735,17 @@ DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(EdRegistry, class_count) == 0x24,
               "EdRegistry::class_count 32-bit offset");
 DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(EdRegistry, object_count) == 0x2c,
               "EdRegistry::object_count 32-bit offset");
-struct EdVectorControl {
-    void AddMenuItem(eduimenu_s *, EdRef *, void *);
+struct EdVectorControl : EdControl {
+    eduiitem_s *components[3];
+    void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
     void Destroy();
     EdVectorControl();
-    void Refresh();
-    void cbButton(eduimenu_s *, eduiitem_s *, u32);
-    void cbChanged(eduimenu_s *, eduiitem_s *, u32);
-    void cbSelected(eduimenu_s *, eduiitem_s *, u32);
+    ~EdVectorControl() override;
+    static void operator delete(void *);
+    void Refresh() override;
+    static void cbButton(eduimenu_s *, eduiitem_s *, u32);
+    static void cbChanged(eduimenu_s *, eduiitem_s *, u32);
+    static void cbSelected(eduimenu_s *, eduiitem_s *, u32);
 };
 struct EditorSettings {
     virtual ~EditorSettings() {
@@ -649,32 +758,54 @@ struct EditorSettings {
     void Serialise(EdStream &);
 };
 DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(EditorSettings) == 0xc, "EditorSettings 32-bit size");
+struct EdClassInterfaceVTableObject {
+    void *offset_to_top;
+    void *type_info;
+    EdClassInterfaceVTable methods;
+};
+extern const EdClassInterfaceVTableObject splineHelperVTable asm("_ZTV12SplineHelper");
+extern const EdClassInterfaceVTableObject knotHelperVTable asm("_ZTV10KnotHelper");
 struct KnotHelper {
-    u8 reserved_00[0xc];
+    void *vtable;
+    EdClass *object_class;
+    EdRef *position_ref;
     EdRef *in_tangent_ref;
     EdRef *out_tangent_ref;
 
-    void CreateObject(void *, i32, i32);
+    KnotHelper()
+        : vtable(const_cast<EdClassInterfaceVTable *>(&knotHelperVTable.methods)), object_class(NULL),
+          position_ref(NULL), in_tangent_ref(NULL), out_tangent_ref(NULL) {
+    }
+    ~KnotHelper();
+    void Flush();
+    void *CreateObject(void *, i32, i32);
     void DestroyObject(void *, i32);
-    void DistanceToObject(VuVec &, VuVec &, void *, EdRef **);
-    void GetNextObject(void *);
-    void GetNumObjects();
+    f32 DistanceToObject(VuVec &, VuVec &, void *, EdRef **);
+    void *GetNextObject(void *);
+    i32 GetNumObjects();
     void Process(void *, EdInputContext &);
     void Render(void *, i32);
 };
 struct SplineHelper {
-    u8 reserved_0x00[8];
+    void *vtable;
+    EdClass *object_class;
     SplineObject *first_object;
-    u8 reserved_0x0c[4];
+    SplineObject *last_object;
     i32 object_count;
     i32 auto_generate_points;
 
+    SplineHelper()
+        : vtable(const_cast<EdClassInterfaceVTable *>(&splineHelperVTable.methods)), object_class(NULL),
+          first_object(NULL), last_object(NULL), object_count(0), auto_generate_points(0) {
+    }
+    ~SplineHelper();
+    void Flush();
     void AddMenuItems(eduimenu_s *);
     void ClearLevel(i32);
-    void CreateObject(void *, i32, i32);
+    void *CreateObject(void *, i32, i32);
     void DestroyObject(void *, i32);
-    void Find(char *);
-    void Find(char *, SplineObject **, i32);
+    SplineObject *Find(char *);
+    i32 Find(char *, SplineObject **, i32);
     void *GetNextObject(void *);
     i32 GetNumObjects();
     void Initialise();
@@ -683,11 +814,11 @@ struct SplineHelper {
     void Process(void *, EdInputContext &);
     void Render(void *, i32);
     void SerialiseObject(EdStream &, void *);
-    void cbEdSplineAutoGenPoints(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdSplineReGenPoints(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdSplineReverseSpline(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdSplineSmoothKnot(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdSplineSmoothSpline(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdSplineAutoGenPoints(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdSplineReGenPoints(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdSplineReverseSpline(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdSplineSmoothKnot(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdSplineSmoothSpline(eduimenu_s *, eduiitem_s *, u32);
 };
 struct SplineKnot {
     SplineKnot *next;
@@ -710,7 +841,8 @@ struct SplineKnotList {
 };
 struct SplinePointBlock {
     SplinePointBlock *next;
-    u8 reserved_0x08[8];
+    SplinePointBlock *previous;
+    i32 capacity;
     i32 point_count;
     VuVec *points;
 
@@ -718,6 +850,7 @@ struct SplinePointBlock {
     SplinePointBlock();
     SplinePointBlock(i32);
     virtual ~SplinePointBlock();
+    static void operator delete(void *);
 };
 struct SplinePointList {
     SplinePointBlock *first;
@@ -731,7 +864,7 @@ struct SplinePointList {
     i32 GetPoint(i32, VuVec &);
 };
 struct SplineObject {
-    u8 reserved_0x00[4];
+    virtual ~SplineObject();
     SplineObject *next;
     SplineObject *previous;
     char name[32];
@@ -744,7 +877,9 @@ struct SplineObject {
     i32 drop;
     i32 closed;
 
-    void Clone();
+    SplineObject();
+    static void operator delete(void *);
+    SplineObject *Clone();
     void Draw(i32, i32, i32, float);
     void DropPoint(VuVec &);
     void GenBezierPoints();
@@ -761,13 +896,8 @@ DECOMP_ASSERT(sizeof(SplineObject) == 0x58, "SplineObject size");
 DECOMP_ASSERT(offsetof(SplineObject, points) == 0x38, "SplineObject points offset");
 DECOMP_ASSERT(offsetof(SplineObject, step) == 0x48, "SplineObject step offset");
 DECOMP_ASSERT(offsetof(SplineHelper, auto_generate_points) == 0x14, "SplineHelper automatic generation offset");
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(SplineHelper) == 0x18, "SplineHelper size");
 DECOMP_ASSERT(sizeof(KnotHelper) == 0x14, "KnotHelper size");
 extern SplineHelper theSplineHelper;
 extern KnotHelper theKnotHelper;
-struct SplineTool {
-    void Initialise(variptr_u &, variptr_u &, i32);
-    void Process(EdInputContext &);
-    void Render();
-};
-
 #endif // GAMEAPI_EDTOOLS_TYPES_H

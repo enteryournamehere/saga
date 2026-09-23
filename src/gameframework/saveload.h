@@ -15,6 +15,8 @@ extern "C" {
     extern i32 saveload_cardformatted;
     extern i32 saveload_freespace;
     extern i32 saveload_filecorrupt;
+    extern char id_test[17];
+    extern u8 code_test[16];
 
     extern i32 saveload_slotused[6];
     extern i32 saveload_slotcode[6];
@@ -57,17 +59,17 @@ extern "C" {
     void saveloadASCallEachFrame(void);
     void saveloadASFormat(void);
     void saveloadAutoSave(void);
-    void saveloadCheckCardFormatted(void);
-    void saveloadCheckCardFreeSpace(void);
-    void saveloadCheckCardPresent(void);
-    void saveloadCheckCardType(void);
-    void saveloadCheckKeyCode(void);
-    void saveloadCheckSlotsUsed(void);
-    void saveloadDeleteSlot(void);
-    void saveloadFormatCard(void);
+    i32 saveloadCheckCardFormatted(void);
+    i32 saveloadCheckCardFreeSpace(i32 slot);
+    i32 saveloadCheckCardPresent(void);
+    i32 saveloadCheckCardType(void);
+    i32 saveloadCheckKeyCode(char *id, u8 *code);
+    i32 saveloadCheckSlotsUsed(void);
+    i32 saveloadDeleteSlot(i32 slot);
+    i32 saveloadFormatCard(void);
     void saveloadLoadIcon(void);
-    void saveloadUnFormatCard(void);
-    void saveloadWriteKeyCode(void);
+    i32 saveloadUnFormatCard(void);
+    i32 saveloadWriteKeyCode(char *id, u8 *code);
 #ifdef __cplusplus
 }
 

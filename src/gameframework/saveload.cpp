@@ -28,6 +28,11 @@ i32 saveload_freespace = 0x800;
 i32 saveload_filecorrupt;
 i32 SAVESIZE_ADDITIONAL = 3;
 
+extern "C" {
+    char id_test[17] = "Travellers Tales";
+    u8 code_test[16] = {1, 2, 3, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+}
+
 i32 PCSaveSlot(i32 slot, void *extradata, i32 extradata_size, u32 hash);
 
 i32 saveload_slotused[6] = {0};
@@ -260,47 +265,56 @@ extern "C" {
         STUBBED();
     }
 
-    void saveloadCheckCardFormatted(void) {
-        STUBBED();
+    i32 saveloadCheckCardFormatted(void) {
+        return 1;
     }
 
-    void saveloadCheckCardFreeSpace(void) {
-        STUBBED();
+    i32 saveloadCheckCardFreeSpace(i32) {
+        return 1;
     }
 
-    void saveloadCheckCardPresent(void) {
-        STUBBED();
+    i32 saveloadCheckCardPresent(void) {
+        return 1;
     }
 
-    void saveloadCheckCardType(void) {
-        STUBBED();
+    i32 saveloadCheckCardType(void) {
+        return 1;
     }
 
-    void saveloadCheckKeyCode(void) {
-        STUBBED();
+    i32 saveloadCheckKeyCode(char *, u8 *) {
+        return 0;
     }
 
-    void saveloadCheckSlotsUsed(void) {
-        STUBBED();
+    i32 saveloadCheckSlotsUsed(void) {
+        i32 used = 0;
+        for (i32 slot = 0; slot <= 5; ++slot) {
+            FILE *file = fopen(fullslotname(slot), "rb");
+            if (file) {
+                ++used;
+                fclose(file);
+            }
+        }
+        return used;
     }
 
-    void saveloadDeleteSlot(void) {
-        STUBBED();
+    i32 saveloadDeleteSlot(i32 slot) {
+        remove(slotname(slot));
+        return 1;
     }
 
-    void saveloadFormatCard(void) {
-        STUBBED();
+    i32 saveloadFormatCard(void) {
+        return 1;
     }
 
     void saveloadLoadIcon(void) {
         STUBBED();
     }
 
-    void saveloadUnFormatCard(void) {
-        STUBBED();
+    i32 saveloadUnFormatCard(void) {
+        return 1;
     }
 
-    void saveloadWriteKeyCode(void) {
-        STUBBED();
+    i32 saveloadWriteKeyCode(char *, u8 *) {
+        return 0;
     }
 }

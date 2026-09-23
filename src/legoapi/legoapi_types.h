@@ -3814,7 +3814,7 @@ struct ClassEditor : BaseEditor {
     EdTool *first_tool;
     EdTool *last_tool;
     i32 tool_count;
-    i32 field_1c;
+    EdTool *active_tool;
     EdManipulator *manipulator;
     ClassObjectList selected_objects;
     ClassObject current_object;
@@ -3836,19 +3836,19 @@ struct ClassEditor : BaseEditor {
     void AddMenuItems(eduimenu_s *);
     void ClearLevel(i32);
     void *CreateObject();
-    void CreateObject(ClassObject &);
-    void CreateObject(EdClass *);
-    void CreateObject(i32);
+    i32 CreateObject(ClassObject &);
+    i32 CreateObject(EdClass *);
+    i32 CreateObject(i32);
     void DestroySelectedObjects();
     void DestroySelectedObjectsNow();
     void DrawObjectSphere(ClassObject &, i32);
     i32 Editable(void *, EdClass *, i32);
     void Enter();
     void Exit();
-    void FindNearestObject(VuVec &, ClassObject &, ClassObject &, i32);
-    void FindNearestObject(VuVec &, ClassObject &, i32);
-    void FindNearestObject(VuVec &, VuVec &, ClassObject &, ClassObject &, i32);
-    void FindNearestObject(VuVec &, VuVec &, ClassObject &, i32);
+    i32 FindNearestObject(VuVec &, ClassObject &, ClassObject &, i32);
+    i32 FindNearestObject(VuVec &, ClassObject &, i32);
+    i32 FindNearestObject(VuVec &, VuVec &, ClassObject &, ClassObject &, i32);
+    i32 FindNearestObject(VuVec &, VuVec &, ClassObject &, i32);
     void Flush();
     void FocusSelected();
     void Initialise(variptr_u &, variptr_u &, i32);
@@ -3867,7 +3867,7 @@ struct ClassEditor : BaseEditor {
     void RegisterTool(EdTool &);
     void Render();
     void SelectLED(i32);
-    void SelectObject(ClassObject &, i32);
+    i32 SelectObject(ClassObject &, i32);
     void Serialise(EdStream &);
     void SetMode(i32);
     static void SetViewMenuHilight(eduimenu_s *);
@@ -3882,37 +3882,48 @@ struct ClassEditor : BaseEditor {
     static void cbDestroyObject(eduimenu_s *, eduiitem_s *, u32);
     static void cbEdClassDeleteObject(eduimenu_s *, eduiitem_s *, u32);
     static void cbEdClassExportMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassFileMenu(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassFileMenu(eduimenu_s *, eduiitem_s *, u32);
     static void cbEdClassImportMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassModeMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassNewMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassNewObject(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassRemoveDuplicates(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassSelectClassMenu(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassModeMenu(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassNewMenu(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassNewObject(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassRemoveDuplicates(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassSelectClassMenu(eduimenu_s *, eduiitem_s *, u32);
     static void cbEdClassSelectObject(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassSelectObjectMenu(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassSelectObjectMenu(eduimenu_s *, eduiitem_s *, u32);
     static void cbEdClassSetMode(eduimenu_s *, eduiitem_s *, u32);
     static void cbEdClassSetPinned(eduimenu_s *, eduiitem_s *, u32);
     static void cbEdClassSetSnap(eduimenu_s *, eduiitem_s *, u32);
     static void cbEdClassSetView(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassSnapMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassToolsMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdClassViewMenu(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdCopySelectedObject(EdInputContext &);
-    void cbEdCreateClassNewObject(i32);
-    void cbEdFilterLED(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassSnapMenu(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassToolsMenu(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdClassViewMenu(eduimenu_s *, eduiitem_s *, u32);
+    i32 cbEdCopySelectedObject(EdInputContext &);
+    i32 cbEdCreateClassNewObject(i32);
+    static void cbEdFilterLED(eduimenu_s *, eduiitem_s *, u32);
     void cbEdLevelDeselectAll(eduimenu_s *, eduiitem_s *, u32);
     void cbEdLevelSelectAll(eduimenu_s *, eduiitem_s *, u32);
     static void cbEdPadSetManipulatorMode(eduimenu_s *, eduiitem_s *, u32);
-    void cbFileSelected(eduimenu_s *, eduiitem_s *, u32);
+    static void cbFileSelected(eduimenu_s *, eduiitem_s *, u32);
 };
 DECOMP_ASSERT(offsetof(ClassEditor, selected_objects) == 0x24, "ClassEditor selection offset");
 DECOMP_ASSERT(offsetof(ClassEditor, snap_ray) == 0x50, "ClassEditor snap-ray offset");
 DECOMP_ASSERT(sizeof(ClassEditor) == 0x70, "ClassEditor ABI");
-struct CursorTool {
-    void Initialise(variptr_u &, variptr_u &, i32);
-    void Process(EdInputContext &);
-    void Render();
+struct CursorTool : EdTool {
+    void Initialise(variptr_u &, variptr_u &, i32) override;
+    const char *GetName() override {
+        return "Cursor Tool";
+    }
+    i32 Process(EdInputContext &) override;
+    void Render() override;
+};
+struct SplineTool : EdTool {
+    void Initialise(variptr_u &, variptr_u &, i32) override;
+    const char *GetName() override {
+        return "Spline Tool";
+    }
+    i32 Process(EdInputContext &) override;
+    void Render() override;
 };
 struct Fade : FadeBase {
     FADETYPE_VALUE GetFadeType() const override;
@@ -5001,13 +5012,16 @@ DECOMP_ASSERT(offsetof(LEVER_s, position) == 0x6c, "LEVER position offset");
 DECOMP_ASSERT(offsetof(LEVER_s, flags) == 0x9c, "LEVER flags offset");
 struct LevelEditorScene {
     char name[0x20];
-    u8 reserved_0x20[0x80];
+    char directory[0x80];
     nugscn_s *scene;
     i32 active : 1;
-    u32 editable : 1;
-    u32 reserved_flags : 30;
+    i32 editable : 1;
+    i32 saved : 1;
+    u32 reserved_flags : 29;
 };
 DECOMP_ASSERT(sizeof(LevelEditorScene) == 0xa8, "LevelEditorScene ABI");
+DECOMP_ASSERT(offsetof(LevelEditorScene, directory) == 0x20, "LevelEditorScene directory offset");
+DECOMP_ASSERT(sizeof(LevelEditorScene::directory) == 0x80, "LevelEditorScene directory size");
 
 struct LevelEditor : BaseThing {
     f32 background_colour[4];
@@ -5018,11 +5032,12 @@ struct LevelEditor : BaseThing {
     i32 field_0x30;
     f32 overlay_alpha;
     i32 field_0x38;
-    i32 field_0x3c;
+    i32 editor_buffer_from_front;
     EdInputContext input;
     u8 reserved_0x298;
     u8 destroying_objects;
-    u8 reserved_0x29a[6];
+    u8 reserved_0x29a[2];
+    i32 editable_scene_count;
     i32 reset_pending;
     LevelEditorScene scenes[10]; // 0x2a4
     BaseEditor *first_editor;
@@ -5031,9 +5046,13 @@ struct LevelEditor : BaseThing {
     BaseEditor *active_editor;
     char save_filename[0x80];
     char editor_filename[0x80];
-    u8 reserved_0xa44[8];
-    u16 current_led_file;
-    u8 reserved_0xa4e[0xe];
+    i32 file_version;
+    i32 multi_load_active;
+    i16 current_led_file;
+    u8 reserved_0xa4e[2];
+    variptr_u editor_buffer_cursor;
+    variptr_u editor_buffer_begin;
+    variptr_u editor_buffer_end;
     char text_buffer[0x400];
     i32 text_length;
     char *info_text[32];
@@ -5082,22 +5101,23 @@ struct LevelEditor : BaseThing {
     i32 IsActiveScene(nugscn_s *);
     i32 IsEditable(i32);
     LevelEditor();
-    void Load(char *, variptr_u *, variptr_u *, i32);
-    void LoadState(variptr_u *, variptr_u *, variptr_u *, variptr_u *, variptr_u *, variptr_u *);
+    i32 Load(char *, variptr_u *, variptr_u *, i32);
+    i32 LoadState(variptr_u *, variptr_u *, variptr_u *, variptr_u *, variptr_u *, variptr_u *);
     void ProcessEvenWhenPaused(ThingProcessData *) override;
-    void ReadStream(EdFileInputStream &);
+    i32 ReadStream(EdFileInputStream &);
     void RegisterEditor(BaseEditor &);
     void Reset();
-    void Save();
-    void SaveState(i32, variptr_u *, variptr_u *);
-    void SaveState(variptr_u *, variptr_u *);
+    i32 Save();
+    i32 SaveState(i32, variptr_u *, variptr_u *);
+    i32 SaveState(variptr_u *, variptr_u *);
     void SetNextMenu(eduimenu_s *);
     void SetPadText(i32, char *);
     void SetSaveFilename(char *);
-    void WriteStream(EdFileOutputStream &);
+    i32 WriteStream(EdFileOutputStream &);
 };
 DECOMP_ASSERT(offsetof(LevelEditor, reset_pending) == 0x2a0, "LevelEditor reset_pending offset");
 DECOMP_ASSERT(offsetof(LevelEditor, destroying_objects) == 0x299, "LevelEditor destruction flag offset");
+DECOMP_ASSERT(offsetof(LevelEditor, editable_scene_count) == 0x29c, "LevelEditor editable scene count offset");
 DECOMP_ASSERT(offsetof(LevelEditor, scenes) == 0x2a4, "LevelEditor scenes offset");
 DECOMP_ASSERT(offsetof(LevelEditor, save_filename) == 0x944, "LevelEditor save filename offset");
 DECOMP_ASSERT(offsetof(LevelEditor, text_buffer) == 0xa5c, "LevelEditor text buffer offset");
@@ -5392,31 +5412,43 @@ DECOMP_ASSERT(offsetof(Placeable, name) == 0xc, "Placeable name offset");
 DECOMP_ASSERT(offsetof(Placeable, params) == 0x10, "Placeable params offset");
 struct PlaceableHelper {
     i32 object_type_count;
+    i32 iteration_object_type;
+    struct ObjectType {
+        char *name;
+        PlaceableInterface *interface;
+    } object_types[16];
 
-    void Find(char *);
-    void Find(char *, Placeable **, i32);
-    void FindObject(char *);
-    void GetNextObject(void *);
-    void GetNextObject(void *, i32 (*)(void *));
+    Placeable *Find(char *);
+    i32 Find(char *, Placeable **, i32);
+    Placeable *FindObject(char *);
+    void *GetNextObject(void *);
+    void *GetNextObject(void *, i32 (*)(void *));
     void Initialise();
-    void IsEditorObject(ClassObject &);
+    i32 IsEditorObject(ClassObject &);
     PlaceableHelper();
     void RegisterObjectType(char *, PlaceableInterface *);
 };
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(PlaceableHelper) == 0x88, "PlaceableHelper size");
+extern PlaceableHelper thePlaceableHelper;
 struct PlaceableInterface {
-    void DebugOutputObjects();
-    void Find(char *);
-    void Find(char *, Placeable **, i32);
+    i32 DebugOutputObjects();
+    Placeable *Find(char *);
+    i32 Find(char *, Placeable **, i32);
 };
-struct PlaceableNameControl {
-    void AddMenuItem(eduimenu_s *, EdRef *, void *);
+struct PlaceableNameControl : EdStringControl {
+    void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
     PlaceableNameControl();
-    void Process(EdInputContext &);
-    void Render();
-    void cbButton(eduimenu_s *, eduiitem_s *, u32);
-    void cbChanged(eduimenu_s *, eduiitem_s *, u32);
-    void cbSelectObject(eduimenu_s *, eduiitem_s *, u32);
+    ~PlaceableNameControl() override;
+    static void operator delete(void *);
+    void Process(EdInputContext &) override;
+    void Render() override;
+    static void cbButton(eduimenu_s *, eduiitem_s *, u32);
+    static void cbChanged(eduimenu_s *, eduiitem_s *, u32);
+    static void cbSelectObject(eduimenu_s *, eduiitem_s *, u32);
+
+    i32 reserved_10;
 };
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(PlaceableNameControl) == 0x14, "PlaceableNameControl size");
 // Pod race net packet (podrace_netpacket).
 struct PODRACENETPACKET_s {
     char pad_0x00[0xc];
@@ -5496,7 +5528,7 @@ struct PropertyTool : EdTool {
     void AddPropertyMenuItems(eduimenu_s *, EdClass *, void *, eduiitem_s *);
     void AutoLocateMenu(PropertyMenu *);
     void BringToFront(PropertyMenu *);
-    void CreatePropertyMenu(ClassObject &);
+    PropertyMenu *CreatePropertyMenu(ClassObject &);
     PropertyMenu *FindItemMenu(PropertyMenu *, ClassItem *);
     PropertyMenu *GetActiveMenu(PropertyMenu *);
     void GetClassName(EdRef *, char *);
@@ -5515,7 +5547,7 @@ struct PropertyTool : EdTool {
     void RefreshMenuControls(PropertyMenu *);
     void Render();
     void RenderMenu(PropertyMenu *);
-    void RetrievePropertyMenu(ClassObject *, PropertyMenuList *);
+    PropertyMenu *RetrievePropertyMenu(ClassObject *, PropertyMenuList *);
     void SelectAttr(i32);
     void SetDefaultActiveMenu(PropertyMenu *);
     void SetMenuControl(eduimenu_s *, EdControl *);
@@ -5543,44 +5575,48 @@ struct SNIPER_s {
     float state;      // 0x1c
 }; // 0x20 bytes: the original strides this array by 0x20
 
-struct SceneInstance {
-    u8 reserved_0x00[0x34];
-    NUMTX initial_transform;
-    NUMTX current_transform;
-    i32 visibility;
+struct SceneObjectHelperVTableObject {
+    void *offset_to_top;
+    void *type_info;
+    EdClassInterfaceVTable methods;
+    void (*sub_render)(SceneObjectHelper *);
+    i32 subsystem_offset_to_top;
+    void *subsystem_type_info;
+    void (*subsystem_methods[6])();
+};
+extern const SceneObjectHelperVTableObject sceneObjectHelperVTable asm("_ZTV17SceneObjectHelper");
 
-    VuVec const *GetCurrentPosition() const;
-    VuMtx const *GetCurrentTransform() const;
-    VuVec const *GetInitialPosition() const;
-    VuMtx const *GetInitialTransform() const;
-    i32 GetVisibility() const;
-    void Render(VuMtx const *) const;
-    SceneInstance();
-    void SetCurrentPosition(VuVec const *);
-    void SetCurrentTransform(VuMtx const *);
-    void SetInitialPosition(VuVec const *);
-    void SetInitialTransform(VuMtx const *);
-    void SetVisibility(i32);
-};
-struct SceneObject {
-    void Clone(i32) const;
-    SceneObject();
-};
 struct SceneObjectHelper {
-    u8 reserved_0x00[8];
+    EdClassInterface class_interface;
     i32 scene_id;
-    u8 reserved_0x0c[0x60];
+    EdSubSystem subsystem;
+    u8 reserved_0x18[4];
+    SceneObject *scenes[10];
+    i32 scene_counts[10];
     i32 scene_object_count;
-    u8 reserved_0x70[0x30];
+    i32 iteration_object_index;
+    i32 iteration_scene_index;
+    char scene_filter[32];
+    SceneInstance *owned_first;
+    SceneInstance *owned_last;
     i32 owned_object_count;
-    u8 reserved_0xa4[0x0c];
+    i32 show_hidden_solid;
+    i32 show_hidden_wire;
+    i32 show_owned_objects;
+
+    SceneObjectHelper() {
+        class_interface.vtable = const_cast<EdClassInterfaceVTable *>(&sceneObjectHelperVTable.methods);
+        *reinterpret_cast<void **>(&subsystem) =
+            const_cast<void *>(static_cast<void const *>(&sceneObjectHelperVTable.subsystem_methods));
+    }
+    ~SceneObjectHelper();
 
     void AddMenuItems(eduimenu_s *);
     void ClearLevel(i32);
-    void CreateObject(void *, i32, i32);
+    void *CreateObject(void *, i32, i32);
     void DestroyObject(void *, i32);
     void Flush();
-    void GetNextObject(void *);
+    void *GetNextObject(void *);
     i32 GetNumObjects();
     void Initialise();
     void PostLoadInitialisation(MemoryBuffer *, MemoryBuffer *);
@@ -5588,13 +5624,20 @@ struct SceneObjectHelper {
     void SetSceneFilter(char *);
     void SubRender();
     void UpdateLists(MemoryBuffer *, MemoryBuffer *);
-    void cbEdSceneObjectShowHiddenSolid(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdSceneObjectShowHiddenWire(eduimenu_s *, eduiitem_s *, u32);
-    void cbEdSceneObjectShowOwnedObjects(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdSceneObjectShowHiddenSolid(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdSceneObjectShowHiddenWire(eduimenu_s *, eduiitem_s *, u32);
+    static void cbEdSceneObjectShowOwnedObjects(eduimenu_s *, eduiitem_s *, u32);
 };
 
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(SceneObjectHelperVTableObject) == 0xa8, "SceneObjectHelper vtable size");
+DECOMP_ASSERT(sizeof(void *) != 4 || offsetof(SceneObjectHelperVTableObject, subsystem_methods) == 0x90,
+              "SceneObjectHelper secondary vtable offset");
 DECOMP_ASSERT(sizeof(SceneObjectHelper) == 0xb0, "SceneObjectHelper size");
 DECOMP_ASSERT(offsetof(SceneObjectHelper, scene_id) == 8, "SceneObjectHelper scene ID offset");
+DECOMP_ASSERT(offsetof(SceneObjectHelper, scenes) == 0x1c, "SceneObjectHelper scene-array offset");
+DECOMP_ASSERT(offsetof(SceneObjectHelper, scene_counts) == 0x44, "SceneObjectHelper scene-count offset");
+DECOMP_ASSERT(offsetof(SceneObjectHelper, iteration_object_index) == 0x70, "SceneObjectHelper iterator offset");
+DECOMP_ASSERT(offsetof(SceneObjectHelper, scene_filter) == 0x78, "SceneObjectHelper filter offset");
 extern SceneObjectHelper theSceneObjectHelper;
 
 struct SpecialObject : Placeable {
@@ -5627,6 +5670,39 @@ struct SpecialObject : Placeable {
 };
 DECOMP_ASSERT(sizeof(SpecialObject) == 0x24, "SpecialObject size");
 DECOMP_ASSERT(offsetof(SpecialObject, special) == 0x18, "SpecialObject special handle offset");
+struct SceneObject : SpecialObject {
+    i32 editor_owned;
+    i32 reserved_0x28;
+
+    Placeable *Clone(i32) const override;
+    SceneObject();
+};
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(SceneObject) == 0x2c, "SceneObject size");
+struct SceneInstance : SceneObject {
+    SceneInstance *next;
+    SceneInstance *previous;
+    NUMTX initial_transform;
+    NUMTX current_transform;
+    i32 visibility;
+
+    static void operator delete(void *pointer);
+
+    char const *GetName() const override;
+    void SetName(char const *) override;
+    VuVec const *GetCurrentPosition() const override;
+    VuMtx const *GetCurrentTransform() const override;
+    VuVec const *GetInitialPosition() const override;
+    VuMtx const *GetInitialTransform() const override;
+    i32 GetVisibility() const override;
+    void Render(VuMtx const *) const override;
+    SceneInstance();
+    void SetCurrentPosition(VuVec const *) override;
+    void SetCurrentTransform(VuMtx const *) override;
+    void SetInitialPosition(VuVec const *) override;
+    void SetInitialTransform(VuMtx const *) override;
+    void SetVisibility(i32) override;
+};
+DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(SceneInstance) == 0xb8, "SceneInstance size");
 struct TELEPORT_s {
     char name[0x40];
     struct nugspline_s *path;

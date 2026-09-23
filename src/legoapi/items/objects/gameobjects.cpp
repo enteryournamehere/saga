@@ -5524,7 +5524,7 @@ void ThingManager::cbEdTimingSelect(eduimenu_s *menu, eduiitem_s *item, u32) {
             edTimingMenu = NULL;
         } else {
             i32 index = 0;
-            for (eduiitem_s *entry = menu->first->next; entry != NULL; entry = entry->next) {
+            for (eduiitem_s *entry = menu->first; entry != NULL; entry = entry->next) {
                 entry->highlighted = index < 3 ? 0 : enabled;
                 ++index;
             }
@@ -5571,6 +5571,23 @@ i32 ThingManager::edTimingProc(float delta_time, nupad_s *pad) {
 
 void ThingManager::edTimingRender() {
     eduiMenuRender(edTimingMenu);
+}
+
+extern "C" {
+    ed_module_s edTimingDesc = {NULL,
+                                NULL,
+                                "Timings",
+                                ThingManager::edTimingInit,
+                                NULL,
+                                ThingManager::edTimingEnter,
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL,
+                                0x656d6974,
+                                ThingManager::edTimingProc,
+                                ThingManager::edTimingRender,
+                                NULL};
 }
 
 i32 SpecialObject::Exists() const {

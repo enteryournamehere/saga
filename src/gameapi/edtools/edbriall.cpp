@@ -73,12 +73,6 @@ EDBRI_USED_MENU(edbricbCancelOptMenu);
 #undef EDBRI_USED_ITEM
 #undef EDBRI_USED_MENU
 
-static void edbriAttachMenu(eduimenu_s *parent, eduimenu_s *child) {
-    eduiMenuAttach(parent, child);
-    child->x = parent->x + 10;
-    child->y = parent->y + 40;
-}
-
 static void edbricbSetPostInstanceType(eduimenu_s *, eduiitem_s *item, u32) {
     edbri_post_instance_type = item->data;
 }
@@ -135,7 +129,9 @@ static void edbricbDpadModeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
                     eduiItemCheckCreate(0, edblack, edbri_mode == 0, 1, edbricbSetDpadMode, "Bridge Orient"));
     eduiMenuAddItem(edbri_dpadmode_menu,
                     eduiItemCheckCreate(1, edblack, edbri_mode == 1, 1, edbricbSetDpadMode, "Bridge Size"));
-    edbriAttachMenu(parent, edbri_dpadmode_menu);
+    eduiMenuAttach(parent, edbri_dpadmode_menu);
+    edbri_dpadmode_menu->x = parent->x + 10;
+    edbri_dpadmode_menu->y = parent->y + 40;
 }
 static void edbricbPlankCountMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     edbri_plankcount_menu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, edbricbCancelPlankCountMenu, "Plank Count");
@@ -145,7 +141,9 @@ static void edbricbPlankCountMenu(eduimenu_s *parent, eduiitem_s *, u32) {
                     eduiItemSliderCreateInt(0, edblack, 0, edbricbSetPlankCount, 1, 23, edbri_planks, "Plank Count"));
     eduiMenuAddItem(edbri_plankcount_menu, eduiItemSliderCreateInt(0, edblack, 0, edbricbSetPostInterval, 1, 23,
                                                                    edbri_post_interval, "Post Interval"));
-    edbriAttachMenu(parent, edbri_plankcount_menu);
+    eduiMenuAttach(parent, edbri_plankcount_menu);
+    edbri_plankcount_menu->x = parent->x + 10;
+    edbri_plankcount_menu->y = parent->y + 40;
 }
 
 static void edbricbPostInstanceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
@@ -159,13 +157,18 @@ static void edbricbPostInstanceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     for (i32 i = 0; i < count; ++i) {
         nuhspecial_s special;
         NuGScnGetSpecial(&special, edbits_base_scene, i);
-        eduiMenuAddItem(edbri_postinstance_menu,
-                        eduiItemCheckCreate(i, edblack, edbri_post_instance_type == i, 1, edbricbSetPostInstanceType,
-                                            NuSpecialGetName(&special)));
-        if (edbri_post_instance_type == i)
+        if (edbri_post_instance_type == i) {
+            eduiMenuAddItem(edbri_postinstance_menu, eduiItemCheckCreate(i, edblack, 1, 1, edbricbSetPostInstanceType,
+                                                                         NuSpecialGetName(&special)));
             edbri_postinstance_menu->selected = edui_last_item;
+        } else {
+            eduiMenuAddItem(edbri_postinstance_menu, eduiItemCheckCreate(i, edblack, 0, 1, edbricbSetPostInstanceType,
+                                                                         NuSpecialGetName(&special)));
+        }
     }
-    edbriAttachMenu(parent, edbri_postinstance_menu);
+    eduiMenuAttach(parent, edbri_postinstance_menu);
+    edbri_postinstance_menu->x = parent->x + 10;
+    edbri_postinstance_menu->y = parent->y + 40;
 }
 static void edbricbPlankInstanceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     edbri_plankinstance_menu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, edbricbCancelPlankInstanceMenu, "Plank Select");
@@ -178,13 +181,18 @@ static void edbricbPlankInstanceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     for (i32 i = 0; i < count; ++i) {
         nuhspecial_s special;
         NuGScnGetSpecial(&special, edbits_base_scene, i);
-        eduiMenuAddItem(edbri_plankinstance_menu,
-                        eduiItemCheckCreate(i, edblack, edbri_plank_instance_type == i, 1, edbricbSetPlankInstanceType,
-                                            NuSpecialGetName(&special)));
-        if (edbri_plank_instance_type == i)
+        if (edbri_plank_instance_type == i) {
+            eduiMenuAddItem(edbri_plankinstance_menu, eduiItemCheckCreate(i, edblack, 1, 1, edbricbSetPlankInstanceType,
+                                                                          NuSpecialGetName(&special)));
             edbri_plankinstance_menu->selected = edui_last_item;
+        } else {
+            eduiMenuAddItem(edbri_plankinstance_menu, eduiItemCheckCreate(i, edblack, 0, 1, edbricbSetPlankInstanceType,
+                                                                          NuSpecialGetName(&special)));
+        }
     }
-    edbriAttachMenu(parent, edbri_plankinstance_menu);
+    eduiMenuAttach(parent, edbri_plankinstance_menu);
+    edbri_plankinstance_menu->x = parent->x + 10;
+    edbri_plankinstance_menu->y = parent->y + 40;
 }
 
 static void edbricbSetBridgeTension(eduimenu_s *, eduiitem_s *item, u32) {
@@ -219,8 +227,7 @@ static void edbricbSetRopeColour(eduimenu_s *menu, eduiitem_s *item, u32) {
     bridge.blue = static_cast<u8>(static_cast<i32>(colour->blue * 255.0f));
     edbriBridgeUpdate(edbri_nearest, edbits_base_scene);
     eduimenu_s *parent = menu->parent;
-    if (parent)
-        eduiMenuDetach(menu);
+    eduiMenuDetach(menu);
     if (menu->callback)
         menu->callback(menu, parent);
 }
@@ -232,7 +239,9 @@ static void edbricbRopeColourMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     edbridge_s &bridge = edBridges[edbri_nearest];
     eduiItemColourPickSetRGB(static_cast<edui_colour_pick_s *>(edui_last_item), bridge.red / 255.0f,
                              bridge.green / 255.0f, bridge.blue / 255.0f);
-    edbriAttachMenu(parent, edbri_ropecolour_menu);
+    eduiMenuAttach(parent, edbri_ropecolour_menu);
+    edbri_ropecolour_menu->x = parent->x + 10;
+    edbri_ropecolour_menu->y = parent->y + 40;
 }
 static void edbricbBridgePropertiesMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     if (edbri_nearest == -1)
@@ -241,22 +250,28 @@ static void edbricbBridgePropertiesMenu(eduimenu_s *parent, eduiitem_s *, u32) {
         eduiMenuCreate(70, 70, 180, 250, ed_fnt, edbricbCancelBridgePropertiesMenu, "Bridge Properties");
     if (!edbri_bridgeproperties_menu)
         return;
-    edbridge_s &bridge = edBridges[edbri_nearest];
-    eduiMenuAddItem(edbri_bridgeproperties_menu, eduiItemSliderCreate(0, edblack, 0, edbricbSetBridgeTension, 0.0f,
-                                                                      1.0f, bridge.field_28, "Tension"));
     eduiMenuAddItem(edbri_bridgeproperties_menu,
-                    eduiItemSliderCreate(0, edblack, 0, edbricbSetBridgeDamp, 0.0f, 1.0f, bridge.field_2c, "Damp"));
-    eduiMenuAddItem(edbri_bridgeproperties_menu, eduiItemSliderCreate(0, edblack, 0, edbricbSetBridgeGravity, -0.1f,
-                                                                      0.2f, bridge.field_30, "Gravity"));
-    eduiMenuAddItem(edbri_bridgeproperties_menu, eduiItemSliderCreate(0, edblack, 0, edbricbSetBridgePlrweight, 0.0f,
-                                                                      10.0f, bridge.field_34, "Plrweight"));
-    eduiMenuAddItem(edbri_bridgeproperties_menu, eduiItemSliderCreate(0, edblack, 0, edbricbSetBridgeRopeheight, 0.0f,
-                                                                      2.0f, bridge.field_38, "Rope Height"));
-    eduiMenuAddItem(edbri_bridgeproperties_menu, eduiItemSliderCreate(0, edblack, 0, edbricbSetBridgeStability, 0.0f,
-                                                                      10.0f, bridge.field_3c, "Stability"));
+                    eduiItemSliderCreate(0, edblack, 0, edbricbSetBridgeTension, 0.0f, 1.0f,
+                                         edBridges[edbri_nearest].field_28, "Tension"));
+    eduiMenuAddItem(edbri_bridgeproperties_menu, eduiItemSliderCreate(0, edblack, 0, edbricbSetBridgeDamp, 0.0f, 1.0f,
+                                                                      edBridges[edbri_nearest].field_2c, "Damp"));
+    eduiMenuAddItem(edbri_bridgeproperties_menu,
+                    eduiItemSliderCreate(0, edblack, 0, edbricbSetBridgeGravity, -0.1f, 0.2f,
+                                         edBridges[edbri_nearest].field_30, "Gravity"));
+    eduiMenuAddItem(edbri_bridgeproperties_menu,
+                    eduiItemSliderCreate(0, edblack, 0, edbricbSetBridgePlrweight, 0.0f, 10.0f,
+                                         edBridges[edbri_nearest].field_34, "Plrweight"));
+    eduiMenuAddItem(edbri_bridgeproperties_menu,
+                    eduiItemSliderCreate(0, edblack, 0, edbricbSetBridgeRopeheight, 0.0f, 2.0f,
+                                         edBridges[edbri_nearest].field_38, "Rope Height"));
+    eduiMenuAddItem(edbri_bridgeproperties_menu,
+                    eduiItemSliderCreate(0, edblack, 0, edbricbSetBridgeStability, 0.0f, 10.0f,
+                                         edBridges[edbri_nearest].field_3c, "Stability"));
     eduiMenuAddItem(edbri_bridgeproperties_menu,
                     eduiItemSelCreate(1, edblack, 0, 0, edbricbRopeColourMenu, "Rope Colour..."));
-    edbriAttachMenu(parent, edbri_bridgeproperties_menu);
+    eduiMenuAttach(parent, edbri_bridgeproperties_menu);
+    edbri_bridgeproperties_menu->x = parent->x + 10;
+    edbri_bridgeproperties_menu->y = parent->y + 40;
 }
 
 static void edbriMakePath(char *path) {
@@ -357,12 +372,9 @@ extern "C" i32 edbriLoadPage(char *path, void *gscn) {
 }
 
 void edbriDoInput(nupad_s *pad) {
-    bool camera_locked = (pad->digital_buttons & 0x100) != 0;
-    if (!camera_locked) {
+    if ((pad->digital_buttons & 0x100) == 0)
         edcamMove(pad);
-        camera_locked = (pad->digital_buttons & 0x100) != 0;
-    }
-    if (camera_locked) {
+    if (pad->digital_buttons & 0x100) {
         if (edbri_nearest == -1) {
             edbriDetermineNearest(-1.0f);
         } else {
@@ -398,7 +410,7 @@ void edbriDoInput(nupad_s *pad) {
         }
     }
     edcamGetPosAng(&edbri_cam_pos, &edbri_cam_ax, &edbri_cam_ay);
-    if (!camera_locked) {
+    if ((pad->digital_buttons & 0x100) == 0) {
         const u32 pressed = pad->digital_buttons_pressed;
         if (pressed & 0x80) {
             edbri_options_menu = eduiMenuCreate(70, 70, 220, 300, ed_fnt, edbricbCancelOptMenu, "Options");
@@ -433,7 +445,7 @@ void edbriDoInput(nupad_s *pad) {
         }
     }
     if (edbri_mode == 0) {
-        edbri_roty += pad->analog_left_pad_right - pad->analog_left_pad_left;
+        edbri_roty = edbri_roty + pad->analog_left_pad_right - pad->analog_left_pad_left;
         i32 rotation = edbri_rotz + pad->analog_left_pad_up;
         if (rotation > 0x4000)
             rotation = 0x2000;

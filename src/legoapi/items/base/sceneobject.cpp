@@ -204,8 +204,7 @@ template <typename Ref>
 static void add_scene_reference(EdClass *object_class, char *type, char *name, i32 offset, i32 size, i32 attributes,
                                 EdControl *control = NULL) {
     void *memory = theMemoryManager.AllocPool(sizeof(Ref), 1);
-    Ref *reference = new (memory) Ref();
-    static_cast<EdRef &>(*reference) = EdRef(type, name, offset, size, attributes, control, 0);
+    Ref *reference = new (memory) Ref(type, name, offset, size, attributes, control, 0);
     object_class->AddType(reference);
 }
 
@@ -351,7 +350,8 @@ void *SceneObjectHelper::GetNextObject(void *item) {
                 reinterpret_cast<u8 *>(scenes[iteration_scene_index]) + iteration_object_index * sizeof(SceneObject));
             if (object->reserved_0x28 == 0) {
                 if (scene_filter[0] == 0 || NuStrIStr(const_cast<char *>(object->GetName()), scene_filter) == NULL)
-                    return object;
+                    return reinterpret_cast<SceneObject *>(reinterpret_cast<u8 *>(scenes[iteration_scene_index]) +
+                                                           iteration_object_index * sizeof(SceneObject));
             }
             ++iteration_object_index;
         }
@@ -380,13 +380,13 @@ void SceneObjectHelper::Initialise() {
                                                 0, object_control);
 
         void *visible_memory = theMemoryManager.AllocPool(sizeof(EdEnumControl), 1);
-        EdEnumControl *visible_control = new (visible_memory) EdEnumControl();
+        EdEnumControl *visible_control = new (visible_memory) EdEnumControl;
         visible_control->items = EdEnumControl::YesNoItems;
         add_scene_reference<EdRefSpecialObject>(object_class, "Int", "Visible", static_cast<i32>(0x80000009), 0, 0,
                                                 visible_control);
 
         void *collision_memory = theMemoryManager.AllocPool(sizeof(EdEnumControl), 1);
-        EdEnumControl *collision_control = new (collision_memory) EdEnumControl();
+        EdEnumControl *collision_control = new (collision_memory) EdEnumControl;
         collision_control->items = EdEnumControl::YesNoItems;
         add_scene_reference<EdRefSpecialObject>(object_class, "Int", "Collision", static_cast<i32>(0x8000000a), 0, 0,
                                                 collision_control);
@@ -408,9 +408,9 @@ void SceneObjectHelper::PostLoadInitialisation(MemoryBuffer *, MemoryBuffer *) {
 }
 
 void SceneObjectHelper::PreLoadInitialisation(MemoryBuffer *, MemoryBuffer *) {
-    i32 *count_slot = scene_counts;
-    for (i32 level = 0; level < 10; ++level, ++count_slot) {
-        SceneObject **scene_slot = reinterpret_cast<SceneObject **>(count_slot - 10);
+    for (i32 level = 0; level < 10; ++level) {
+        i32 *count_slot = &scene_counts[level];
+        SceneObject **scene_slot = &scenes[level];
         nugscn_s *scene = theLevelEditor.GetScene(level);
         if (scene != NULL && *count_slot == 0) {
             *count_slot = NuGScnNumSpecials(scene);
@@ -432,12 +432,13 @@ void SceneObjectHelper::PreLoadInitialisation(MemoryBuffer *, MemoryBuffer *) {
     }
 
     scene_object_count = 0;
-    count_slot = scene_counts;
+    i32 *count_slot = scene_counts;
     for (i32 level = 0; level < 10; ++level, ++count_slot) {
         SceneObject *object = *reinterpret_cast<SceneObject **>(count_slot - 10);
         nugscn_s *scene = theLevelEditor.GetScene(level);
         if (scene != NULL) {
-            for (i32 index = 0; index < *count_slot; ++index) {
+            const i32 count = *count_slot;
+            for (i32 index = 0; index < count; ++index) {
                 NuGScnGetSpecial(&object->special, scene, index);
                 object->attributes = 0x12400000;
                 object->led_file = level;

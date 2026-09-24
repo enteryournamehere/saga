@@ -85,12 +85,30 @@ void cbFileSaveEffects(eduimenu_s *parent, eduiitem_s *, u32) {
     char level_directory[256];
     char level_name[256];
     char level_extension[256];
-    strcpy(general_directory, edbits_general_save_directory[0] ? edbits_general_save_directory : ".");
-    strcpy(general_name, edbits_general_save_name[0] ? edbits_general_save_name : "particle");
-    strcpy(general_extension, edbits_general_save_extension[0] ? edbits_general_save_extension : "ptl");
-    strcpy(level_directory, edbits_level_save_directory[0] ? edbits_level_save_directory : ".");
-    strcpy(level_name, edbits_level_save_name[0] ? edbits_level_save_name : "particle");
-    strcpy(level_extension, edbits_level_save_extension[0] ? edbits_level_save_extension : "ptl");
+    if (!edbits_general_save_directory[0])
+        strcpy(general_directory, ".");
+    else
+        strcpy(general_directory, edbits_general_save_directory);
+    if (!edbits_general_save_name[0])
+        strcpy(general_name, "particle");
+    else
+        strcpy(general_name, edbits_general_save_name);
+    if (!edbits_general_save_extension[0])
+        strcpy(general_extension, "ptl");
+    else
+        strcpy(general_extension, edbits_general_save_extension);
+    if (!edbits_level_save_directory[0])
+        strcpy(level_directory, ".");
+    else
+        strcpy(level_directory, edbits_level_save_directory);
+    if (!edbits_level_save_name[0])
+        strcpy(level_name, "particle");
+    else
+        strcpy(level_name, edbits_level_save_name);
+    if (!edbits_level_save_extension[0])
+        strcpy(level_extension, "ptl");
+    else
+        strcpy(level_extension, edbits_level_save_extension);
 
     char filename[256];
     char backup[256];
@@ -375,7 +393,7 @@ void edppStartPage(i32 page) {
                 goto page_started;
         }
         particle->instance_id = -1;
-        particle->effect_index = LookupDebrisEffectPage(particle->name, static_cast<i8>(page));
+        particle->effect_index = LookupDebrisEffectPage(edpp_ptls[index].name, static_cast<i8>(page));
         edppStartSingleEffect(index);
         if (particle->instance_id == -1)
             particle->instance_id = 99999;
@@ -389,7 +407,7 @@ static void edptlcbStartPage(eduimenu_s *, eduiitem_s *item, u32) {
     edppStartPage(static_cast<i8>(item->data));
 }
 static void edptlcbBounceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
-    u32 colours[4] = {0xc479c000, 0xc479c000, 0xc479c000, 0xc479c000};
+    u32 colours[4] __attribute__((aligned(16))) = {0xc479c000, 0xc479c000, 0xc479c000, 0xc479c000};
     if (edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)
         return;
     debkeydatatype_s *key = &debkeydata[edpp_ptls[edpp_nearest].instance_id];
@@ -525,15 +543,14 @@ static void edptlcbSwitchMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     u32 colours[4] = {0xc479c000, 0xc479c000, 0xc479c000, 0xc479c000};
     if (edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)
         return;
-    edpp_particle_s *particle = &edpp_ptls[edpp_nearest];
     edptl_switch_menu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, edptlcbCancelSwitchMenu, "Switch Menu");
     if (edptl_switch_menu == NULL)
         return;
     eduiMenuAddItem(edptl_switch_menu, eduiItemSelCreate(1, colours, 0, 0, edptlcbSwitchTypeMenu, "Switch Type..."));
     eduiMenuAddItem(edptl_switch_menu, eduiItemSliderCreateInt(0, colours, 0, edptlcbSetSwitchId, -1, 129,
-                                                               particle->switch_id, "Switch ID"));
+                                                               edpp_ptls[edpp_nearest].switch_id, "Switch ID"));
     eduiMenuAddItem(edptl_switch_menu, eduiItemSliderCreate(0, colours, 0, edptlcbSetSwitchVar, 0.0f, 20.0f,
-                                                            particle->switch_variable, "Switch Var"));
+                                                            edpp_ptls[edpp_nearest].switch_variable, "Switch Var"));
     eduiMenuAttach(parent, edptl_switch_menu);
     edptl_switch_menu->x = parent->x + 10;
     edptl_switch_menu->y = parent->y + 40;
@@ -573,27 +590,26 @@ static void edptlcbSetSwitchId(eduimenu_s *, eduiitem_s *item, u32) {
     debkeydata[edpp_ptls[edpp_nearest].instance_id].trigger_second = switch_id;
 }
 static void edptlcbSoundIDMenu(eduimenu_s *parent, eduiitem_s *item, u32) {
-    const debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
     const u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+    const debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
     edptl_soundid_menu = eduiMenuCreate(70, 70, 180, 200, ed_fnt, edptlcbCancelSoundIDMenu, "Sound ID");
     if (edptl_soundid_menu == NULL)
         return;
 
-    const i32 slot = item->data;
     eduiMenuAddItem(edptl_soundid_menu,
-                    eduiItemCheckCreate((slot << 16) + 9999, colours, effect->sound_data[slot * 3] == -1, 0,
+                    eduiItemCheckCreate((item->data << 16) + 9999, colours, effect->sound_data[item->data * 3] == -1, 0,
                                         edptlcbSetSoundID, "NONE"));
     for (i32 sound = 0; sound < 1600; ++sound) {
         if (g_soundInfo[sound].sfx_name == NULL)
             continue;
-        if (effect->sound_data[slot * 3] == sound) {
+        if (effect->sound_data[item->data * 3] == sound) {
             eduiMenuAddItem(edptl_soundid_menu,
-                            eduiItemCheckCreate((slot << 16) + sound, colours, 1, 1, edptlcbSetSoundID,
+                            eduiItemCheckCreate((item->data << 16) + sound, colours, 1, 1, edptlcbSetSoundID,
                                                 const_cast<char *>(g_soundInfo[sound].sfx_name)));
             edptl_soundid_menu->selected = edui_last_item;
         } else {
             eduiMenuAddItem(edptl_soundid_menu,
-                            eduiItemCheckCreate((slot << 16) + sound, colours, 0, 1, edptlcbSetSoundID,
+                            eduiItemCheckCreate((item->data << 16) + sound, colours, 0, 1, edptlcbSetSoundID,
                                                 const_cast<char *>(g_soundInfo[sound].sfx_name)));
         }
     }
@@ -698,16 +714,18 @@ static void edptlcbClipboardMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     if (edpp_create_type == -1)
         return;
 
-    const u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+    const u32 colours[4] __attribute__((aligned(16))) = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     ptlclipmenu = eduiMenuCreate(70, 70, 300, 250, ed_fnt, edptlcbCancelClipboardMenu, "Clipboard Menu");
     if (ptlclipmenu == NULL)
         return;
 
-    char *list_name = "General List";
-    if (edpp_effect_list == 1)
-        list_name = "Level List";
+    char list_name[32];
+    if (edpp_effect_list == 0)
+        strcpy(list_name, "General List");
+    else if (edpp_effect_list == 1)
+        strcpy(list_name, "Level List");
     else if (edpp_effect_list == 5)
-        list_name = "Char List";
+        strcpy(list_name, "Char List");
     char label[60];
     if (edptl_clipboard_entry == -1) {
         sprintf(label, "Cut %s from %s", debtab[edpp_create_type]->name, list_name);
@@ -985,11 +1003,10 @@ static void edptlcbSwitchTypeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     edptl_switchtype_menu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, edptlcbCancelSwitchTypeMenu, "Switch Type");
     if (edptl_switchtype_menu == NULL)
         return;
-    const i32 switch_type = edpp_ptls[edpp_nearest].switch_type;
-    eduiMenuAddItem(edptl_switchtype_menu,
-                    eduiItemCheckCreate(0, colours, switch_type == 0, 1, edptlcbSetSwitchType, "None"));
-    eduiMenuAddItem(edptl_switchtype_menu,
-                    eduiItemCheckCreate(1, colours, switch_type == 1, 1, edptlcbSetSwitchType, "Global Switch"));
+    eduiMenuAddItem(edptl_switchtype_menu, eduiItemCheckCreate(0, colours, edpp_ptls[edpp_nearest].switch_type == 0, 1,
+                                                               edptlcbSetSwitchType, "None"));
+    eduiMenuAddItem(edptl_switchtype_menu, eduiItemCheckCreate(1, colours, edpp_ptls[edpp_nearest].switch_type == 1, 1,
+                                                               edptlcbSetSwitchType, "Global Switch"));
     eduiMenuAttach(parent, edptl_switchtype_menu);
     edptl_switchtype_menu->x = parent->x + 10;
     edptl_switchtype_menu->y = parent->y + 40;

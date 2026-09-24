@@ -155,17 +155,30 @@ static inline void edpartFinishMenu(eduimenu_s *menu) {
 
 static inline void edpartAddType(eduimenu_s *menu, i8 page) {
     if (part_types_used < 128) {
-        for (i32 index = 0; index < 128; ++index) {
-            part_typedesc_s *type = &part_types[index];
-            if (type->name[0] == '\0') {
+        part_typedesc_s *scan = part_types;
+        for (i32 index = 0; index < 128; ++index, ++scan) {
+            if (scan->name[0] == '\0') {
+                part_typedesc_s *type = &part_types[index];
                 sprintf(type->name, "New%d", index);
                 edpartInitType(index);
                 type->field_b3 = page;
                 type->page = page;
-                for (i32 variant = 0; variant < 8; ++variant) {
-                    type->effect_ids[variant] = -1;
-                    type->effect_pages[variant] = -1;
-                }
+                type->effect_ids[0] = -1;
+                type->effect_pages[0] = -1;
+                type->effect_ids[1] = -1;
+                type->effect_pages[1] = -1;
+                type->effect_ids[2] = -1;
+                type->effect_pages[2] = -1;
+                type->effect_ids[3] = -1;
+                type->effect_pages[3] = -1;
+                type->effect_ids[4] = -1;
+                type->effect_pages[4] = -1;
+                type->effect_ids[5] = -1;
+                type->effect_pages[5] = -1;
+                type->effect_ids[6] = -1;
+                type->effect_pages[6] = -1;
+                type->effect_ids[7] = -1;
+                type->effect_pages[7] = -1;
                 part_page_on[page] = 1;
                 ++part_types_used;
                 part_page_used[page] = 1;
@@ -412,13 +425,15 @@ static void edpartCopyType(eduimenu_s *menu, eduiitem_s *, u32) {
                 part_type_s *source = &part_types[edpart_create_type];
                 part_type_s *copy = &part_types[index];
                 *copy = *source;
-                if (strlen(source->name) > 12) {
+                size_t name_length = strlen(source->name);
+                if (name_length <= 12) {
+                    sprintf(copy->name, "%s%03d", source->name, index);
+                } else {
                     char name[16];
-                    strcpy(name, source->name);
+                    memcpy(name, source->name, name_length + 1);
                     name[12] = '\0';
                     sprintf(copy->name, "%s%03d", name, index);
-                } else
-                    sprintf(copy->name, "%s%03d", source->name, index);
+                }
                 ++part_types_used;
                 edpart_create_type = index;
                 break;
@@ -625,11 +640,15 @@ static void edpartSoundsMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     if (edpart_nearest_type != NULL) {
         edpart_sounds_menu = eduiMenuCreate(70, 70, 250, 300, ed_fnt, edpartCancelSoundsMenu, "Attached Sounds");
         if (edpart_sounds_menu != NULL) {
-            char text[20];
-            for (i32 sound = 0; sound < 4; ++sound) {
-                sprintf(text, "Sound %d...", sound + 1);
-                eduiMenuAddItem(edpart_sounds_menu, eduiItemSelCreate(sound, edblack, 0, 0, edpartSoundXMenu, text));
-            }
+            char text[16];
+            sprintf(text, "Sound %d...", 1);
+            eduiMenuAddItem(edpart_sounds_menu, eduiItemSelCreate(0, edblack, 0, 0, edpartSoundXMenu, text));
+            sprintf(text, "Sound %d...", 2);
+            eduiMenuAddItem(edpart_sounds_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartSoundXMenu, text));
+            sprintf(text, "Sound %d...", 3);
+            eduiMenuAddItem(edpart_sounds_menu, eduiItemSelCreate(2, edblack, 0, 0, edpartSoundXMenu, text));
+            sprintf(text, "Sound %d...", 4);
+            eduiMenuAddItem(edpart_sounds_menu, eduiItemSelCreate(3, edblack, 0, 0, edpartSoundXMenu, text));
             eduiMenuAttach(menu, edpart_sounds_menu);
             edpart_sounds_menu->x = menu->x + 10;
             edpart_sounds_menu->y = menu->y + 40;
@@ -841,17 +860,12 @@ static void edpartChangeMaxLife(eduimenu_s *, eduiitem_s *item, u32) {
 }
 static void edpartChangeVarEmit(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpart_nearest_type != NULL) {
-        switch (item->data) {
-            case 0:
-                edpart_nearest_type->velocity_random.x = static_cast<edui_slider_s *>(item)->value;
-                break;
-            case 1:
-                edpart_nearest_type->velocity_random.y = static_cast<edui_slider_s *>(item)->value;
-                break;
-            case 2:
-                edpart_nearest_type->velocity_random.z = static_cast<edui_slider_s *>(item)->value;
-                break;
-        }
+        if (item->data == 0)
+            edpart_nearest_type->velocity_random.x = static_cast<edui_slider_s *>(item)->value;
+        else if (item->data == 1)
+            edpart_nearest_type->velocity_random.y = static_cast<edui_slider_s *>(item)->value;
+        else if (item->data == 2)
+            edpart_nearest_type->velocity_random.z = static_cast<edui_slider_s *>(item)->value;
     }
 }
 static void edpartDieDebrisMenu(eduimenu_s *menu, eduiitem_s *, u32) {
@@ -879,13 +893,15 @@ static void edpartLevelTypeMenu(eduimenu_s *menu, eduiitem_s *, u32) {
         else
             eduiMenuAddItem(edpart_leveltype_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Add Type"));
         for (i32 index = 0; index < 128; ++index) {
-            part_type_s *type = &part_types[index];
-            if (type->name[0] != '\0' && type->field_b3 == 1) {
-                eduiitem_s *item =
-                    eduiItemCheckCreate(index, edblack, index == edpart_create_type, 1, edpartSelType, type->name);
-                eduiMenuAddItem(edpart_leveltype_menu, item);
-                if (index == edpart_create_type)
-                    edpart_leveltype_menu->selected = item;
+            if (part_types[index].name[0] != '\0' && part_types[index].field_b3 == 1) {
+                if (index == edpart_create_type) {
+                    eduiMenuAddItem(edpart_leveltype_menu,
+                                    eduiItemCheckCreate(index, edblack, 1, 1, edpartSelType, part_types[index].name));
+                    edpart_leveltype_menu->selected = edui_last_item;
+                } else {
+                    eduiMenuAddItem(edpart_leveltype_menu,
+                                    eduiItemCheckCreate(index, edblack, 0, 1, edpartSelType, part_types[index].name));
+                }
             }
         }
         eduiMenuAttach(menu, edpart_leveltype_menu);
@@ -965,17 +981,12 @@ static void edpartChangeNameMenu(eduimenu_s *menu, eduiitem_s *, u32) {
 }
 static void edpartChangeVarStart(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpart_nearest_type != NULL) {
-        switch (item->data) {
-            case 0:
-                edpart_nearest_type->position_random.x = static_cast<edui_slider_s *>(item)->value;
-                break;
-            case 1:
-                edpart_nearest_type->position_random.y = static_cast<edui_slider_s *>(item)->value;
-                break;
-            case 2:
-                edpart_nearest_type->position_random.z = static_cast<edui_slider_s *>(item)->value;
-                break;
-        }
+        if (item->data == 0)
+            edpart_nearest_type->position_random.x = static_cast<edui_slider_s *>(item)->value;
+        else if (item->data == 1)
+            edpart_nearest_type->position_random.y = static_cast<edui_slider_s *>(item)->value;
+        else if (item->data == 2)
+            edpart_nearest_type->position_random.z = static_cast<edui_slider_s *>(item)->value;
     }
 }
 static void edpartImpactPartMenu(eduimenu_s *menu, eduiitem_s *, u32) {
@@ -1057,17 +1068,45 @@ static void edpartFileLoadEffects(eduimenu_s *parent, eduiitem_s *, u32) {
     memset(part_page_used, 0, sizeof(i32) * 8);
     memset(part_page_on, 0, sizeof(i32) * 8);
     memset(part_scene, 0, sizeof(NUGSCN *) * 32);
-    memset(part_scene_pageid, -1, sizeof(i32) * 32);
+    typedef i32 ScenePageVector __attribute__((vector_size(16)));
+    ScenePageVector blank_pages = {-1, -1, -1, -1};
+    ScenePageVector *scene_pages = reinterpret_cast<ScenePageVector *>(__builtin_assume_aligned(part_scene_pageid, 16));
+    scene_pages[0] = blank_pages;
+    scene_pages[1] = blank_pages;
+    scene_pages[2] = blank_pages;
+    scene_pages[3] = blank_pages;
+    scene_pages[4] = blank_pages;
+    scene_pages[5] = blank_pages;
+    scene_pages[6] = blank_pages;
+    scene_pages[7] = blank_pages;
     part_platimpactcnt = 0;
     char path[256];
     char general_directory[256], general_name[256], general_extension[256];
     char level_directory[256], level_name[256], level_extension[256];
-    strcpy(general_directory, edbits_general_save_directory[0] ? edbits_general_save_directory : ".");
-    strcpy(general_name, edbits_general_save_name[0] ? edbits_general_save_name : "part");
-    strcpy(general_extension, edbits_general_save_extension[0] ? edbits_general_save_extension : "par");
-    strcpy(level_directory, edbits_level_save_directory[0] ? edbits_level_save_directory : ".");
-    strcpy(level_name, edbits_level_save_name[0] ? edbits_level_save_name : "part");
-    strcpy(level_extension, edbits_level_save_extension[0] ? edbits_level_save_extension : "par");
+    if (!edbits_general_save_directory[0])
+        __builtin_memcpy(general_directory, ".", 2);
+    else
+        strcpy(general_directory, edbits_general_save_directory);
+    if (!edbits_general_save_name[0])
+        __builtin_memcpy(general_name, "part", 5);
+    else
+        strcpy(general_name, edbits_general_save_name);
+    if (!edbits_general_save_extension[0])
+        __builtin_memcpy(general_extension, "par", 4);
+    else
+        strcpy(general_extension, edbits_general_save_extension);
+    if (!edbits_level_save_directory[0])
+        __builtin_memcpy(level_directory, ".", 2);
+    else
+        strcpy(level_directory, edbits_level_save_directory);
+    if (!edbits_level_save_name[0])
+        __builtin_memcpy(level_name, "part", 5);
+    else
+        strcpy(level_name, edbits_level_save_name);
+    if (!edbits_level_save_extension[0])
+        __builtin_memcpy(level_extension, "par", 4);
+    else
+        strcpy(level_extension, edbits_level_save_extension);
     sprintf(path, "%s\\%s.%s", general_directory, general_name, general_extension);
     if (NuFileExists(path))
         edpartLoadPage(path, 0, edbits_things_scene);
@@ -1090,25 +1129,18 @@ static inline void edpartSavePath(char *path, char *backup, bool level) {
     char *save_directory = level ? edbits_level_save_directory : edbits_general_save_directory;
     char *save_name = level ? edbits_level_save_name : edbits_general_save_name;
     char *save_extension = level ? edbits_level_save_extension : edbits_general_save_extension;
-    if (save_directory[0])
-        strcpy(directory, save_directory);
-    else {
-        directory[0] = '.';
-        directory[1] = '\0';
-    }
-    if (save_name[0])
-        strcpy(name, save_name);
-    else {
-        name[0] = 'p';
-        name[1] = 'a';
-        name[2] = 'r';
-        name[3] = 't';
-        name[4] = '\0';
-    }
-    if (save_extension[0])
-        strcpy(extension, save_extension);
+    if (!save_directory[0])
+        __builtin_memcpy(directory, ".", 2);
     else
+        strcpy(directory, save_directory);
+    if (!save_name[0])
+        __builtin_memcpy(name, "part", 5);
+    else
+        strcpy(name, save_name);
+    if (!save_extension[0])
         __builtin_memcpy(extension, "par", 4);
+    else
+        strcpy(extension, save_extension);
     sprintf(path, "%s\\%s.%s", directory, name, extension);
     sprintf(backup, "%s\\%s.%s.bak", directory, name, extension);
 }
@@ -1128,69 +1160,64 @@ static void edpartFileSaveEffects(eduimenu_s *parent, eduiitem_s *, u32) {
     char path[256], backup[256];
     char general_directory[256], general_name[256], general_extension[256];
     char level_directory[256], level_name[256], level_extension[256];
-    if (edbits_general_save_directory[0])
+    if (!edbits_general_save_directory[0])
+        __builtin_memcpy(general_directory, ".", 2);
+    else
         strcpy(general_directory, edbits_general_save_directory);
-    else {
-        general_directory[0] = '.';
-        general_directory[1] = '\0';
-    }
-    if (edbits_general_save_name[0])
+    if (!edbits_general_save_name[0])
+        __builtin_memcpy(general_name, "part", 5);
+    else
         strcpy(general_name, edbits_general_save_name);
-    else {
-        general_name[0] = 'p';
-        general_name[1] = 'a';
-        general_name[2] = 'r';
-        general_name[3] = 't';
-        general_name[4] = '\0';
-    }
-    if (edbits_general_save_extension[0])
-        strcpy(general_extension, edbits_general_save_extension);
-    else
+    if (!edbits_general_save_extension[0])
         __builtin_memcpy(general_extension, "par", 4);
-    if (edbits_level_save_directory[0])
-        strcpy(level_directory, edbits_level_save_directory);
-    else {
-        level_directory[0] = '.';
-        level_directory[1] = '\0';
-    }
-    if (edbits_level_save_name[0])
-        strcpy(level_name, edbits_level_save_name);
-    else {
-        level_name[0] = 'p';
-        level_name[1] = 'a';
-        level_name[2] = 'r';
-        level_name[3] = 't';
-        level_name[4] = '\0';
-    }
-    if (edbits_level_save_extension[0])
-        strcpy(level_extension, edbits_level_save_extension);
     else
+        strcpy(general_extension, edbits_general_save_extension);
+    if (!edbits_level_save_directory[0])
+        __builtin_memcpy(level_directory, ".", 2);
+    else
+        strcpy(level_directory, edbits_level_save_directory);
+    if (!edbits_level_save_name[0])
+        __builtin_memcpy(level_name, "part", 5);
+    else
+        strcpy(level_name, edbits_level_save_name);
+    if (!edbits_level_save_extension[0])
         __builtin_memcpy(level_extension, "par", 4);
+    else
+        strcpy(level_extension, edbits_level_save_extension);
 
     sprintf(path, "%s\\%s.%s", general_directory, general_name, general_extension);
     sprintf(backup, "%s\\%s.%s.bak", general_directory, general_name, general_extension);
     bool general_backup = edbits_override_backups || EdFileBackup(path, backup);
-    bool general_saved = edpartSaveEffects(path, 0) != 0;
+    i32 general_saved = edpartSaveEffects(path, 0);
     sprintf(path, "%s\\%s.%s", level_directory, level_name, level_extension);
     sprintf(backup, "%s\\%s.%s.bak", level_directory, level_name, level_extension);
     bool level_backup = edbits_override_backups || EdFileBackup(path, backup);
     bool level_saved = edpartSaveEffects(path, 1) != 0;
-    const char *message;
-    if (!general_saved && !level_saved)
-        message = "Both Saves Failed";
-    else if (!general_saved)
-        message = "General Save Failed";
-    else if (!level_saved)
-        message = "Level Save Failed";
-    else if (!general_backup && !level_backup)
-        message = "Saved OK - Both Backups Failed";
-    else if (!general_backup)
-        message = "Saved OK - General Backup Failed";
-    else if (!level_backup)
-        message = "Saved OK - Level Backup Failed";
-    else
-        message = "Saved OK";
-    edpartSaveMessage(parent, message, general_saved && level_saved && general_backup && level_backup);
+    if (!general_saved && !level_saved) {
+        edpartSaveMessage(parent, "Both Saves Failed", false);
+        return;
+    }
+    if (!general_saved) {
+        edpartSaveMessage(parent, "General Save Failed", false);
+        return;
+    }
+    if (!level_saved) {
+        edpartSaveMessage(parent, "Level Save Failed", false);
+        return;
+    }
+    if (!general_backup && !level_backup) {
+        edpartSaveMessage(parent, "Saved OK - Both Backups Failed", false);
+        return;
+    }
+    if (!general_backup) {
+        edpartSaveMessage(parent, "Saved OK - General Backup Failed", false);
+        return;
+    }
+    if (!level_backup) {
+        edpartSaveMessage(parent, "Saved OK - Level Backup Failed", false);
+        return;
+    }
+    edpartSaveMessage(parent, "Saved OK", true);
 }
 static void edpartGeneralTypeMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     edpart_generaltype_menu =
@@ -1202,13 +1229,15 @@ static void edpartGeneralTypeMenu(eduimenu_s *menu, eduiitem_s *, u32) {
         else
             eduiMenuAddItem(edpart_generaltype_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Add Type"));
         for (i32 index = 0; index < 128; ++index) {
-            part_type_s *type = &part_types[index];
-            if (type->name[0] != '\0' && type->field_b3 == 0) {
-                eduiitem_s *item =
-                    eduiItemCheckCreate(index, edblack, index == edpart_create_type, 1, edpartSelType, type->name);
-                eduiMenuAddItem(edpart_generaltype_menu, item);
-                if (index == edpart_create_type)
-                    edpart_generaltype_menu->selected = item;
+            if (part_types[index].name[0] != '\0' && part_types[index].field_b3 == 0) {
+                if (index == edpart_create_type) {
+                    eduiMenuAddItem(edpart_generaltype_menu,
+                                    eduiItemCheckCreate(index, edblack, 1, 1, edpartSelType, part_types[index].name));
+                    edpart_generaltype_menu->selected = edui_last_item;
+                } else {
+                    eduiMenuAddItem(edpart_generaltype_menu,
+                                    eduiItemCheckCreate(index, edblack, 0, 1, edpartSelType, part_types[index].name));
+                }
             }
         }
         eduiMenuAttach(menu, edpart_generaltype_menu);
@@ -1270,17 +1299,22 @@ static void edpartSetInstanceType(eduimenu_s *, eduiitem_s *item, u32) {
 #undef EDPART_FIND_INSTANCE
         return;
     remove_instance:
-        edpartRemoveInstance(edpart_nearest_type, index);
+        for (i32 next = index + 1; next < 8; ++next) {
+            edpart_nearest_type->effect_ids[next - 1] = edpart_nearest_type->effect_ids[next];
+            edpart_nearest_type->effect_pages[next - 1] = edpart_nearest_type->effect_pages[next];
+        }
+        edpart_nearest_type->effect_ids[7] = -1;
+        edpart_nearest_type->effect_pages[7] = -1;
+        --edpart_nearest_type->variant_count;
     }
 }
 static void edpartSetSoundControl(eduimenu_s *menu, eduiitem_s *item, u32) {
     edpart_soundcontrol_menu = NULL;
-    u32 slot = static_cast<u32>(item->data) >> 16;
-    i32 value = item->data & 0xffff;
-    if (value == 9999)
-        value = -1;
+    u32 data = item->data;
+    u32 value = static_cast<u16>(data);
+    u32 slot = data >> 16;
     if (edpart_nearest_type != NULL)
-        edpart_nearest_type->sound_modes[slot] = value;
+        edpart_nearest_type->sound_modes[slot] = value == 9999 ? -1 : value;
     edpartRefreshEmitterSounds();
     eduiMenuDetach(menu);
     eduiMenuDestroy(menu);
@@ -1449,23 +1483,16 @@ static void edpartCancelVarEmitMenu(eduimenu_s *, eduimenu_s *) {
 
 static void edpartChangeDebrisIndex(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpart_nearest_type != NULL) {
-        switch (edpart_set_debris) {
-            case 0:
-                edpart_nearest_type->trail_effects[0] = item->data;
-                break;
-            case 1:
-                edpart_nearest_type->trail_effects[1] = item->data;
-                break;
-            case 2:
-                edpart_nearest_type->attached_effect = item->data;
-                break;
-            case 3:
-                edpart_nearest_type->impact_effect = item->data;
-                break;
-            case 4:
-                edpart_nearest_type->kill_effect = item->data;
-                break;
-        }
+        if (edpart_set_debris == 0)
+            edpart_nearest_type->trail_effects[0] = item->data;
+        else if (edpart_set_debris == 1)
+            edpart_nearest_type->trail_effects[1] = item->data;
+        else if (edpart_set_debris == 2)
+            edpart_nearest_type->attached_effect = item->data;
+        else if (edpart_set_debris == 3)
+            edpart_nearest_type->impact_effect = item->data;
+        else if (edpart_set_debris == 4)
+            edpart_nearest_type->kill_effect = item->data;
     }
 }
 
@@ -1492,20 +1519,15 @@ static void edpartChangeGenRateMenu(eduimenu_s *menu, eduiitem_s *, u32) {
 
 static void edpartChangeInstanceRot(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpart_nearest_type != NULL) {
-        switch (item->data) {
-            case 0:
-                edpart_nearest_type->rotation[0] =
-                    static_cast<i32>(static_cast<edui_slider_s *>(item)->value * (65536.0f / 360.0f));
-                break;
-            case 1:
-                edpart_nearest_type->rotation[1] =
-                    static_cast<i32>(static_cast<edui_slider_s *>(item)->value * (65536.0f / 360.0f));
-                break;
-            case 2:
-                edpart_nearest_type->rotation[2] =
-                    static_cast<i32>(static_cast<edui_slider_s *>(item)->value * (65536.0f / 360.0f));
-                break;
-        }
+        if (item->data == 0)
+            edpart_nearest_type->rotation[0] =
+                static_cast<i32>(static_cast<edui_slider_s *>(item)->value * (65536.0f / 360.0f));
+        else if (item->data == 1)
+            edpart_nearest_type->rotation[1] =
+                static_cast<i32>(static_cast<edui_slider_s *>(item)->value * (65536.0f / 360.0f));
+        else if (item->data == 2)
+            edpart_nearest_type->rotation[2] =
+                static_cast<i32>(static_cast<edui_slider_s *>(item)->value * (65536.0f / 360.0f));
     }
 }
 
@@ -1552,50 +1574,58 @@ static void edpartInstanceFlagsMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     edpart_instanceflags_menu =
         eduiMenuCreate(70, 70, 300, 250, ed_fnt, edpartCancelInstanceFlagsMenu, "Instance Flags");
     if (edpart_instanceflags_menu != NULL) {
-        u32 flags = edpart_nearest_type->flags;
         i32 group = 1;
-        eduiMenuAddItem(edpart_instanceflags_menu, eduiItemToggleCreate(1, edblack, (flags & 1) != 0, group++,
-                                                                        edpartChangeInstanceFlag, "Die when stopped"));
         eduiMenuAddItem(edpart_instanceflags_menu,
-                        eduiItemToggleCreate(2, edblack, (flags & 2) != 0, group++, edpartChangeInstanceFlag,
-                                             "Collide with Characters"));
+                        eduiItemToggleCreate(1, edblack, (edpart_nearest_type->flags & 1) != 0, group++,
+                                             edpartChangeInstanceFlag, "Die when stopped"));
         eduiMenuAddItem(edpart_instanceflags_menu,
-                        eduiItemToggleCreate(4, edblack, (flags & 4) != 0, group++, edpartChangeInstanceFlag,
-                                             "Interact only with Active Chars"));
-        eduiMenuAddItem(edpart_instanceflags_menu, eduiItemToggleCreate(8, edblack, (flags & 8) != 0, group++,
-                                                                        edpartChangeInstanceFlag, "Damage Characters"));
+                        eduiItemToggleCreate(2, edblack, (edpart_nearest_type->flags & 2) != 0, group++,
+                                             edpartChangeInstanceFlag, "Collide with Characters"));
+        eduiMenuAddItem(edpart_instanceflags_menu,
+                        eduiItemToggleCreate(4, edblack, (edpart_nearest_type->flags & 4) != 0, group++,
+                                             edpartChangeInstanceFlag, "Interact only with Active Chars"));
+        eduiMenuAddItem(edpart_instanceflags_menu,
+                        eduiItemToggleCreate(8, edblack, (edpart_nearest_type->flags & 8) != 0, group++,
+                                             edpartChangeInstanceFlag, "Damage Characters"));
         if (edpart_nearest_type->effect_ids[0] != 9999)
             eduiMenuAddItem(edpart_instanceflags_menu,
-                            eduiItemToggleCreate(0x10, edblack, (flags & 0x10) != 0, group++, edpartChangeInstanceFlag,
-                                                 "Don't die when off-screen"));
-        eduiMenuAddItem(edpart_instanceflags_menu, eduiItemToggleCreate(0x40, edblack, (flags & 0x40) != 0, group++,
-                                                                        edpartChangeInstanceFlag, "Is a Collectible"));
-        eduiMenuAddItem(edpart_instanceflags_menu, eduiItemToggleCreate(0x80, edblack, (flags & 0x80) != 0, group++,
-                                                                        edpartChangeInstanceFlag, "Rotate Randomly"));
+                            eduiItemToggleCreate(0x10, edblack, (edpart_nearest_type->flags & 0x10) != 0, group++,
+                                                 edpartChangeInstanceFlag, "Don't die when off-screen"));
         eduiMenuAddItem(edpart_instanceflags_menu,
-                        eduiItemToggleCreate(0x100000, edblack, (flags & 0x100000) != 0, group++,
+                        eduiItemToggleCreate(0x40, edblack, (edpart_nearest_type->flags & 0x40) != 0, group++,
+                                             edpartChangeInstanceFlag, "Is a Collectible"));
+        eduiMenuAddItem(edpart_instanceflags_menu,
+                        eduiItemToggleCreate(0x80, edblack, (edpart_nearest_type->flags & 0x80) != 0, group++,
+                                             edpartChangeInstanceFlag, "Rotate Randomly"));
+        eduiMenuAddItem(edpart_instanceflags_menu,
+                        eduiItemToggleCreate(0x100000, edblack, (edpart_nearest_type->flags & 0x100000) != 0, group++,
                                              edpartChangeInstanceFlag, "Ordered Rotate Randomly"));
-        eduiMenuAddItem(edpart_instanceflags_menu, eduiItemToggleCreate(0x100, edblack, (flags & 0x100) != 0, group++,
-                                                                        edpartChangeInstanceFlag, "No Bounce"));
         eduiMenuAddItem(edpart_instanceflags_menu,
-                        eduiItemToggleCreate(0x200, edblack, (flags & 0x200) != 0, group++, edpartChangeInstanceFlag,
-                                             "Slot Cannot be Stolen"));
-        eduiMenuAddItem(edpart_instanceflags_menu, eduiItemToggleCreate(0x400, edblack, (flags & 0x400) != 0, group++,
-                                                                        edpartChangeInstanceFlag, "Ignore Terrain"));
+                        eduiItemToggleCreate(0x100, edblack, (edpart_nearest_type->flags & 0x100) != 0, group++,
+                                             edpartChangeInstanceFlag, "No Bounce"));
         eduiMenuAddItem(edpart_instanceflags_menu,
-                        eduiItemToggleCreate(0x800, edblack, (flags & 0x800) != 0, group++, edpartChangeInstanceFlag,
-                                             "Face Direction of Movement"));
-        eduiMenuAddItem(edpart_instanceflags_menu, eduiItemToggleCreate(0x1000, edblack, (flags & 0x1000) != 0, group++,
-                                                                        edpartChangeInstanceFlag, "Disable Draw"));
+                        eduiItemToggleCreate(0x200, edblack, (edpart_nearest_type->flags & 0x200) != 0, group++,
+                                             edpartChangeInstanceFlag, "Slot Cannot be Stolen"));
         eduiMenuAddItem(edpart_instanceflags_menu,
-                        eduiItemToggleCreate(0x2000, edblack, (flags & 0x2000) != 0, group++, edpartChangeInstanceFlag,
-                                             "Real Time Lighting"));
-        eduiMenuAddItem(edpart_instanceflags_menu, eduiItemToggleCreate(0x4000, edblack, (flags & 0x4000) != 0, group++,
-                                                                        edpartChangeInstanceFlag, "Ignore Creature"));
-        eduiMenuAddItem(edpart_instanceflags_menu, eduiItemToggleCreate(0x8000, edblack, (flags & 0x8000) != 0, group++,
-                                                                        edpartChangeInstanceFlag, "Thrown"));
+                        eduiItemToggleCreate(0x400, edblack, (edpart_nearest_type->flags & 0x400) != 0, group++,
+                                             edpartChangeInstanceFlag, "Ignore Terrain"));
         eduiMenuAddItem(edpart_instanceflags_menu,
-                        eduiItemToggleCreate(0x10000, edblack, (flags & 0x10000) != 0, group++,
+                        eduiItemToggleCreate(0x800, edblack, (edpart_nearest_type->flags & 0x800) != 0, group++,
+                                             edpartChangeInstanceFlag, "Face Direction of Movement"));
+        eduiMenuAddItem(edpart_instanceflags_menu,
+                        eduiItemToggleCreate(0x1000, edblack, (edpart_nearest_type->flags & 0x1000) != 0, group++,
+                                             edpartChangeInstanceFlag, "Disable Draw"));
+        eduiMenuAddItem(edpart_instanceflags_menu,
+                        eduiItemToggleCreate(0x2000, edblack, (edpart_nearest_type->flags & 0x2000) != 0, group++,
+                                             edpartChangeInstanceFlag, "Real Time Lighting"));
+        eduiMenuAddItem(edpart_instanceflags_menu,
+                        eduiItemToggleCreate(0x4000, edblack, (edpart_nearest_type->flags & 0x4000) != 0, group++,
+                                             edpartChangeInstanceFlag, "Ignore Creature"));
+        eduiMenuAddItem(edpart_instanceflags_menu,
+                        eduiItemToggleCreate(0x8000, edblack, (edpart_nearest_type->flags & 0x8000) != 0, group++,
+                                             edpartChangeInstanceFlag, "Thrown"));
+        eduiMenuAddItem(edpart_instanceflags_menu,
+                        eduiItemToggleCreate(0x10000, edblack, (edpart_nearest_type->flags & 0x10000) != 0, group++,
                                              edpartChangeInstanceFlag, "Can Damage Owner"));
         eduiMenuAttach(menu, edpart_instanceflags_menu);
         edpart_instanceflags_menu->x = menu->x + 10;
@@ -1624,29 +1654,29 @@ static void edpartWorldInstanceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     if (edpart_worldinstance_menu == NULL || edbits_base_scene == NULL || edpart_nearest_type == NULL)
         return;
     i32 group = 1;
-    bool selected_first = false;
+    i32 selected_first = 0;
     i32 count = NuGScnNumSpecials(edbits_base_scene);
     for (i32 index = 0; index < count; ++index) {
         nuhspecial_s special;
         NuGScnGetSpecial(&special, edbits_base_scene, index);
         char *name = NuSpecialExistsFn(&special) ? NuSpecialGetName(&special) : NULL;
-        bool selected = false;
-        bool included = false;
+        i32 selected = 0;
+        i32 included = 0;
         for (i32 variant = 0; variant < edpart_nearest_type->variant_count; ++variant) {
             if (edpart_nearest_type->effect_ids[variant] == index) {
-                if (edpart_nearest_type->effect_pages[variant] == 0)
-                    selected = true;
-                else
-                    included = true;
+                if (edpart_nearest_type->effect_pages[variant] == 0) {
+                    selected = 1;
+                    included = 1;
+                }
             }
         }
         if (edpart_filter && NuStrNCmp(edpart_filter_string, name, NuStrLen(edpart_filter_string)) != 0 && !included)
             continue;
         eduiitem_s *item = eduiItemToggleCreate(index, edblack, selected, group++, edpartSetInstanceType, name);
         eduiMenuAddItem(edpart_worldinstance_menu, item);
-        if (selected && !selected_first) {
-            selected_first = true;
-            edpart_worldinstance_menu->selected = item;
+        if (selected & (selected_first ^ 1)) {
+            selected_first = 1;
+            edpart_worldinstance_menu->selected = edui_last_item;
         }
     }
     if (group == 1)
@@ -1674,14 +1704,12 @@ static void edpartCancelVarStartMenu(eduimenu_s *, eduimenu_s *) {
 
 static void edpartChangeDebrisPerSec(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpart_nearest_type != NULL) {
-        switch (edpart_set_debris) {
-            case 0:
-                edpart_nearest_type->trail_rates[0] = static_cast<i32>(static_cast<edui_slider_s *>(item)->value);
-                break;
-            case 1:
+        if (edpart_set_debris != 0) {
+            if (edpart_set_debris == 1)
                 edpart_nearest_type->trail_rates[1] = static_cast<i32>(static_cast<edui_slider_s *>(item)->value);
-                break;
+            return;
         }
+        edpart_nearest_type->trail_rates[0] = static_cast<i32>(static_cast<edui_slider_s *>(item)->value);
     }
 }
 
@@ -1732,12 +1760,11 @@ static void edpartInstanceOrientMenu(eduimenu_s *menu, eduiitem_s *, u32) {
         return;
 #define EDPART_ORIENT_SLIDER(axis, field, callback, minimum, maximum, label)                                           \
     do {                                                                                                               \
-        edui_slider_s *slider = static_cast<edui_slider_s *>(                                                          \
-            eduiItemSliderCreate(axis, edblack, 0, callback, minimum, maximum,                                         \
-                                 edpart_nearest_type->field[axis] * (360.0f / 65536.0f), label));                      \
-        eduiMenuAddItem(edpart_instorient_menu, slider);                                                               \
-        eduiItemSliderSetFmt(slider, "(%1.01f)");                                                                      \
-        eduiItemSliderSetGranularity(slider, 0.1f);                                                                    \
+        eduiMenuAddItem(edpart_instorient_menu,                                                                        \
+                        eduiItemSliderCreate(axis, edblack, 0, callback, minimum, maximum,                             \
+                                             edpart_nearest_type->field[axis] * (360.0f / 65536.0f), label));          \
+        eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");                                \
+        eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);                              \
     } while (0)
     EDPART_ORIENT_SLIDER(0, rotation, edpartChangeInstanceRot, edpart_superscale * -180.0f, edpart_superscale * 360.0f,
                          "Base Rotation X");
@@ -1761,14 +1788,14 @@ static void edpartPartIndexMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     edpart_partindex_menu = eduiMenuCreate(70, 70, 250, 250, ed_fnt, edpartCancelPartIndexMenu, "Part Type");
     if (edpart_partindex_menu == NULL || edpart_nearest_type == NULL)
         return;
-    i32 selected = edpart_set_part == 5 ? edpart_nearest_type->impact_part : -1;
+    i32 selected = edpart_set_part == 3 ? edpart_nearest_type->impact_part : -1;
     eduiMenuAddItem(edpart_partindex_menu, eduiItemCheckCreate(static_cast<usize>(-1), edblack, selected == -1, 1,
                                                                edpartChangePartIndex, "None"));
     for (i32 index = 0; index < 128; ++index) {
         part_type_s *type = &part_types[index];
         if (type->name[0] == '\0' || type->field_b3 != edpart_which_scene)
             continue;
-        bool current_type = edpart_nearest_emit != NULL && index == edpart_nearest_emit->effect_id;
+        bool current_type = index == edpart_nearest_emit->effect_id;
         eduiitem_s *item =
             eduiItemCheckCreate(index, current_type ? edgrey : edblack, !current_type && index == selected,
                                 current_type ? 0 : 1, current_type ? NULL : edpartChangePartIndex, type->name);
@@ -1794,29 +1821,29 @@ static void edpartThingsInstanceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     if (edpart_thingsinstance_menu == NULL || edbits_things_scene == NULL || edpart_nearest_type == NULL)
         return;
     i32 group = 1;
-    bool selected_first = false;
+    i32 selected_first = 0;
     i32 count = NuGScnNumSpecials(edbits_things_scene);
     for (i32 index = 0; index < count; ++index) {
         nuhspecial_s special;
         NuGScnGetSpecial(&special, edbits_things_scene, index);
         char *name = NuSpecialExistsFn(&special) ? NuSpecialGetName(&special) : NULL;
-        bool selected = false;
-        bool included = false;
+        i32 selected = 0;
+        i32 included = 0;
         for (i32 variant = 0; variant < edpart_nearest_type->variant_count; ++variant) {
             if (edpart_nearest_type->effect_ids[variant] == index) {
-                if (edpart_nearest_type->effect_pages[variant] == 1)
-                    selected = true;
-                else
-                    included = true;
+                if (edpart_nearest_type->effect_pages[variant] == 1) {
+                    selected = 1;
+                    included = 1;
+                }
             }
         }
         if (edpart_filter && NuStrNCmp(edpart_filter_string, name, NuStrLen(edpart_filter_string)) != 0 && !included)
             continue;
         eduiitem_s *item = eduiItemToggleCreate(index, edblack, selected, group++, edpartSetInstanceType, name);
         eduiMenuAddItem(edpart_thingsinstance_menu, item);
-        if (selected && !selected_first) {
-            selected_first = true;
-            edpart_thingsinstance_menu->selected = item;
+        if (selected & (selected_first ^ 1)) {
+            selected_first = 1;
+            edpart_thingsinstance_menu->selected = edui_last_item;
         }
     }
     if (group == 1)
@@ -1876,14 +1903,18 @@ static void edpartInstanceOrphansMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     EDPART_ORPHAN_ITEM(6)
     EDPART_ORPHAN_ITEM(7)
 #undef EDPART_ORPHAN_ITEM
-    eduiMenuAddItem(edpart_instanceorphans_menu,
-                    eduiItemSelCreate(8, edpart_nearest_orphans ? edblack : edgrey, 0, 0,
-                                      edpart_nearest_orphans ? edpartDeleteAllInstanceOrphans : NULL,
-                                      "Remove All Orphans"));
-    eduiMenuAddItem(edpart_instanceorphans_menu,
-                    eduiItemSelCreate(8, edpart_nearest_duplicates ? edblack : edgrey, 0, 0,
-                                      edpart_nearest_duplicates ? edpartDeleteAllInstanceDuplicates : NULL,
-                                      "Remove Duplicates"));
+    if (edpart_nearest_orphans) {
+        eduiMenuAddItem(edpart_instanceorphans_menu,
+                        eduiItemSelCreate(8, edblack, 0, 0, edpartDeleteAllInstanceOrphans, "Remove All Orphans"));
+    } else {
+        eduiMenuAddItem(edpart_instanceorphans_menu, eduiItemSelCreate(8, edgrey, 0, 0, NULL, "Remove All Orphans"));
+    }
+    if (edpart_nearest_duplicates) {
+        eduiMenuAddItem(edpart_instanceorphans_menu,
+                        eduiItemSelCreate(8, edblack, 0, 0, edpartDeleteAllInstanceDuplicates, "Remove Duplicates"));
+    } else {
+        eduiMenuAddItem(edpart_instanceorphans_menu, eduiItemSelCreate(8, edgrey, 0, 0, NULL, "Remove Duplicates"));
+    }
     eduiMenuAttach(parent, edpart_instanceorphans_menu);
     edpart_instanceorphans_menu->x = parent->x + 10;
     edpart_instanceorphans_menu->y = parent->y + 40;
@@ -1906,27 +1937,26 @@ static void edpartCancelSwitchTypeMenu(eduimenu_s *, eduimenu_s *) {
 
 static void edpartChangeInstanceVarRot(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpart_nearest_type != NULL) {
-        switch (item->data) {
-            case 0:
-                edpart_nearest_type->rotation_random[0] =
-                    static_cast<i32>(static_cast<edui_slider_s *>(item)->value * (65536.0f / 360.0f));
-                break;
-            case 1:
-                edpart_nearest_type->rotation_random[1] =
-                    static_cast<i32>(static_cast<edui_slider_s *>(item)->value * (65536.0f / 360.0f));
-                break;
-            case 2:
-                edpart_nearest_type->rotation_random[2] =
-                    static_cast<i32>(static_cast<edui_slider_s *>(item)->value * (65536.0f / 360.0f));
-                break;
-        }
+        if (item->data == 0)
+            edpart_nearest_type->rotation_random[0] =
+                static_cast<i32>(static_cast<edui_slider_s *>(item)->value * (65536.0f / 360.0f));
+        else if (item->data == 1)
+            edpart_nearest_type->rotation_random[1] =
+                static_cast<i32>(static_cast<edui_slider_s *>(item)->value * (65536.0f / 360.0f));
+        else if (item->data == 2)
+            edpart_nearest_type->rotation_random[2] =
+                static_cast<i32>(static_cast<edui_slider_s *>(item)->value * (65536.0f / 360.0f));
     }
 }
 
 static __attribute__((optimize("O3"))) void edpartDeleteInstanceOrphan(eduimenu_s *menu, eduiitem_s *item, u32) {
     edpartRemoveInstance(edpart_nearest_type, item->data);
     --edpart_nearest_orphans;
-    edpartFinishMenu(menu);
+    eduimenu_s *parent = menu->parent;
+    if (parent)
+        eduiMenuDetach(menu);
+    if (menu->callback)
+        menu->callback(menu, parent);
 }
 
 static void edpartFileSaveEffectsLevel(eduimenu_s *parent, eduiitem_s *, u32) {
@@ -1934,11 +1964,13 @@ static void edpartFileSaveEffectsLevel(eduimenu_s *parent, eduiitem_s *, u32) {
     edpartSavePath(path, backup, true);
     bool backed_up = edbits_override_backups || EdFileBackup(path, backup);
     bool saved = edpartSaveEffects(path, 1) != 0;
-    edpartSaveMessage(parent,
-                      !saved      ? "Save Failed"
-                      : backed_up ? "Saved OK"
-                                  : "Saved OK - Backup Failed",
-                      saved && backed_up);
+    if (!saved) {
+        edpartSaveMessage(parent, "Save Failed", false);
+    } else if (!backed_up) {
+        edpartSaveMessage(parent, "Saved OK - Backup Failed", false);
+    } else {
+        edpartSaveMessage(parent, "Saved OK", true);
+    }
 }
 
 static void edpartGeneralPartIndexMenu(eduimenu_s *menu, eduiitem_s *item, u32 value) {
@@ -2058,11 +2090,13 @@ static void edpartFileSaveEffectsGeneral(eduimenu_s *parent, eduiitem_s *, u32) 
     edpartSavePath(path, backup, false);
     bool backed_up = edbits_override_backups || EdFileBackup(path, backup);
     bool saved = edpartSaveEffects(path, 0) != 0;
-    edpartSaveMessage(parent,
-                      !saved      ? "Save Failed"
-                      : backed_up ? "Saved OK"
-                                  : "Saved OK - Backup Failed",
-                      saved && backed_up);
+    if (!saved) {
+        edpartSaveMessage(parent, "Save Failed", false);
+    } else if (!backed_up) {
+        edpartSaveMessage(parent, "Saved OK - Backup Failed", false);
+    } else {
+        edpartSaveMessage(parent, "Saved OK", true);
+    }
 }
 
 static void edpartGeneralDebrisIndexMenu(eduimenu_s *menu, eduiitem_s *item, u32 value) {
@@ -2128,10 +2162,21 @@ static __attribute__((optimize("O3"))) void edpartDeleteAllInstanceOrphans(eduim
 
 static void edpartCancelInstanceOrphansMenu(eduimenu_s *, eduimenu_s *) {
     if (edpart_nearest_type->variant_count == 0) {
-        for (i32 i = 0; i < 8; i++) {
-            edpart_nearest_type->effect_ids[i] = -1;
-            edpart_nearest_type->effect_pages[i] = 1;
-        }
+        edpart_nearest_type->effect_pages[0] = 1;
+        edpart_nearest_type->effect_ids[1] = -1;
+        edpart_nearest_type->effect_pages[1] = 1;
+        edpart_nearest_type->effect_ids[2] = -1;
+        edpart_nearest_type->effect_pages[2] = 1;
+        edpart_nearest_type->effect_ids[3] = -1;
+        edpart_nearest_type->effect_pages[3] = 1;
+        edpart_nearest_type->effect_ids[4] = -1;
+        edpart_nearest_type->effect_pages[4] = 1;
+        edpart_nearest_type->effect_ids[5] = -1;
+        edpart_nearest_type->effect_pages[5] = 1;
+        edpart_nearest_type->effect_ids[6] = -1;
+        edpart_nearest_type->effect_pages[6] = 1;
+        edpart_nearest_type->effect_ids[7] = -1;
+        edpart_nearest_type->effect_pages[7] = 1;
         edpart_nearest_type->effect_ids[0] = 9999;
         edpart_nearest_type->flags |= 0x10;
     }
@@ -2147,7 +2192,11 @@ static void edpartCancelInstanceSettingsMenu(eduimenu_s *, eduimenu_s *) {
 static __attribute__((optimize("O3"))) void edpartDeleteAllInstanceDuplicates(eduimenu_s *menu, eduiitem_s *, u32) {
     for (i32 index = 0; index < 8; ++index) {
         i16 effect = edpart_nearest_type->effect_ids[index];
-        if (effect == 9999 || effect == -1 || effect == 9998)
+        if (effect == 9999)
+            continue;
+        if (effect == -1)
+            continue;
+        if (effect == 9998)
             continue;
         for (i32 previous = 0; previous < index; ++previous) {
             if (effect == edpart_nearest_type->effect_ids[previous]) {
@@ -2158,7 +2207,11 @@ static __attribute__((optimize("O3"))) void edpartDeleteAllInstanceDuplicates(ed
         }
     }
     edpart_nearest_duplicates = 0;
-    edpartFinishMenu(menu);
+    eduimenu_s *parent = menu->parent;
+    if (parent)
+        eduiMenuDetach(menu);
+    if (menu->callback)
+        menu->callback(menu, parent);
 }
 
 void edpartDoInput(nupad_s *pad) {
@@ -2278,22 +2331,7 @@ void edpartDoInput(nupad_s *pad) {
         i32 left = pad->analog_left_pad_left;
         i32 up = pad->analog_left_pad_up;
         i32 down = pad->analog_left_pad_down;
-        if (edpart_dpad_mode == 0) {
-            if (pad->digital_buttons & 0x200)
-                edpart_emitrotx = edpart_emitroty = edpart_emitrotz = 0;
-            if (pad->digital_buttons & 0x400)
-                edpart_emitrotx += right - left;
-            else {
-                edpart_emitroty += right - left;
-                i32 rotation = edpart_emitrotz + up;
-                if (rotation > 0x8000)
-                    rotation = 0x8000;
-                rotation -= down;
-                if (rotation < -0x8000)
-                    rotation = -0x8000;
-                edpart_emitrotz = rotation;
-            }
-        } else if (edpart_dpad_mode == 1) {
+        if (edpart_dpad_mode == 1) {
             if (pad->digital_buttons & 0x200)
                 edpart_roty = edpart_rotz = 0;
             edpart_roty += right - left;
@@ -2304,15 +2342,23 @@ void edpartDoInput(nupad_s *pad) {
             if (rotation < -0x8000)
                 rotation = -0x8000;
             edpart_rotz = rotation;
-        } else if (edpart_dpad_mode == 2) {
-            if (up == 255 || (pad->digital_buttons_pressed & 0x1000))
-                edpart_offset += 1.25f;
-            if (down == 255 || (pad->digital_buttons_pressed & 0x4000))
-                edpart_offset -= 1.25f;
-            if (edpart_offset < 0.0f)
-                edpart_offset = 0.0f;
+        } else if (edpart_dpad_mode == 0) {
+            if (pad->digital_buttons & 0x200)
+                edpart_emitrotx = edpart_emitroty = edpart_emitrotz = 0;
+            if (pad->digital_buttons & 0x400)
+                edpart_emitrotx = edpart_emitrotx + right - left;
+            else {
+                edpart_emitroty = edpart_emitroty + right - left;
+                i32 rotation = edpart_emitrotz + up;
+                if (rotation > 0x8000)
+                    rotation = 0x8000;
+                rotation -= down;
+                if (rotation < -0x8000)
+                    rotation = -0x8000;
+                edpart_emitrotz = rotation;
+            }
         } else if (edpart_dpad_mode == 3) {
-            edpart_refroty += right - left;
+            edpart_refroty = edpart_refroty + right - left;
             i32 rotation = edpart_refrotz + up;
             if (rotation > 0)
                 rotation = 0;
@@ -2320,16 +2366,22 @@ void edpartDoInput(nupad_s *pad) {
             if (rotation < -0x8000)
                 rotation = -0x8000;
             edpart_refrotz = rotation;
+        } else if (edpart_dpad_mode == 2) {
+            if (up == 255 || (pad->digital_buttons_pressed & 0x1000))
+                edpart_offset += 1.25f;
+            if (down == 255 || (pad->digital_buttons_pressed & 0x4000))
+                edpart_offset -= 1.25f;
+            if (edpart_offset < 0.0f)
+                edpart_offset = 0.0f;
         }
     } else {
         f32 size = edpart_copy_size + static_cast<f32>(pad->analog_left_pad_up) / 5000.0f -
                    static_cast<f32>(pad->analog_left_pad_down) / 5000.0f;
         if (size < 0.05f)
-            size = 0.05f;
-        if (size > 2.0f)
-            size = 2.0f;
-        edpart_copy_size = size;
-        edpart_copyroty += pad->analog_left_pad_right - pad->analog_left_pad_left;
+            edpart_copy_size = 0.05f;
+        else
+            edpart_copy_size = 2.0f < size ? 2.0f : size;
+        edpart_copyroty = edpart_copyroty + pad->analog_left_pad_right - pad->analog_left_pad_left;
     }
 
     if (edpart_nearest == -1)
@@ -2338,21 +2390,26 @@ void edpartDoInput(nupad_s *pad) {
     edpart_nearest_emit = &part_emits[edpart_nearest];
     if (edpart_nearest_emit->effect_id != -1)
         edpart_nearest_type = &part_types[edpart_nearest_emit->effect_id];
-    edpart_nearest_orphans = 0;
     edpart_nearest_duplicates = 0;
+    i32 orphans = 0;
+    i32 duplicates = 0;
     for (i32 variant = 0; variant < 8; ++variant) {
         i16 effect = edpart_nearest_type->effect_ids[variant];
+        if (effect == 9999 || effect == -1)
+            continue;
         if (effect == 9998)
-            ++edpart_nearest_orphans;
-        else if (effect != 9999 && effect != -1) {
+            ++orphans;
+        else {
             for (i32 previous = 0; previous < variant; ++previous) {
                 if (effect == edpart_nearest_type->effect_ids[previous]) {
-                    ++edpart_nearest_duplicates;
+                    ++duplicates;
                     break;
                 }
             }
         }
     }
+    edpart_nearest_orphans = orphans;
+    edpart_nearest_duplicates = duplicates;
 }
 
 extern "C" {

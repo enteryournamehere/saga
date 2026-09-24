@@ -169,6 +169,13 @@ static __used__ void eduiFntPrintEx(void *font, int x, int y, int alignment, cha
     }
 }
 
+static __attribute__((noinline)) void eduiFntPrintEx(void *font, float x, float y, int alignment, char *format, ...) {
+    va_list arguments;
+    va_start(arguments, format);
+    eduiFntPrintEx(font, static_cast<i32>(x * 16.0f), static_cast<i32>(y * 8.0f), alignment, format, arguments);
+    va_end(arguments);
+}
+
 static __used__ void eduiFntPrintClipEx(void *font, float x, float y, int alignment, float clip_x, float clip_width,
                                         char *format, ...) {
     if (!edui_donotdraw) {
@@ -1935,9 +1942,11 @@ extern "C" {
         }
 
         VARIPTR *buffer = static_cast<VARIPTR *>(buf);
-        usize matrix_base = ALIGN(buffer->addr, 16);
+        usize matrix_base;
         if (edbits_editmode == 1 && edgra_mtxbuffer != NULL) {
             matrix_base = reinterpret_cast<usize>(edgra_mtxbuffer);
+        } else {
+            matrix_base = ALIGN(buffer->addr, 16);
         }
         edgra_page_matrix_stack[page] = reinterpret_cast<NUMTX *>(matrix_base);
 
@@ -1984,7 +1993,9 @@ extern "C" {
             EdFileRead(instance_name, sizeof(instance_name));
             clump->special_index = edbitsLookupInstance(instance_name, static_cast<NUGSCN *>(gscn));
             clump->element_count = EdFileReadInt();
-            EdFileReadNuVec(&clump->position);
+            clump->position.x = EdFileReadFloat();
+            clump->position.y = EdFileReadFloat();
+            clump->position.z = EdFileReadFloat();
             clump->size = EdFileReadFloat();
             clump->field_18 = EdFileReadFloat();
 
@@ -2049,14 +2060,14 @@ extern "C" {
 
             i32 skipped_individuals = 0;
             if (clump->kind == 3) {
-                i32 individual = 0;
-                while (individual < EDGRA_MAX_INDIVIDUAL_CLUMPS && IndGrassClumpsUsed[individual] != 0) {
-                    ++individual;
-                }
-                if (individual == EDGRA_MAX_INDIVIDUAL_CLUMPS) {
+                if (edgra_ind_clumps_used == EDGRA_MAX_INDIVIDUAL_CLUMPS) {
                     skipped_individuals = clump->element_count;
                     clump->element_count = 0;
                 } else {
+                    i32 individual = 0;
+                    while (IndGrassClumpsUsed[individual] != 0) {
+                        ++individual;
+                    }
                     clump->individual_index = static_cast<i16>(individual);
                     IndGrassClumpsUsed[individual] = 1;
                     if (clump->element_count > EDGRA_MAX_UNITS_PER_INDIVIDUAL_CLUMP) {
@@ -2064,11 +2075,12 @@ extern "C" {
                         clump->element_count = EDGRA_MAX_UNITS_PER_INDIVIDUAL_CLUMP;
                     }
                     for (i32 element = 0; element < clump->element_count; ++element) {
-                        edgra_individual_s *blade = GetIndGrassClump(individual, element);
-                        EdFileReadNuVec(&blade->position);
-                        blade->field_0c = EdFileReadFloat();
-                        blade->field_10 = EdFileReadShort();
-                        blade->field_12 = EdFileReadShort();
+                        GetIndGrassClump(individual, element)->position.x = EdFileReadFloat();
+                        GetIndGrassClump(individual, element)->position.y = EdFileReadFloat();
+                        GetIndGrassClump(individual, element)->position.z = EdFileReadFloat();
+                        GetIndGrassClump(individual, element)->field_0c = EdFileReadFloat();
+                        GetIndGrassClump(individual, element)->field_10 = EdFileReadShort();
+                        GetIndGrassClump(individual, element)->field_12 = EdFileReadShort();
                     }
                 }
                 for (i32 element = 0; element < skipped_individuals; ++element) {
@@ -2086,7 +2098,9 @@ extern "C" {
             if (version >= 8) {
                 NUVEC *vectors = static_cast<NUVEC *>(clump->vector_buffer);
                 for (i32 element = 0; element < clump->element_count; ++element) {
-                    EdFileReadNuVec(&vectors[element]);
+                    vectors[element].x = EdFileReadFloat();
+                    vectors[element].y = EdFileReadFloat();
+                    vectors[element].z = EdFileReadFloat();
                 }
             }
             if (clump->element_count < 4) {
@@ -2118,7 +2132,6 @@ extern "C" {
         edgra_page_used[page] = 1;
         edgra_page_scene[page] = static_cast<NUGSCN *>(gscn);
         edgra_page_terrain[page] = reinterpret_cast<void *>(static_cast<usize>(static_cast<u32>(terrain)));
-        edgra_page_calculate_done[page] = 0;
         if (edbits_editmode != 1 || edgra_vecbuffer == NULL) {
             buffer->addr = vector_cursor;
         }
@@ -2891,24 +2904,25 @@ extern "C" {
         picker->cursor = NuStrLen(picker->value);
         memcpy(picker->colours, source->colours, sizeof(picker->colours));
         picker->max_length = static_cast<edui_textpicker_s *>(source)->max_length;
-        picker->keyboard_flags =
-            (picker->keyboard_flags & ~2u) | (static_cast<edui_textpicker_s *>(source)->keyboard_flags & 2u);
+        u8 *picker_flags = reinterpret_cast<u8 *>(&picker->keyboard_flags);
+        const u8 *source_flags =
+            reinterpret_cast<const u8 *>(&static_cast<edui_textpicker_s *>(source)->keyboard_flags);
+        *picker_flags = (*picker_flags & ~2u) | (*source_flags & 2u);
     }
     i32 eduiClearActiveMenu(void) {
         eduiSetActiveMenu(NULL);
         return 0;
     }
     i32 eduiCheckForPadMenuCancel(eduimenu_s *menu, nupad_s *pad) {
-        i32 result = 0;
-        if (pad && (pad->digital_buttons_pressed & 0x10)) {
-            eduimenu_s *parent = menu->parent;
-            if (!eduiGetUsingMenuFocus() && menu->parent)
-                eduiMenuDetach(menu);
-            if (menu->callback)
-                menu->callback(menu, parent);
-            result = 1;
-        }
-        return result;
+        if (!pad || !(pad->digital_buttons_pressed & 0x10))
+            return 0;
+
+        eduimenu_s *parent = menu->parent;
+        if (!eduiGetUsingMenuFocus() && parent)
+            eduiMenuDetach(menu);
+        if (menu->callback)
+            menu->callback(menu, parent);
+        return 1;
     }
     void eduiCreate3LineMessageMenu(eduimenu_s *parent, char *first, char *second, char *third, i32 first_highlight,
                                     i32 second_highlight, i32 third_highlight) {
@@ -2932,12 +2946,17 @@ extern "C" {
         edui_messagemenu->y = parent->y + 40;
     }
     void eduiCreateMessageMenu(eduimenu_s *parent, char *message, i32 highlighted) {
-        eduiiattr_s colours{highlighted == 1 ? 0x8000c000u : 0x800000c0u, 0x80ff0000, 0x80808080, 0x80404040};
+        static const u32 initial_colours[4]
+            __attribute__((aligned(16))) = {0x800000c0u, 0x80ff0000, 0x80808080, 0x80404040};
+        u32 colours[4] __attribute__((aligned(16)));
+        memcpy(colours, initial_colours, sizeof(colours));
+        if (highlighted == 1)
+            colours[0] = 0x8000c000u;
         edui_messagemenu =
             eduiMenuCreate(70, 70, 180, 250, parent->font, eduicbCancelMessageMenu, const_cast<char *>("Message"));
         if (!edui_messagemenu)
             return;
-        eduiMenuAddItem(edui_messagemenu, eduiItemSelCreate(1, &colours, 0, 0, NULL, message));
+        eduiMenuAddItem(edui_messagemenu, eduiItemSelCreate(1, colours, 0, 0, NULL, message));
         eduiMenuAttach(parent, edui_messagemenu);
         edui_messagemenu->x = parent->x + 10;
         edui_messagemenu->y = parent->y + 40;
@@ -3013,14 +3032,14 @@ extern "C" {
     f32 eduiGetAnalougePadValue(nupad_s *pad) {
         f32 value = 0.0f;
         if (pad && (pad->digital_buttons & EDUI_CURSOR_PRIMARY)) {
-            if (pad->analog_right_x > 192)
-                value = (pad->analog_right_y - 128.0f) * 0.01f;
-            else if (pad->analog_right_x < 64)
-                value = (128.0f - pad->analog_right_y) * -0.01f;
             if (pad->analog_left_x > 192)
-                value = (pad->analog_left_y - 128.0f) * 0.001f;
+                value = (pad->analog_left_y - 128.0f) * 0.01f;
             else if (pad->analog_left_x < 64)
-                value = (128.0f - pad->analog_left_y) * -0.001f;
+                value = (128.0f - pad->analog_left_y) * -0.01f;
+            if (pad->analog_right_x > 192)
+                value = (pad->analog_right_y - 128.0f) * 0.001f;
+            else if (pad->analog_right_x < 64)
+                value = (128.0f - pad->analog_right_y) * -0.001f;
         }
         return value;
     }
@@ -3110,7 +3129,49 @@ extern "C" {
     }
     void eduiGradStageSetHSV(edui_gradient_node_s *stage, f32 hue, f32 saturation, f32 value) {
         f32 red = 0.0f, green = 0.0f, blue = 0.0f;
-        eduiHSVToRGB(hue, saturation, value, red, green, blue);
+        if (saturation == 0.0f) {
+            red = green = blue = value;
+        } else {
+            f32 adjusted_hue = hue == 360.0f ? 0.0f : hue;
+            adjusted_hue /= 60.0f;
+            i32 sector = static_cast<i32>(NuFloor(adjusted_hue));
+            f32 fraction = adjusted_hue - sector;
+            f32 low = (1.0f - saturation) * value;
+            f32 falling = (1.0f - saturation * fraction) * value;
+            f32 rising = (1.0f - (1.0f - fraction) * saturation) * value;
+            switch (sector) {
+                case 0:
+                    red = value;
+                    green = rising;
+                    blue = low;
+                    break;
+                case 1:
+                    red = falling;
+                    green = value;
+                    blue = low;
+                    break;
+                case 2:
+                    red = low;
+                    green = value;
+                    blue = rising;
+                    break;
+                case 3:
+                    red = low;
+                    green = falling;
+                    blue = value;
+                    break;
+                case 4:
+                    red = rising;
+                    green = low;
+                    blue = value;
+                    break;
+                case 5:
+                    red = value;
+                    green = low;
+                    blue = falling;
+                    break;
+            }
+        }
         stage->hue = hue;
         stage->saturation = saturation;
         stage->value = value;
@@ -4890,36 +4951,37 @@ extern "C" {
     }
     static __used__ i32 eduicbInteractProp(struct edui_interact_s *interact) {
         edui_prop_s *property = static_cast<edui_prop_s *>(interact->item);
-        if (!(edui_cursor_buttons_db & EDUI_CURSOR_PRIMARY) || (property->unknown_property_flags & 0x0a))
-            return (property->unknown_property_flags & 0x0b) != 0;
+        u8 &property_flags = reinterpret_cast<u8 *>(property)[0x4c];
+        if (!(edui_cursor_buttons_db & EDUI_CURSOR_PRIMARY) || (property_flags & 0x0a))
+            return (property_flags & 0x0b) != 0;
         f32 label_end = interact->x + property->label_width;
         f32 cursor_bottom = interact->y + interact->height;
         bool in_row = edui_cursor_y >= interact->y && edui_cursor_y < cursor_bottom;
-        if (property->unknown_property_flags & 1) {
+        if (property_flags & 1) {
             if (in_row && edui_cursor_x >= label_end + 1.0f && edui_cursor_x < property->button_x) {
-                property->unknown_property_flags |= 1;
+                property_flags |= 1;
                 eduiPropTextPos = -1;
                 return 1;
             }
-            return (property->unknown_property_flags & 0x0b) != 0;
+            return (property_flags & 0x0b) != 0;
         }
         edui_prop_s *bounds_property = property;
-        if (in_row && edui_cursor_x < label_end - 1.0f && property->selected) {
+        if (in_row && edui_cursor_x >= label_end - 1.0f && edui_cursor_x < label_end + 1.0f && property->selected) {
             property->selected(interact->menu, property, 0);
             bounds_property = static_cast<edui_prop_s *>(interact->item);
             label_end = interact->x + bounds_property->label_width;
         }
         if (in_row && edui_cursor_x >= label_end - 1.0f && edui_cursor_x < label_end + 1.0f) {
-            property->unknown_property_flags |= 0x06;
+            property_flags |= 0x06;
             bounds_property = static_cast<edui_prop_s *>(interact->item);
             label_end = interact->x + bounds_property->label_width;
         }
         if (in_row && edui_cursor_x >= label_end + 1.0f && edui_cursor_x < bounds_property->button_x &&
-            !(property->unknown_property_flags & 1)) {
+            !(property_flags & 1)) {
             if (property->selected)
                 property->selected(interact->menu, property, 0);
             NuKeyFlush();
-            property->unknown_property_flags |= 1;
+            property_flags |= 1;
             NuStrCpy(eduiPropTextStore, property->property_text);
             NuStrCpy(eduiPropTextEdit, property->property_text);
             eduiPropTextPos = NuStrLen(property->property_text);
@@ -4930,10 +4992,10 @@ extern "C" {
               edui_cursor_y < (property->button_y + property->button_size) * 0.5f)) &&
             property->button) {
             property->button(interact->menu, property, 0);
-            if (property->unknown_property_flags & 0x20)
+            if (property_flags & 0x20)
                 return 1;
         }
-        return (property->unknown_property_flags & 0x0b) != 0;
+        return (property_flags & 0x0b) != 0;
     }
     static __used__ i32 eduicbInteractFilter(struct edui_interact_s *interact) {
         return eduicbInteractProp(interact);
@@ -5002,14 +5064,26 @@ extern "C" {
         eduiMenuDestroy(menu);
     }
 
+    static __attribute__((always_inline)) inline i32 eduiPickerDeadZone32(i32 raw_value) {
+        i32 value = raw_value - 128;
+        if (value > 0) {
+            if (value < 32)
+                return 0;
+            return (value - 32) * 255 / 223;
+        }
+        if (value > -32)
+            return 0;
+        return (value + 32) * 255 / 223;
+    }
+
     static __used__ i32 eduicbProcessColourPick(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad) {
         edui_colour_pick_s *pick = static_cast<edui_colour_pick_s *>(item);
         if (!edui_cursor_buttons) {
             pick->dragging_colour = 0;
             pick->dragging_saturation = 0;
         }
-        f32 dx = NuPs2ApplyDeadZone(pad->analog_left_x, 32) * 0.001f;
-        f32 dy = NuPs2ApplyDeadZone(pad->analog_left_y, 32) * 0.001f;
+        f32 dx = eduiPickerDeadZone32(pad->analog_left_x) * 0.001f;
+        f32 dy = eduiPickerDeadZone32(pad->analog_left_y) * 0.001f;
         pick->cursor_x += dx;
         pick->cursor_y += dy;
         if (pick->cursor_x < 0.0f)
@@ -5168,7 +5242,8 @@ extern "C" {
     static __used__ i32 eduicbProcessFilter(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad) {
         auto *filter = static_cast<edui_filter_s *>(item);
         (void)delta_time;
-        if (filter->unknown_property_flags & 2) {
+        u8 *filter_flags = reinterpret_cast<u8 *>(filter) + 0x4c;
+        if (*filter_flags & 2) {
             filter->label_width = edui_cursor_x - static_cast<f32>(item->x);
             if (filter->label_width < 1.0f)
                 filter->label_width = 1.0f;
@@ -5177,7 +5252,7 @@ extern "C" {
                     static_cast<edui_prop_s *>(other)->label_width = filter->label_width;
             }
             if (!(edui_cursor_buttons & EDUI_CURSOR_PRIMARY))
-                filter->unknown_property_flags &= ~2;
+                *filter_flags &= ~2;
         }
         eduicbProcessPropKeyboard(menu, filter);
         eduiSetCameraEnabled(1);
@@ -5192,14 +5267,14 @@ extern "C" {
                 filter->unknown_property_flags &= ~8;
         }
         char *query = (filter->unknown_property_flags & 1) ? eduiPropTextEdit : filter->property_text;
-        bool changed = false;
+        i32 changed = 0;
         if (!*query) {
             for (eduiitem_s *child = filter->first_child; child;) {
                 eduiitem_s *next = child->next;
                 eduiItemFilterRemoveItem(filter, child);
                 eduiMenuAddItem(menu, child);
                 child = next;
-                changed = true;
+                changed = 1;
             }
         } else {
             for (eduiitem_s *candidate = menu->first; candidate;) {
@@ -5207,7 +5282,7 @@ extern "C" {
                 if (candidate->type != 18 && candidate->type != 20 && !NuStrIStr(candidate->text, query)) {
                     eduiMenuRemoveItem(menu, candidate);
                     eduiItemFilterAddItem(filter, candidate);
-                    changed = true;
+                    changed = 1;
                 }
                 candidate = next;
             }
@@ -5216,7 +5291,7 @@ extern "C" {
                 if (NuStrIStr(candidate->text, query)) {
                     eduiItemFilterRemoveItem(filter, candidate);
                     eduiMenuAddItem(menu, candidate);
-                    changed = true;
+                    changed = 1;
                 }
                 candidate = next;
             }
@@ -5239,15 +5314,19 @@ extern "C" {
             if (!gpcfg)
                 return 0;
             eduiitem_s *pick;
-            if (item->type == 8)
+            if (item->type == 8) {
                 pick = eduiItemGreyPickCreate(reinterpret_cast<usize>(item), &ed_attr, cbgpcfgCPPress, "Colourpick");
-            else if (item->type == 9)
+                if (gradient->selected_stage)
+                    eduiItemColourPickSetHSV(static_cast<edui_colour_pick_s *>(pick), gradient->selected_stage->hue,
+                                             gradient->selected_stage->saturation, gradient->selected_stage->value);
+            } else if (item->type == 9)
                 pick = eduiItemSelCreate(reinterpret_cast<usize>(item), &ed_attr, 0, 0, cbgpcfgCPPress, "Edit");
-            else
+            else {
                 pick = eduiItemColourPickCreate(reinterpret_cast<usize>(item), &ed_attr, cbgpcfgCPPress, "Colourpick");
-            if (item->type != 9 && gradient->selected_stage)
-                eduiItemColourPickSetHSV(static_cast<edui_colour_pick_s *>(pick), gradient->selected_stage->hue,
-                                         gradient->selected_stage->saturation, gradient->selected_stage->value);
+                if (gradient->selected_stage)
+                    eduiItemColourPickSetHSV(static_cast<edui_colour_pick_s *>(pick), gradient->selected_stage->hue,
+                                             gradient->selected_stage->saturation, gradient->selected_stage->value);
+            }
             eduiMenuAddItem(gpcfg, pick);
             eduiMenuAddItem(gpcfg, eduiItemSelCreate(reinterpret_cast<usize>(item), &ed_attr, 0, 0, cbgpcfgAdd, "Add"));
             eduiMenuAddItem(gpcfg, eduiItemSelCreate(reinterpret_cast<usize>(item), &ed_attr, 0, 0, cbgpcfgDel, "Del"));
@@ -5501,7 +5580,8 @@ extern "C" {
     static __used__ i32 eduicbProcessProp(eduimenu_s *menu, eduiitem_s *item, f32 delta_time, nupad_s *pad) {
         (void)delta_time;
         edui_prop_s *property = static_cast<edui_prop_s *>(item);
-        if (property->unknown_property_flags & 2) {
+        u8 *property_flags = reinterpret_cast<u8 *>(property) + 0x4c;
+        if (*property_flags & 2) {
             property->label_width = edui_cursor_x - static_cast<f32>(item->x);
             if (property->label_width < 1.0f)
                 property->label_width = 1.0f;
@@ -5510,12 +5590,12 @@ extern "C" {
                     static_cast<edui_prop_s *>(other)->label_width = property->label_width;
             }
             if (!(edui_cursor_buttons & EDUI_CURSOR_PRIMARY))
-                property->unknown_property_flags &= ~2;
+                *property_flags &= ~2;
         }
         eduicbProcessPropKeyboard(menu, property);
         eduiSetCameraEnabled(1);
         if ((property->unknown_property_flags & 8) ||
-            (pad && item->type == 17 && (pad->digital_buttons & EDUI_CURSOR_PRIMARY))) {
+            (item->type == 17 && (pad->digital_buttons & EDUI_CURSOR_PRIMARY))) {
             if (property->button) {
                 eduiSetCameraEnabled(0);
                 property->button(menu, item, edui_cursor_buttons);
@@ -5612,11 +5692,14 @@ extern "C" {
             if (picker->cursor <= 0)
                 return;
             --picker->cursor;
-            if (picker->value[picker->cursor + 1])
+            if (picker->value[picker->cursor + 1]) {
+                if (picker->cursor > 0xfe)
+                    return;
                 memmove(picker->value + picker->cursor, picker->value + picker->cursor + 1,
                         sizeof(picker->value) - picker->cursor - 1);
-            else
+            } else {
                 picker->value[picker->cursor] = '\0';
+            }
         };
         auto insert_character = [&](char character) {
             if (NuStrLen(picker->value) >= picker->max_length)
@@ -5787,7 +5870,8 @@ extern "C" {
             pick->changed(menu, item, pad->digital_buttons);
         return 0;
     }
-    static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width) {
+    __attribute__((force_align_arg_pointer)) static __used__ i32 eduicbRenderCheck(eduimenu_s *, eduiitem_s *item,
+                                                                                   i32 x, i32 y, i32 width) {
         i32 height = static_cast<i32>(NuQFntHeight(edui_font) * 1.25f) >> 3;
         i32 baseline = static_cast<i32>(NuQFntHeight(edui_font) * 0.125f + NuQFntBaseline(edui_font));
         item->x = x;
@@ -5818,43 +5902,61 @@ extern "C" {
         }
         return height;
     }
-    static void eduiDrawHueValueBand(i32 x, i32 y, i32 width, i32 height, u32 first, u32 second, f32 start, f32 end) {
+#if defined(__i386__) && defined(__SSE__)
+#define EDUI_GRAD_CALL __attribute__((regparm(2), sseregparm))
+#else
+#define EDUI_GRAD_CALL
+#endif
+    static __attribute__((noinline, used)) EDUI_GRAD_CALL void
+    eduiDrawHueValueBand(i32 x, i32 y, i32 width, i32 height, f32 start, f32 end, u32 first, u32 second) {
         i32 left = (x << 4) + static_cast<i32>(start * static_cast<f32>(width << 4));
         i32 band_width = static_cast<i32>(end * static_cast<f32>(width << 4)) -
                          static_cast<i32>(start * static_cast<f32>(width << 4));
         i32 strip_height = height;
-        for (i32 strip = 0; strip < 8; ++strip) {
-            i32 scale_top = strip > 1 ? strip - 1 : 0;
-            i32 scale_bottom = strip;
-            u32 top_left = 0x80000000u;
-            u32 top_right = 0x80000000u;
-            u32 bottom_left = 0x80000000u;
-            u32 bottom_right = 0x80000000u;
-            for (i32 channel = 0; channel < 3; ++channel) {
-                i32 shift = channel * 8;
-                top_left |= (((first >> shift) & 0xff) * scale_top / 8) << shift;
-                top_right |= (((second >> shift) & 0xff) * scale_top / 8) << shift;
-                bottom_left |= (((first >> shift) & 0xff) * scale_bottom / 8) << shift;
-                bottom_right |= (((second >> shift) & 0xff) * scale_bottom / 8) << shift;
-            }
-            i32 colours[4] = {static_cast<i32>(top_left), static_cast<i32>(top_right), static_cast<i32>(bottom_left),
-                              static_cast<i32>(bottom_right)};
-            if (!edui_donotdraw)
-                NuRndrGradRect2di(left, (y << 3) + strip * strip_height, band_width, strip_height, colours,
-                                  uimtls[ui_bgmtl]);
-        }
+        i32 colours[4] = {static_cast<i32>(0x80000000u), static_cast<i32>(0x80000000u), static_cast<i32>(0x80000000u),
+                          static_cast<i32>(0x80000000u)};
+        if (!edui_donotdraw)
+            NuRndrGradRect2di(left, y << 3, band_width, strip_height, colours, uimtls[ui_bgmtl]);
+#define EDUI_DRAW_VALUE_STRIP(strip)                                                                                   \
+    {                                                                                                                  \
+        colours[0] = colours[2];                                                                                       \
+        colours[1] = colours[3];                                                                                       \
+        u8 *bottom_left = reinterpret_cast<u8 *>(&colours[2]);                                                         \
+        u8 *bottom_right = reinterpret_cast<u8 *>(&colours[3]);                                                        \
+        bottom_left[0] = ((first & 0xff) * (strip)) / 8;                                                               \
+        bottom_left[1] = (((first >> 8) & 0xff) * (strip)) / 8;                                                        \
+        bottom_left[2] = (((first >> 16) & 0xff) * (strip)) / 8;                                                       \
+        bottom_left[3] = 0x80 + ((static_cast<i32>(first >> 24) - 0x80) * (strip)) / 8;                                \
+        bottom_right[0] = ((second & 0xff) * (strip)) / 8;                                                             \
+        bottom_right[1] = (((second >> 8) & 0xff) * (strip)) / 8;                                                      \
+        bottom_right[2] = (((second >> 16) & 0xff) * (strip)) / 8;                                                     \
+        bottom_right[3] = 0x80 + ((static_cast<i32>(second >> 24) - 0x80) * (strip)) / 8;                              \
+        if (!edui_donotdraw)                                                                                           \
+            NuRndrGradRect2di(left, (y << 3) + (strip) * strip_height, band_width, strip_height, colours,              \
+                              uimtls[ui_bgmtl]);                                                                       \
     }
+        EDUI_DRAW_VALUE_STRIP(1);
+        EDUI_DRAW_VALUE_STRIP(2);
+        EDUI_DRAW_VALUE_STRIP(3);
+        EDUI_DRAW_VALUE_STRIP(4);
+        EDUI_DRAW_VALUE_STRIP(5);
+        EDUI_DRAW_VALUE_STRIP(6);
+        EDUI_DRAW_VALUE_STRIP(7);
+#undef EDUI_DRAW_VALUE_STRIP
+    }
+#undef EDUI_GRAD_CALL
     static __used__ i32 eduicbRenderColourPick(eduimenu_s *menu, eduiitem_s *item, i32 x, i32 y, i32 width) {
         (void)menu;
         edui_colour_pick_s *picker = static_cast<edui_colour_pick_s *>(item);
         item->x = x;
         item->y = y;
-        i32 main_height = (width * 3) >> 2;
-        static const u32 hues[7] = {0x800000ffu, 0x8000ffffu, 0x8000ff00u, 0x80ffff00u,
-                                    0x80ff0000u, 0x80ff00ffu, 0x800000ffu};
-        for (i32 band = 0; band < 6; ++band)
-            eduiDrawHueValueBand(x, y, width, main_height, hues[band], hues[band + 1], static_cast<f32>(band) / 6.0f,
-                                 static_cast<f32>(band + 1) / 6.0f);
+        i32 main_height = (width * 3) / 4;
+        eduiDrawHueValueBand(x, y, width, main_height, 0.0f, 1.0f / 6.0f, 0x800000ffu, 0x8000ffffu);
+        eduiDrawHueValueBand(x, y, width, main_height, 1.0f / 6.0f, 2.0f / 6.0f, 0x8000ffffu, 0x8000ff00u);
+        eduiDrawHueValueBand(x, y, width, main_height, 2.0f / 6.0f, 0.5f, 0x8000ff00u, 0x80ffff00u);
+        eduiDrawHueValueBand(x, y, width, main_height, 0.5f, 4.0f / 6.0f, 0x80ffff00u, 0x80ff0000u);
+        eduiDrawHueValueBand(x, y, width, main_height, 4.0f / 6.0f, 5.0f / 6.0f, 0x80ff0000u, 0x80ff00ffu);
+        eduiDrawHueValueBand(x, y, width, main_height, 5.0f / 6.0f, 1.0f, 0x80ff00ffu, 0x800000ffu);
         if (!edui_donotdraw) {
             i32 value_y = static_cast<i32>(y + main_height * picker->cursor_y) << 3;
             i32 hue_x = static_cast<i32>(x + width * picker->cursor_x) << 4;
@@ -5940,7 +6042,9 @@ extern "C" {
         const bool over_button = edui_cursor_x >= expander->button_x && edui_cursor_y >= expander->button_y * 0.5f &&
                                  edui_cursor_x < expander->button_x + expander->button_size &&
                                  edui_cursor_y < (expander->button_y + expander->button_size) * 0.5f;
-        expander->unknown_flags = (expander->unknown_flags & ~1u) | static_cast<u32>(over_button);
+        // The original updates only the byte containing open and hover at offset 0x54.
+        u8 *hover_flags = reinterpret_cast<u8 *>(expander) + 0x54;
+        *hover_flags = (*hover_flags & ~2u) | static_cast<u8>(over_button) << 1;
 
         if (!edui_donotdraw) {
             NuQFntSet(edui_font);
@@ -5952,8 +6056,8 @@ extern "C" {
         for (eduimenu_s *ancestor = menu; ancestor; ancestor = ancestor->parent) {
             if (ancestor == eduiGetActiveMenu()) {
                 if (!edui_donotdraw)
-                    NuRndrRect2di(x << 4, y << 3, width << 4, height << 3, item->colours[2 + item->highlighted],
-                                  uimtls[ui_bgmtl]);
+                    NuRndrRect2di(x << 4, y << 3, width << 4, static_cast<i32>(row_height * 8.0f),
+                                  item->colours[2 + item->highlighted], uimtls[ui_bgmtl]);
                 break;
             }
         }
@@ -5966,8 +6070,8 @@ extern "C" {
                               0xff000000, uimtls[0]);
             }
         }
-        const f32 button_x = static_cast<f32>(x) + static_cast<f32>(expander->depth) * button_size + 2.0f;
-        const f32 button_y = static_cast<f32>(y) + 2.0f;
+        const f32 button_x = static_cast<f32>(x) + static_cast<f32>(expander->depth) * button_size + 1.0f;
+        const f32 button_y = static_cast<f32>(y) + 1.0f;
         expander->button_size = button_size;
         expander->button_x = button_x;
         expander->button_y = button_y;
@@ -6148,9 +6252,22 @@ extern "C" {
                 closest = distance;
             }
         }
-        for (i32 onion = 0; onion < 8; ++onion)
-            if (picker->onion_skins[onion])
-                eduiRenderGraphLine(picker->onion_skins[onion], plot_x, plot_y, graph_width, graph_height, 0x80402000);
+        if (picker->onion_skins[0])
+            eduiRenderGraphLine(picker->onion_skins[0], plot_x, plot_y, graph_width, graph_height, 0x80402000);
+        if (picker->onion_skins[1])
+            eduiRenderGraphLine(picker->onion_skins[1], plot_x, plot_y, graph_width, graph_height, 0x80402000);
+        if (picker->onion_skins[2])
+            eduiRenderGraphLine(picker->onion_skins[2], plot_x, plot_y, graph_width, graph_height, 0x80402000);
+        if (picker->onion_skins[3])
+            eduiRenderGraphLine(picker->onion_skins[3], plot_x, plot_y, graph_width, graph_height, 0x80402000);
+        if (picker->onion_skins[4])
+            eduiRenderGraphLine(picker->onion_skins[4], plot_x, plot_y, graph_width, graph_height, 0x80402000);
+        if (picker->onion_skins[5])
+            eduiRenderGraphLine(picker->onion_skins[5], plot_x, plot_y, graph_width, graph_height, 0x80402000);
+        if (picker->onion_skins[6])
+            eduiRenderGraphLine(picker->onion_skins[6], plot_x, plot_y, graph_width, graph_height, 0x80402000);
+        if (picker->onion_skins[7])
+            eduiRenderGraphLine(picker->onion_skins[7], plot_x, plot_y, graph_width, graph_height, 0x80402000);
         eduiRenderGraphLine(graph, plot_x, plot_y, graph_width, graph_height, 0x80800000);
         if (picker->selected_point >= 0 && !edui_donotdraw) {
             i32 point = picker->selected_point;
@@ -6241,7 +6358,9 @@ extern "C" {
         eduiFntPrintEx(edui_font, x << 4, (y << 3) + baseline, 16, format, number->value);
         return height;
     }
-    static __used__ i32 eduicbRenderProp(struct eduimenu_s *menu, struct eduiitem_s *item, i32 x, i32 y, i32 scale) {
+    static __used__ __attribute__((optimize("no-omit-frame-pointer"))) i32 eduicbRenderProp(struct eduimenu_s *menu,
+                                                                                            struct eduiitem_s *item,
+                                                                                            i32 x, i32 y, i32 scale) {
         edui_prop_s *property = static_cast<edui_prop_s *>(item);
         item->x = x;
         item->y = y;
@@ -6250,14 +6369,21 @@ extern "C" {
                                  edui_cursor_y < (property->button_y + property->button_size) * 0.5f &&
                                  !eduiInteractLocked;
         const bool button_highlighted = (property->unknown_property_flags & 8) || over_button;
-        property->unknown_property_flags = (property->unknown_property_flags & ~16u) | (button_highlighted ? 16u : 0u);
-        if (!edui_donotdraw) {
+        u8 *property_flags = reinterpret_cast<u8 *>(property) + 0x4c;
+        *property_flags = (*property_flags & ~16u) | (button_highlighted ? 16u : 0u);
+        if (!edui_donotdraw)
             NuQFntSet(edui_font);
-            const u32 text_colour = item->unknown_10 == 1   ? 0xff000060
-                                    : item->unknown_10 == 2 ? 0xff006000
-                                    : item->unknown_10 == 3 ? 0xff600000
-                                                            : item->colours[item->highlighted];
-            NuQFntSetColour(edui_font, text_colour);
+        if (item->unknown_10 == 2) {
+            if (!edui_donotdraw)
+                NuQFntSetColour(edui_font, 0xff006000);
+        } else if (item->unknown_10 == 3) {
+            if (!edui_donotdraw)
+                NuQFntSetColour(edui_font, 0xff600000);
+        } else if (item->unknown_10 == 1) {
+            if (!edui_donotdraw)
+                NuQFntSetColour(edui_font, 0xff000060);
+        } else if (!edui_donotdraw) {
+            NuQFntSetColour(edui_font, item->colours[item->highlighted]);
         }
         const f32 row_height = NuQFntHeight(edui_font) * 1.25f * 0.125f;
         const i32 height = static_cast<i32>(row_height);
@@ -6288,8 +6414,7 @@ extern "C" {
             eduiFntPrintClipEx(edui_font, static_cast<f32>(x) + indentation, static_cast<f32>(y) + baseline, 16,
                                static_cast<f32>(x) - indentation, property->label_width, item->text);
             const f32 text_x = static_cast<f32>(x) + property->label_width + 2.0f;
-            eduiFntPrintEx(edui_font, static_cast<i32>(text_x * 16.0f),
-                           static_cast<i32>((static_cast<f32>(y) + baseline) * 8.0f), 16, eduiPropTextEdit);
+            eduiFntPrintEx(edui_font, text_x, static_cast<f32>(y) + baseline, 16, eduiPropTextEdit);
             char prefix[256];
             NuStrNCpy(prefix, eduiPropTextEdit, eduiPropTextPos + 1);
             prefix[eduiPropTextPos + 1] = '\0';
@@ -6304,8 +6429,8 @@ extern "C" {
         property->button_x = static_cast<f32>(x + scale) - (2.0f + property->button_size);
         property->button_y = static_cast<f32>(y) + 2.0f;
         if (!edui_donotdraw) {
-            for (eduimenu_s *ancestor = menu; ancestor; ancestor = ancestor->parent) {
-                if (ancestor == eduiGetActiveMenu()) {
+            for (eduimenu_s *descendant = menu; descendant; descendant = descendant->child) {
+                if (descendant == eduiGetActiveMenu()) {
                     NuRndrRect2di(x << 4, y << 3, scale << 4, static_cast<i32>(row_height * 8.0f),
                                   item->colours[2 + item->highlighted], uimtls[ui_bgmtl]);
                     break;
@@ -6408,10 +6533,11 @@ extern "C" {
     static __used__ i32 eduicbRenderSeparator(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width) {
         NuQFntHeight(edui_font);
         NuQFntBaseline(edui_font);
-        item->x = x;
+        numtl_s *background_material = uimtls[ui_bgmtl];
         item->y = y;
+        item->x = x;
         if (!edui_donotdraw)
-            NuRndrRect2di(x << 4, y << 3, width << 4, 64, item->colours[2 + item->highlighted], uimtls[ui_bgmtl]);
+            NuRndrRect2di(x << 4, y << 3, width << 4, 64, item->colours[2 + item->highlighted], background_material);
         if (!edui_donotdraw)
             NuRndrLine2di((x + 4) << 4, (y << 3) + 32, ((x + width) << 4) - 64, (y << 3) + 32, 0xff000000,
                           uimtls[ui_bgmtl]);
@@ -6481,7 +6607,9 @@ extern "C" {
             NuRndrLine2di(marker_x, top, marker_x, bottom, item->colours[item->highlighted], uimtls[0]);
         return height * 2;
     }
-    static __used__ i32 eduicbRenderTextPick(eduimenu_s *, eduiitem_s *item, i32 x, i32 y, i32 width) {
+    static __used__ __attribute__((optimize("no-omit-frame-pointer"))) i32 eduicbRenderTextPick(eduimenu_s *,
+                                                                                                eduiitem_s *item, i32 x,
+                                                                                                i32 y, i32 width) {
         auto *picker = static_cast<edui_textpicker_s *>(item);
         i32 height = static_cast<i32>(NuQFntHeight(edui_font) * 1.25f) >> 3;
         i32 baseline = static_cast<i32>(NuQFntHeight(edui_font) * 0.125f + NuQFntBaseline(edui_font));
@@ -6520,7 +6648,7 @@ extern "C" {
         if (!edui_donotdraw)
             NuRndrRect2di(x << 4, y << 3, item_width << 4, total_height << 3, item->colours[2], uimtls[ui_bgmtl]);
         for (i32 row = 0; row < 4; ++row) {
-            for (i32 column = 0; column < 10; ++column) {
+            auto draw_key = [&](i32 column) {
                 if (!edui_donotdraw) {
                     NuQFntSet(edui_font);
                     NuQFntSetColour(edui_font,
@@ -6528,7 +6656,17 @@ extern "C" {
                 }
                 char letter[2] = {textrow[row][column], '\0'};
                 eduiFntPrintEx(edui_font, (x + height * column) << 4, ((y + row * height) << 3) + baseline, 16, letter);
-            }
+            };
+            draw_key(0);
+            draw_key(1);
+            draw_key(2);
+            draw_key(3);
+            draw_key(4);
+            draw_key(5);
+            draw_key(6);
+            draw_key(7);
+            draw_key(8);
+            draw_key(9);
         }
         if (!edui_donotdraw) {
             NuQFntSet(edui_font);
@@ -6541,13 +6679,11 @@ extern "C" {
         if (cursor_flash >= 16 && !edui_donotdraw) {
             char prefix[256];
             i32 position = picker->cursor;
-            if (position < 0)
-                position = 0;
-            if (position > 255)
-                position = 255;
-            memcpy(prefix, picker->value, position);
-            prefix[position] = '\0';
-            i32 offset = static_cast<i32>(NuQFntPrintLenU(edui_font, prefix));
+            i32 offset = 0;
+            if (position) {
+                NuStrNCpy(prefix, picker->value, position + 1);
+                offset = static_cast<i32>(NuQFntPrintLenU(edui_font, prefix));
+            }
             char at_cursor[2] = {position < NuStrLen(picker->value) ? picker->value[position] : 'A', '\0'};
             NuRndrRect2di((x << 4) + offset, value_y - static_cast<i32>(NuQFntBaseline(edui_font)),
                           static_cast<i32>(NuQFntPrintLenU(edui_font, at_cursor)),

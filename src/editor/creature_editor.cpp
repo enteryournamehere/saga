@@ -109,7 +109,7 @@ extern "C" void aieditor_SetCurrentScript(char *, const AIEditorScriptSelection 
 extern "C" void aieditor_ClearMainMenu(void);
 extern "C" i32 aidata_version;
 static eduiitem_s *reset_params_option;
-static u32 creature_editor_item_colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
+static u32 attr[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
 extern "C" void *ed_fnt;
 extern "C" i32 AIEDITOR_CREATURES;
 extern "C" i32 AIEDITOR_ROUTES;
@@ -163,7 +163,12 @@ static void creatureEditor_cb_max_n_respawns(eduimenu_s *, eduiitem_s *, u32);
 static void creatureEditor_cb_min_t_respawn(eduimenu_s *, eduiitem_s *, u32);
 static void creatureEditor_cb_max_t_respawn(eduimenu_s *, eduiitem_s *, u32);
 
-static __used__ void *CreateCreature(i32 type, nuvec_s *position, i32 angle) {
+#if defined(__i386__)
+#define CREATURE_EDITOR_REGPARM2 __attribute__((regparm(2)))
+#else
+#define CREATURE_EDITOR_REGPARM2
+#endif
+static __used__ CREATURE_EDITOR_REGPARM2 void *CreateCreature(i32 type, nuvec_s *position, i32 angle) {
     if (type == -1) {
         return nullptr;
     }
@@ -225,10 +230,12 @@ static __attribute__((always_inline, optimize("O3"))) inline EDLOCATOR_s *FindCr
 __attribute__((optimize("O3"))) void creatureEditor_Enter() {
     aieditor->creatures.head = nullptr;
     aieditor->creatures.tail = nullptr;
-    NULISTHDR *free_creatures = reinterpret_cast<NULISTHDR *>(reinterpret_cast<u8 *>(aieditor) + 0x3691c);
-    CreatureEditorRecord *pool = reinterpret_cast<CreatureEditorRecord *>(reinterpret_cast<u8 *>(aieditor) + 0x3131c);
-    for (i32 i = 0; i < 128; ++i)
+    for (i32 i = 0; i < 128; ++i) {
+        NULISTHDR *free_creatures = reinterpret_cast<NULISTHDR *>(reinterpret_cast<u8 *>(aieditor) + 0x3691c);
+        CreatureEditorRecord *pool =
+            reinterpret_cast<CreatureEditorRecord *>(reinterpret_cast<u8 *>(aieditor) + 0x3131c);
         NuLinkedListAppend(free_creatures, &pool[i].link);
+    }
 
     AISYS *system = aieditor->ai_system;
     if (system != nullptr) {
@@ -240,10 +247,12 @@ __attribute__((optimize("O3"))) void creatureEditor_Enter() {
                 continue;
             EDAIPATH_s *path = pathEditor_GetPath(reinterpret_cast<const char *>(source->path_info.path));
             f32 tolerance = 0.0f;
-            do {
+            for (;;) {
                 pathEditor_OnPathCheck(&creature->position, (EDAIPATHCHECK_s *)creature->path_check, path, tolerance);
+                if (*reinterpret_cast<i32 *>(creature->path_check) != 0)
+                    break;
                 tolerance += 0.01f;
-            } while (*reinterpret_cast<i32 *>(creature->path_check) == 0);
+            }
             i32 *path_angle = reinterpret_cast<i32 *>(creature->path_check + 0x18);
             *path_angle = NuAngSub(creature->angle, *path_angle);
             strcpy(creature->name, source->name);
@@ -333,23 +342,25 @@ static __used__ void creatureEditor_cbActivationMenu(eduimenu_s *parent, eduiite
     eduimenu_s *menu = eduiMenuCreate(220, 70, 240, 250, ed_fnt, creatureEditor_cbCancelMenu, "Activation Condition");
     if (menu == nullptr)
         return;
-    eduiMenuAddItem(menu, eduiItemSliderCreateInt(1, creature_editor_item_colours, 0, creatureEditor_cb_difficulty, 1,
-                                                  9, creature->difficulty, "Activation Difficulty"));
-    eduiMenuAddItem(menu, eduiItemCheckCreate(0, creature_editor_item_colours, creature->activation == 0, 1,
-                                              creatureEditor_cbSetActivation, "AUTOMATIC"));
-    eduiMenuAddItem(menu, eduiItemCheckCreate(2, creature_editor_item_colours, creature->activation == 2, 1,
-                                              creatureEditor_cbSetActivation, "SCRIPT"));
+    eduiMenuAddItem(menu, eduiItemSliderCreateInt(1, attr, 0, creatureEditor_cb_difficulty, 1, 9, creature->difficulty,
+                                                  "Activation Difficulty"));
+    eduiMenuAddItem(
+        menu, eduiItemCheckCreate(0, attr, creature->activation == 0, 1, creatureEditor_cbSetActivation, "AUTOMATIC"));
+    eduiMenuAddItem(
+        menu, eduiItemCheckCreate(2, attr, creature->activation == 2, 1, creatureEditor_cbSetActivation, "SCRIPT"));
     i32 index = 0;
     char label[64];
     NULISTHDR *list = creatureEditor_AreaList();
     for (NULISTLNK *link = NuLinkedListGetHead(list); link != nullptr;
          link = NuLinkedListGetNext(list, link), ++index) {
-        sprintf(label, "AREA \"%s\"", reinterpret_cast<char *>(link) + 8);
-        bool selected = creatureEditor_Current()->activation_area == link;
-        eduiMenuAddItem(menu, eduiItemCheckCreate(index, creature_editor_item_colours, selected, 1,
-                                                  creatureEditor_cbSetAreaActivation, label));
-        if (selected)
+        if (creatureEditor_Current()->activation_area == link) {
+            sprintf(label, "AREA \"%s\"", reinterpret_cast<char *>(link) + 8);
+            eduiMenuAddItem(menu, eduiItemCheckCreate(index, attr, 1, 1, creatureEditor_cbSetAreaActivation, label));
             menu->selected = edui_last_item;
+        } else {
+            sprintf(label, "AREA \"%s\"", reinterpret_cast<char *>(link) + 8);
+            eduiMenuAddItem(menu, eduiItemCheckCreate(index, attr, 0, 1, creatureEditor_cbSetAreaActivation, label));
+        }
         eduiMenuAttach(parent, menu);
     }
     eduiMenuAttach(parent, menu);
@@ -394,16 +405,16 @@ static __used__ void creatureEditor_cbGroupMenu(eduimenu_s *parent, eduiitem_s *
     eduimenu_s *menu = eduiMenuCreate(220, 70, 240, 250, ed_fnt, creatureEditor_cbCancelMenu, "Group Values");
     if (menu == nullptr)
         return;
-    eduiMenuAddItem(menu, eduiItemSliderCreateInt(1, creature_editor_item_colours, 0, creatureEditor_cb_ngroup, 1, 31,
-                                                  creature->group_count, "Group Size"));
-    eduiMenuAddItem(menu, eduiItemSliderCreate(1, creature_editor_item_colours, 0, creatureEditor_cb_stagger_start,
-                                               0.0f, 60.0f, creature->stagger_start, "Stagger Time"));
-    eduiMenuAddItem(menu, eduiItemSliderCreateInt(1, creature_editor_item_colours, 0, creatureEditor_cb_nacross, 1, 31,
-                                                  creature->across_count, "Formation Width"));
-    eduiMenuAddItem(menu, eduiItemSliderCreate(1, creature_editor_item_colours, 0, creatureEditor_cb_xspacing, 0.2f,
-                                               4.8f, creature->x_spacing, "Formation X Spacing"));
-    eduiMenuAddItem(menu, eduiItemSliderCreate(1, creature_editor_item_colours, 0, creatureEditor_cb_zspacing, 0.2f,
-                                               4.8f, creature->z_spacing, "Formation Z Spacing"));
+    eduiMenuAddItem(menu, eduiItemSliderCreateInt(1, attr, 0, creatureEditor_cb_ngroup, 1, 31, creature->group_count,
+                                                  "Group Size"));
+    eduiMenuAddItem(menu, eduiItemSliderCreate(1, attr, 0, creatureEditor_cb_stagger_start, 0.0f, 60.0f,
+                                               creature->stagger_start, "Stagger Time"));
+    eduiMenuAddItem(menu, eduiItemSliderCreateInt(1, attr, 0, creatureEditor_cb_nacross, 1, 31, creature->across_count,
+                                                  "Formation Width"));
+    eduiMenuAddItem(menu, eduiItemSliderCreate(1, attr, 0, creatureEditor_cb_xspacing, 0.2f, 4.8f, creature->x_spacing,
+                                               "Formation X Spacing"));
+    eduiMenuAddItem(menu, eduiItemSliderCreate(1, attr, 0, creatureEditor_cb_zspacing, 0.2f, 4.8f, creature->z_spacing,
+                                               "Formation Z Spacing"));
     eduiMenuAttach(parent, menu);
 }
 
@@ -428,8 +439,7 @@ static __used__ void creatureEditor_cbRenameCreatureMenu(eduimenu_s *parent, edu
     eduimenu_s *menu = eduiMenuCreate(240, 90, 240, 250, ed_fnt, creatureEditor_cbCancelMenu, "Rename Creature");
     if (menu == nullptr)
         return;
-    eduiitem_s *item =
-        eduiItemTextPickCreate(0, creature_editor_item_colours, creatureEditor_cbRenameCreature, "Creature Name");
+    eduiitem_s *item = eduiItemTextPickCreate(0, attr, creatureEditor_cbRenameCreature, "Creature Name");
     eduiMenuAddItem(menu, item);
     edui_textpicker_s *picker = reinterpret_cast<edui_textpicker_s *>(item);
     strcpy(picker->value, creature->name);
@@ -461,23 +471,24 @@ static __used__ void creatureEditor_cbRespawnMenu(eduimenu_s *parent, eduiitem_s
         return;
     if (NuLinkedListGetHead(creatureEditor_LocatorList()) != nullptr) {
         char label[64];
-        if (creature->respawn_locator != nullptr) {
-            EDLOCATOR_s *locator = reinterpret_cast<EDLOCATOR_s *>(creature->respawn_locator);
+        if (creatureEditor_Current()->respawn_locator != nullptr) {
+            EDLOCATOR_s *locator = reinterpret_cast<EDLOCATOR_s *>(creatureEditor_Current()->respawn_locator);
             sprintf(label, "Respawn Locator \"%s\"", locator->name);
         } else {
             strcpy(label, "Respawn Locator NONE");
         }
-        eduiMenuAddItem(menu, eduiItemSelCreate(1, creature_editor_item_colours, 0, 0,
-                                                creatureEditor_cbSelectRespawnLocator, label));
+        eduiMenuAddItem(menu, eduiItemSelCreate(1, attr, 0, 0, creatureEditor_cbSelectRespawnLocator, label));
     }
-    eduiMenuAddItem(menu, eduiItemSliderCreateInt(1, creature_editor_item_colours, 0, creatureEditor_cb_min_n_respawns,
-                                                  -1, 33, static_cast<i8>(creature->min_respawns), "Min Num Respawns"));
-    eduiMenuAddItem(menu, eduiItemSliderCreateInt(1, creature_editor_item_colours, 0, creatureEditor_cb_max_n_respawns,
-                                                  -1, 33, static_cast<i8>(creature->max_respawns), "Max Num Respawns"));
-    eduiMenuAddItem(menu, eduiItemSliderCreate(1, creature_editor_item_colours, 0, creatureEditor_cb_min_t_respawn,
-                                               0.0f, 60.0f, creature->min_respawn_time, "Min Respawn Time"));
-    eduiMenuAddItem(menu, eduiItemSliderCreate(1, creature_editor_item_colours, 0, creatureEditor_cb_max_t_respawn,
-                                               0.0f, 60.0f, creature->max_respawn_time, "Max Respawn Time"));
+    eduiMenuAddItem(menu, eduiItemSliderCreateInt(1, attr, 0, creatureEditor_cb_min_n_respawns, -1, 33,
+                                                  static_cast<i8>(creatureEditor_Current()->min_respawns),
+                                                  "Min Num Respawns"));
+    eduiMenuAddItem(menu, eduiItemSliderCreateInt(1, attr, 0, creatureEditor_cb_max_n_respawns, -1, 33,
+                                                  static_cast<i8>(creatureEditor_Current()->max_respawns),
+                                                  "Max Num Respawns"));
+    eduiMenuAddItem(menu, eduiItemSliderCreate(1, attr, 0, creatureEditor_cb_min_t_respawn, 0.0f, 60.0f,
+                                               creatureEditor_Current()->min_respawn_time, "Min Respawn Time"));
+    eduiMenuAddItem(menu, eduiItemSliderCreate(1, attr, 0, creatureEditor_cb_max_t_respawn, 0.0f, 60.0f,
+                                               creatureEditor_Current()->max_respawn_time, "Max Respawn Time"));
     eduiMenuAttach(parent, menu);
 }
 
@@ -489,14 +500,14 @@ static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbV
     eduimenu_s *menu = eduiMenuCreate(220, 70, 240, 250, ed_fnt, creatureEditor_cbCancelMenu, "Vision");
     if (menu == nullptr)
         return;
-    eduiMenuAddItem(menu, eduiItemSliderCreate(1, creature_editor_item_colours, 0, creatureEditor_cb_viewdistance, 0.5f,
-                                               49.5f, creature->view_distance, "View Distance"));
-    eduiMenuAddItem(menu, eduiItemSliderCreate(1, creature_editor_item_colours, 0, creatureEditor_cb_heardistance, 0.5f,
-                                               49.5f, creature->hear_distance, "Hearing Distance"));
-    eduiMenuAddItem(menu, eduiItemSliderCreate(1, creature_editor_item_colours, 0, creatureEditor_cb_maxviewheight,
-                                               0.1f, 99.9f, creature->max_view_height, "Max View Height"));
-    eduiMenuAddItem(menu, eduiItemSliderCreate(1, creature_editor_item_colours, 0, creatureEditor_cb_minviewheight,
-                                               0.1f, 99.9f, -creature->negative_min_view_height, "Min View Height -"));
+    eduiMenuAddItem(menu, eduiItemSliderCreate(1, attr, 0, creatureEditor_cb_viewdistance, 0.5f, 49.5f,
+                                               creature->view_distance, "View Distance"));
+    eduiMenuAddItem(menu, eduiItemSliderCreate(1, attr, 0, creatureEditor_cb_heardistance, 0.5f, 49.5f,
+                                               creature->hear_distance, "Hearing Distance"));
+    eduiMenuAddItem(menu, eduiItemSliderCreate(1, attr, 0, creatureEditor_cb_maxviewheight, 0.1f, 99.9f,
+                                               creature->max_view_height, "Max View Height"));
+    eduiMenuAddItem(menu, eduiItemSliderCreate(1, attr, 0, creatureEditor_cb_minviewheight, 0.1f, 99.9f,
+                                               -creature->negative_min_view_height, "Min View Height -"));
     eduiMenuAttach(parent, menu);
 }
 
@@ -514,8 +525,7 @@ static __used__ void creatureEditor_cbScriptParams(eduimenu_s *parent, eduiitem_
         } else {
             strcpy(label, "Trigger Area NONE");
         }
-        eduiMenuAddItem(
-            menu, eduiItemSelCreate(1, creature_editor_item_colours, 0, 0, creatureEditor_cbSelectTriggerArea, label));
+        eduiMenuAddItem(menu, eduiItemSelCreate(1, attr, 0, 0, creatureEditor_cbSelectTriggerArea, label));
     }
     if (NuLinkedListGetHead(creatureEditor_LocatorList()) != nullptr) {
         if (creature->locator != nullptr) {
@@ -523,49 +533,67 @@ static __used__ void creatureEditor_cbScriptParams(eduimenu_s *parent, eduiitem_
         } else {
             strcpy(label, "Locator NONE");
         }
-        eduiMenuAddItem(
-            menu, eduiItemSelCreate(1, creature_editor_item_colours, 0, 0, creatureEditor_cbSelectLocator, label));
+        eduiMenuAddItem(menu, eduiItemSelCreate(1, attr, 0, 0, creatureEditor_cbSelectLocator, label));
     }
     AISCRIPT *script = AIScriptFind(aieditor->ai_system, creature->script_name, 1, 1, 1);
-    const char *param_name = script != nullptr ? script->params[0].name : nullptr;
-    if (param_name != nullptr)
-        sprintf(label, param_name);
-    else
+    if (script == nullptr) {
         sprintf(label, "Param%d", 0);
-    eduiMenuAddItem(menu, eduiItemSliderCreate(0, creature_editor_item_colours, 0, creatureEditor_cbSetScriptParam,
-                                               0.0f, 100.0f, aieditorsettings.current_script_params[0], label));
-    eduiItemSliderSetGranularity(reinterpret_cast<edui_slider_s *>(edui_last_item), 0.1f);
-
-    param_name = script != nullptr ? script->params[1].name : nullptr;
-    if (param_name != nullptr)
-        sprintf(label, param_name);
-    else
+        eduiMenuAddItem(menu, eduiItemSliderCreate(0, attr, 0, creatureEditor_cbSetScriptParam, 0.0f, 100.0f,
+                                                   aieditorsettings.current_script_params[0], label));
+        eduiItemSliderSetGranularity(reinterpret_cast<edui_slider_s *>(edui_last_item), 0.1f);
         sprintf(label, "Param%d", 1);
-    eduiMenuAddItem(menu, eduiItemSliderCreate(1, creature_editor_item_colours, 0, creatureEditor_cbSetScriptParam,
-                                               0.0f, 100.0f, aieditorsettings.current_script_params[1], label));
-    eduiItemSliderSetGranularity(reinterpret_cast<edui_slider_s *>(edui_last_item), 0.1f);
-
-    param_name = script != nullptr ? script->params[2].name : nullptr;
-    if (param_name != nullptr)
-        sprintf(label, param_name);
-    else
+        eduiMenuAddItem(menu, eduiItemSliderCreate(1, attr, 0, creatureEditor_cbSetScriptParam, 0.0f, 100.0f,
+                                                   aieditorsettings.current_script_params[1], label));
+        eduiItemSliderSetGranularity(reinterpret_cast<edui_slider_s *>(edui_last_item), 0.1f);
         sprintf(label, "Param%d", 2);
-    eduiMenuAddItem(menu, eduiItemSliderCreate(2, creature_editor_item_colours, 0, creatureEditor_cbSetScriptParam,
-                                               0.0f, 100.0f, aieditorsettings.current_script_params[2], label));
-    eduiItemSliderSetGranularity(reinterpret_cast<edui_slider_s *>(edui_last_item), 0.1f);
-
-    param_name = script != nullptr ? script->params[3].name : nullptr;
-    if (param_name != nullptr)
-        sprintf(label, param_name);
-    else
+        eduiMenuAddItem(menu, eduiItemSliderCreate(2, attr, 0, creatureEditor_cbSetScriptParam, 0.0f, 100.0f,
+                                                   aieditorsettings.current_script_params[2], label));
+        eduiItemSliderSetGranularity(reinterpret_cast<edui_slider_s *>(edui_last_item), 0.1f);
         sprintf(label, "Param%d", 3);
-    eduiMenuAddItem(menu, eduiItemSliderCreate(3, creature_editor_item_colours, 0, creatureEditor_cbSetScriptParam,
-                                               0.0f, 100.0f, aieditorsettings.current_script_params[3], label));
-    eduiItemSliderSetGranularity(reinterpret_cast<edui_slider_s *>(edui_last_item), 0.1f);
+        eduiMenuAddItem(menu, eduiItemSliderCreate(3, attr, 0, creatureEditor_cbSetScriptParam, 0.0f, 100.0f,
+                                                   aieditorsettings.current_script_params[3], label));
+        eduiItemSliderSetGranularity(reinterpret_cast<edui_slider_s *>(edui_last_item), 0.1f);
+    } else {
+        const char *param_name = script->params[0].name;
+        if (param_name != nullptr)
+            sprintf(label, param_name);
+        else
+            sprintf(label, "Param%d", 0);
+        eduiMenuAddItem(menu, eduiItemSliderCreate(0, attr, 0, creatureEditor_cbSetScriptParam, 0.0f, 100.0f,
+                                                   aieditorsettings.current_script_params[0], label));
+        eduiItemSliderSetGranularity(reinterpret_cast<edui_slider_s *>(edui_last_item), 0.1f);
+
+        param_name = script != nullptr ? script->params[1].name : nullptr;
+        if (param_name != nullptr)
+            sprintf(label, param_name);
+        else
+            sprintf(label, "Param%d", 1);
+        eduiMenuAddItem(menu, eduiItemSliderCreate(1, attr, 0, creatureEditor_cbSetScriptParam, 0.0f, 100.0f,
+                                                   aieditorsettings.current_script_params[1], label));
+        eduiItemSliderSetGranularity(reinterpret_cast<edui_slider_s *>(edui_last_item), 0.1f);
+
+        param_name = script != nullptr ? script->params[2].name : nullptr;
+        if (param_name != nullptr)
+            sprintf(label, param_name);
+        else
+            sprintf(label, "Param%d", 2);
+        eduiMenuAddItem(menu, eduiItemSliderCreate(2, attr, 0, creatureEditor_cbSetScriptParam, 0.0f, 100.0f,
+                                                   aieditorsettings.current_script_params[2], label));
+        eduiItemSliderSetGranularity(reinterpret_cast<edui_slider_s *>(edui_last_item), 0.1f);
+
+        param_name = script != nullptr ? script->params[3].name : nullptr;
+        if (param_name != nullptr)
+            sprintf(label, param_name);
+        else
+            sprintf(label, "Param%d", 3);
+        eduiMenuAddItem(menu, eduiItemSliderCreate(3, attr, 0, creatureEditor_cbSetScriptParam, 0.0f, 100.0f,
+                                                   aieditorsettings.current_script_params[3], label));
+        eduiItemSliderSetGranularity(reinterpret_cast<edui_slider_s *>(edui_last_item), 0.1f);
+    }
     reset_params_option = nullptr;
     if ((aieditorsettings.current_script_flags & 0x1e) != 0) {
-        reset_params_option = eduiMenuAddItem(menu, eduiItemToggleCreate(1, creature_editor_item_colours, 1, 1,
-                                                                         creatureEditor_cbResetParams, "Reset Params"));
+        reset_params_option =
+            eduiMenuAddItem(menu, eduiItemToggleCreate(1, attr, 1, 1, creatureEditor_cbResetParams, "Reset Params"));
     }
     eduiMenuAttach(parent, menu);
 }
@@ -581,12 +609,14 @@ static __used__ void creatureEditor_cbSelectScript(eduimenu_s *parent, eduiitem_
         if (NuStrICmp(name, "Level") == 0)
             continue;
         CreatureEditorRecord *creature = creatureEditor_Current();
-        bool selected = creature != nullptr && NuStrICmp(creature->script_name, name) == 0;
-        eduiMenuAddItem(menu, eduiItemCheckCreate(index, creature_editor_item_colours, selected, 1,
-                                                  creatureEditor_cbSetScript, name));
-        if (selected)
+        if (creature != nullptr && NuStrICmp(creature->script_name, name) == 0) {
+            eduiMenuAddItem(menu, eduiItemCheckCreate(index, attr, 1, 1, creatureEditor_cbSetScript, name));
             menu->selected = edui_last_item;
-        eduiMenuAttach(parent, menu);
+            eduiMenuAttach(parent, menu);
+        } else {
+            eduiMenuAddItem(menu, eduiItemCheckCreate(index, attr, 0, 1, creatureEditor_cbSetScript, name));
+            eduiMenuAttach(parent, menu);
+        }
     }
 }
 
@@ -596,16 +626,19 @@ static __used__ void creatureEditor_cbSelectType(eduimenu_s *parent, eduiitem_s 
     eduimenu_s *menu = eduiMenuCreate(220, 70, 240, 250, ed_fnt, creatureEditor_cbCancelMenu, "Select AI Type");
     if (menu == nullptr)
         return;
-    for (i32 index = 0;; ++index) {
-        i32 type = LevelCharacterGlobalIDFn(static_cast<u8>(index));
-        if (type == -1)
-            break;
-        bool selected = aieditorsettings.current_path_type == type;
-        eduiMenuAddItem(menu, eduiItemCheckCreate(type, creature_editor_item_colours, selected, 1,
-                                                  creatureEditor_cbSetType, GlobalCharacterNameFn(type)));
-        if (selected)
+    i32 index = 0;
+    i32 type = LevelCharacterGlobalIDFn(0);
+    while (type != -1) {
+        if (aieditorsettings.current_path_type == type) {
+            eduiMenuAddItem(
+                menu, eduiItemCheckCreate(type, attr, 1, 1, creatureEditor_cbSetType, GlobalCharacterNameFn(type)));
             menu->selected = edui_last_item;
+        } else {
+            eduiMenuAddItem(
+                menu, eduiItemCheckCreate(type, attr, 0, 1, creatureEditor_cbSetType, GlobalCharacterNameFn(type)));
+        }
         eduiMenuAttach(parent, menu);
+        type = LevelCharacterGlobalIDFn(static_cast<u8>(++index));
     }
 }
 
@@ -626,21 +659,25 @@ static __used__ __attribute__((force_align_arg_pointer)) void creatureEditor_cbS
 }
 
 static __used__ void creatureEditor_cbSetScriptParam(eduimenu_s *menu, eduiitem_s *item, unsigned int) {
+    if (item == nullptr)
+        return;
     CreatureEditorRecord *creature = creatureEditor_Current();
-    if (item == nullptr || creature == nullptr)
+    if (creature == nullptr)
         return;
     i32 index = item->data;
     f32 value = reinterpret_cast<edui_slider_s *>(item)->value;
     if (value == aieditorsettings.current_script_params[index])
         return;
     aieditorsettings.current_script_params[index] = value;
-    u32 bit = (index & 0x20) != 0 ? 0 : 2u << index;
+    u32 bit = 2u << (index & 31);
+    if (index & 0x20)
+        bit = 0;
     aieditorsettings.current_script_flags |= bit;
     creature->script_params[index] = value;
     creature->flags = (creature->flags & ~0x1e) | aieditorsettings.current_script_flags;
     if (menu != nullptr && reset_params_option == nullptr) {
-        reset_params_option = eduiMenuAddItem(menu, eduiItemToggleCreate(1, creature_editor_item_colours, 1, 1,
-                                                                         creatureEditor_cbResetParams, "Reset Params"));
+        reset_params_option =
+            eduiMenuAddItem(menu, eduiItemToggleCreate(1, attr, 1, 1, creatureEditor_cbResetParams, "Reset Params"));
     }
 }
 
@@ -704,19 +741,20 @@ static __used__ void creatureEditor_cbSelectLocator(eduimenu_s *parent, eduiitem
     if (menu == nullptr)
         return;
     CreatureEditorRecord *creature = creatureEditor_Current();
-    eduiMenuAddItem(menu, eduiItemCheckCreate(-1, creature_editor_item_colours, creature->locator == nullptr, 1,
-                                              creatureEditor_cbSetLocator, "NONE"));
+    eduiMenuAddItem(
+        menu, eduiItemCheckCreate(-1, attr, creature->locator == nullptr, 1, creatureEditor_cbSetLocator, "NONE"));
     i32 index = 0;
     NULISTHDR *list = creatureEditor_LocatorList();
     for (NULISTLNK *link = NuLinkedListGetHead(list); link != nullptr; link = NuLinkedListGetNext(list, link)) {
         EDLOCATOR_s *locator = reinterpret_cast<EDLOCATOR_s *>(link);
         if (*reinterpret_cast<void **>(reinterpret_cast<u8 *>(locator) + 0x2c) != creature->path)
             continue;
-        bool selected = creatureEditor_Current()->locator == locator;
-        eduiMenuAddItem(menu, eduiItemCheckCreate(index, creature_editor_item_colours, selected, 1,
-                                                  creatureEditor_cbSetLocator, locator->name));
-        if (selected)
+        if (creatureEditor_Current()->locator == locator) {
+            eduiMenuAddItem(menu, eduiItemCheckCreate(index, attr, 1, 1, creatureEditor_cbSetLocator, locator->name));
             menu->selected = edui_last_item;
+        } else {
+            eduiMenuAddItem(menu, eduiItemCheckCreate(index, attr, 0, 1, creatureEditor_cbSetLocator, locator->name));
+        }
         eduiMenuAttach(parent, menu);
         ++index;
     }
@@ -751,19 +789,19 @@ static __used__ void creatureEditor_cbSelectRespawnLocator(eduimenu_s *parent, e
     if (menu == nullptr)
         return;
     CreatureEditorRecord *creature = creatureEditor_Current();
-    eduiMenuAddItem(menu, eduiItemCheckCreate(-1, creature_editor_item_colours, creature->respawn_locator == nullptr, 1,
+    eduiMenuAddItem(menu, eduiItemCheckCreate(-1, attr, creature->respawn_locator == nullptr, 1,
                                               creatureEditor_cbSetRespawnLocator, "NONE"));
     i32 index = 0;
     for (NULISTLNK *link = NuLinkedListGetHead(creatureEditor_LocatorList()); link != nullptr;
          link = NuLinkedListGetNext(creatureEditor_LocatorList(), link)) {
         EDLOCATOR_s *locator = reinterpret_cast<EDLOCATOR_s *>(link);
         if (creatureEditor_Current()->respawn_locator == locator) {
-            eduiMenuAddItem(menu, eduiItemCheckCreate(index, creature_editor_item_colours, 1, 1,
-                                                      creatureEditor_cbSetRespawnLocator, locator->name));
+            eduiMenuAddItem(menu,
+                            eduiItemCheckCreate(index, attr, 1, 1, creatureEditor_cbSetRespawnLocator, locator->name));
             menu->selected = edui_last_item;
         } else {
-            eduiMenuAddItem(menu, eduiItemCheckCreate(index, creature_editor_item_colours, 0, 1,
-                                                      creatureEditor_cbSetRespawnLocator, locator->name));
+            eduiMenuAddItem(menu,
+                            eduiItemCheckCreate(index, attr, 0, 1, creatureEditor_cbSetRespawnLocator, locator->name));
         }
         ++index;
         eduiMenuAttach(parent, menu);
@@ -771,8 +809,10 @@ static __used__ void creatureEditor_cbSelectRespawnLocator(eduimenu_s *parent, e
 }
 
 static __used__ void creatureEditor_cbSetRespawnLocator(eduimenu_s *, eduiitem_s *item, unsigned int) {
+    if (item == nullptr)
+        return;
     CreatureEditorRecord *creature = creatureEditor_Current();
-    if (item == nullptr || creature == nullptr)
+    if (creature == nullptr)
         return;
     if (item->data == -1) {
         creature->locator = nullptr;
@@ -788,28 +828,34 @@ static __used__ void creatureEditor_cbSelectTriggerArea(eduimenu_s *parent, edui
     if (menu == nullptr)
         return;
     CreatureEditorRecord *creature = creatureEditor_Current();
-    bool none_selected = creature->trigger_area == nullptr;
-    eduiMenuAddItem(menu, eduiItemCheckCreate(-1, creature_editor_item_colours, none_selected, 1,
-                                              creatureEditor_cbSetTriggerArea, "NONE"));
-    if (none_selected)
+    if (creature->trigger_area == nullptr) {
+        eduiMenuAddItem(menu, eduiItemCheckCreate(-1, attr, 1, 1, creatureEditor_cbSetTriggerArea, "NONE"));
         menu->selected = edui_last_item;
+    } else {
+        eduiMenuAddItem(menu, eduiItemCheckCreate(-1, attr, 0, 1, creatureEditor_cbSetTriggerArea, "NONE"));
+    }
     eduiMenuAttach(parent, menu);
     i32 index = 0;
     NULISTHDR *list = creatureEditor_AreaList();
     for (NULISTLNK *link = NuLinkedListGetHead(list); link != nullptr;
          link = NuLinkedListGetNext(list, link), ++index) {
-        bool selected = creatureEditor_Current()->trigger_area == link;
-        eduiMenuAddItem(menu, eduiItemCheckCreate(index, creature_editor_item_colours, selected, 1,
-                                                  creatureEditor_cbSetTriggerArea, reinterpret_cast<char *>(link) + 8));
-        if (selected)
+        if (creatureEditor_Current()->trigger_area == link) {
+            eduiMenuAddItem(menu, eduiItemCheckCreate(index, attr, 1, 1, creatureEditor_cbSetTriggerArea,
+                                                      reinterpret_cast<char *>(link) + 8));
             menu->selected = edui_last_item;
+        } else {
+            eduiMenuAddItem(menu, eduiItemCheckCreate(index, attr, 0, 1, creatureEditor_cbSetTriggerArea,
+                                                      reinterpret_cast<char *>(link) + 8));
+        }
         eduiMenuAttach(parent, menu);
     }
 }
 
 static __used__ void creatureEditor_cbSetTriggerArea(eduimenu_s *, eduiitem_s *item, unsigned int) {
+    if (item == nullptr)
+        return;
     CreatureEditorRecord *creature = creatureEditor_Current();
-    if (item == nullptr || creature == nullptr)
+    if (creature == nullptr)
         return;
     if (item->data == -1) {
         creature->trigger_area = nullptr;
@@ -1035,8 +1081,10 @@ extern "C" {
             EdFileWriteChar(connection_found && (turned_around != reversed));
             EdFileWriteShort(connection_index);
 
-            for (i32 index = 0; index < 4; ++index)
-                EdFileWriteFloat(creature->script_params[index]);
+            EdFileWriteFloat(creature->script_params[0]);
+            EdFileWriteFloat(creature->script_params[1]);
+            EdFileWriteFloat(creature->script_params[2]);
+            EdFileWriteFloat(creature->script_params[3]);
             if (creature->trigger_area != nullptr) {
                 EdFileWriteInt(1);
                 EdFileWrite(reinterpret_cast<char *>(creature->trigger_area) + 8, 0x10);
@@ -1269,60 +1317,52 @@ __attribute__((optimize("O2"))) eduimenu_s *creatureEditor_Process(nupad_s *pad)
             eduiMenuCreate(200, 70, 240, 330, ed_fnt, aieditor_cbCancelMainMenu, const_cast<char *>("Options"));
         if (menu == nullptr)
             return nullptr;
-        eduiMenuAddItem(menu, eduiItemSelCreate(AIEDITOR_ROUTES, creature_editor_item_colours, 0, 0,
-                                                aieditor_cvSelectEditorMode, const_cast<char *>("Select Editor Mode")));
-        eduiMenuAddItem(menu, eduiItemSelCreate(1, creature_editor_item_colours, 0, 0, aieditor_cbSave,
-                                                const_cast<char *>("Save AI Data")));
-        eduiMenuAddItem(menu, eduiItemSelCreate(1, creature_editor_item_colours, 0, 0, aieditor_cbGoToPlayer,
-                                                const_cast<char *>("Go To Player")));
-        eduiMenuAddItem(menu, eduiItemSelCreate(1, creature_editor_item_colours, 0, 0, aieditor_cbMovePlayer,
-                                                const_cast<char *>("Move Player")));
-        eduiMenuAddItem(menu, eduiItemSelCreate(1, creature_editor_item_colours, 0, 0, creatureEditor_cbSelectType,
+        eduiMenuAddItem(menu, eduiItemSelCreate(AIEDITOR_ROUTES, attr, 0, 0, aieditor_cvSelectEditorMode,
+                                                const_cast<char *>("Select Editor Mode")));
+        eduiMenuAddItem(menu, eduiItemSelCreate(1, attr, 0, 0, aieditor_cbSave, const_cast<char *>("Save AI Data")));
+        eduiMenuAddItem(menu,
+                        eduiItemSelCreate(1, attr, 0, 0, aieditor_cbGoToPlayer, const_cast<char *>("Go To Player")));
+        eduiMenuAddItem(menu,
+                        eduiItemSelCreate(1, attr, 0, 0, aieditor_cbMovePlayer, const_cast<char *>("Move Player")));
+        eduiMenuAddItem(menu, eduiItemSelCreate(1, attr, 0, 0, creatureEditor_cbSelectType,
                                                 const_cast<char *>("Select Creature Type")));
         CreatureEditorRecord *creature = creatureEditor_Current();
         if (creature != nullptr) {
             if (AIScriptNameFromIx(aieditor->ai_system, 0) != nullptr) {
-                eduiMenuAddItem(menu,
-                                eduiItemSelCreate(1, creature_editor_item_colours, 0, 0, creatureEditor_cbSelectScript,
-                                                  const_cast<char *>("Select Script")));
+                eduiMenuAddItem(menu, eduiItemSelCreate(1, attr, 0, 0, creatureEditor_cbSelectScript,
+                                                        const_cast<char *>("Select Script")));
             }
-            eduiMenuAddItem(menu,
-                            eduiItemSelCreate(1, creature_editor_item_colours, 0, 0, creatureEditor_cbScriptParams,
-                                              const_cast<char *>("Script Params")));
-            eduiMenuAddItem(menu, eduiItemSliderCreateInt(1, creature_editor_item_colours, 0,
-                                                          creatureEditor_cb_assigntoset, 0, aisys_maxnumcreaturesets,
-                                                          creature->set, const_cast<char *>("Assigned To Set")));
-            eduiMenuAddItem(menu, eduiItemSelCreate(1, creature_editor_item_colours, 0, 0,
-                                                    creatureEditor_cbRenameCreatureMenu,
+            eduiMenuAddItem(menu, eduiItemSelCreate(1, attr, 0, 0, creatureEditor_cbScriptParams,
+                                                    const_cast<char *>("Script Params")));
+            eduiMenuAddItem(menu, eduiItemSliderCreateInt(1, attr, 0, creatureEditor_cb_assigntoset, 0,
+                                                          aisys_maxnumcreaturesets, creature->set,
+                                                          const_cast<char *>("Assigned To Set")));
+            eduiMenuAddItem(menu, eduiItemSelCreate(1, attr, 0, 0, creatureEditor_cbRenameCreatureMenu,
                                                     const_cast<char *>("Rename Creature")));
-            eduiMenuAddItem(menu,
-                            eduiItemSelCreate(1, creature_editor_item_colours, 0, 0, creatureEditor_cbActivationMenu,
-                                              const_cast<char *>("Activation Conditions")));
-            eduiMenuAddItem(menu, eduiItemSelCreate(1, creature_editor_item_colours, 0, 0, creatureEditor_cbRespawnMenu,
+            eduiMenuAddItem(menu, eduiItemSelCreate(1, attr, 0, 0, creatureEditor_cbActivationMenu,
+                                                    const_cast<char *>("Activation Conditions")));
+            eduiMenuAddItem(menu, eduiItemSelCreate(1, attr, 0, 0, creatureEditor_cbRespawnMenu,
                                                     const_cast<char *>("Respawn Values")));
-            eduiMenuAddItem(menu, eduiItemSelCreate(1, creature_editor_item_colours, 0, 0, creatureEditor_cbGroupMenu,
-                                                    const_cast<char *>("Group Values")));
-            eduiMenuAddItem(menu, eduiItemSelCreate(1, creature_editor_item_colours, 0, 0, creatureEditor_cbVisionMenu,
-                                                    const_cast<char *>("Vision")));
-            eduiMenuAddItem(menu, eduiItemToggleCreate(1, creature_editor_item_colours, creature->flags & 1, 1,
-                                                       creatureEditor_cbFlagsToggle,
+            eduiMenuAddItem(
+                menu, eduiItemSelCreate(1, attr, 0, 0, creatureEditor_cbGroupMenu, const_cast<char *>("Group Values")));
+            eduiMenuAddItem(
+                menu, eduiItemSelCreate(1, attr, 0, 0, creatureEditor_cbVisionMenu, const_cast<char *>("Vision")));
+            eduiMenuAddItem(menu, eduiItemToggleCreate(1, attr, creature->flags & 1, 1, creatureEditor_cbFlagsToggle,
                                                        const_cast<char *>("Ignore Wall Splines")));
-            eduiMenuAddItem(menu, eduiItemToggleCreate(0x20, creature_editor_item_colours, (creature->flags >> 5) & 1,
-                                                       2, creatureEditor_cbFlagsToggle,
+            eduiMenuAddItem(menu, eduiItemToggleCreate(0x20, attr, (creature->flags >> 5) & 1, 2,
+                                                       creatureEditor_cbFlagsToggle,
                                                        const_cast<char *>("Not On LowEnd Device")));
         }
         const i32 toggle_offset = creature != nullptr ? 2 : 0;
         eduiMenuAddItem(menu,
-                        eduiItemToggleCreate(1, creature_editor_item_colours, -i32(aieditorsettings.stop_platforms),
-                                             1 + toggle_offset, aieditor_cbStopPlatformsToggle,
-                                             const_cast<char *>("Stop Platforms")));
-        eduiMenuAddItem(menu, eduiItemToggleCreate(1, creature_editor_item_colours,
-                                                   -i32(aieditorsettings.snap_height_display), 2 + toggle_offset,
-                                                   aieditor_cbSnapHeightToggle, const_cast<char *>("Snap Height")));
+                        eduiItemToggleCreate(1, attr, -i32(aieditorsettings.stop_platforms), 1 + toggle_offset,
+                                             aieditor_cbStopPlatformsToggle, const_cast<char *>("Stop Platforms")));
         eduiMenuAddItem(menu,
-                        eduiItemToggleCreate(1, creature_editor_item_colours, -i32(aieditorsettings.show_creatures_set),
-                                             3 + toggle_offset, aieditor_cbShowCreaturesSetToggle,
-                                             const_cast<char *>("Show Current Set")));
+                        eduiItemToggleCreate(1, attr, -i32(aieditorsettings.snap_height_display), 2 + toggle_offset,
+                                             aieditor_cbSnapHeightToggle, const_cast<char *>("Snap Height")));
+        eduiMenuAddItem(menu, eduiItemToggleCreate(1, attr, -i32(aieditorsettings.show_creatures_set),
+                                                   3 + toggle_offset, aieditor_cbShowCreaturesSetToggle,
+                                                   const_cast<char *>("Show Current Set")));
         return menu;
     }
 
@@ -1335,10 +1375,10 @@ __attribute__((optimize("O2"))) eduimenu_s *creatureEditor_Process(nupad_s *pad)
                                                   const_cast<char *>("Delete creature??"));
                 if (menu == nullptr)
                     return nullptr;
-                eduiMenuAddItem(menu, eduiItemSelCreate(0, creature_editor_item_colours, 0, 0,
-                                                        creatureEditor_cbDeleteCreature, const_cast<char *>("No")));
-                eduiMenuAddItem(menu, eduiItemSelCreate(1, creature_editor_item_colours, 0, 0,
-                                                        creatureEditor_cbDeleteCreature, const_cast<char *>("Yes")));
+                eduiMenuAddItem(
+                    menu, eduiItemSelCreate(0, attr, 0, 0, creatureEditor_cbDeleteCreature, const_cast<char *>("No")));
+                eduiMenuAddItem(
+                    menu, eduiItemSelCreate(1, attr, 0, 0, creatureEditor_cbDeleteCreature, const_cast<char *>("Yes")));
                 return menu;
             }
             EDLOCATOR_s *locator = aieditor->nearest_locator;
@@ -1362,30 +1402,31 @@ __attribute__((optimize("O2"))) eduimenu_s *creatureEditor_Process(nupad_s *pad)
         } else {
             NULISTHDR *creatures = &aieditor->creatures;
             CreatureEditorRecord *selected = creatureEditor_Current();
-            CreatureEditorRecord *next = nullptr;
             bool change_selection = false;
             if ((pad->digital_buttons_pressed & 0x1000) != 0 ||
                 ((pad->digital_buttons & 0x100) != 0 && (pad->digital_buttons_pressed & 8) != 0)) {
-                next = selected != nullptr
-                           ? reinterpret_cast<CreatureEditorRecord *>(NuLinkedListGetNext(creatures, &selected->link))
-                           : nullptr;
-                if (next == nullptr)
-                    next = reinterpret_cast<CreatureEditorRecord *>(NuLinkedListGetHead(creatures));
+                if (selected != nullptr)
+                    aieditor->mode_selection_36930 =
+                        reinterpret_cast<EditorNamedEntry *>(NuLinkedListGetNext(creatures, &selected->link));
+                if (creatureEditor_Current() == nullptr)
+                    aieditor->mode_selection_36930 =
+                        reinterpret_cast<EditorNamedEntry *>(NuLinkedListGetHead(creatures));
                 change_selection = true;
             } else if ((pad->digital_buttons & 0x100) != 0 && (pad->digital_buttons_pressed & 2) != 0) {
-                next = selected != nullptr
-                           ? reinterpret_cast<CreatureEditorRecord *>(NuLinkedListGetPrev(creatures, &selected->link))
-                           : nullptr;
-                if (next == nullptr)
-                    next = reinterpret_cast<CreatureEditorRecord *>(NuLinkedListGetTail(creatures));
+                if (selected != nullptr)
+                    aieditor->mode_selection_36930 =
+                        reinterpret_cast<EditorNamedEntry *>(NuLinkedListGetPrev(creatures, &selected->link));
+                if (creatureEditor_Current() == nullptr)
+                    aieditor->mode_selection_36930 =
+                        reinterpret_cast<EditorNamedEntry *>(NuLinkedListGetTail(creatures));
                 change_selection = true;
             } else if (pad->digital_buttons_pressed & 0x100) {
-                next = reinterpret_cast<CreatureEditorRecord *>(creatureEditor_GetNearest(0));
+                aieditor->mode_selection_36930 = reinterpret_cast<EditorNamedEntry *>(creatureEditor_GetNearest(0));
                 change_selection = true;
             }
 
             if (change_selection) {
-                aieditor->mode_selection_36930 = reinterpret_cast<EditorNamedEntry *>(next);
+                CreatureEditorRecord *next = creatureEditor_Current();
                 if (next != nullptr) {
                     aieditor->current_path = reinterpret_cast<EDAIPATH_s *>(next->path);
                     edcamSetPos(&next->position);
@@ -1397,20 +1438,32 @@ __attribute__((optimize("O2"))) eduimenu_s *creatureEditor_Process(nupad_s *pad)
                 EDAIPATHCHECK_s *check = reinterpret_cast<EDAIPATHCHECK_s *>(reinterpret_cast<u8 *>(aieditor) + 0x48);
                 i32 angle = aieditorsettings.area_rotation;
                 bool rotate = false;
-                if (pad->digital_buttons & (0x2000 | 0x8000)) {
+                if (pad->digital_buttons & 0x2000) {
                     rotate = true;
                     CreatureEditorRecord *hover = *reinterpret_cast<CreatureEditorRecord **>(aieditor->unknown_3692c);
                     if (selected != nullptr && selected == hover)
                         angle = selected->angle;
                     i32 &step = *reinterpret_cast<i32 *>(aieditor->unknown_36934);
-                    const u32 direction = (pad->digital_buttons & 0x2000) ? 0x2000 : 0x8000;
-                    if (pad->digital_buttons_pressed & direction)
+                    if (pad->digital_buttons_pressed & 0x8000)
                         step = 0x14;
-                    else if (step < 600)
+                    else
                         step += 0x14;
                     if (step > 600)
                         step = 600;
-                    angle = (pad->digital_buttons & 0x2000) ? NuAngAdd(angle, step) : NuAngSub(angle, step);
+                    angle = NuAngAdd(angle, step);
+                } else if (pad->digital_buttons & 0x8000) {
+                    rotate = true;
+                    CreatureEditorRecord *hover = *reinterpret_cast<CreatureEditorRecord **>(aieditor->unknown_3692c);
+                    if (selected != nullptr && selected == hover)
+                        angle = selected->angle;
+                    i32 &step = *reinterpret_cast<i32 *>(aieditor->unknown_36934);
+                    if (pad->digital_buttons_pressed & 0x2000)
+                        step = 0x14;
+                    else
+                        step += 0x14;
+                    if (step > 600)
+                        step = 600;
+                    angle = NuAngSub(angle, step);
                 } else if (pad->digital_buttons & 0x4000) {
                     rotate = true;
                     const i32 relative = NuAngSub(angle, check->angle);
@@ -1497,11 +1550,12 @@ __attribute__((optimize("O2"))) eduimenu_s *creatureEditor_Process(nupad_s *pad)
                 }
                 strcpy(created->name, name);
                 if (aieditorsettings.current_script_name[0] != 0)
-                    NuStrCpy(created->script_name, aieditorsettings.current_script_name);
+                    strcpy(created->script_name, aieditorsettings.current_script_name);
                 memcpy(created->script_params, aieditorsettings.current_script_params, sizeof(created->script_params));
                 created->flags = (created->flags & ~0x1eu) | aieditorsettings.current_script_flags;
+                created->path = aieditor->current_path;
                 memcpy(created->path_check, reinterpret_cast<u8 *>(aieditor) + 0x48, sizeof(created->path_check));
-                created->angle =
+                reinterpret_cast<EDAIPATHCHECK_s *>(created->path_check)->angle =
                     NuAngSub(created->angle, *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(aieditor) + 0x60));
                 created->set = set;
                 creatureEditor_Updated(reinterpret_cast<EDCREATURE_s *>(created));

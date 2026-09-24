@@ -749,15 +749,26 @@ static void cbPtlCollMenu(eduimenu_s *parent, eduiitem_s *, u32) {
 
     eduiMenuAddItem(collmenu, eduiItemGreyGradPickCreate(0, colours, cbPtlApplyCollEnv, "Collision Envelope"));
     coll_env_item = edui_last_item;
-    const f32 minimum = effect->min_size / 10000.0f;
-    const f32 maximum = effect->max_size / 10000.0f;
-    for (i32 index = 0; index < 8; ++index) {
-        const debris_float_key_s &key = effect->collision_keys[index];
-        const f32 value = minimum == maximum ? 1.0f : (key.value - minimum) / (maximum - minimum);
-        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(coll_env_item), key.time, value, value, value);
-        if (key.time == 1.0f)
-            break;
+#define COLL_STAGE(index)                                                                                              \
+    {                                                                                                                  \
+        const debris_float_key_s &key = effect->collision_keys[index];                                                 \
+        const f32 minimum = effect->min_size / 10000.0f;                                                               \
+        const f32 range = (effect->max_size - effect->min_size) / 10000.0f;                                            \
+        const f32 value = effect->min_size == effect->max_size ? 1.0f : (key.value - minimum) / range;                 \
+        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(coll_env_item), key.time, value, value, value);        \
+        if (key.time == 1.0f)                                                                                          \
+            goto coll_stages_done;                                                                                     \
     }
+    COLL_STAGE(0)
+    COLL_STAGE(1)
+    COLL_STAGE(2)
+    COLL_STAGE(3)
+    COLL_STAGE(4)
+    COLL_STAGE(5)
+    COLL_STAGE(6)
+    COLL_STAGE(7)
+#undef COLL_STAGE
+coll_stages_done:
     eduiMenuAddItem(collmenu, eduiItemSliderCreateInt(0, colours, 0, cbChangeNumCollSpheres, 0, 8,
                                                       static_cast<i8>(effect->process_spheres), "Num Spheres"));
     eduiMenuAddItem(collmenu, eduiItemSelCreate(1, colours, 0, 0, cbPtlDefaultCollEnv, "Default Envelope"));
@@ -783,21 +794,31 @@ static void cbPtlCopySize(eduimenu_s *, eduiitem_s *item, u32) {
     }
     while (gradient->first_stage)
         eduiGradStageDelete(gradient, gradient->first_stage);
-    for (i32 i = 0; i < 8; ++i) {
-        if (item->data == 1) {
-            f32 grey = (effect->height_keys[i].value - effect->min_size) / (effect->max_size - effect->min_size);
-            eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_h_item), effect->height_keys[i].time,
-                                grey, grey, grey);
-            if (effect->height_keys[i].time == 1.0f)
-                break;
-        } else {
-            f32 grey = (effect->width_keys[i].value - effect->min_size) / (effect->max_size - effect->min_size);
-            eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_w_item), effect->width_keys[i].time, grey,
-                                grey, grey);
-            if (effect->width_keys[i].time == 1.0f)
-                break;
-        }
+    // Keep the eight stages explicit: the original callback expands each stage separately.
+#define COPY_SIZE_STAGE(i)                                                                                             \
+    if (item->data == 1) {                                                                                             \
+        f32 grey = (effect->height_keys[i].value - effect->min_size) / (effect->max_size - effect->min_size);          \
+        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_h_item), effect->height_keys[i].time, grey,  \
+                            grey, grey);                                                                               \
+        if (effect->height_keys[i].time == 1.0f)                                                                       \
+            goto copy_size_done;                                                                                       \
+    } else {                                                                                                           \
+        f32 grey = (effect->width_keys[i].value - effect->min_size) / (effect->max_size - effect->min_size);           \
+        eduiGradStageAddRGB(static_cast<edui_gradient_pick_s *>(grad_size_w_item), effect->width_keys[i].time, grey,   \
+                            grey, grey);                                                                               \
+        if (effect->width_keys[i].time == 1.0f)                                                                        \
+            goto copy_size_done;                                                                                       \
     }
+    COPY_SIZE_STAGE(0)
+    COPY_SIZE_STAGE(1)
+    COPY_SIZE_STAGE(2)
+    COPY_SIZE_STAGE(3)
+    COPY_SIZE_STAGE(4)
+    COPY_SIZE_STAGE(5)
+    COPY_SIZE_STAGE(6)
+    COPY_SIZE_STAGE(7)
+#undef COPY_SIZE_STAGE
+copy_size_done:
     GenericDebinfoDmaTypeUpdate(effect);
 }
 
@@ -811,15 +832,12 @@ static void cbPtlDataMenu(eduimenu_s *parent, eduiitem_s *, u32) {
         eduiMenuAddItem(ptldatamenu, eduiItemSelCreate(1, colours, 0, 0, cbPtlDeleteEffect, "Delete Effect"));
         eduiMenuAddItem(ptldatamenu, eduiItemSelCreate(1, colours, 0, 0, cbPtlCopyEffect, "Copy Effect"));
     }
-    char *save_label = NULL;
     if (edpp_effect_list == 0)
-        save_label = "Save General list";
+        eduiMenuAddItem(ptldatamenu, eduiItemSelCreate(1, colours, 0, 0, cbFileSaveEffects, "Save General list"));
     else if (edpp_effect_list == 1)
-        save_label = "Save Level list";
+        eduiMenuAddItem(ptldatamenu, eduiItemSelCreate(1, colours, 0, 0, cbFileSaveEffects, "Save Level list"));
     else if (edpp_effect_list == 5)
-        save_label = "Save Char list";
-    if (save_label != NULL)
-        eduiMenuAddItem(ptldatamenu, eduiItemSelCreate(1, colours, 0, 0, cbFileSaveEffects, save_label));
+        eduiMenuAddItem(ptldatamenu, eduiItemSelCreate(1, colours, 0, 0, cbFileSaveEffects, "Save Char list"));
     eduiMenuAddItem(ptldatamenu, eduiItemSelCreate(1, colours, 0, 0, cbFileLoadEffects, "Load all from file"));
     if (edpp_create_type != -1)
         eduiMenuAddItem(ptldatamenu, eduiItemSelCreate(1, colours, 0, 0, edptlcbClipboardMenu, "Clipboard..."));
@@ -1053,29 +1071,33 @@ static void cbPtlAddEffect(eduimenu_s *menu, eduiitem_s *, u32) {
     while (index < EDPP_MAX_TYPES && debtab[index] != NULL)
         ++index;
     if (index < EDPP_MAX_TYPES) {
-        debinftype *effect = &effecttypes[index];
-        debtab[index] = effect;
-        *effect = *debtab[0];
-        effect->status = 1;
-        sprintf(effect->name, "New%d", index);
-        effect->category = edpp_effect_list;
-        if (edpp_effect_list == 0)
-            effect->page = static_cast<u8>(edbits_particle_general_page);
-        else if (edpp_effect_list == 5)
-            effect->page = static_cast<u8>(edbits_particle_char_page);
-        else if (edpp_effect_list == 1)
-            effect->page = static_cast<u8>(edbits_particle_level_page);
-        if (edpp_effect_list == 0 || edpp_effect_list == 1 || edpp_effect_list == 5)
-            edpp_page_used[effect->page] = 1;
+        debtab[index] = &effecttypes[index];
+        *debtab[index] = *debtab[0];
+        debtab[index]->status = 1;
+        sprintf(debtab[index]->name, "New%d", index);
+        debtab[index]->category = edpp_effect_list;
+        if (edpp_effect_list == 0) {
+            i32 page = edbits_particle_general_page;
+            debtab[index]->page = static_cast<u8>(page);
+            edpp_page_used[page] = 1;
+        } else if (edpp_effect_list == 5) {
+            i32 page = edbits_particle_char_page;
+            debtab[index]->page = static_cast<u8>(page);
+            edpp_page_used[page] = 1;
+        } else if (edpp_effect_list == 1) {
+            i32 page = edbits_particle_level_page;
+            debtab[index]->page = static_cast<u8>(page);
+            edpp_page_used[page] = 1;
+        }
         edpp_create_type = index;
         ++edpp_types_used;
-        UpdateTotalPtls(effect);
+        UpdateTotalPtls(debtab[index]);
     }
-    eduimenu_s *child = menu->child;
-    if (child != NULL)
+    eduimenu_s *parent = menu->parent;
+    if (parent != NULL)
         eduiMenuDetach(menu);
     if (menu->callback != NULL)
-        menu->callback(menu, child);
+        menu->callback(menu, parent);
 }
 
 static void cbPtlApplyGrad(eduimenu_s *, eduiitem_s *, u32) {
@@ -1302,11 +1324,11 @@ static void cbPtlCopyEffect(eduimenu_s *menu, eduiitem_s *, u32) {
             ++edpp_types_used;
             edpp_create_type = index;
         }
-        eduimenu_s *child = menu->child;
-        if (child != NULL)
+        eduimenu_s *parent = menu->parent;
+        if (parent != NULL)
             eduiMenuDetach(menu);
         if (menu->callback != NULL)
-            menu->callback(menu, child);
+            menu->callback(menu, parent);
     }
 }
 
@@ -2350,7 +2372,7 @@ static void cbCancelChangeNameMenu(eduimenu_s *menu, eduimenu_s *) {
     if (edpp_create_type == -1 || debtab[edpp_create_type] == NULL) {
         return;
     }
-    if (debtab[edpp_create_type]->name[0] != '\0') {
+    if (__builtin_expect(debtab[edpp_create_type]->name[0] != '\0', 1)) {
         eduiMenuDestroy(namemenu);
         namemenu = NULL;
         return;

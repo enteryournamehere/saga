@@ -79,19 +79,20 @@ void routeEditor_Render(i32 x, i32 y, float xscale, float yscale) {
 
 template <bool RequireHats, bool RejectFlag40, bool RejectFlag80>
 static __attribute__((always_inline)) inline i32 FindModelListDataFlags(APICHARACTERMODELLIST_s *models,
-                                                                        u32 model_flags, u32 game_flags, i32 first_id) {
-    for (i32 id = first_id; id != -1; ++models, id = models->model_id) {
+                                                                        u32 model_flags, u32 game_flags, i16 first_id) {
+    for (i16 id = first_id; id != -1; ++models, id = models->model_id) {
         if (Collection_Got(id) == 0)
             continue;
-        const GAMECHARACTERDATA &game_data = GCDataList[id];
+        const i32 current_id = models->model_id;
+        const GAMECHARACTERDATA &game_data = GCDataList[current_id];
         if ((game_data.flags_090 & game_flags) != game_flags ||
-            (CDataList[id].model_flags & model_flags) != model_flags)
+            (CDataList[current_id].model_flags & model_flags) != model_flags)
             continue;
         if (RejectFlag40 && (game_data.flags_094[1] & 0x40) != 0)
             continue;
         if (RejectFlag80 && static_cast<i8>(game_data.flags_094[1]) < 0)
             continue;
-        if (RequireHats && CanWearHatsInFreePlay(id) == 0)
+        if (RequireHats && CanWearHatsInFreePlay(current_id) == 0)
             continue;
         return 1;
     }
@@ -102,7 +103,7 @@ i32 InModelListDataFlags(APICHARACTERMODELLIST_s *models, u32 model_flags, u32 g
                          i32 reject_flag_40) {
     if (models == nullptr)
         return 0;
-    const i32 first_id = models->model_id;
+    const i16 first_id = models->model_id;
     if (first_id == -1)
         return 0;
     const u32 reject_flag_80 = model_flags & 8;
@@ -127,53 +128,56 @@ i32 InModelListDataFlags(APICHARACTERMODELLIST_s *models, u32 model_flags, u32 g
 }
 
 void antinodeEditor_Render(i32 x, i32 y, float xscale, float yscale) {
-    i32 text_x = (x + 10) * 16;
-    i32 text_y = y * 8;
-    NuQFntPrintEx(system_qfont, text_x, text_y - 40, 16, "Antinode Editor");
+    NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 - 40, 16, "Antinode Editor");
     NuQFntSetColour(system_qfont, 0x80000000);
     NuQFntSetScale(system_qfont, xscale, yscale);
     EDANTINODE_s *selected = reinterpret_cast<EDANTINODE_s *>(aieditor->mode_selection_42e9c);
-    EDANTINODE_s *nearest = *reinterpret_cast<EDANTINODE_s **>(reinterpret_cast<u8 *>(aieditor) + 0x42ea0);
-    EDANTINODE_s *display = selected != nullptr ? selected : nearest;
+    EDANTINODE_s *display = selected;
+    if (display == nullptr)
+        display = *reinterpret_cast<EDANTINODE_s **>(reinterpret_cast<u8 *>(aieditor) + 0x42ea0);
     if (display != nullptr) {
         nuvec_s displacement;
         NuVecXZDist(&display->position, &aieditor->camera_position, &displacement);
     }
-    if (selected != nullptr && nearest != nullptr && selected == nearest) {
+    EDANTINODE_s *nearest = *reinterpret_cast<EDANTINODE_s **>(reinterpret_cast<u8 *>(aieditor) + 0x42ea0);
+    if (nearest != nullptr && nearest == aieditor->mode_selection_42e9c) {
         char *platform_name = NuSpecialGetName(&selected->special);
         if (platform_name != nullptr) {
-            NuQFntPrintEx(system_qfont, text_x, text_y + 120, 16, "Platform=%s", platform_name);
+            NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 120, 16, "Platform=%s", platform_name);
         } else {
-            NuQFntPrintEx(system_qfont, text_x, text_y + 120, 16, "Not attached to platform");
+            NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 120, 16, "Not attached to platform");
         }
-        NuQFntPrintEx(system_qfont, text_x, text_y + 240, 16, "X - Move selected/Adjust size");
-        NuQFntPrintEx(system_qfont, text_x, text_y + 360, 16, "TRI - Delete selected");
-        if (selected->type == 0) {
-            NuQFntPrintEx(system_qfont, text_x, text_y + 480, 16, "LRIGHT - Increase radius, %.2f", selected->radius);
-            NuQFntPrintEx(system_qfont, text_x, text_y + 600, 16, "LLEFT - Decrease radius");
+        NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 240, 16, "X - Move selected/Adjust size");
+        NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 360, 16, "TRI - Delete selected");
+        if (reinterpret_cast<EDANTINODE_s *>(aieditor->mode_selection_42e9c)->type == 0) {
+            NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 480, 16, "LRIGHT - Increase radius, %.2f",
+                          selected->radius);
+            NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 600, 16, "LLEFT - Decrease radius");
         } else if (aieditor->pad_buttons & 0x40) {
-            NuQFntPrintEx(system_qfont, text_x, text_y + 480, 16, "LRIGHT - Increase X, %.2f", selected->base_radius);
-            NuQFntPrintEx(system_qfont, text_x, text_y + 600, 16, "LLEFT - Decrease X");
-            NuQFntPrintEx(system_qfont, text_x, text_y + 720, 16, "LUP - Increase Z, %.2f", selected->base_height);
-            NuQFntPrintEx(system_qfont, text_x, text_y + 840, 16, "LDOWN - Decrease Z");
+            NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 480, 16, "LRIGHT - Increase X, %.2f",
+                          selected->base_radius);
+            NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 600, 16, "LLEFT - Decrease X");
+            NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 720, 16, "LUP - Increase Z, %.2f",
+                          reinterpret_cast<EDANTINODE_s *>(aieditor->mode_selection_42e9c)->base_height);
+            NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 840, 16, "LDOWN - Decrease Z");
         } else if (aieditorsettings.solid_antinode_display && (aieditor->pad_buttons & 0x1000)) {
-            NuQFntPrintEx(system_qfont, text_x, text_y + 480, 16, "L1 - Increase upper height");
-            NuQFntPrintEx(system_qfont, text_x, text_y + 600, 16, "R1 - Decrease upper height");
+            NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 480, 16, "L1 - Increase upper height");
+            NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 600, 16, "R1 - Decrease upper height");
         } else if (aieditorsettings.solid_antinode_display && (aieditor->pad_buttons & 0x4000)) {
-            NuQFntPrintEx(system_qfont, text_x, text_y + 480, 16, "L1 - Increase lower height");
-            NuQFntPrintEx(system_qfont, text_x, text_y + 600, 16, "R1 - Decrease lower height");
+            NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 480, 16, "L1 - Increase lower height");
+            NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 600, 16, "R1 - Decrease lower height");
         } else {
-            NuQFntPrintEx(system_qfont, text_x, text_y + 480, 16, "LLEFT - Rotate left");
-            NuQFntPrintEx(system_qfont, text_x, text_y + 600, 16, "LRIGHT - Rotate right");
+            NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 480, 16, "LLEFT - Rotate left");
+            NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 600, 16, "LRIGHT - Rotate right");
             if (aieditorsettings.solid_antinode_display) {
-                NuQFntPrintEx(system_qfont, text_x, text_y + 720, 16, "LUP - Adjust upper height");
-                NuQFntPrintEx(system_qfont, text_x, text_y + 840, 16, "LDOWN - Adjust lower height");
+                NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 720, 16, "LUP - Adjust upper height");
+                NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 840, 16, "LDOWN - Adjust lower height");
             }
         }
     } else {
-        NuQFntPrintEx(system_qfont, text_x, text_y + 240, 16,
+        NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 240, 16,
                       nearest != nullptr ? "X - Select antinode" : "X - Create antinode");
-        NuQFntPrintEx(system_qfont, text_x, text_y + 360, 16, "SELECT - Select nearest");
+        NuQFntPrintEx(system_qfont, (x + 10) * 16, y * 8 + 360, 16, "SELECT - Select nearest");
     }
     antinodeEditorDrawAntinodes();
     areaEditorDrawAreas();
@@ -188,23 +192,22 @@ void creatureEditor_Render(i32 x, i32 y, float xscale, float yscale) {
         return;
     i32 count = NuLinkedListCheck(&aieditor->creatures);
     i32 text_x = (x + 10) * 16;
-    i32 text_y = y * 8;
-    NuQFntPrintEx(system_qfont, text_x, text_y - 40, 16, "Creature Editor  (%d placed)", count);
+    NuQFntPrintEx(system_qfont, text_x, y * 8 - 40, 16, "Creature Editor  (%d placed)", count);
     NuQFntSetColour(system_qfont, 0x80000000);
     NuQFntSetScale(system_qfont, xscale, yscale);
 
-    u8 *selected = reinterpret_cast<u8 *>(aieditor->mode_selection_36930);
-    u8 *nearest = *reinterpret_cast<u8 **>(aieditor->unknown_3692c);
-    u8 *display = selected != nullptr ? selected : nearest;
+    u8 *display = reinterpret_cast<u8 *>(aieditor->mode_selection_36930);
+    if (display == nullptr)
+        display = *reinterpret_cast<u8 **>(aieditor->unknown_3692c);
     if (display != nullptr) {
         nuvec_s displacement;
         f32 distance =
             NuVecXZDist(reinterpret_cast<nuvec_s *>(display + 0x28), &aieditor->camera_position, &displacement);
         if (*reinterpret_cast<u32 *>(display + 0x68) & 0x20) {
-            NuQFntPrintEx(system_qfont, text_x, text_y + 120, 16, "\"%s\", xzrng=%.2f (NotLowEnd)", display + 8,
+            NuQFntPrintEx(system_qfont, text_x, y * 8 + 120, 16, "\"%s\", xzrng=%.2f (NotLowEnd)", display + 8,
                           distance);
         } else {
-            NuQFntPrintEx(system_qfont, text_x, text_y + 120, 16, "\"%s\", xzrng=%.2f", display + 8, distance);
+            NuQFntPrintEx(system_qfont, text_x, y * 8 + 120, 16, "\"%s\", xzrng=%.2f", display + 8, distance);
         }
         u8 set = display[0x5a];
         char set_name[32];
@@ -214,43 +217,44 @@ void creatureEditor_Render(i32 x, i32 y, float xscale, float yscale) {
             strcpy(set_name, "Set=NONE");
         }
         if (display[0x18] != 0) {
-            NuQFntPrintEx(system_qfont, text_x, text_y + 240, 16, "Script = \"%s\", %s", display + 0x18, set_name);
+            NuQFntPrintEx(system_qfont, text_x, y * 8 + 240, 16, "Script = \"%s\", %s", display + 0x18, set_name);
         } else {
-            NuQFntPrintEx(system_qfont, text_x, text_y + 240, 16, "Script = NONE, %s", set_name);
+            NuQFntPrintEx(system_qfont, text_x, y * 8 + 240, 16, "Script = NONE, %s", set_name);
         }
         EDLOCATOR_s *area = *reinterpret_cast<EDLOCATOR_s **>(display + 0x80);
-        EDLOCATOR_s *locator = *reinterpret_cast<EDLOCATOR_s **>(display + 0x84);
         if (area != nullptr)
-            NuQFntPrintEx(system_qfont, text_x, text_y + 360, 16, "Area = \"%s\"", area->name);
+            NuQFntPrintEx(system_qfont, text_x, y * 8 + 360, 16, "Area = \"%s\"", area->name);
+        EDLOCATOR_s *locator = *reinterpret_cast<EDLOCATOR_s **>(display + 0x84);
         if (locator != nullptr)
-            NuQFntPrintEx(system_qfont, text_x, text_y + 480, 16, "Locator = \"%s\"", locator->name);
+            NuQFntPrintEx(system_qfont, text_x, y * 8 + 480, 16, "Locator = \"%s\"", locator->name);
     }
-    NuQFntPrintEx(system_qfont, text_x, text_y + 600, 16, "SQR - Options");
-    if (nearest == nullptr) {
-        NuQFntPrintEx(system_qfont, text_x, text_y + 720, 16, "X - Create creature");
-        if (selected != nullptr)
-            NuQFntPrintEx(system_qfont, text_x, text_y + 840, 16, "TRI - Deselect selected");
-        NuQFntPrintEx(system_qfont, text_x, text_y + 960, 16, "LLEFT/LRight - Rotate");
-    } else if (nearest != selected) {
-        NuQFntPrintEx(system_qfont, text_x, text_y + 720, 16, "X - Select creature");
+    NuQFntPrintEx(system_qfont, text_x, y * 8 + 600, 16, "SQR - Options");
+    u8 *nearest_for_menu = *reinterpret_cast<u8 **>(aieditor->unknown_3692c);
+    if (nearest_for_menu == nullptr) {
+        NuQFntPrintEx(system_qfont, text_x, y * 8 + 720, 16, "X - Create creature");
+        if (aieditor->mode_selection_36930 != nullptr)
+            NuQFntPrintEx(system_qfont, text_x, y * 8 + 840, 16, "TRI - Deselect selected");
+        NuQFntPrintEx(system_qfont, text_x, y * 8 + 960, 16, "LLEFT/LRight - Rotate");
+    } else if (nearest_for_menu != reinterpret_cast<u8 *>(aieditor->mode_selection_36930)) {
+        NuQFntPrintEx(system_qfont, text_x, y * 8 + 720, 16, "X - Select creature");
     } else {
-        NuQFntPrintEx(system_qfont, text_x, text_y + 720, 16, "X - Move selected");
-        NuQFntPrintEx(system_qfont, text_x, text_y + 840, 16, "TRI - Delete selected");
-        NuQFntPrintEx(system_qfont, text_x, text_y + 960, 16, "LLEFT/LRight - Rotate");
+        NuQFntPrintEx(system_qfont, text_x, y * 8 + 720, 16, "X - Move selected");
+        NuQFntPrintEx(system_qfont, text_x, y * 8 + 840, 16, "TRI - Delete selected");
+        NuQFntPrintEx(system_qfont, text_x, y * 8 + 960, 16, "LLEFT/LRight - Rotate");
     }
-    if (selected != nullptr && aieditor->nearest_locator != nullptr)
-        NuQFntPrintEx(system_qfont, text_x, text_y + 720, 16, "O - Set locator.");
+    if (aieditor->mode_selection_36930 != nullptr && aieditor->nearest_locator != nullptr)
+        NuQFntPrintEx(system_qfont, text_x, y * 8 + 720, 16, "O - Set locator.");
 
     for (NULISTLNK *link = NuLinkedListGetHead(&aieditor->creatures); link != nullptr;
          link = NuLinkedListGetNext(&aieditor->creatures, link)) {
         u8 *record = reinterpret_cast<u8 *>(link);
         EDCREATURE_s *creature = reinterpret_cast<EDCREATURE_s *>(record);
-        i32 render_colour =
-            record == selected ? (record == nearest ? 0xff0000ff : 0x800000ff) : (record == nearest ? -1 : 0);
-        i32 group_count = record[0x5b];
-        u32 valid_positions = *reinterpret_cast<u32 *>(record + 0x54);
-        for (i32 group = 0; group < group_count; ++group) {
-            if (group >= 32 || !(valid_positions & (1u << group)) || !creatureEditor_IsSelectable(creature)) {
+        i32 render_colour = record == reinterpret_cast<u8 *>(aieditor->mode_selection_36930)
+                                ? (record == nearest_for_menu ? 0xff0000ff : 0x800000ff)
+                                : (record == nearest_for_menu ? -1 : 0);
+        for (i32 group = 0; group < record[0x5b]; ++group) {
+            u32 valid_positions = *reinterpret_cast<u32 *>(record + 0x54);
+            if (!((static_cast<u64>(valid_positions) >> (group & 63)) & 1) || !creatureEditor_IsSelectable(creature)) {
                 continue;
             }
             nuvec_s position;
@@ -281,7 +285,7 @@ void creatureEditor_Render(i32 x, i32 y, float xscale, float yscale) {
             render_colour = 0;
         }
     }
-    if (nearest == nullptr && *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(aieditor) + 0x48) != 0 &&
+    if (nearest_for_menu == nullptr && *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(aieditor) + 0x48) != 0 &&
         *reinterpret_cast<f32 *>(reinterpret_cast<u8 *>(aieditor) + 0x42ea4) < 1.0f &&
         aieditorsettings.current_path_type >= 0) {
         GlobalCharacterRenderFn(&aieditor->camera_position, static_cast<i16>(aieditorsettings.area_rotation),
@@ -315,9 +319,12 @@ __attribute__((force_align_arg_pointer)) i32 creatureEditor_CalculatePos(EDCREAT
     }
     i32 across = record->across_count;
     i32 column = index % across;
-    i32 row = index / across;
-    nuvec_s offset = {((column + 1) / 2) * record->x_spacing * ((column & 1) ? -1.0f : 1.0f), 0.0f,
-                      -row * record->z_spacing};
+    nuvec_s offset;
+    offset.x = ((column + 1) / 2) * record->x_spacing;
+    if (column & 1)
+        offset.x = -offset.x;
+    offset.y = 0.0f;
+    offset.z = -record->z_spacing * (index / record->across_count);
     NuVecRotateY(&offset, &offset, record->angle);
     NuVecAdd(position, &offset, &record->position);
     if (check_path != 0) {

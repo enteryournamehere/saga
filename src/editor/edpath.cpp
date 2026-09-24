@@ -218,21 +218,20 @@ static __used__ void ParseAIPathCnxFlag(char *) {
 void pathEditorDrawNode(NUVEC *position, f32 radius, f32 lower_height, f32 upper_height, u32 colour, numtl_s *material,
                         i32 segments, i32 solid);
 
-static __used__ void pathEditorDrawPath(EDAIPATH_s *path, i32 path_index) {
-    if (path == nullptr) {
-        return;
-    }
+static void pathEditorDrawPath(EDAIPATH_s *path, i32 path_index) {
     u8 drawn_connections[0x1fe0] = {};
-    u32 colour =
-        path == aieditor->current_path ? 0xffffffff : AISysGetPathColour(path_index % AISysGetPathColourCount());
-    i32 solid =
-        aieditorsettings.solid_path_display && (static_cast<i16>(aieditorsettings.current_mode) == AIEDITOR_PATHS ||
-                                                static_cast<i16>(aieditorsettings.current_mode) == AIEDITOR_CREATURES ||
-                                                static_cast<i16>(aieditorsettings.current_mode) == AIEDITOR_LOCATORS);
+    i16 mode = aieditorsettings.current_mode;
+    i32 solid = aieditorsettings.solid_path_display &&
+                (mode == AIEDITOR_PATHS || mode == AIEDITOR_CREATURES || mode == AIEDITOR_LOCATORS);
     u32 active_route = 0;
-    if (aieditorsettings.current_mode == AIEDITOR_ROUTES && aieditor->current_path != nullptr) {
+    if (mode == AIEDITOR_ROUTES && aieditor->current_path != nullptr) {
         EDAIPATH_s *selected = aieditor->current_path;
         active_route = selected->current_route != nullptr ? 1u << (selected->current_route - selected->routes) : 1u;
+    }
+    u32 colour =
+        path == aieditor->current_path ? 0xffffffff : AISysGetPathColour(path_index % AISysGetPathColourCount());
+    if (path == nullptr) {
+        return;
     }
     for (EDAIPATHNODE_s *node = (EDAIPATHNODE_s *)NuLinkedListGetHead(&path->nodes); node != nullptr;
          node = (EDAIPATHNODE_s *)NuLinkedListGetNext(&path->nodes, &node->link)) {
@@ -350,8 +349,8 @@ static __used__ void pathEditorDrawPath(EDAIPATH_s *path, i32 path_index) {
     }
 }
 
-static __used__ i32 TestPointPathCheck(nuvec_s *point, EDAIPATHNODE_s *first, EDAIPATHNODE_s *second, f32 *fraction,
-                                       f32 *width, i32 *angle, f32 tolerance) {
+static i32 TestPointPathCheck(nuvec_s *point, EDAIPATHNODE_s *first, EDAIPATHNODE_s *second, f32 *fraction, f32 *width,
+                              i32 *angle, f32 tolerance) {
     AIPATH path;
     AIPATHCNX connection;
     AIPATHNODE nodes[2];
@@ -622,13 +621,14 @@ static __used__ void pathEditor_cbSetShareNode(eduimenu_s *, eduiitem_s *item, u
             }
             node->shared_node = shared;
             ++shared->reference_count;
-            node->position = current->position;
-            node->radius = current->radius;
-            node->lower_height = current->lower_height;
-            node->upper_height = current->upper_height;
-            node->special = current->special;
-            node->special_position = current->special_position;
         }
+        EDAIPATHNODE_s *source = aieditor->current_path->current_node;
+        node->radius = source->radius;
+        node->lower_height = source->lower_height;
+        node->upper_height = source->upper_height;
+        node->position = source->position;
+        node->special = source->special;
+        node->special_position = source->special_position;
     }
     if (item->data == 0) {
         aieditor_ClearMainMenu();
@@ -674,8 +674,14 @@ static __used__ void pathEditor_cbShareNodeMenu(eduimenu_s *parent, eduiitem_s *
     eduiMenuAttach(parent, menu);
 }
 
-static __used__ void pathEditorCalcRouteIterator(AIPATH_s *path, f32 *distances, u8 *visited, i32 previous, i32 current,
-                                                 f32 distance, i32 route_mask) {
+#if defined(__i386__) && defined(__SSE__)
+#define EDPATH_ROUTE_ITERATOR_CALL __attribute__((regparm(2), sseregparm))
+#else
+#define EDPATH_ROUTE_ITERATOR_CALL
+#endif
+static __used__ EDPATH_ROUTE_ITERATOR_CALL void pathEditorCalcRouteIterator(AIPATH_s *path, f32 *distances, u8 *visited,
+                                                                            i32 previous, i32 current, f32 distance,
+                                                                            i32 route_mask) {
     ++iterator_count;
     if ((visited[current / 8] & (1 << (current % 8))) != 0) {
         return;
@@ -721,31 +727,58 @@ static __used__ void pathEditor_cbCnxFlagsToggle(eduimenu_s *, eduiitem_s *item,
     if (other == nullptr || node == nullptr) {
         return;
     }
-    for (i32 i = 0; i < 8; ++i) {
-        if (node->connections[i].node != other) {
-            continue;
-        }
-        AIPATHCNXTYPE_s *type = &aipathcnxtypes[type_index];
-        EDAIPATHCNX_s *connection = &node->connections[i];
-        u32 mask = type->connection_flag;
+    i32 i;
+    if (node->connections[0].node == other)
+        i = 0;
+    else if (node->connections[1].node == other)
+        i = 1;
+    else if (node->connections[2].node == other)
+        i = 2;
+    else if (node->connections[3].node == other)
+        i = 3;
+    else if (node->connections[4].node == other)
+        i = 4;
+    else if (node->connections[5].node == other)
+        i = 5;
+    else if (node->connections[6].node == other)
+        i = 6;
+    else if (node->connections[7].node == other)
+        i = 7;
+    else
+        return;
+    AIPATHCNXTYPE_s *type = &aipathcnxtypes[type_index];
+    EDAIPATHCNX_s *connection = &node->connections[i];
+    u32 mask = type->connection_flag;
+    u32 flags = connection->flags;
+    u32 updated_flags = flags | mask;
+    if (flags & mask)
+        updated_flags = flags & ~mask;
+    connection->flags = updated_flags;
+    if (type->flags != 0) {
+        i32 j;
+        if (other->connections[0].node == node)
+            j = 0;
+        else if (other->connections[1].node == node)
+            j = 1;
+        else if (other->connections[2].node == node)
+            j = 2;
+        else if (other->connections[3].node == node)
+            j = 3;
+        else if (other->connections[4].node == node)
+            j = 4;
+        else if (other->connections[5].node == node)
+            j = 5;
+        else if (other->connections[6].node == node)
+            j = 6;
+        else if (other->connections[7].node == node)
+            j = 7;
+        else
+            return;
         if (connection->flags & mask) {
-            connection->flags &= ~mask;
+            other->connections[j].flags |= mask;
         } else {
-            connection->flags |= mask;
+            other->connections[j].flags &= ~mask;
         }
-        if (type->flags != 0) {
-            for (i32 j = 0; j < 8; ++j) {
-                if (other->connections[j].node == node) {
-                    if (connection->flags & mask) {
-                        other->connections[j].flags |= mask;
-                    } else {
-                        other->connections[j].flags &= ~mask;
-                    }
-                    break;
-                }
-            }
-        }
-        break;
     }
 }
 
@@ -829,11 +862,11 @@ static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *item,
     if (item != nullptr) {
         EDAIPATH_s *path = (EDAIPATH_s *)NuLinkedListGetHead(&aieditor->paths);
         i32 index = 0;
-        while (path != nullptr && index < item->data) {
+        while (path != nullptr && index != item->data) {
             path = (EDAIPATH_s *)NuLinkedListGetNext(&aieditor->paths, &path->link);
             ++index;
         }
-        if (path != nullptr && item->data >= 0) {
+        if (path != nullptr) {
             aieditor->current_path = path;
             EDAIPATHNODE_s *nearest = nullptr;
             f32 best_distance = 3.402823466e38f;
@@ -865,7 +898,7 @@ static __used__ void pathEditor_cbSetCurrentPath(eduimenu_s *, eduiitem_s *item,
 static __used__ void pathEditor_cbNodeFlagsToggle(eduimenu_s *, eduiitem_s *item, u32) {
     EDAIPATHNODE_s *node = aieditor->current_path->current_node;
     if (node != nullptr) {
-        u32 flags = node->flags;
+        u8 flags = node->flags;
         u32 mask = item->data;
         if ((u8)flags & mask) {
             flags &= ~mask;
@@ -962,9 +995,15 @@ static __used__ f32 **pathEditorCalculateDistanceTable(AIPATH_s *path, i32 route
 // The route records use a dense route index, while the editor keeps sixteen
 // independently switchable slots.  The original helper first marks both ends
 // of every route connection, then builds the compact node lookup and matrix.
-static __used__ void pathEditorCreateSpecialRouteData(AIPATH_s *path, EDAIPATH_s *editor_path, VARIPTR *cursor,
-                                                      VARIPTR *end) {
+#if defined(__i386__)
+#define EDPATH_SPECIAL_ROUTE_CALL __attribute__((regparm(2)))
+#else
+#define EDPATH_SPECIAL_ROUTE_CALL
+#endif
+static __used__ EDPATH_SPECIAL_ROUTE_CALL void pathEditorCreateSpecialRouteData(AIPATH_s *path, EDAIPATH_s *editor_path,
+                                                                                VARIPTR *cursor, VARIPTR *end) {
     i32 route_slots[16];
+    u8 route_members[16][32] = {};
     i32 route_count = 0;
     for (i32 slot = 0; slot < 16; ++slot) {
         if (editor_path->routes[slot].flags & 1) {
@@ -1011,7 +1050,14 @@ static __used__ void pathEditorCreateSpecialRouteData(AIPATH_s *path, EDAIPATH_s
                 }
                 for (i32 route_index = 0; route_index < route_count; ++route_index) {
                     if (editor_connection->route_mask & (1u << route_slots[route_index])) {
-                        connection->route_mask |= 1u << route_index;
+                        u16 bit = 1u << route_index;
+                        if ((connection->route_mask & bit) == 0) {
+                            connection->route_mask |= bit;
+                            for (i32 endpoint = 0; endpoint < 2; ++endpoint) {
+                                u8 node_index = connection->node_indices[endpoint];
+                                route_members[route_index][node_index >> 3] |= 1u << (node_index & 7);
+                            }
+                        }
                     }
                 }
                 break;
@@ -1022,15 +1068,6 @@ static __used__ void pathEditorCreateSpecialRouteData(AIPATH_s *path, EDAIPATH_s
     for (i32 route_index = 0; route_index < route_count; ++route_index) {
         AIPATHROUTE_s *route = &path->routes[route_index];
         i32 slot = route_slots[route_index];
-        u8 members[256];
-        memset(members, 0, sizeof(members));
-        for (i32 edge = 0; edge < path->connection_count; ++edge) {
-            AIPATHCNX_s *connection = &path->connections[edge];
-            if (connection->route_mask & (1 << route_index)) {
-                members[connection->node_indices[0]] = 1;
-                members[connection->node_indices[1]] = 1;
-            }
-        }
         i32 exits = 0;
         for (EDAIPATHNODE_s *node = (EDAIPATHNODE_s *)NuLinkedListGetHead(&editor_path->nodes); node != nullptr;
              node = (EDAIPATHNODE_s *)NuLinkedListGetNext(&editor_path->nodes, &node->link)) {
@@ -1039,7 +1076,7 @@ static __used__ void pathEditorCreateSpecialRouteData(AIPATH_s *path, EDAIPATH_s
             }
         }
         for (i32 node = 0; node < path->node_count; ++node) {
-            if (members[node]) {
+            if (route_members[route_index][node >> 3] & (1u << (node & 7))) {
                 ++route->route_count;
                 path->nodes[node].route_membership_mask |= 1 << route_index;
             }
@@ -1076,7 +1113,7 @@ static __used__ void pathEditorCreateSpecialRouteData(AIPATH_s *path, EDAIPATH_s
         i32 member_index = 0;
         i32 exit_index = 0;
         for (i32 node = 0; node < path->node_count; ++node) {
-            if (!members[node]) {
+            if (!(route_members[route_index][node >> 3] & (1u << (node & 7)))) {
                 continue;
             }
             route->node_routes[node] = member_index;
@@ -1085,44 +1122,57 @@ static __used__ void pathEditorCreateSpecialRouteData(AIPATH_s *path, EDAIPATH_s
                 route->exit_nodes[exit_index++] = node;
             }
         }
-        // A route-specific table permits only edges belonging to this route.
-        f32 **distances = pathEditorCalculateDistanceTable(path, 1 << route_index, cursor, end);
+        // The distance and full-node next-hop tables are temporary. Keep their
+        // allocations beyond the persistent route data without advancing it.
+        VARIPTR scratch = *cursor;
+        f32 **distances = pathEditorCalculateDistanceTable(path, 1 << route_index, &scratch, end);
         if (distances == nullptr) {
             continue;
         }
-        for (i32 source = 0; source < route->route_count; ++source) {
-            if (route->route_nodes[source] == nullptr) {
-                continue;
-            }
-            i32 source_node = route->node_directions[source];
-            for (i32 destination = 0; destination < route->route_count; ++destination) {
-                i32 destination_node = route->node_directions[destination];
+        u8 **next_hops = (u8 **)AISysBufferAlloc(&scratch, end, path->node_count * sizeof(u8 *));
+        memset(next_hops, 0, path->node_count * sizeof(u8 *));
+        for (i32 source = 0; source < path->node_count; ++source) {
+            next_hops[source] = (u8 *)AISysBufferAlloc(&scratch, end, path->node_count);
+            memset(next_hops[source], 0, path->node_count);
+        }
+        for (i32 source = 0; source < path->node_count; ++source) {
+            for (i32 destination = 0; destination < path->node_count; ++destination) {
+                next_hops[source][destination] = 0xff;
                 if (source == destination) {
-                    route->route_nodes[source][destination] = 0xff;
                     continue;
                 }
                 f32 best = FLT_MAX;
                 u8 next = 0xff;
-                AIPATHNODE_s *node = &path->nodes[source_node];
+                AIPATHNODE_s *node = &path->nodes[source];
                 for (i32 edge = 0; edge < node->connection_count; ++edge) {
                     AIPATHCNX_s *connection = node->connections[edge];
-                    i32 direction = connection->node_indices[0] != source_node;
+                    i32 direction = connection->node_indices[0] != source;
                     if (!(connection->route_mask & (1 << route_index)) ||
                         (connection->traversal_flags[direction] & 0x40000000)) {
                         continue;
                     }
                     i32 neighbor = connection->node_indices[!direction];
-                    f32 distance = distances[source_node][neighbor] + distances[neighbor][destination_node];
+                    f32 distance = distances[source][neighbor] + distances[neighbor][destination];
                     if (distance < best) {
                         best = distance;
-                        next = route->node_routes[neighbor];
+                        next = edge;
                     }
                 }
-                route->route_nodes[source][destination] = next;
+                next_hops[source][destination] = next;
+            }
+        }
+        for (i32 source = 0; source < route->route_count; ++source) {
+            if (route->route_nodes[source] == nullptr) {
+                continue;
+            }
+            for (i32 destination = 0; destination < route->route_count; ++destination) {
+                route->route_nodes[source][destination] =
+                    next_hops[route->node_directions[source]][route->node_directions[destination]];
             }
         }
     }
 }
+#undef EDPATH_SPECIAL_ROUTE_CALL
 
 static __used__ void pathEditor_cbCancelDeleteAreaMenu(eduimenu_s *, eduimenu_s *) {
     aieditor_ClearMainMenu();
@@ -1265,7 +1315,7 @@ static __used__ void routeEditor_cbDeleteRoute(eduimenu_s *parent, eduiitem_s *i
             i32 index = route - path->routes;
             route->flags &= ~u8(1);
             path->current_route = nullptr;
-            u16 mask = ~(u16)(1 << index);
+            u64 mask = ~(1ULL << index);
             for (EDAIPATHNODE_s *node = (EDAIPATHNODE_s *)NuLinkedListGetHead(&path->nodes); node != nullptr;
                  node = (EDAIPATHNODE_s *)NuLinkedListGetNext(&path->nodes, &node->link)) {
 #define CLEAR_CONNECTION_ROUTE(N) node->connections[N].route_mask &= mask
@@ -1283,8 +1333,7 @@ static __used__ void routeEditor_cbDeleteRoute(eduimenu_s *parent, eduiitem_s *i
             i32 next_index = index;
 #define TRY_NEXT_ROUTE()                                                                                               \
     ++next_index;                                                                                                      \
-    if (next_index >= 16)                                                                                              \
-        next_index = 0;                                                                                                \
+    next_index = next_index >= 16 ? 0 : next_index;                                                                    \
     if (path->routes[next_index].flags & 1)                                                                            \
     path->current_route = &path->routes[next_index]
             TRY_NEXT_ROUTE();
@@ -1383,12 +1432,13 @@ extern "C" {
         if (aieditor->current_path == nullptr) {
             return nullptr;
         }
-        if (NuLinkedListGetHead(&aieditor->paths) == nullptr) {
+        EDAIPATH_s *first_editor_path = (EDAIPATH_s *)NuLinkedListGetHead(&aieditor->paths);
+        if (first_editor_path == nullptr) {
             return nullptr;
         }
 
         i32 path_count = 0;
-        for (EDAIPATH_s *path = (EDAIPATH_s *)NuLinkedListGetHead(&aieditor->paths); path != nullptr;
+        for (EDAIPATH_s *path = first_editor_path; path != nullptr;
              path = (EDAIPATH_s *)NuLinkedListGetNext(&aieditor->paths, &path->link)) {
             path->draw_index = path_count++;
         }
@@ -1402,9 +1452,7 @@ extern "C" {
         VARIPTR scratch_limit;
         scratch_limit.void_ptr = *scratch_end;
         distance_tables = (f32 ***)AISysBufferAlloc(&scratch, &scratch_limit, path_count * sizeof(f32 **));
-        if (distance_tables != nullptr) {
-            memset(distance_tables, 0, path_count * sizeof(f32 **));
-        }
+        memset(distance_tables, 0, path_count * sizeof(f32 **));
 
         i32 shared_count = 0;
         for (EDAISHAREDPATHNODE_s *shared = (EDAISHAREDPATHNODE_s *)NuLinkedListGetHead(&aieditor->shared_path_nodes);
@@ -1416,9 +1464,6 @@ extern "C" {
         if (shared_count != 0) {
             system->special_routes = (AIPATHSPECIALROUTE_s *)AISysBufferAlloc(
                 &scratch, &scratch_limit, shared_count * sizeof(AIPATHSPECIALROUTE_s));
-            if (system->special_routes == nullptr) {
-                return nullptr;
-            }
             memset(system->special_routes, 0, shared_count * sizeof(AIPATHSPECIALROUTE_s));
             for (EDAISHAREDPATHNODE_s *shared =
                      (EDAISHAREDPATHNODE_s *)NuLinkedListGetHead(&aieditor->shared_path_nodes);
@@ -1427,9 +1472,6 @@ extern "C" {
                 AIPATHSPECIALROUTE_s *route = &system->special_routes[shared->runtime_index];
                 i32 participants = shared->reference_count;
                 route->paths = (AIPATH_s **)AISysBufferAlloc(&scratch, &scratch_limit, participants * sizeof(AIPATH_s));
-                if (route->paths == nullptr) {
-                    return nullptr;
-                }
                 memset(route->paths, 0, participants * sizeof(AIPATH_s));
             }
         }
@@ -1438,15 +1480,13 @@ extern "C" {
             return nullptr;
         }
         memset(system->paths, 0, path_count * sizeof(AIPATH_s *));
-
         i32 path_index = 0;
         for (EDAIPATH_s *editor_path = (EDAIPATH_s *)NuLinkedListGetHead(&aieditor->paths); editor_path != nullptr;
              editor_path = (EDAIPATH_s *)NuLinkedListGetNext(&aieditor->paths, &editor_path->link), ++path_index) {
             AIPATH_s *path = (AIPATH_s *)AISysBufferAlloc(cursor, end, sizeof(AIPATH_s));
             system->paths[path_index] = path;
             if (path == nullptr) {
-                distance_tables = nullptr;
-                return nullptr;
+                continue;
             }
             memset(path, 0, sizeof(*path));
             strcpy(path->name, editor_path->name);
@@ -1485,6 +1525,7 @@ extern "C" {
                     distance_tables = nullptr;
                     return nullptr;
                 }
+                path->special_route_count = 0;
             }
             if (path->node_count != 0) {
                 path->nodes = (AIPATHNODE_s *)AISysBufferAlloc(cursor, end, path->node_count * sizeof(AIPATHNODE_s));
@@ -1496,6 +1537,7 @@ extern "C" {
                 }
             }
 
+            i32 connection_index = 0;
             for (EDAIPATHNODE_s *node = (EDAIPATHNODE_s *)NuLinkedListGetHead(&editor_path->nodes); node != nullptr;
                  node = (EDAIPATHNODE_s *)NuLinkedListGetNext(&editor_path->nodes, &node->link)) {
                 if (path->nodes == nullptr) {
@@ -1513,9 +1555,9 @@ extern "C" {
                 runtime->radius = node->radius;
                 runtime->radius_squared = node->radius * node->radius;
                 runtime->min_height = node->position.y + node->lower_height;
-                runtime->min_height_offset = node->lower_height;
                 runtime->max_height = node->position.y + node->upper_height;
-                runtime->max_height_offset = node->upper_height;
+                runtime->min_height_offset = runtime->min_height - node->position.y;
+                runtime->max_height_offset = runtime->max_height - node->position.y;
                 runtime->runtime_flags = node->flags;
                 runtime->special_handle = node->special;
                 runtime->special_position = node->special_position;
@@ -1525,12 +1567,6 @@ extern "C" {
                 }
                 runtime->distance_cache_nodes[0] = 0xff;
                 runtime->distance_cache_nodes[1] = 0xff;
-            }
-
-            i32 connection_index = 0;
-            for (EDAIPATHNODE_s *node = (EDAIPATHNODE_s *)NuLinkedListGetHead(&editor_path->nodes); node != nullptr;
-                 node = (EDAIPATHNODE_s *)NuLinkedListGetNext(&editor_path->nodes, &node->link)) {
-                AIPATHNODE_s *runtime = &path->nodes[node->index];
                 if (runtime->connection_count != 0) {
                     runtime->connections = (AIPATHCNX_s **)AISysBufferAlloc(
                         cursor, end, runtime->connection_count * sizeof(AIPATHCNX_s *));
@@ -1578,8 +1614,7 @@ extern "C" {
                 }
                 if (node->shared_node != nullptr && path->special_routes != nullptr) {
                     AIPATHNODELINK_s *link =
-                        &path->special_routes[runtime->special_route_index =
-                                                  (u8)(path->special_route_count - special_count--)];
+                        &path->special_routes[runtime->special_route_index = path->special_route_count++];
                     link->node_index = node->index;
                     link->special_route_index = node->shared_node->runtime_index;
                     AIPATHSPECIALROUTE_s *shared_route = &system->special_routes[node->shared_node->runtime_index];
@@ -1656,7 +1691,7 @@ extern "C" {
                 for (i32 node_index = 0; node_index < path->node_count; ++node_index) {
                     AIPATHNODE_s *node = &path->nodes[node_index];
                     AISysGetPathPos(aieditor->ai_system, &node->position, &info, first_path, 0xff);
-                    if (!info.on_path || info.connection == nullptr || info.path == nullptr) {
+                    if (!info.on_path) {
                         node->path_flags = -1;
                         node->runtime_flags &= ~u8(1);
                         continue;
@@ -1693,32 +1728,31 @@ extern "C" {
     }
 
     void pathEditorDrawPaths(void) {
-        AIEDITOR_RENDER_STATE *state = aieditor;
-        EDAIPATHWALL_s *wall = (EDAIPATHWALL_s *)NuLinkedListGetHead(&state->path_walls);
+        EDAIPATHWALL_s *wall = (EDAIPATHWALL_s *)NuLinkedListGetHead(&aieditor->path_walls);
         while (wall != nullptr) {
             wall->flags &= ~u8(1);
-            wall = (EDAIPATHWALL_s *)NuLinkedListGetNext(&state->path_walls, &wall->link);
+            wall = (EDAIPATHWALL_s *)NuLinkedListGetNext(&aieditor->path_walls, &wall->link);
         }
 
         if (aieditorsettings.draw_all_paths) {
             i32 index = 0;
-            EDAIPATH_s *path = (EDAIPATH_s *)NuLinkedListGetHead(&state->paths);
+            EDAIPATH_s *path = (EDAIPATH_s *)NuLinkedListGetHead(&aieditor->paths);
             while (path != nullptr) {
                 path->draw_index = index++;
-                path = (EDAIPATH_s *)NuLinkedListGetNext(&state->paths, &path->link);
+                path = (EDAIPATH_s *)NuLinkedListGetNext(&aieditor->paths, &path->link);
             }
-            if (state->current_path != nullptr) {
-                pathEditorDrawPath(state->current_path, state->current_path->draw_index);
+            if (aieditor->current_path != nullptr) {
+                pathEditorDrawPath(aieditor->current_path, aieditor->current_path->draw_index);
             }
-            path = (EDAIPATH_s *)NuLinkedListGetHead(&state->paths);
+            path = (EDAIPATH_s *)NuLinkedListGetHead(&aieditor->paths);
             while (path != nullptr) {
-                if (path != state->current_path) {
+                if (path != aieditor->current_path) {
                     pathEditorDrawPath(path, path->draw_index);
                 }
-                path = (EDAIPATH_s *)NuLinkedListGetNext(&state->paths, &path->link);
+                path = (EDAIPATH_s *)NuLinkedListGetNext(&aieditor->paths, &path->link);
             }
         } else {
-            pathEditorDrawPath(state->current_path, 0);
+            pathEditorDrawPath(aieditor->current_path, 0);
         }
     }
 
@@ -2004,7 +2038,7 @@ void pathEditor_Enter(void) {
         for (i32 path_index = 0; path_index < runtime_system->path_count; ++path_index) {
             AIPATH_s *runtime_path = runtime_system->paths[path_index];
             EDAIPATH_s *path = (EDAIPATH_s *)NuLinkedListGetHead(&aieditor->free_paths);
-            if (runtime_path == nullptr || path == nullptr) {
+            if (path == nullptr) {
                 break;
             }
             NuLinkedListRemove(&aieditor->free_paths, &path->link);
@@ -2023,16 +2057,16 @@ void pathEditor_Enter(void) {
 
             for (i32 node_index = 0; node_index < runtime_path->node_count; ++node_index) {
                 AIPATHNODE_s *source = &runtime_path->nodes[node_index];
+                if (path->node_count >= 254) {
+                    break;
+                }
                 EDAIPATHNODE_s *node = (EDAIPATHNODE_s *)NuLinkedListGetHead(&aieditor->free_path_nodes);
-                if (node == nullptr || path->node_count >= 254) {
+                if (node == nullptr) {
                     break;
                 }
                 NuLinkedListRemove(&aieditor->free_path_nodes, &node->link);
                 NuLinkedListAppend(&path->nodes, &node->link);
-                node->index = node_index;
                 ++path->node_count;
-                if (source->name != nullptr)
-                    strcpy(node->name, source->name);
                 node->position = source->position;
                 node->radius = source->radius;
                 node->lower_height = source->min_height - source->position.y;
@@ -2040,31 +2074,32 @@ void pathEditor_Enter(void) {
                 node->flags = source->runtime_flags;
                 node->special = source->special_handle;
                 node->special_position = source->special_position;
+                node->index = node_index;
+                if (source->name != nullptr)
+                    strcpy(node->name, source->name);
                 if (source->special_route_index < runtime_path->special_route_count) {
                     AIPATHNODELINK_s *link = &runtime_path->special_routes[source->special_route_index];
                     i32 shared_index = link->special_route_index;
-                    if (shared_index >= 0 && shared_index < 64) {
-                        EDAISHAREDPATHNODE_s *shared = shared_nodes[shared_index];
-                        if (shared == nullptr) {
-                            shared = (EDAISHAREDPATHNODE_s *)NuLinkedListGetHead(&aieditor->free_shared_nodes);
-                            if (shared != nullptr) {
-                                NuLinkedListRemove(&aieditor->free_shared_nodes, &shared->link);
-                                NuLinkedListAppend(&aieditor->shared_path_nodes, &shared->link);
-                                shared_nodes[shared_index] = shared;
-                            }
-                        }
+                    EDAISHAREDPATHNODE_s *shared = shared_nodes[shared_index];
+                    if (shared == nullptr) {
+                        shared = (EDAISHAREDPATHNODE_s *)NuLinkedListGetHead(&aieditor->free_shared_nodes);
                         if (shared != nullptr) {
-                            if (node->shared_node != shared) {
-                                if (node->shared_node != nullptr) {
-                                    EDAISHAREDPATHNODE_s *previous = node->shared_node;
-                                    --previous->reference_count;
-                                    if (previous->reference_count <= 1) {
-                                        pathEditor_DestroySharedNode(previous);
-                                    }
+                            NuLinkedListRemove(&aieditor->free_shared_nodes, &shared->link);
+                            NuLinkedListAppend(&aieditor->shared_path_nodes, &shared->link);
+                            shared_nodes[shared_index] = shared;
+                        }
+                    }
+                    if (shared != nullptr) {
+                        if (node->shared_node != shared) {
+                            if (node->shared_node != nullptr) {
+                                EDAISHAREDPATHNODE_s *previous = node->shared_node;
+                                --previous->reference_count;
+                                if (previous->reference_count <= 1) {
+                                    pathEditor_DestroySharedNode(previous);
                                 }
-                                node->shared_node = shared;
-                                ++shared->reference_count;
                             }
+                            node->shared_node = shared;
+                            ++shared->reference_count;
                         }
                     }
                 }
@@ -2235,7 +2270,7 @@ void pathEditor_Render(i32 x, i32 y, float x_scale, float y_scale) {
             NuQFntPrintEx(system_qfont, screen_x, screen_y - 40, 16, "Show Routes : \"%s\"", path->name);
             NuQFntSetColour(system_qfont, 0x80000000);
             NuQFntSetScale(system_qfont, x_scale, y_scale);
-            NuQFntPrintEx(system_qfont, screen_x, screen_y + 120, 16, "%s", path->name);
+            NuQFntPrintEx(system_qfont, screen_x, screen_y + 120, 16, "%s", aieditor->current_path->name);
             NuQFntPrintEx(system_qfont, screen_x, screen_y + 240, 16, "SQR - Sub menu");
             NuQFntPrintEx(system_qfont, screen_x, screen_y + 360, 16, "SELECT - Goto nearest");
             if (path->runtime_nearest >= 0) {
@@ -2277,6 +2312,38 @@ void pathEditor_Render(i32 x, i32 y, float x_scale, float y_scale) {
             }
         }
     }
+    if (aieditorsettings.unknown_060_bit0 && aieditor->cached_path_system != nullptr) {
+        AIPATH_s *runtime_path = aieditor->cached_path_system->paths[0];
+        if (runtime_path != nullptr) {
+            i32 current = aieditor->current_path->runtime_start;
+            i32 end = aieditor->current_path->runtime_end;
+            if (current >= 0 && current < runtime_path->node_count && end >= 0 && end < runtime_path->node_count &&
+                current != end) {
+                AIPATHNODE_s *node = &runtime_path->nodes[current];
+                u8 edge = runtime_path->route_matrix[current][end];
+                while (edge != 0xff) {
+                    AIPATHCNX_s *connection = node->connections[edge];
+                    i32 next = connection->node_indices[0] != current ? connection->node_indices[0]
+                                                                      : connection->node_indices[1];
+                    AIPATHNODE_s *next_node = &runtime_path->nodes[next];
+                    NURND_VERTEX3D vertices[2];
+                    vertices[0].position = node->position;
+                    vertices[1].position = next_node->position;
+                    vertices[0].position.y += 0.1f;
+                    vertices[1].position.y += 0.1f;
+                    vertices[0].colour = 0xff0000ff;
+                    vertices[1].colour = 0xff0000ff;
+                    AiRndrLine3d(vertices, nullptr, nullptr);
+                    current = next;
+                    end = aieditor->current_path->runtime_end;
+                    if (current == end)
+                        break;
+                    node = &runtime_path->nodes[current];
+                    edge = runtime_path->route_matrix[current][end];
+                }
+            }
+        }
+    }
     pathEditorDrawPaths();
     if (aieditorsettings.show_creatures_display) {
         creatureEditor_RenderAllCreatures();
@@ -2301,7 +2368,7 @@ static EDAIPATHNODE_s *pathEditor_GetNearestNode(EDAIPATH_s *path, i32 require_r
              node = reinterpret_cast<EDAIPATHNODE_s *>(NuLinkedListGetNext(&path->nodes, &node->link))) {
             NUVEC delta;
             f32 distance = NuVecXZDistSqr(&aieditor->cursor_position, &node->position, &delta);
-            if (distance >= nearest_distance) {
+            if (!(nearest_distance > distance)) {
                 continue;
             }
             f32 height = aieditor->cursor_position.y - node->position.y;
@@ -2336,30 +2403,45 @@ static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s 
 
 static __used__ i32 routeEditor_AddToRoute(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) {
     EDAIPATH_s *path = aieditor->current_path;
-    if (path == nullptr || path->current_route == nullptr)
+    if (path->current_route == nullptr)
         return 0;
     i32 index = path->current_route - path->routes;
     if (index > 15)
         return 0;
     u16 mask = 1u << index;
-    for (i32 slot = 0; slot < 8; ++slot) {
-        EDAIPATHCNX_s *connection = &node->connections[slot];
-        if (connection->node != other)
-            continue;
-        if (!(connection->route_mask & mask)) {
-            connection->route_mask |= mask;
-            return 1;
-        }
-        connection->route_mask &= ~mask;
-        if (other->connections[slot].node != nullptr && (other->connections[slot].route_mask & mask))
-            other->route_mask &= ~mask;
-        return -1;
+    i32 slot;
+    if (node->connections[0].node == other)
+        slot = 0;
+    else if (node->connections[1].node == other)
+        slot = 1;
+    else if (node->connections[2].node == other)
+        slot = 2;
+    else if (node->connections[3].node == other)
+        slot = 3;
+    else if (node->connections[4].node == other)
+        slot = 4;
+    else if (node->connections[5].node == other)
+        slot = 5;
+    else if (node->connections[6].node == other)
+        slot = 6;
+    else if (node->connections[7].node == other)
+        slot = 7;
+    else
+        return 0;
+    EDAIPATHCNX_s *connection = &node->connections[slot];
+    if (!(connection->route_mask & mask)) {
+        connection->route_mask |= mask;
+        return 1;
     }
-    return 0;
+    connection->route_mask &= ~mask;
+    if (other->connections[slot].node != nullptr && (other->connections[slot].route_mask & mask))
+        other->route_mask &= ~mask;
+    return -1;
 }
 
 eduimenu_s *routeEditor_Process(nupad_s *pad) {
-    if (pad->digital_buttons_pressed & 0x80) {
+    u32 pressed = pad->digital_buttons_pressed;
+    if (pressed & 0x80) {
         eduimenu_s *menu =
             eduiMenuCreate(200, 70, 240, 270, ed_fnt, aieditor_cbCancelMainMenu, const_cast<char *>("Options"));
         if (menu == nullptr)
@@ -2384,7 +2466,7 @@ eduimenu_s *routeEditor_Process(nupad_s *pad) {
     if (path == nullptr)
         return nullptr;
     // Both route cycling directions are expanded across the 16 fixed slots in the original.
-    if (pad->digital_buttons_pressed & 0x1000) {
+    if (pressed & 0x1000) {
         i32 index = path->current_route == nullptr ? 1 : path->current_route - path->routes + 1;
 #define ROUTE_EDITOR_TRY_FORWARD()                                                                                     \
     if (index >= 16)                                                                                                   \
@@ -2412,7 +2494,7 @@ eduimenu_s *routeEditor_Process(nupad_s *pad) {
 #undef ROUTE_EDITOR_TRY_FORWARD
         path->current_route = nullptr;
         return nullptr;
-    } else if (pad->digital_buttons_pressed & 0x4000) {
+    } else if (pressed & 0x4000) {
         i32 index = path->current_route == nullptr ? 15 : path->current_route - path->routes - 1;
 #define ROUTE_EDITOR_TRY_BACKWARD()                                                                                    \
     if (index < 0)                                                                                                     \
@@ -2444,13 +2526,13 @@ eduimenu_s *routeEditor_Process(nupad_s *pad) {
         return nullptr;
     }
 route_selected:
-    if ((pad->digital_buttons & 0x40) && (pad->digital_buttons_pressed & 0x40) && path->nearest_node != nullptr) {
+    if ((pad->digital_buttons & 0x40) && (pressed & 0x40) && path->nearest_node != nullptr) {
         path->current_node = path->nearest_node;
         nuvec_s position = path->current_node->position;
         position.y = aieditor->cursor_position.y;
         edcamSetPos(&position);
     }
-    if ((pad->digital_buttons_pressed & 0x20) && path->current_node != nullptr && path->nearest_node != nullptr &&
+    if ((pressed & 0x20) && path->current_node != nullptr && path->nearest_node != nullptr &&
         path->current_node != path->nearest_node) {
         EDAIPATHNODE_s *nearest = path->nearest_node;
         i32 change = routeEditor_AddToRoute(path->current_node, nearest);
@@ -2462,9 +2544,9 @@ route_selected:
             edcamSetPos(&position);
         }
     }
-    if ((pad->digital_buttons_pressed & 0x10) && path->current_node != nullptr) {
+    if ((pressed & 0x10) && path->current_node != nullptr) {
         i32 index = path->current_route - path->routes;
-        u16 mask = 1u << index;
+        u32 mask = 1u << index;
         for (i32 slot = 0; slot < 8; ++slot) {
             EDAIPATHCNX_s *connection = &path->current_node->connections[slot];
             if (connection->node != nullptr && (connection->route_mask & mask)) {
@@ -2473,8 +2555,25 @@ route_selected:
             }
         }
     }
-    if (pad->digital_buttons_pressed & 0x100) {
-        path->current_node = pathEditor_GetNearestNode(path, 0);
+    if (pressed & 0x100) {
+        EDAIPATHNODE_s *nearest = nullptr;
+        f32 nearest_distance = FLT_MAX;
+        for (EDAIPATHNODE_s *node = reinterpret_cast<EDAIPATHNODE_s *>(NuLinkedListGetHead(&path->nodes));
+             node != nullptr;
+             node = reinterpret_cast<EDAIPATHNODE_s *>(NuLinkedListGetNext(&path->nodes, &node->link))) {
+            NUVEC delta;
+            f32 distance = NuVecXZDistSqr(&aieditor->cursor_position, &node->position, &delta);
+            if (nearest_distance > distance) {
+                f32 height = aieditor->cursor_position.y - node->position.y;
+                f32 upper = NuFmax(0.2f, node->height_max);
+                f32 lower = NuFmin(-0.2f, node->height_min);
+                if (height <= upper && height >= lower) {
+                    nearest = node;
+                    nearest_distance = distance;
+                }
+            }
+        }
+        path->current_node = nearest;
         if (path->current_node != nullptr)
             edcamSetPos(&path->current_node->position);
     }
@@ -2507,11 +2606,9 @@ static void pathEditor_PathNodeMoved(EDAIPATHNODE_s *node) {
                  other = reinterpret_cast<EDAIPATHNODE_s *>(NuLinkedListGetNext(&path->nodes, &other->link))) {
                 if (other != node && other->shared_node == node->shared_node) {
                     other->radius = node->radius;
-                    other->position.x = node->position.x;
                     other->height_min = node->height_min;
-                    other->position.y = node->position.y;
                     other->height_max = node->height_max;
-                    other->position.z = node->position.z;
+                    other->position = node->position;
                     other->platform = node->platform;
                     other->platform_position = node->platform_position;
                     creatureEditor_PathNodeMoved(other);

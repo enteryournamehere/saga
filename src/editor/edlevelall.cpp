@@ -21,6 +21,9 @@
 #if defined(__i386__) && defined(__SSE__)
 #include <xmmintrin.h>
 #endif
+#if defined(__i386__) && defined(__SSE2__)
+#include <emmintrin.h>
+#endif
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/nurand.h"
 #include "nu2api/nufile/nufile.h"
@@ -117,7 +120,7 @@ extern "C" void eduiSetCursorColour(u32);
 extern "C" void eduiSetFontScale(f32, f32);
 
 PropertyTool thePropertyTool;
-PropertyMenuMetrics menu_startmetrics = {20, 5, 200, 400};
+PropertyMenuMetrics menu_startmetrics __attribute__((aligned(16))) = {20, 5, 200, 400};
 eduiiattr_s EdLevelAttr = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
 i32 EdLevelFnt;
 i32 EdLevelFntScale = 24;
@@ -427,8 +430,13 @@ void ClassEditor::Process(EdInputContext &input) {
             theRegistry.ClassIFaceProcess(entry->ed_class, entry->object, input);
         if (input.GetPress(39) != 0.0f) {
             ClassObjectListEntry *entry = selected_objects.first;
-            VuVec position;
-            get_class_object_attribute(entry->ed_class, entry->object, entry->reference, 8, EdType_VuVec, &position, 0);
+            EdMember member;
+            VuVec position __attribute__((aligned(16)));
+            if (entry->reference == NULL ||
+                !entry->reference->GetAttributeData(entry->object, 8, EdType_VuVec, &position, 0)) {
+                if (entry->ed_class->FindMember(&member, entry->object, 8, 1))
+                    member.reference->GetAttributeData(member.object, 8, EdType_VuVec, &position, 0);
+            }
             theLevelEditor.background_colour[0] = position.x;
             theLevelEditor.background_colour[1] = position.y;
             theLevelEditor.background_colour[2] = position.z;
@@ -458,8 +466,7 @@ void ClassEditor::Render() {
             manipulator->Render(selected_objects);
         } else {
             for (ClassObjectListEntry *entry = selected_objects.first; entry != NULL; entry = entry->next) {
-                ClassObject selected = {entry->ed_class, entry->object, entry->reference};
-                DrawObjectSphere(selected, 0xff800000);
+                DrawObjectSphere(*reinterpret_cast<ClassObject *>(&entry->ed_class), 0xff800000);
             }
         }
         for (ClassObjectListEntry *entry = selected_objects.first; entry != NULL; entry = entry->next)
@@ -478,16 +485,23 @@ void ClassEditor::Render() {
                 continue;
 
             ClassObject selected = {ed_class, object, NULL};
-            const bool is_selected = selected_objects.IsInList(selected) != 0;
-            if ((ed_class->flags & 0x08000000) != 0 && !is_selected)
+            if ((ed_class->flags & 0x08000000) != 0 && selected_objects.IsInList(selected) == 0)
                 theRegistry.ClassIFaceRender(ed_class, object, 0);
-            if ((ed_class->flags & 0x80) != 0 && is_selected && object != current_object.object)
+            if ((ed_class->flags & 0x80) != 0 && selected_objects.IsInList(selected) != 0 &&
+                object != current_object.object)
                 DrawObjectSphere(selected, 0xff000080);
         }
     }
 
     if (menu != NULL)
         eduiMenuRender(menu);
+}
+
+template <typename T> T *CreateObject(MemoryBuffer *buffer) {
+    void *storage = buffer->Allocate(sizeof(T));
+    if (storage == NULL)
+        return NULL;
+    return new (storage) T();
 }
 
 void ClassEditor::Serialise(EdStream &stream) {
@@ -498,7 +512,7 @@ void ClassEditor::Serialise(EdStream &stream) {
     if (stream.mode == 1) {
         MemoryBuffer *saved = stream.memory_buffer;
         stream.memory_buffer = stream.secondary_buffer;
-        EdRegistry *source = static_cast<EdRegistry *>(stream.secondary_buffer->Allocate(sizeof(EdRegistry)));
+        EdRegistry *source = ::CreateObject<EdRegistry>(stream.secondary_buffer);
         source->Initialise(*stream.secondary_buffer->position, *stream.secondary_buffer->end, 50, 50, 10, 1);
         source->Serialise(stream);
         stream.memory_buffer = saved;
@@ -510,10 +524,10 @@ void ClassEditor::WriteBlock(i32) {
 }
 
 void ClassEditor::DestroySelectedObjects() {
-    f32 x, y;
-    eduiGetCursorCoords(&x, &y);
     char title[136];
     NuStrCpy(title, "Destroy Selected Objects");
+    f32 x, y;
+    eduiGetCursorCoords(&x, &y);
     eduimenu_s *confirm_menu =
         eduiMenuCreate(static_cast<i32>(x * 640.0f), static_cast<i32>(y * 448.0f), 300, 50,
                        reinterpret_cast<void *>(static_cast<usize>(EdLevelFnt)), cbDestroyMenu, title);
@@ -556,23 +570,27 @@ void ClassEditor::DrawObjectSphere(ClassObject &selected, i32 colour) {
         return;
     f32 radius;
     EdMember member;
+    i32 radius_type = EdType_Float;
     if (selected.reference == NULL ||
-        selected.reference->GetAttributeData(selected.object, 0x40, EdType_Float, &radius, 0) == 0) {
+        selected.reference->GetAttributeData(selected.object, 0x40, radius_type, &radius, 0) == 0) {
         if (selected.ed_class->FindMember(&member, selected.object, 0x40, 1) == 0 ||
-            member.reference->GetAttributeData(member.object, 0x40, EdType_Float, &radius, 0) == 0) {
+            member.reference->GetAttributeData(member.object, 0x40, radius_type, &radius, 0) == 0) {
             radius = 1.0f;
         }
     }
-    VuMtx transform;
+    // The original places this matrix on a 16-byte-aligned stack slot.
+    VuMtx transform __attribute__((aligned(16)));
+    i32 matrix_type = EdType_VuMtx;
     if ((selected.reference == NULL ||
-         selected.reference->GetAttributeData(selected.object, 0x10, EdType_VuMtx, &transform, 0) == 0) &&
+         selected.reference->GetAttributeData(selected.object, 0x10, matrix_type, &transform, 0) == 0) &&
         (selected.ed_class->FindMember(&member, selected.object, 0x10, 1) == 0 ||
-         member.reference->GetAttributeData(member.object, 0x10, EdType_VuMtx, &transform, 0) == 0)) {
+         member.reference->GetAttributeData(member.object, 0x10, matrix_type, &transform, 0) == 0)) {
         VuVec position;
+        i32 position_type = EdType_VuVec;
         if ((selected.reference != NULL &&
-             selected.reference->GetAttributeData(selected.object, 8, EdType_VuVec, &position, 0) != 0) ||
+             selected.reference->GetAttributeData(selected.object, 8, position_type, &position, 0) != 0) ||
             (selected.ed_class->FindMember(&member, selected.object, 8, 1) != 0 &&
-             member.reference->GetAttributeData(member.object, 8, EdType_VuVec, &position, 0) != 0)) {
+             member.reference->GetAttributeData(member.object, 8, position_type, &position, 0) != 0)) {
             EdDrawBegin(0);
             EdDrawLineSphere(position, radius, 1.0f, colour);
             EdDrawEnd();
@@ -595,9 +613,10 @@ i32 ClassEditor::Editable(void *object, EdClass *object_class, i32 index) {
     if (object == NULL) {
         return (class_filter >> index) & 1;
     }
-    EdMember member;
+    i32 short_type = EdType_Short;
+    EdMember member __attribute__((aligned(16)));
     if (object_class->FindMember(&member, object, 256, 1)) {
-        member.reference->GetAttributeData(member.object, 256, EdType_Short, &scene, 0);
+        member.reference->GetAttributeData(member.object, 256, short_type, &scene, 0);
     }
     return theLevelEditor.IsEditable(scene) != 0;
 }
@@ -653,8 +672,7 @@ i32 ClassEditor::FindNearestObject(VuVec &point, ClassObject &result, i32 filter
     for (i32 class_index = 0; class_index < theRegistry.class_count; ++class_index) {
         EdClass *ed_class = &theRegistry.classes[class_index];
         EdClassInterface *interface = ed_class->interface;
-        if (!Editable(NULL, ed_class, class_index) || interface == NULL || (ed_class->flags & 8) == 0 ||
-            interface->vtable->get_next_object == NULL)
+        if (!Editable(NULL, ed_class, class_index) || (ed_class->flags & 8) == 0)
             continue;
         for (void *object = interface->vtable->get_next_object(interface, NULL); object != NULL;
              object = interface->vtable->get_next_object(interface, object)) {
@@ -693,13 +711,12 @@ i32 ClassEditor::FindNearestObject(VuVec &point, ClassObject &result, i32 filter
 
 i32 ClassEditor::FindNearestObject(VuVec &origin, VuVec &direction, ClassObject &result, ClassObject &after,
                                    i32 filter) {
-    ClassObject candidates[16];
+    ClassObject candidates[16] __attribute__((aligned(16))) = {};
     i32 candidate_count = 0;
     for (i32 class_index = 0; class_index < theRegistry.class_count; ++class_index) {
         EdClass *ed_class = &theRegistry.classes[class_index];
         EdClassInterface *interface = ed_class->interface;
-        if (!Editable(NULL, ed_class, class_index) || interface == NULL || (ed_class->flags & 8) == 0 ||
-            interface->vtable->get_next_object == NULL || interface->vtable->distance_to_ray == NULL)
+        if (!Editable(NULL, ed_class, class_index) || interface == NULL || (ed_class->flags & 8) == 0)
             continue;
         for (void *object = interface->vtable->get_next_object(interface, NULL); object != NULL;
              object = interface->vtable->get_next_object(interface, object)) {
@@ -734,8 +751,7 @@ i32 ClassEditor::FindNearestObject(VuVec &origin, VuVec &direction, ClassObject 
     for (i32 class_index = 0; class_index < theRegistry.class_count; ++class_index) {
         EdClass *ed_class = &theRegistry.classes[class_index];
         EdClassInterface *interface = ed_class->interface;
-        if (!Editable(NULL, ed_class, class_index) || interface == NULL || (ed_class->flags & 8) == 0 ||
-            interface->vtable->get_next_object == NULL || interface->vtable->distance_to_ray == NULL)
+        if (!Editable(NULL, ed_class, class_index) || interface == NULL || (ed_class->flags & 8) == 0)
             continue;
         for (void *object = interface->vtable->get_next_object(interface, NULL); object != NULL;
              object = interface->vtable->get_next_object(interface, object)) {
@@ -813,7 +829,9 @@ i32 ClassEditor::IsUniqueName(char *name) {
         }
 
         void *object = interface->vtable->get_next_object(interface, NULL);
-        while (object != NULL) {
+        if (object == NULL)
+            continue;
+        do {
             EdMember member;
             char candidate_name[128];
             if (ed_class->FindMember(&member, object, 2, 1)) {
@@ -824,7 +842,7 @@ i32 ClassEditor::IsUniqueName(char *name) {
             }
             interface = ed_class->interface;
             object = interface->vtable->get_next_object(interface, object);
-        }
+        } while (object != NULL);
     }
     return 1;
 }
@@ -848,7 +866,7 @@ void ClassEditor::MakeUniqueName(char const *name, char *destination, i32 size) 
     }
 
     if (prefix_length + digit_count >= size) {
-        prefix_length = size - digit_count - 1;
+        prefix_length = size + ~digit_count;
     }
     NuStrNCpy(destination, name, prefix_length + 1);
     char format[16];
@@ -1086,7 +1104,11 @@ void ClassEditor::UpdateSelectedObjects(EdInputContext &input) {
         ClassObjectListEntry *next_entry = entry->next;
         EdClassInterface *interface = entry->ed_class->interface;
         void *object = interface->vtable->get_next_object(interface, NULL);
-        while (object != NULL && object != entry->object) {
+        for (;;) {
+            if (object == NULL)
+                break;
+            if (object == entry->object)
+                break;
             object = interface->vtable->get_next_object(interface, object);
         }
         if (object == NULL) {
@@ -1107,41 +1129,39 @@ void ClassEditor::UpdateSelectedObjects(EdInputContext &input) {
     }
     if (selected_objects.first == NULL)
         return;
-    if (input.GetPress(19) != 0.0f || input.GetPress(20) != 0.0f) {
-        ClassObjectListEntry *entry = selected_objects.first;
-        EdClassInterface *interface = entry->ed_class->interface;
-        void *object = NULL;
-        if (input.GetPress(19) != 0.0f) {
-            object = interface->vtable->get_next_object(interface, entry->object);
+    ClassObjectListEntry *entry = selected_objects.first;
+    EdClassInterface *interface = entry->ed_class->interface;
+    void *object = NULL;
+    if (input.GetPress(19) != 0.0f) {
+        object = interface->vtable->get_next_object(interface, entry->object);
+        if (object == NULL)
+            object = interface->vtable->get_next_object(interface, NULL);
+        for (i32 remaining = 4096; remaining != 0; --remaining) {
+            if (Editable(object, entry->ed_class, -1))
+                break;
+            object = interface->vtable->get_next_object(interface, object);
             if (object == NULL)
                 object = interface->vtable->get_next_object(interface, NULL);
-            for (i32 remaining = 4096; remaining != 0 && object != NULL; --remaining) {
-                if (Editable(object, entry->ed_class, -1))
-                    break;
-                object = interface->vtable->get_next_object(interface, object);
-                if (object == NULL)
-                    object = interface->vtable->get_next_object(interface, NULL);
-            }
         }
-        if (input.GetPress(20) != 0.0f) {
-            void *current = entry->object;
-            void *previous = NULL;
-            for (i32 remaining = 4096; remaining != 0; --remaining) {
-                if (Editable(current, entry->ed_class, -1))
-                    previous = current;
-                current = interface->vtable->get_next_object(interface, current);
-                if (current == NULL)
-                    current = interface->vtable->get_next_object(interface, NULL);
-                if (current == entry->object)
-                    break;
-            }
-            object = previous;
+    }
+    if (input.GetPress(20) != 0.0f) {
+        void *current = entry->object;
+        void *previous = NULL;
+        for (i32 remaining = 4096; remaining != 0; --remaining) {
+            if (Editable(current, entry->ed_class, -1))
+                previous = current;
+            current = interface->vtable->get_next_object(interface, current);
+            if (current == NULL)
+                current = interface->vtable->get_next_object(interface, NULL);
+            if (current == entry->object)
+                break;
         }
-        if (object != NULL) {
-            ClassObject selected = {entry->ed_class, object, NULL};
-            SelectObject(selected, 0);
-            ViewSelected();
-        }
+        object = previous;
+    }
+    if (object != NULL) {
+        ClassObject selected = {entry->ed_class, object, NULL};
+        theClassEditor.SelectObject(selected, 0);
+        theClassEditor.ViewSelected();
     }
 }
 
@@ -1363,20 +1383,16 @@ void ClassEditor::cbEdClassSelectObjectMenu(eduimenu_s *parent, eduiitem_s *item
                                       reinterpret_cast<void *>(static_cast<usize>(EdLevelFnt)), cbEdLevelDestroy, NULL);
     if (menu == NULL)
         return;
-    if (ed_class != NULL && ed_class->interface != NULL) {
-        EdClassInterface *interface = ed_class->interface;
-        EdRef *name_ref = ed_class->FindTypeRef(2, 1);
-        if (interface->vtable->get_next_object != NULL) {
-            for (void *object = interface->vtable->get_next_object(interface, NULL); object != NULL;
-                 object = interface->vtable->get_next_object(interface, object)) {
-                char name[128];
-                if (name_ref == NULL || !name_ref->GetAttributeData(object, 2, EdType_String, name, sizeof(name)))
-                    NuStrCpy(name, ed_class->name);
-                if (theClassEditor.Editable(object, ed_class, -1))
-                    eduiMenuAddItem(menu, eduiItemSelCreate(reinterpret_cast<usize>(object), &EdLevelAttr, 0, 0,
-                                                            cbEdClassSelectObject, name));
-            }
-        }
+    EdClassInterface *interface = ed_class->interface;
+    EdRef *name_ref = ed_class->FindTypeRef(2, 1);
+    for (void *object = interface->vtable->get_next_object(interface, NULL); object != NULL;
+         object = interface->vtable->get_next_object(interface, object)) {
+        char name[128];
+        if (name_ref == NULL || !name_ref->GetAttributeData(object, 2, EdType_String, name, sizeof(name)))
+            NuStrCpy(name, ed_class->name);
+        if (theClassEditor.Editable(object, ed_class, -1))
+            eduiMenuAddItem(menu, eduiItemSelCreate(reinterpret_cast<usize>(object), &EdLevelAttr, 0, 0,
+                                                    cbEdClassSelectObject, name));
     }
     if (menu->first == NULL) {
         eduiMenuAddItem(
@@ -1405,8 +1421,8 @@ void ClassEditor::cbEdClassSetPinned(eduimenu_s *menu, eduiitem_s *item, u32) {
     } else {
         eduiMenuDetach(menu);
         eduiMenuDestroy(menu);
-        if (edLevelNextMenu == menu) {
-            edLevelNextMenu = NULL;
+        if (edLevelActiveMenu == menu) {
+            edLevelActiveMenu = NULL;
         }
         eduiSetPinnedMenu(NULL);
     }
@@ -1418,21 +1434,15 @@ void ClassEditor::cbEdClassSetSnap(eduimenu_s *menu, eduiitem_s *item, u32) {
 }
 
 void ClassEditor::cbEdClassSetView(eduimenu_s *menu, eduiitem_s *item, u32) {
-    switch (item->data) {
-        case 0:
-            theClassEditor.class_filter = -1;
-            break;
-        case 1:
-            theClassEditor.class_filter = 0;
-            break;
-        case 2:
-            theClassEditor.class_filter = ~theClassEditor.class_filter;
-            break;
-        default:
-            if (item->data - 3 >= 0) {
-                theClassEditor.class_filter ^= 1 << (item->data - 3);
-            }
-            break;
+    i32 index = item->data;
+    if (index == 1) {
+        theClassEditor.class_filter = 0;
+    } else if (static_cast<u32>(index) < 1) {
+        theClassEditor.class_filter = -1;
+    } else if (index == 2) {
+        theClassEditor.class_filter = ~theClassEditor.class_filter;
+    } else if (index - 3 >= 0) {
+        theClassEditor.class_filter ^= 1 << (index - 3);
     }
     SetViewMenuHilight(menu);
 }
@@ -1511,22 +1521,23 @@ void ClassEditor::cbEdClassViewMenu(eduimenu_s *parent, eduiitem_s *item, u32) {
 }
 
 i32 ClassEditor::cbEdCopySelectedObject(EdInputContext &) {
-    if (selected_objects.first != NULL) {
-        return CreateObject(*reinterpret_cast<ClassObject *>(&selected_objects.first->ed_class));
+    if (theClassEditor.selected_objects.first != NULL) {
+        return theClassEditor.CreateObject(
+            *reinterpret_cast<ClassObject *>(&theClassEditor.selected_objects.first->ed_class));
     }
     return 0;
 }
 
 i32 ClassEditor::cbEdCreateClassNewObject(i32 class_id) {
     EdClass *ed_class = theRegistry.GetClass(class_id);
-    for (ClassObjectListEntry *entry = selected_objects.first; entry != NULL; entry = entry->next) {
+    for (ClassObjectListEntry *entry = theClassEditor.selected_objects.first; entry != NULL; entry = entry->next) {
         if (entry->ed_class == ed_class) {
-            return CreateObject(*reinterpret_cast<ClassObject *>(&entry->ed_class));
+            return theClassEditor.CreateObject(*reinterpret_cast<ClassObject *>(&entry->ed_class));
         }
     }
-    if (ed_class == NULL || (ed_class->flags & 0x04000000))
+    if (ed_class->flags & 0x04000000)
         return 0;
-    return CreateObject(class_id);
+    return theClassEditor.CreateObject(class_id);
 }
 
 void ClassEditor::cbEdFilterLED(eduimenu_s *, eduiitem_s *item, u32) {
@@ -1616,14 +1627,17 @@ void ClassEditor::cbFileSelected(eduimenu_s *, eduiitem_s *item, u32) {
     theLevelEditor.CloseMenu();
 }
 
-void ClassObject::GetName(char *destination, i32 size) {
+__attribute__((force_align_arg_pointer)) void ClassObject::GetName(char *destination, i32 size) {
     if (object == NULL) {
         NuStrNCpy(destination, "None", size);
         return;
     }
 
     char name[128];
-    if (!get_class_object_attribute(ed_class, object, reference, 2, EdType_String, name, 128)) {
+    EdMember member;
+    if ((reference == NULL || !reference->GetAttributeData(object, 2, EdType_String, name, sizeof(name))) &&
+        (!ed_class->FindMember(&member, object, 2, 1) ||
+         !member.reference->GetAttributeData(member.object, 2, EdType_String, name, sizeof(name)))) {
         NuStrCpy(name, "NoName");
     }
     sprintf(destination, "%s.%s", ed_class->name, name);
@@ -2456,7 +2470,8 @@ i32 LevelEditor::WriteStream(EdFileOutputStream &stream) {
     settings.Serialise(stream);
     stream.EndBlock();
     stream.BeginBlock("Editors");
-    stream.SerialiseBuffer(&editor_count, sizeof(editor_count), 1);
+    i32 count = editor_count;
+    stream.SerialiseBuffer(&count, sizeof(count), 1);
     for (BaseEditor *editor = first_editor; editor != NULL; editor = editor->next) {
         stream.BeginBlock(editor->GetName());
         editor->Serialise(stream);
@@ -2579,19 +2594,12 @@ void PropertyTool::BringToFront(PropertyMenu *menu) {
     --menu_count;
     menu->order = -2;
     PropertyMenu *position = active_menu;
-    while (position != NULL && position->order < -1) {
-        position = position->next;
+    if (position != NULL && position->order < -1) {
+        do {
+            position = position->next;
+        } while (position != NULL && position->order < -1);
     }
-    if (position != NULL) {
-        menu->next = position->next;
-        menu->previous = position;
-        if (position->next != NULL) {
-            position->next->previous = menu;
-        } else {
-            last_menu = menu;
-        }
-        position->next = menu;
-    } else {
+    if (position == NULL) {
         menu->previous = last_menu;
         if (last_menu != NULL) {
             last_menu->next = menu;
@@ -2600,13 +2608,22 @@ void PropertyTool::BringToFront(PropertyMenu *menu) {
         if (active_menu == NULL) {
             active_menu = menu;
         }
+    } else {
+        menu->next = position;
+        menu->previous = position->previous;
+        if (position->previous != NULL) {
+            position->previous->next = menu;
+        } else {
+            active_menu = menu;
+        }
+        position->previous = menu;
     }
     ++menu_count;
 }
 
 PropertyMenu *PropertyTool::CreatePropertyMenu(ClassObject &object) {
     PropertyMenu *property_menu = new (theMemoryManager.AllocPool(sizeof(PropertyMenu), 1)) PropertyMenu();
-    PropertyMenuMetrics metrics = ediGetMenuStartMetrics();
+    PropertyMenuMetrics metrics __attribute__((aligned(16))) = ediGetMenuStartMetrics();
     char name[64];
     char title[128];
     if (!get_class_object_attribute(object.ed_class, object.object, object.reference, 2, EdType_String, name,
@@ -2649,12 +2666,14 @@ PropertyMenu *PropertyTool::GetActiveMenu(PropertyMenu *menu) {
 }
 
 void PropertyTool::GetClassName(EdRef *reference, char *name) {
-    EdClass *ed_class = show_type_names != 0 ? theRegistry.GetClass(reference->type_id) : NULL;
-    if (ed_class != NULL) {
-        sprintf(name, "%s %s", ed_class->name, reference->name);
-    } else {
-        NuStrCpy(name, reference->name);
+    if (show_type_names != 0) {
+        EdClass *ed_class = theRegistry.GetClass(reference->type_id);
+        if (ed_class != NULL) {
+            sprintf(name, "%s %s", ed_class->name, reference->name);
+            return;
+        }
     }
+    NuStrCpy(name, reference->name);
 }
 
 PropertyMenu *PropertyTool::GetNextActiveMenu() {
@@ -2670,12 +2689,14 @@ eduimenu_s *PropertyTool::GetNextDefaultActiveMenu(eduimenu_s *menu) {
 }
 
 void PropertyTool::GetTypeName(EdRef *reference, char *name) {
-    EdType *type = show_type_names != 0 ? theRegistry.GetType(reference->type_id) : NULL;
-    if (type != NULL) {
-        sprintf(name, "%s %s", type->name, reference->name);
-    } else {
-        NuStrCpy(name, reference->name);
+    if (show_type_names != 0) {
+        EdType *type = theRegistry.GetType(reference->type_id);
+        if (type != NULL) {
+            sprintf(name, "%s %s", type->name, reference->name);
+            return;
+        }
     }
+    NuStrCpy(name, reference->name);
 }
 
 void PropertyTool::Initialise(variptr_u &, variptr_u &, i32) {
@@ -2736,38 +2757,20 @@ i32 PropertyTool::ProcessMenu(EdInputContext &input) {
         }
 
         PropertyMenu *position = rebuilt.first;
-        if (menu->order == -1) {
-            while (position != NULL && position->order < 0) {
-                position = position->next;
+        while (position != NULL && position->order <= menu->order) {
+            position = position->next;
+        }
+        if (position != NULL) {
+            menu->next = position;
+            menu->previous = position->previous;
+            if (position->previous != NULL) {
+                position->previous->next = menu;
+            } else {
+                rebuilt.first = menu;
             }
-            if (position != NULL) {
-                menu->next = position;
-                menu->previous = position->previous;
-                if (position->previous != NULL) {
-                    position->previous->next = menu;
-                } else {
-                    rebuilt.first = menu;
-                }
-                position->previous = menu;
-                ++rebuilt.count;
-                continue;
-            }
-        } else {
-            while (position != NULL && position->order <= menu->order) {
-                position = position->next;
-            }
-            if (position != NULL) {
-                menu->next = position;
-                menu->previous = position->previous;
-                if (position->previous != NULL) {
-                    position->previous->next = menu;
-                } else {
-                    rebuilt.first = menu;
-                }
-                position->previous = menu;
-                ++rebuilt.count;
-                continue;
-            }
+            position->previous = menu;
+            ++rebuilt.count;
+            continue;
         }
         menu->next = NULL;
         menu->previous = rebuilt.last;
@@ -2779,7 +2782,8 @@ i32 PropertyTool::ProcessMenu(EdInputContext &input) {
         rebuilt.last = menu;
         ++rebuilt.count;
     }
-    for (PropertyMenu *menu = active_menu; menu != NULL;) {
+    while (active_menu != NULL) {
+        PropertyMenu *menu = active_menu;
         PropertyMenu *next = menu->next;
         if (next != NULL) {
             next->previous = menu->previous;
@@ -2796,7 +2800,6 @@ i32 PropertyTool::ProcessMenu(EdInputContext &input) {
         --menu_count;
         menu->Destroy();
         theMemoryManager.FreePool(menu, sizeof(PropertyMenu));
-        menu = next;
     }
     active_menu = rebuilt.first;
     last_menu = rebuilt.last;
@@ -2882,8 +2885,8 @@ void PropertyTool::RenderMenu(PropertyMenu *property_menu) {
     if (property_menu->order == -1)
         AutoLocateMenu(property_menu);
     eduimenu_s *menu = property_menu->menu;
-    VuVec start;
-    VuVec end;
+    VuVec start __attribute__((aligned(16)));
+    VuVec end __attribute__((aligned(16)));
     NuCameraCalcRay((static_cast<f32>(menu->x) + static_cast<f32>(menu->width) * 0.5f) / 640.0f,
                     (static_cast<f32>(menu->y) + static_cast<f32>(menu->height) * 0.125f) / 448.0f, &start.xyz,
                     &end.xyz, NULL);
@@ -2896,7 +2899,7 @@ void PropertyTool::RenderMenu(PropertyMenu *property_menu) {
     EdDrawBegin(0);
     EdDrawLineSegment(start, end, static_cast<i32>(reinterpret_cast<usize>(&selected_attr)));
     EdDrawEnd();
-    if (menu != NULL)
+    if (property_menu->menu != NULL)
         eduiMenuRender(menu);
     if (menu->selected != NULL) {
         EdControl *control = static_cast<EdControl *>(menu->selected->data_ptr);
@@ -2941,7 +2944,12 @@ PropertyMenuMetrics PropertyTool::ediGetMenuStartMetrics() {
 }
 
 void PropertyTool::ediMenuRetrieveMetrics(eduimenu_s *menu) {
+#if defined(__i386__) && defined(__SSE2__)
+    __m128i metrics = _mm_load_si128(reinterpret_cast<const __m128i *>(&menu_startmetrics));
+    _mm_storeu_si128(reinterpret_cast<__m128i *>(&menu->x), metrics);
+#else
     memcpy(&menu->x, &menu_startmetrics, sizeof(menu_startmetrics));
+#endif
 }
 
 void PropertyTool::ediMenuStoreMetrics(eduimenu_s *menu) {
@@ -2955,9 +2963,17 @@ i32 ClassObjectList::GetAveragePosition(VuVec &average) {
     average = VuVec(0.0f, 0.0f, 0.0f, 1.0f);
     i32 position_count = 0;
     for (ClassObjectListEntry *entry = first; entry != NULL; entry = entry->next) {
-        VuVec position;
-        if (get_class_object_attribute(entry->ed_class, entry->object, entry->reference, 8, EdType_VuVec, &position,
-                                       0)) {
+        EdMember member;
+        // The original's local vector is 16-byte aligned.
+        VuVec position __attribute__((aligned(16)));
+        i32 position_type = EdType_VuVec;
+        bool found = entry->reference != NULL &&
+                     entry->reference->GetAttributeData(entry->object, 8, position_type, &position, 0) != 0;
+        if (!found) {
+            found = entry->ed_class->FindMember(&member, entry->object, 8, 1) != 0 &&
+                    member.reference->GetAttributeData(member.object, 8, position_type, &position, 0) != 0;
+        }
+        if (found) {
             average.x += position.x;
             average.y += position.y;
             average.z += position.z;
@@ -3236,7 +3252,7 @@ void EdClass::Serialise(EdStream &stream, i32 *class_mapping) {
         return;
     }
     stream.SerialiseString(&name);
-    i32 count;
+    i32 count __attribute__((aligned(16)));
     if (stream.version == 0) {
         stream.SerialiseBuffer(&count, sizeof(count), 1);
     }
@@ -3269,8 +3285,7 @@ void EdClass::Serialise(EdStream &stream, i32 *class_mapping) {
             }
             member->Serialise(stream, class_mapping);
         }
-    }
-    if (stream.mode == 1) {
+    } else if (stream.mode == 1) {
         if (stream.version <= 2) {
             stream.SerialiseBuffer(&count, sizeof(count), 1);
             for (i32 i = 0; i < count; ++i) {
@@ -3409,11 +3424,8 @@ i32 EdClass::FindMember(EdMember *result, void *object, i32 attributes, i32 recu
         return 0;
     if (recursive == 0) {
         do {
-            if (member->attributes >= 0 && (member->attributes & attributes) != 0) {
-                result->object = object;
-                result->reference = member;
-                return 1;
-            }
+            if (member->attributes >= 0 && (member->attributes & attributes) != 0)
+                goto found;
             member = member->next;
         } while (member != NULL);
         return 0;
@@ -3424,14 +3436,15 @@ i32 EdClass::FindMember(EdMember *result, void *object, i32 attributes, i32 recu
             void *member_object = member->GetMemberObject(object);
             if (member_class->FindMember(result, member_object, attributes, 1) != 0)
                 return 1;
-        } else if ((member->attributes & attributes) != 0) {
-            result->object = object;
-            result->reference = member;
-            return 1;
-        }
+        } else if ((member->attributes & attributes) != 0)
+            goto found;
         member = member->next;
     } while (member != NULL);
     return 0;
+found:
+    result->object = object;
+    result->reference = member;
+    return 1;
 }
 
 void *EdClass::FindObject(char *object_name) {

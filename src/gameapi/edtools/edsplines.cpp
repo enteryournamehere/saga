@@ -135,20 +135,24 @@ extern const EdClassInterfaceVTableObject knotHelperVTable asm("_ZTV10KnotHelper
 #undef EDVT_SLOT
 #undef EDVT_SYMBOL
 
+extern const EdClassInterfaceVTableObject edClassInterfaceVTable asm("_ZTV16EdClassInterface");
+
 SplineHelper::~SplineHelper() {
+    vtable = const_cast<EdClassInterfaceVTable *>(&edClassInterfaceVTable.methods);
 }
 KnotHelper::~KnotHelper() {
+    vtable = const_cast<EdClassInterfaceVTable *>(&edClassInterfaceVTable.methods);
 }
 
 extern "C" void splineHelperDeletingDestructor(SplineHelper *object) asm("_ZN12SplineHelperD0Ev");
 void splineHelperDeletingDestructor(SplineHelper *object) {
-    object->~SplineHelper();
+    object->vtable = const_cast<EdClassInterfaceVTable *>(&edClassInterfaceVTable.methods);
     ::operator delete(object);
 }
 
 extern "C" void knotHelperDeletingDestructor(KnotHelper *object) asm("_ZN10KnotHelperD0Ev");
 void knotHelperDeletingDestructor(KnotHelper *object) {
-    object->~KnotHelper();
+    object->vtable = const_cast<EdClassInterfaceVTable *>(&edClassInterfaceVTable.methods);
     ::operator delete(object);
 }
 
@@ -168,8 +172,8 @@ i32 BezierLinePos(VuVec &, VuVec &, VuVec &, VuVec &, VuVec &, f32);
 template <typename Ref>
 static Ref *make_spline_reference(EdClass *object_class, char *type, char *name, i32 offset, i32 size, i32 attributes,
                                   EdControl *control, bool add_to_class = true) {
-    Ref *reference = new (theMemoryManager.AllocPool(sizeof(Ref), 1)) Ref();
-    static_cast<EdRef &>(*reference) = EdRef(type, name, offset, size, attributes, control, 0);
+    Ref *reference =
+        new (theMemoryManager.AllocPool(sizeof(Ref), 1)) Ref(type, name, offset, size, attributes, control, 0);
     if (add_to_class)
         object_class->AddType(reference);
     return reference;
@@ -184,13 +188,13 @@ static EdVectorControl *make_spline_vector_control() {
 }
 
 static EdEnumControl *make_spline_yes_no_control() {
-    EdEnumControl *control = new (theMemoryManager.AllocPool(sizeof(EdEnumControl), 1)) EdEnumControl();
+    EdEnumControl *control = new (theMemoryManager.AllocPool(sizeof(EdEnumControl), 1)) EdEnumControl;
     control->items = EdEnumControl::YesNoItems;
     return control;
 }
 
 static EdFloatControl *make_spline_float_control(f32 minimum, f32 maximum) {
-    EdFloatControl *control = new (theMemoryManager.AllocPool(sizeof(EdFloatControl), 1)) EdFloatControl();
+    EdFloatControl *control = new (theMemoryManager.AllocPool(sizeof(EdFloatControl), 1)) EdFloatControl;
     control->value_type = EdType_Float;
     control->format = const_cast<char *>("%.2f");
     control->minimum = minimum;
@@ -204,13 +208,15 @@ f32 SplineLength(nugspline_s *spline, i32 closed) {
     i32 segment_count = closed != 0 ? spline->length : spline->length - 1;
     f32 length = 0.0f;
     NUVEC *previous = spline->pts;
-    for (i32 segment = 1; segment <= segment_count; ++segment) {
-        NUVEC *next = &spline->pts[segment == spline->length ? 0 : segment];
+    i32 segment = 0;
+    do {
+        NUVEC *next = &spline->pts[segment == spline->length - 1 ? 0 : segment + 1];
         NUVEC difference;
         NuVecSub(&difference, next, previous);
         length += NuVecMag(&difference);
         previous = next;
-    }
+        ++segment;
+    } while (segment < segment_count);
     return length;
 }
 
@@ -241,7 +247,7 @@ void *KnotHelper::CreateObject(void *, i32, i32) {
          selected = selected->next) {
         if (spline == NULL && selected->ed_class == theSplineHelper.object_class)
             spline = static_cast<SplineObject *>(selected->object);
-        if (selected_knot == NULL && selected->ed_class == object_class)
+        if (selected_knot == NULL && selected->ed_class == theKnotHelper.object_class)
             selected_knot = static_cast<SplineKnot *>(selected->object);
         if (spline != NULL && selected_knot != NULL)
             break;
@@ -258,8 +264,12 @@ void *KnotHelper::CreateObject(void *, i32, i32) {
         ++theSplineHelper.object_count;
     }
     SplineKnot *knot = static_cast<SplineKnot *>(theMemoryManager.AllocPool(sizeof(SplineKnot), 1));
-    knot->spline = spline;
+    if (knot != NULL) {
+        knot->next = NULL;
+        knot->previous = NULL;
+    }
     knot->led_file = Placeable::CurrentLedFile;
+    knot->spline = spline;
     if (selected_knot == NULL) {
         knot->next = NULL;
         knot->previous = spline->knots.last;
@@ -419,10 +429,12 @@ void SplineHelper::AddMenuItems(eduimenu_s *menu) {
 void SplineHelper::ClearLevel(i32 level) {
     if (level == -1)
         return;
-    for (SplineObject *spline = static_cast<SplineObject *>(GetNextObject(NULL)); spline != NULL;) {
-        SplineObject *next = static_cast<SplineObject *>(GetNextObject(spline));
+    EdClassInterface *interface = reinterpret_cast<EdClassInterface *>(this);
+    for (SplineObject *spline = static_cast<SplineObject *>(interface->vtable->get_next_object(interface, NULL));
+         spline != NULL;) {
+        SplineObject *next = static_cast<SplineObject *>(interface->vtable->get_next_object(interface, spline));
         if (spline->led_file == level)
-            DestroyObject(spline, 0);
+            interface->vtable->destroy_object(interface, spline, 0);
         spline = next;
     }
 }
@@ -432,9 +444,10 @@ void *SplineHelper::CreateObject(void *, i32, i32) {
     spline->previous = last_object;
     if (last_object != NULL)
         last_object->next = spline;
-    else
-        first_object = spline;
+    const bool had_first = first_object != NULL;
     last_object = spline;
+    if (!had_first)
+        first_object = spline;
     ++object_count;
     return spline;
 }
@@ -566,12 +579,14 @@ void SplineHelper::SerialiseObject(EdStream &stream, void *object) {
             knot->led_file = Placeable::CurrentLedFile;
             theKnotHelper.object_class->SerialiseObject(stream, knot);
             knot->spline = spline;
+            knot->next = NULL;
             knot->previous = spline->knots.last;
             if (spline->knots.last != NULL)
                 spline->knots.last->next = knot;
-            else
-                spline->knots.first = knot;
+            const bool had_first = spline->knots.first != NULL;
             spline->knots.last = knot;
+            if (!had_first)
+                spline->knots.first = knot;
             ++spline->knots.count;
         }
     }
@@ -684,16 +699,20 @@ SplineObject *SplineObject::Clone() {
     NuStrCpy(clone->name, name);
     SplineKnot *source = knots.first;
     for (i32 index = 0; index < knots.count; ++index) {
-        SplineKnot *knot = new (theMemoryManager.AllocPool(sizeof(SplineKnot), 1)) SplineKnot();
-        knot->next = NULL;
-        knot->previous = clone->knots.last;
+        SplineKnot *knot = new (theMemoryManager.AllocPool(sizeof(SplineKnot), 1)) SplineKnot;
+        if (knot != NULL) {
+            knot->next = NULL;
+            knot->previous = NULL;
+        }
         knot->spline = clone;
         knot->led_file = Placeable::CurrentLedFile;
+        knot->previous = clone->knots.last;
         if (clone->knots.last != NULL)
             clone->knots.last->next = knot;
-        else
-            clone->knots.first = knot;
+        const bool had_first = clone->knots.first != NULL;
         clone->knots.last = knot;
+        if (!had_first)
+            clone->knots.first = knot;
         ++clone->knots.count;
         knot->position.x = source->position.x;
         knot->position.y = source->position.y;
@@ -718,8 +737,8 @@ SplineObject *SplineObject::Clone() {
 }
 
 void SplineObject::Draw(i32, i32 colour_mode, i32 straight, float show_points) {
-    EdDrawBegin(0);
     i32 colour = colour_mode == 0 ? static_cast<i32>(0x80808080) : static_cast<i32>(0x80008080);
+    EdDrawBegin(0);
     for (SplineKnot *knot = knots.first; knot != NULL && knot->next != NULL; knot = knot->next) {
         SplineKnot *next = knot->next;
         if (straight != 0 || step < 0.1f)
@@ -727,18 +746,27 @@ void SplineObject::Draw(i32, i32 colour_mode, i32 straight, float show_points) {
         else
             DrawBezierLine(knot->position, knot->out_tangent, next->position, next->in_tangent, edLevel3dMtl, colour);
     }
-    if (show_points != 0.0f && step > 0.1f)
+    u32 show_points_bits;
+    __builtin_memcpy(&show_points_bits, &show_points, sizeof(show_points_bits));
+    if (show_points_bits != 0 && step > 0.1f)
         points.Draw();
     EdDrawEnd();
 }
 
-void SplineObject::DropPoint(VuVec &point) {
+__attribute__((force_align_arg_pointer)) void SplineObject::DropPoint(VuVec &point) {
     if (drop != 0) {
         VuVec start = point;
         point.y -= 10.0f;
         VuVec direction{0.0f, -1000.0f, 0.0f, 1.0f};
-        if (EdTerrRay(start, direction) != 0)
+        if (EdTerrRay(start, direction) != 0) {
+#if defined(__i386__) && defined(__SSE__)
+            __m128 lanes = _mm_load_ps(&start.x);
+            _mm_storel_pi(reinterpret_cast<__m64 *>(&point), lanes);
+            _mm_storeh_pi(reinterpret_cast<__m64 *>(&point.z), lanes);
+#else
             point = start;
+#endif
+        }
     }
 }
 
@@ -748,7 +776,7 @@ void SplineObject::GenBezierPoints() {
     if (start == NULL)
         return;
     SplineKnot *end = start->next;
-    bool closing = false;
+    i32 closing = 0;
     f32 distance = 0.0f;
     while (end != NULL) {
         f32 length = BezierLineLength(start->position, start->out_tangent, end->position, end->in_tangent);
@@ -760,12 +788,12 @@ void SplineObject::GenBezierPoints() {
             points.AddPoint(point);
         }
         distance -= length;
-        if (closing)
-            return;
         start = end;
         end = end->next;
+        if (closing)
+            return;
         if (end == NULL && closed != 0) {
-            closing = true;
+            closing = 1;
             end = knots.first;
         }
     }
@@ -773,14 +801,21 @@ void SplineObject::GenBezierPoints() {
 
 void SplineObject::GenLinearPoints() {
     points.Clear();
+    VuVec point;
     for (SplineKnot *knot = knots.first; knot != NULL; knot = knot->next) {
-        VuVec point = knot->position;
+        point.x = knot->position.x;
+        point.y = knot->position.y;
+        point.z = knot->position.z;
+        point.w = knot->position.w;
         DropPoint(point);
         point.y += height;
         points.AddPoint(point);
     }
     if (closed != 0 && knots.first != NULL) {
-        VuVec point = knots.first->position;
+        point.x = knots.first->position.x;
+        point.y = knots.first->position.y;
+        point.z = knots.first->position.z;
+        point.w = knots.first->position.w;
         DropPoint(point);
         point.y += height;
         points.AddPoint(point);
@@ -797,27 +832,35 @@ void SplineObject::GenPoints() {
 void SplineObject::ReverseKnots() {
     SplineKnot *knot = knots.last;
     SplineKnot *old_first = knots.first;
-    knots.first = NULL;
     knots.last = NULL;
+    knots.first = NULL;
     knots.count = 0;
-    while (knot != NULL) {
-        SplineKnot *prior = knot->previous;
-        SplineKnot *next = knot->next;
-        if (next != NULL)
-            next->previous = prior;
-        if (prior != NULL)
-            prior->next = next;
-        else
-            old_first = next;
-        knot->next = NULL;
-        knot->previous = knots.last;
-        if (knots.last != NULL)
-            knots.last->next = knot;
-        else
-            knots.first = knot;
-        knots.last = knot;
-        ++knots.count;
-        knot = prior;
+    i32 next_count = 1;
+    if (knot != NULL) {
+        while (true) {
+            SplineKnot *prior = knot->previous;
+            SplineKnot *next = knot->next;
+            if (next != NULL)
+                next->previous = prior;
+            if (prior != NULL)
+                prior->next = next;
+            else
+                old_first = next;
+            knot->next = NULL;
+            knot->previous = knots.last;
+            if (knots.last != NULL)
+                knots.last->next = knot;
+            bool had_first = knots.first != NULL;
+            knots.last = knot;
+            if (!had_first)
+                knots.first = knot;
+            i32 count = next_count++;
+            if (prior == NULL) {
+                knots.count = count;
+                break;
+            }
+            knot = prior;
+        }
     }
     while (old_first != NULL) {
         SplineKnot *next = old_first->next;
@@ -867,7 +910,13 @@ void SplinePointList::AddPoint(VuVec &point) {
         block = new (theMemoryManager.AllocPool(sizeof(SplinePointBlock), 1)) SplinePointBlock();
         if (block == NULL)
             return;
-        block->points[block->point_count++] = point;
+        i32 index = block->point_count;
+        block->point_count = index + 1;
+        VuVec &destination = block->points[index];
+        destination.x = point.x;
+        destination.y = point.y;
+        destination.z = point.z;
+        destination.w = point.w;
         block->next = NULL;
         block->previous = last;
         if (last != NULL)
@@ -878,7 +927,13 @@ void SplinePointList::AddPoint(VuVec &point) {
         ++block_count;
         return;
     }
-    block->points[block->point_count++] = point;
+    i32 index = block->point_count;
+    block->point_count = index + 1;
+    VuVec &destination = block->points[index];
+    destination.x = point.x;
+    destination.y = point.y;
+    destination.z = point.z;
+    destination.w = point.w;
 }
 
 void SplinePointList::Clear() {

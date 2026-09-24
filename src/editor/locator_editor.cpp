@@ -133,17 +133,14 @@ static __used__ void locatorEditor_cbEmptyLocatorSet(eduimenu_s *parent, eduiite
     if (item == nullptr) {
         return;
     }
-    if (item->data == 1) {
-        EDLOCATORSET_s *set = aieditor->current_locator_set;
-        if (set != nullptr) {
-            for (i32 index = 0; index < 64; ++index) {
-                set->locators[index] = nullptr;
-            }
-        }
-        aieditor_ClearMainMenu();
-    } else if (item->data == 2) {
-        aieditor_ClearMainMenu();
-    } else if (item->data == 0) {
+    u32 data = (u32)item->data;
+    if (__builtin_expect(data == 1, 0)) {
+        goto empty_set;
+    }
+    if (__builtin_expect(data >= 1, 0)) {
+        goto maybe_cancel;
+    }
+    {
         eduimenu_s *menu =
             eduiMenuCreate(0xf0, 0x5a, 0xf0, 0xfa, ed_fnt, nullptr, (char *)"Empty current locator set?");
         if (menu != nullptr) {
@@ -153,7 +150,21 @@ static __used__ void locatorEditor_cbEmptyLocatorSet(eduimenu_s *parent, eduiite
                             eduiItemSelCreate(1, locator_attr, 0, 0, locatorEditor_cbEmptyLocatorSet, (char *)"Yes"));
             eduiMenuAttach(parent, menu);
         }
+        return;
     }
+maybe_cancel:
+    if (data == 2) {
+        aieditor_ClearMainMenu();
+    }
+    return;
+empty_set:
+    EDLOCATORSET_s *set = aieditor->current_locator_set;
+    if (set != nullptr) {
+        for (i32 index = 0; index < 64; ++index) {
+            set->locators[index] = nullptr;
+        }
+    }
+    aieditor_ClearMainMenu();
 }
 static __used__ void locatorEditor_cbCreateLocatorSet(eduimenu_s *, eduiitem_s *, u32) {
     EDLOCATORSET_s *set = (EDLOCATORSET_s *)NuLinkedListGetHead(&aieditor->free_locator_sets);
@@ -269,8 +280,8 @@ static __used__ void locatorEditor_cbRenameLocatorMenu(eduimenu_s *parent, eduii
     edui_textpicker_s *item = (edui_textpicker_s *)eduiItemTextPickCreate(
         0, locator_attr, locatorEditor_cbRenameLocator, (char *)"Locator Name");
     eduiMenuAddItem(menu, item);
-    strcpy(item->value, aieditor->current_locator->name);
-    item->max_length = 15;
+    strcpy(((edui_textpicker_s *)edui_last_item)->value, aieditor->current_locator->name);
+    ((edui_textpicker_s *)edui_last_item)->max_length = 15;
     eduiMenuAttach(parent, menu);
     menu->x = parent->x + 10;
     menu->y = parent->y + 40;
@@ -287,8 +298,8 @@ static __used__ void locatorEditor_cbRenameLocatorSetMenu(eduimenu_s *parent, ed
     edui_textpicker_s *item =
         (edui_textpicker_s *)eduiItemTextPickCreate(0, locator_attr, locatorEditor_cbRenameLocatorSet, (char *)"Name");
     eduiMenuAddItem(menu, item);
-    strcpy(item->value, aieditor->current_locator_set->name);
-    item->max_length = 15;
+    strcpy(((edui_textpicker_s *)edui_last_item)->value, aieditor->current_locator_set->name);
+    ((edui_textpicker_s *)edui_last_item)->max_length = 15;
     eduiMenuAttach(parent, menu);
     menu->x = parent->x + 10;
     menu->y = parent->y + 40;
@@ -310,8 +321,8 @@ static __used__ void locatorEditor_cbAddLocatorsByNameMenu(eduimenu_s *parent, e
     } else {
         strcpy(aieditor->pending_locator_name, aieditor->current_locator_set->name);
     }
-    NuStrCpy(item->value, aieditor->pending_locator_name);
-    item->max_length = 15;
+    NuStrCpy(((edui_textpicker_s *)edui_last_item)->value, aieditor->pending_locator_name);
+    ((edui_textpicker_s *)edui_last_item)->max_length = 15;
     eduiMenuAttach(parent, menu);
     menu->x = parent->x + 10;
     menu->y = parent->y + 40;
@@ -360,7 +371,7 @@ static __used__ void locatorEditor_cbCancelRenameLocatorSetMenu(eduimenu_s *, ed
     aieditor_ClearMainMenu();
 }
 
-static __used__ void DestroyLocator(EDLOCATOR_s *locator) {
+static __used__ __attribute__((optimize("no-tree-vectorize"))) void DestroyLocator(EDLOCATOR_s *locator) {
     if (locator == nullptr) {
         return;
     }
@@ -382,13 +393,17 @@ static __used__ void DestroyLocator(EDLOCATOR_s *locator) {
     NuLinkedListAppend(&aieditor->free_locators, &locator->link);
 }
 
-static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *locator, EDLOCATOR_s *before) {
-    if (set == nullptr || locator == nullptr || set->locators[63] != nullptr) {
-        return 0;
-    }
-    if (set->locators[0] != nullptr && set->locators[0]->path != locator->path) {
-        return 0;
-    }
+#if defined(__i386__)
+#define LOCATOR_SET_BODY_ATTR __attribute__((noinline, optimize("no-tree-vectorize"), regparm(2)))
+#else
+#define LOCATOR_SET_BODY_ATTR __attribute__((noinline, optimize("no-tree-vectorize")))
+#endif
+static LOCATOR_SET_BODY_ATTR unsigned int
+AddLocatorToSetBody(EDLOCATORSET_s *set, EDLOCATOR_s *locator,
+                    EDLOCATOR_s *before) __asm__("_ZL15AddLocatorToSetP14EDLOCATORSET_sP11EDLOCATOR_sS2_.part.5");
+
+static LOCATOR_SET_BODY_ATTR unsigned int AddLocatorToSetBody(EDLOCATORSET_s *set, EDLOCATOR_s *locator,
+                                                              EDLOCATOR_s *before) {
     for (i32 index = 0; index < 64 && set->locators[index] != nullptr; ++index) {
         if (set->locators[index] == locator) {
             for (i32 move = index; move < 63; ++move) {
@@ -407,6 +422,53 @@ static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *l
                 set->locators[index + 1] = locator;
                 return 1;
             }
+        }
+    }
+    for (i32 index = 0; index < 64; ++index) {
+        if (set->locators[index] == nullptr) {
+            set->locators[index] = locator;
+            if (index < 63) {
+                set->locators[index + 1] = nullptr;
+            }
+            return 1;
+        }
+    }
+    return 0;
+}
+#undef LOCATOR_SET_BODY_ATTR
+
+static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s *set, EDLOCATOR_s *locator, EDLOCATOR_s *before) {
+    if (locator == nullptr || set == nullptr || set->locators[63] != nullptr) {
+        return 0;
+    }
+    if (set->locators[0] != nullptr && set->locators[0]->path != locator->path) {
+        return 0;
+    }
+    return AddLocatorToSetBody(set, locator, before);
+}
+
+#if defined(__i386__)
+static __attribute__((noinline, optimize("no-tree-vectorize"), regparm(2))) unsigned int
+#else
+static __attribute__((noinline, optimize("no-tree-vectorize"))) unsigned int
+#endif
+AddLocatorToSetAtEnd(EDLOCATORSET_s *set, EDLOCATOR_s *locator) __asm__(
+    "_ZL15AddLocatorToSetP14EDLOCATORSET_sP11EDLOCATOR_sS2_.constprop.131");
+
+static unsigned int AddLocatorToSetAtEnd(EDLOCATORSET_s *set, EDLOCATOR_s *locator) {
+    if (locator == nullptr || set == nullptr || set->locators[63] != nullptr) {
+        return 0;
+    }
+    if (set->locators[0] != nullptr && set->locators[0]->path != locator->path) {
+        return 0;
+    }
+    for (i32 index = 0; index < 64 && set->locators[index] != nullptr; ++index) {
+        if (set->locators[index] == locator) {
+            for (i32 move = index; move < 63; ++move) {
+                set->locators[move] = set->locators[move + 1];
+            }
+            set->locators[63] = nullptr;
+            break;
         }
     }
     for (i32 index = 0; index < 64; ++index) {
@@ -487,22 +549,29 @@ extern "C" {
                 i32 path_index = locator->path->draw_index;
                 EdFileWriteChar(path_index);
                 i32 connection_index = 0;
-                bool connection_found = false;
+                i32 connection_direction = 0;
                 AIPATH_s *path = path_system->paths[path_index];
                 for (i32 index = 0; index < path->connection_count; ++index) {
                     AIPATHCNX_s *connection = &path->connections[index];
                     i32 first = locator->first_node->index;
                     i32 second = locator->second_node->index;
-                    if ((connection->node_indices[0] == first && connection->node_indices[1] == second) ||
-                        (connection->node_indices[0] == second && connection->node_indices[1] == first)) {
+                    if (connection->node_indices[0] == first && connection->node_indices[1] == second) {
                         connection_index = index;
-                        connection_found = true;
+                        i32 angle = locator->path_angle;
+                        i32 magnitude = angle < 0 ? -angle : angle;
+                        connection_direction = magnitude > 0x3fff;
+                        break;
+                    }
+                    if (connection->node_indices[0] == second && connection->node_indices[1] == first) {
+                        connection_index = index;
+                        i32 angle = locator->path_angle;
+                        i32 magnitude = angle < 0 ? -angle : angle;
+                        connection_direction = magnitude <= 0x3fff;
                         break;
                     }
                 }
                 i32 angle = locator->path_angle;
-                i32 magnitude = angle < 0 ? -angle : angle;
-                EdFileWriteChar(connection_found && magnitude > 0x3fff);
+                EdFileWriteChar(connection_direction);
                 EdFileWriteShort(connection_index);
                 EdFileWriteFloat(locator->path_fraction);
                 EdFileWriteFloat(locator->path_width);
@@ -635,22 +704,24 @@ extern "C" {
 } // extern "C"
 
 void locatorEditor_Enter(void) {
-    memset(&aieditor->locators, 0, 0x48);
+    AIEDITOR_RENDER_STATE *const *state = &aieditor;
+    // Keep the global pointer slot in a register across the list operations.
+    __asm__ volatile("" : "+r"(state));
+    memset(&(*state)->locators, 0, 0x48);
     for (i32 index = 0; index < 256; ++index) {
-        NuLinkedListAppend(&aieditor->free_locators, &aieditor->locator_pool[index].link);
+        NuLinkedListAppend(&(*state)->free_locators, &(*state)->locator_pool[index].link);
     }
-    memset(&aieditor->locator_sets, 0, 0x118);
+    memset(&(*state)->locator_sets, 0, 0x118);
     for (i32 index = 0; index < 64; ++index) {
-        NuLinkedListAppend(&aieditor->free_locator_sets, &aieditor->locator_set_pool[index].link);
+        NuLinkedListAppend(&(*state)->free_locator_sets, &(*state)->locator_set_pool[index].link);
     }
-    if (aieditor->ai_system != nullptr) {
-        AISYS_s *system = aieditor->ai_system;
-        for (i32 index = 0; index < system->locator_count; ++index) {
-            AILOCATOR *source = &system->locators[index];
-            EDLOCATOR_s *locator = (EDLOCATOR_s *)NuLinkedListGetHead(&aieditor->free_locators);
+    if ((*state)->ai_system != nullptr) {
+        for (i32 index = 0; index < (*state)->ai_system->locator_count; ++index) {
+            AILOCATOR *source = &(*state)->ai_system->locators[index];
+            EDLOCATOR_s *locator = (EDLOCATOR_s *)NuLinkedListGetHead(&(*state)->free_locators);
             if (locator != nullptr) {
-                NuLinkedListRemove(&aieditor->free_locators, &locator->link);
-                NuLinkedListAppend(&aieditor->locators, &locator->link);
+                NuLinkedListRemove(&(*state)->free_locators, &locator->link);
+                NuLinkedListAppend(&(*state)->locators, &locator->link);
                 locator->position = source->position;
                 locator->direction = source->direction;
             }
@@ -663,43 +734,42 @@ void locatorEditor_Enter(void) {
             } while (!locator->on_path);
             locator->path_angle = NuAngSub(locator->direction, locator->path_angle);
         }
-        for (i32 index = 0; index < system->locator_set_count; ++index) {
-            AILOCATORSET *source = &system->locator_sets[index];
-            EDLOCATORSET_s *set = (EDLOCATORSET_s *)NuLinkedListGetHead(&aieditor->free_locator_sets);
+        for (i32 index = 0; index < (*state)->ai_system->locator_set_count; ++index) {
+            AILOCATORSET *source = &(*state)->ai_system->locator_sets[index];
+            EDLOCATORSET_s *set = (EDLOCATORSET_s *)NuLinkedListGetHead(&(*state)->free_locator_sets);
             if (set == nullptr) {
-                break;
+                continue;
             }
-            NuLinkedListRemove(&aieditor->free_locator_sets, &set->link);
+            NuLinkedListRemove(&(*state)->free_locator_sets, &set->link);
             memset(set, 0, sizeof(*set));
-            NuLinkedListAppend(&aieditor->locator_sets, &set->link);
+            NuLinkedListAppend(&(*state)->locator_sets, &set->link);
             strcpy(set->name, source->name);
             for (i32 member = 0; member < source->locator_count; ++member) {
-                set->locators[member] = &aieditor->locator_pool[source->locator_entries[member]];
+                set->locators[member] = &(*state)->locator_pool[source->locator_entries[member]];
             }
         }
     }
-    if (aieditor->current_locator_set != nullptr) {
-        strcpy(aieditorsettings.current_route_name, aieditor->current_locator_set->name);
+    if ((*state)->current_locator_set != nullptr) {
+        strcpy(aieditorsettings.current_route_name, (*state)->current_locator_set->name);
     }
     if (aieditorsettings.current_route_name[0] == 0) {
-        aieditor->current_locator_set = nullptr;
+        (*state)->current_locator_set = nullptr;
         return;
     }
-    EDLOCATORSET_s *set = (EDLOCATORSET_s *)NuLinkedListGetHead(&aieditor->locator_sets);
+    EDLOCATORSET_s *set = (EDLOCATORSET_s *)NuLinkedListGetHead(&(*state)->locator_sets);
     while (set != nullptr && NuStrICmp(aieditorsettings.current_route_name, set->name) != 0) {
-        set = (EDLOCATORSET_s *)NuLinkedListGetNext(&aieditor->locator_sets, &set->link);
+        set = (EDLOCATORSET_s *)NuLinkedListGetNext(&(*state)->locator_sets, &set->link);
     }
-    aieditor->current_locator_set = set;
+    (*state)->current_locator_set = set;
 }
 
 void locatorEditor_Render(i32 x, i32 y, float x_scale, float y_scale) {
     i32 text_x = (x + 10) * 16;
-    i32 text_y = y * 8;
     if (aieditor->current_locator_set != nullptr) {
-        NuQFntPrintEx(system_qfont, text_x, text_y - 40, 16, "Locator Editor: Set=\"%s\"",
+        NuQFntPrintEx(system_qfont, text_x, y * 8 - 40, 16, "Locator Editor: Set=\"%s\"",
                       aieditor->current_locator_set->name);
     } else {
-        NuQFntPrintEx(system_qfont, text_x, text_y - 40, 16, "Locator Editor: Set=\"NONE\"");
+        NuQFntPrintEx(system_qfont, text_x, y * 8 - 40, 16, "Locator Editor: Set=\"NONE\"");
     }
     NuQFntSetColour(system_qfont, 0x80000000);
     NuQFntSetScale(system_qfont, x_scale, y_scale);
@@ -708,19 +778,19 @@ void locatorEditor_Render(i32 x, i32 y, float x_scale, float y_scale) {
     if (display_locator != nullptr) {
         NUVEC delta;
         f32 distance = NuVecXZDist(&display_locator->position, &aieditor->camera_position, &delta);
-        NuQFntPrintEx(system_qfont, text_x, text_y + 120, 16, "\"%s\", xzrng=%.2f", display_locator->name,
+        NuQFntPrintEx(system_qfont, text_x, (y + 15) * 8, 16, "\"%s\", xzrng=%.2f", display_locator->name,
                       static_cast<f64>(distance));
     }
-    NuQFntPrintEx(system_qfont, text_x, text_y + 240, 16, "SQR - Options");
+    NuQFntPrintEx(system_qfont, text_x, (y + 30) * 8, 16, "SQR - Options");
     if (aieditor->nearest_locator == nullptr) {
-        NuQFntPrintEx(system_qfont, text_x, text_y + 360, 16, "X - Create locator");
+        NuQFntPrintEx(system_qfont, text_x, (y + 45) * 8, 16, "X - Create locator");
     } else if (aieditor->nearest_locator != aieditor->current_locator) {
-        NuQFntPrintEx(system_qfont, text_x, text_y + 360, 16, "X - Select locator");
+        NuQFntPrintEx(system_qfont, text_x, (y + 45) * 8, 16, "X - Select locator");
     } else {
-        NuQFntPrintEx(system_qfont, text_x, text_y + 360, 16, "X - Move selected");
-        NuQFntPrintEx(system_qfont, text_x, text_y + 480, 16, "TRI - Delete selected");
-        NuQFntPrintEx(system_qfont, text_x, text_y + 600, 16, "LLEFT - Rotate left");
-        NuQFntPrintEx(system_qfont, text_x, text_y + 720, 16, "LRIGHT - Rotate right");
+        NuQFntPrintEx(system_qfont, text_x, (y + 45) * 8, 16, "X - Move selected");
+        NuQFntPrintEx(system_qfont, text_x, (y + 60) * 8, 16, "TRI - Delete selected");
+        NuQFntPrintEx(system_qfont, text_x, (y + 75) * 8, 16, "LLEFT - Rotate left");
+        NuQFntPrintEx(system_qfont, text_x, (y + 90) * 8, 16, "LRIGHT - Rotate right");
     }
     if (aieditor->nearest_locator == nullptr &&
         *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(aieditor) + 0x48) != 0 &&
@@ -772,7 +842,7 @@ __attribute__((optimize("no-tree-vectorize"))) eduimenu_s *locatorEditor_Process
     if ((pad->digital_buttons_pressed & 0x80) != 0) {
         goto options;
     }
-    if (NuStrLen(aieditor->pending_locator_name) == 0) {
+    if (__builtin_expect(NuStrLen(aieditor->pending_locator_name) == 0, 1)) {
         goto process_buttons;
     }
     {
@@ -850,6 +920,18 @@ process_buttons:
         } else if ((pad->digital_buttons_pressed & 0x40) != 0 &&
                    *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(aieditor) + 0x48) != 0) {
             EDLOCATOR_s *previous = aieditor->current_locator;
+            char base[32];
+            if (aieditor->current_locator_set != nullptr && NuStrLen(aieditor->current_locator_set->name) != 0) {
+                NuStrCpy(base, aieditor->current_locator_set->name);
+            } else if (previous != nullptr) {
+                NuStrCpy(base, previous->name);
+            } else {
+                NuStrCpy(base, "Locator");
+            }
+            char *suffix = strrchr(base, '_');
+            if (suffix != nullptr) {
+                *suffix = 0;
+            }
             EDLOCATOR_s *locator = (EDLOCATOR_s *)NuLinkedListGetHead(&aieditor->free_locators);
             if (locator != nullptr) {
                 NuLinkedListRemove(&aieditor->free_locators, &locator->link);
@@ -859,18 +941,6 @@ process_buttons:
             }
             aieditor->current_locator = locator;
             if (locator != nullptr) {
-                char base[32];
-                if (aieditor->current_locator_set != nullptr && aieditor->current_locator_set->name[0] != 0) {
-                    NuStrCpy(base, aieditor->current_locator_set->name);
-                } else if (previous != nullptr) {
-                    NuStrCpy(base, previous->name);
-                } else {
-                    NuStrCpy(base, "Locator");
-                }
-                char *suffix = strrchr(base, '_');
-                if (suffix != nullptr) {
-                    *suffix = 0;
-                }
                 char name[16];
                 i32 index = 0;
                 EDLOCATOR_s *other;
@@ -957,24 +1027,32 @@ process_buttons:
             aieditor->current_path = aieditor->current_locator->path;
             edcamSetPos(&aieditor->current_locator->position);
         }
-    } else if ((pad->digital_buttons & (0x2000 | 0x8000)) != 0) {
+    } else if ((pad->digital_buttons & 0x2000) != 0) {
         i32 &step = *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(aieditor) + 0x36934);
         if (aieditor->current_locator != nullptr && aieditor->current_locator == aieditor->nearest_locator) {
             aieditorsettings.area_rotation = aieditor->current_locator->direction;
         }
-        if ((pad->digital_buttons & 0x2000) != 0) {
-            step = (pad->digital_buttons_pressed & 0x8000) != 0 ? 20 : step + 20;
-            if (step > 600) {
-                step = 600;
-            }
-            aieditorsettings.area_rotation = NuAngAdd(aieditorsettings.area_rotation, step);
-        } else {
-            step = (pad->digital_buttons_pressed & 0x2000) != 0 ? 20 : step + 20;
-            if (step > 600) {
-                step = 600;
-            }
-            aieditorsettings.area_rotation = NuAngSub(aieditorsettings.area_rotation, step);
+        step = (pad->digital_buttons_pressed & 0x8000) != 0 ? 20 : step + 20;
+        if (step > 600) {
+            step = 600;
         }
+        aieditorsettings.area_rotation = NuAngAdd(aieditorsettings.area_rotation, step);
+        if (aieditor->current_locator != nullptr && aieditor->current_locator == aieditor->nearest_locator) {
+            aieditor->current_locator->direction = aieditorsettings.area_rotation;
+            aieditor->current_locator->path_angle =
+                NuAngSub(aieditor->current_locator->direction,
+                         *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(aieditor) + 0x60));
+        }
+    } else if ((pad->digital_buttons & 0x8000) != 0) {
+        i32 &step = *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(aieditor) + 0x36934);
+        if (aieditor->current_locator != nullptr && aieditor->current_locator == aieditor->nearest_locator) {
+            aieditorsettings.area_rotation = aieditor->current_locator->direction;
+        }
+        step = (pad->digital_buttons_pressed & 0x2000) != 0 ? 20 : step + 20;
+        if (step > 600) {
+            step = 600;
+        }
+        aieditorsettings.area_rotation = NuAngSub(aieditorsettings.area_rotation, step);
         if (aieditor->current_locator != nullptr && aieditor->current_locator == aieditor->nearest_locator) {
             aieditor->current_locator->direction = aieditorsettings.area_rotation;
             aieditor->current_locator->path_angle =
@@ -1005,12 +1083,16 @@ process_buttons:
                 break;
             }
         }
-        EDLOCATOR_s *before = aieditor->current_locator != nearest ? aieditor->current_locator : nullptr;
-        if (AddLocatorToSet(set, nearest, before) != 0) {
-            aieditor->current_locator = nearest;
-            aieditor->current_path = nearest->path;
-            aieditorsettings.area_rotation = nearest->direction;
-            edcamSetPos(&nearest->position);
+        EDLOCATOR_s *before = aieditor->current_locator;
+        if (before != nullptr && before != nearest) {
+            if (AddLocatorToSet(set, nearest, before) != 0) {
+                aieditor->current_locator = nearest;
+                aieditor->current_path = nearest->path;
+                aieditorsettings.area_rotation = nearest->direction;
+                edcamSetPos(&nearest->position);
+            }
+        } else {
+            AddLocatorToSetAtEnd(set, nearest);
         }
     }
     *reinterpret_cast<EDCREATURE_s **>(reinterpret_cast<u8 *>(aieditor) + 0x3692c) = creatureEditor_GetNearest(1);

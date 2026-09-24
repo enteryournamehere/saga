@@ -56,7 +56,7 @@ TIMER LevelTimer;
 
 void (*WorldInfo_InitMenuFn)(WORLDINFO *, i32 *, i32 *) = NULL;
 void (*WorldInfo_InitLastFn)(WORLDINFO *) = NULL;
-i32 abort_load = 0;
+volatile i32 abort_load = 0;
 char ConfigBuffer[0x10000];
 i32 numtl_force_mipmode = 0;
 i32 GAMEDEMO = 0;

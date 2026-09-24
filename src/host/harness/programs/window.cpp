@@ -64,7 +64,7 @@ extern i32 memcard_loadcorrupt;
 extern volatile i32 waiting_for_level;
 extern i32 waiting_for_character;
 extern i32 waiting_for_new_level;
-extern i32 abort_load;
+extern volatile i32 abort_load;
 extern i32 reset_load;
 extern i32 CharacterDataLoad;
 extern i32 NewMode;

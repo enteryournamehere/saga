@@ -47,7 +47,7 @@ struct APICHARACTERMODELLIST_s;
 struct CUSTOMISER;
 struct MISSIONSYS_s;
 
-extern i32 abort_load;
+extern volatile i32 abort_load;
 extern NUGSCN *area_scene;
 extern NUGSCN *vehicle_scene;
 extern NUGSCN *big_icon_scene;

@@ -351,9 +351,9 @@ giz_freeplay:
             _NuTimeBarSlotBegin(0, 0xf, "frmtmr");
             DebrisSetTimeIncrement(FRAMETIME);
 
-            i = GetMenuID();
-            panelOpts = TempOptions.field11_0xb;
-            if (i != 4) {
+            if (GetMenuID() == 4) {
+                panelOpts = TempOptions.field11_0xb;
+            } else {
                 panelOpts = Game.options_save.field11_0xb;
             }
             InitPanel((u32)panelOpts);
@@ -778,9 +778,9 @@ giz_freeplay:
             }
 
             FRAMETIME = savedFrametime;
-            i = GetMenuID();
-            panelOpts = TempOptions.field11_0xb;
-            if (i != 4) {
+            if (GetMenuID() == 4) {
+                panelOpts = TempOptions.field11_0xb;
+            } else {
                 panelOpts = Game.options_save.field11_0xb;
             }
             WidescreenCode((u32)panelOpts);

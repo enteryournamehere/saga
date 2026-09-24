@@ -90,7 +90,7 @@ extern nuhspecial_s *hackFlashingSpecial;
 
 extern FadeSystem FadeSys;
 extern i32 Paused;
-extern i32 waiting_for_level;
+extern volatile i32 waiting_for_level;
 extern i32 GAMEDEMO;
 extern "C" {
     extern f32 MainRenderTime;

@@ -334,7 +334,7 @@ f32 g_BgLoadDelayHackTimer;
 
 static i32 EditBufferEndSize = 0;
 
-i32 waiting_for_level;
+volatile i32 waiting_for_level;
 i32 level_already_loaded = -1;
 i32 next_level;
 

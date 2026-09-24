@@ -69,7 +69,7 @@ void InitAlphaList() {
 }
 
 f32 GetAspectRatio() {
-    return static_cast<f32>(g_backingWidth) / static_cast<f32>(g_backingHeight);
+    return static_cast<f32>(g_backingHeight) / static_cast<f32>(g_backingWidth);
 }
 
 static u8 ScreenGrabNeeded;

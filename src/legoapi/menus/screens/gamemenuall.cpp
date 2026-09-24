@@ -70,6 +70,7 @@ extern char *apitxt_DOYOUWANTTOABORT;
 extern char *apitxt_DOYOUWANTTOABORTLOAD;
 extern char *apitxt_RETRY;
 extern char *apitxt_SLOT;
+extern char *apitxt_CANCEL;
 extern char *apitxt_NODATAAVAILABLE;
 extern char *apiGameName;
 extern char *apitxt_YES;
@@ -1115,7 +1116,7 @@ void MenuDrawNoMemoryCard(MENU_s *menu) {
     Draw_NOMEMORYCARD();
     menu->draw_y = MENUBOTY - MENUDY;
     DrawMenuEntry(menu, apitxt_RETRY);
-    DrawMenuEntry(menu, apitxt_SLOT);
+    DrawMenuEntry(menu, apitxt_CANCEL);
 }
 
 void MenuEnterCardWarning(MENU_s *) {

@@ -525,7 +525,7 @@ static i32 CheckMusicOther(void);
 
 static i32 GameAudio_CheckReverb_LSW() {
     LEVELDATA *level = WorldInfo_CurrentlyActive()->current_level;
-    if (level == HOTHBATTLEB_LDATA || level == TATOOINED_LDATA) {
+    if (level == HOTHBATTLEB_LDATA || level == DAGOBAHD_LDATA) {
         return 1;
     }
     if (level == ASTEROIDCHASEB_LDATA && GameCam->sock_position.location.sock == 4) {

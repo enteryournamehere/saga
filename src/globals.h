@@ -26,6 +26,7 @@ struct nuhspecial_s;
 struct GIZMOBLOWUP_s;
 struct GIZOBSTACLE_s;
 struct WORLDINFO_s;
+struct HUBMINIKITPIECES_s;
 struct DOOR_s;
 struct AREASAVE_s;
 struct GAMECAMERA_s;
@@ -34,6 +35,7 @@ struct COLLECTION_s;
 class FadeSystem;
 
 extern BOLT_s Bolt[32];
+extern "C" HUBMINIKITPIECES_s **Char_MiniKit;
 extern AREADATA_s *BOUNTYHUNTERPURSUIT_ADATA;
 extern AREADATA_s *DOGFIGHT_ADATA;
 extern AREADATA_s *GUNSHIP_ADATA;
@@ -1073,7 +1075,7 @@ extern void (*CutScene_StoppedFn)(CUTINFO *);
 extern i32 (*CutScene_ReplaceCharacterModelFn)(CUTINFO *, NUGCUTCHAR_s *);
 extern i32 (*InitBolt_AddMomentumType)(BOLT_s *, GameObject_s *, nuvec_s *);
 extern i32 (*Bolt_HitPlatFn)(BOLT_s *);
-extern void (*Bolt_HitCustomFn)(BOLT_s *, nuvec_s *);
+extern i32 (*Bolt_HitCustomFn)(BOLT_s *, nuvec_s *);
 extern void (*GizObstacle_SetDefaultSFXFn)(void *, GIZOBSTACLE_s *);
 
 extern i32 PermDataLoaded;          // original .data init 1

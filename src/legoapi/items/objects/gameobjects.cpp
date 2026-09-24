@@ -913,43 +913,46 @@ static void *Condition_AngleAboutMyLocatorToPlayerInit(AISYS_s *, char *name, AI
 }
 
 static f32 Condition_EitherPlayerUsingHatMachine(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *name, void *) {
-    if (player != NULL && player->character_context == 0x61) {
-        HATMACHINE_s *machine = static_cast<HATMACHINE_s *>(player->field_0x788);
-        if (machine != NULL && (name == NULL || NuStrICmp(machine->name, name) == 0))
-            return 1.0f;
+    HATMACHINE_s *machine;
+    if (player != NULL && player->character_context == 0x61 &&
+        (machine = static_cast<HATMACHINE_s *>(player->field_0x788)) != NULL &&
+        (name == NULL || NuStrICmp(machine->name, name) == 0)) {
+        return 1.0f;
     }
-    if (player2 != NULL && player2->character_context == 0x61) {
-        HATMACHINE_s *machine = static_cast<HATMACHINE_s *>(player2->field_0x788);
-        if (machine != NULL && (name == NULL || NuStrICmp(machine->name, name) == 0))
-            return 1.0f;
+    if (player2 != NULL && player2->character_context == 0x61 &&
+        (machine = static_cast<HATMACHINE_s *>(player2->field_0x788)) != NULL &&
+        (name == NULL || NuStrICmp(machine->name, name) == 0)) {
+        return 1.0f;
     }
     return 0.0f;
 }
 
 static f32 Condition_EitherPlayerPullingLever(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *name, void *) {
-    if (player != NULL && player->character_context == 0x4a) {
-        LEVER_s *lever = static_cast<LEVER_s *>(player->field_0x788);
-        if (lever != NULL && (name == NULL || NuStrICmp(lever->name, name) == 0))
-            return 1.0f;
+    LEVER_s *lever;
+    if (player != NULL && player->character_context == 0x4a &&
+        (lever = static_cast<LEVER_s *>(player->field_0x788)) != NULL &&
+        (name == NULL || NuStrICmp(lever->name, name) == 0)) {
+        return 1.0f;
     }
-    if (player2 != NULL && player2->character_context == 0x4a) {
-        LEVER_s *lever = static_cast<LEVER_s *>(player2->field_0x788);
-        if (lever != NULL && (name == NULL || NuStrICmp(lever->name, name) == 0))
-            return 1.0f;
+    if (player2 != NULL && player2->character_context == 0x4a &&
+        (lever = static_cast<LEVER_s *>(player2->field_0x788)) != NULL &&
+        (name == NULL || NuStrICmp(lever->name, name) == 0)) {
+        return 1.0f;
     }
     return 0.0f;
 }
 
 static f32 Condition_EitherPlayerUsingPanel(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *name, void *) {
-    if (player != NULL && player->character_context == 0x0b) {
-        GIZPANEL_s *panel = static_cast<GIZPANEL_s *>(player->field_0x788);
-        if (panel != NULL && (name == NULL || NuStrICmp(panel->name, name) == 0))
-            return 1.0f;
+    GIZPANEL_s *panel;
+    if (player != NULL && player->character_context == 0x0b &&
+        (panel = static_cast<GIZPANEL_s *>(player->field_0x788)) != NULL &&
+        (name == NULL || NuStrICmp(panel->name, name) == 0)) {
+        return 1.0f;
     }
-    if (player2 != NULL && player2->character_context == 0x0b) {
-        GIZPANEL_s *panel = static_cast<GIZPANEL_s *>(player2->field_0x788);
-        if (panel != NULL && (name == NULL || NuStrICmp(panel->name, name) == 0))
-            return 1.0f;
+    if (player2 != NULL && player2->character_context == 0x0b &&
+        (panel = static_cast<GIZPANEL_s *>(player2->field_0x788)) != NULL &&
+        (name == NULL || NuStrICmp(panel->name, name) == 0)) {
+        return 1.0f;
     }
     return 0.0f;
 }

@@ -914,7 +914,7 @@ static __used__ void pathEditor_cbNodeFlagsToggle(eduimenu_s *, eduiitem_s *item
     }
 }
 
-static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *, eduimenu_s *menu) {
+static __used__ void pathEditor_cbCancelSelectMenu(eduimenu_s *menu, eduimenu_s *) {
     eduiMenuDestroy(menu);
 }
 
@@ -1182,11 +1182,11 @@ static __used__ void pathEditor_cbCancelDeleteNodeMenu(eduimenu_s *, eduimenu_s 
     aieditor_ClearMainMenu();
 }
 
-static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *, eduimenu_s *menu) {
+static __used__ void pathEditor_cbCancelRenameNodeMenu(eduimenu_s *menu, eduimenu_s *) {
     eduiMenuDestroy(menu);
 }
 
-static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *, eduimenu_s *menu) {
+static __used__ void pathEditor_cbCancelRenamePathMenu(eduimenu_s *menu, eduimenu_s *) {
     eduiMenuDestroy(menu);
 }
 
@@ -1415,11 +1415,11 @@ static __used__ void routeEditor_cbRenameRouteMenu(eduimenu_s *parent, eduiitem_
     menu->y = parent->y + 40;
 }
 
-static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *, eduimenu_s *menu) {
+static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *menu, eduimenu_s *) {
     eduiMenuDestroy(menu);
 }
 
-static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *, eduimenu_s *menu) {
+static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *menu, eduimenu_s *) {
     eduiMenuDestroy(menu);
 }
 

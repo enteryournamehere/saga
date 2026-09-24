@@ -358,10 +358,10 @@ locatorEditor_cbAddLocatorsByNameYesNo(eduimenu_s *, eduiitem_s *item, u32) {
     memset(aieditor->pending_locator_name, 0, sizeof(aieditor->pending_locator_name));
     aieditor_ClearMainMenu();
 }
-static __used__ void locatorEditor_cbCancelRenameMenu(eduimenu_s *, eduimenu_s *menu) {
+static __used__ void locatorEditor_cbCancelRenameMenu(eduimenu_s *menu, eduimenu_s *) {
     eduiMenuDestroy(menu);
 }
-static __used__ void locatorEditor_cbCancelSelectLocatorSet(eduimenu_s *, eduimenu_s *menu) {
+static __used__ void locatorEditor_cbCancelSelectLocatorSet(eduimenu_s *menu, eduimenu_s *) {
     eduiMenuDestroy(menu);
 }
 static __used__ void locatorEditor_cbCancelDeleteLocatorMenu(eduimenu_s *, eduimenu_s *) {

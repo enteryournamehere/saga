@@ -341,9 +341,9 @@ template <typename T> static inline void EffectField(debinftype *effect, usize o
 }
 
 void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
-    // The shipped area pages also use version 40. The file record is not a
-    // byte-for-byte image of debinftype (runtime fields and padding differ).
-    if (version != 40 && version != 41) {
+    // The file record is not a byte-for-byte image of debinftype (runtime
+    // fields and padding differ). The shipped area pages use version 34.
+    if (version < 34 || version > 41) {
         return;
     }
 
@@ -366,11 +366,13 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
 
     effect->generator_type = static_cast<u8>(EdFileReadChar());
     effect->momentum_adjustment_type = static_cast<u8>(EdFileReadChar());
-    effect->cutscene_only = static_cast<u8>(EdFileReadChar());
+    effect->cutscene_only = version >= 35 ? static_cast<u8>(EdFileReadChar()) : 0;
     effect->disabled = 0;
     effect->particle_type = static_cast<u8>(EdFileReadChar());
+    if (version < 39)
+        EdFileReadChar();
     effect->status = 1;
-    effect->camera_facing = static_cast<u8>(EdFileReadChar());
+    effect->camera_facing = version >= 40 ? static_cast<u8>(EdFileReadChar()) : 0;
 
     for (usize offset = 0x30; offset <= 0xa4; offset += sizeof(f32)) {
         EffectField<f32>(effect, offset, EdFileReadFloat());
@@ -411,7 +413,7 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
     *reinterpret_cast<f32 *>(effect->fields_2f8 + 0x0) = EdFileReadFloat();
     *reinterpret_cast<f32 *>(effect->fields_2f8 + 0x4) = EdFileReadFloat();
     *reinterpret_cast<f32 *>(effect->fields_2f8 + 0x8) = EdFileReadFloat();
-    effect->thinning = EdFileReadFloat();
+    effect->thinning = version >= 36 ? EdFileReadFloat() : 4.0f;
     for (usize offset = 0xc; offset < sizeof(effect->fields_2f8); offset += sizeof(f32)) {
         *reinterpret_cast<f32 *>(effect->fields_2f8 + offset) = EdFileReadFloat();
     }

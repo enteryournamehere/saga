@@ -160,7 +160,7 @@ static char *Shard_GetGizmoName(GIZMO *gizmo) {
 }
 
 static i32 Shard_GetOutput(GIZMO *gizmo, i32, i32) {
-    return (static_cast<SHARD *>(gizmo->object)->state_flags >> 3) & 1;
+    return (static_cast<SHARD *>(gizmo->object)->state_flags & 8) != 0;
 }
 
 static char *Shard_GetOutputName(GIZMO *gizmo, i32 output_index) {

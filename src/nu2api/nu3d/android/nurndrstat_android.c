@@ -47,7 +47,7 @@ extern "C" {
 
     i32 NuRndrSetAmbientLightSpecular(const NUCOLOUR4 *colour) {
         render_state.global_specular = colour->a;
-        NuRndrSetAmbientLightPS(reinterpret_cast<const NUCOLOUR3 *>(colour));
+        NuRndrSetAmbientLight(reinterpret_cast<NUCOLOUR3 *>(const_cast<NUCOLOUR4 *>(colour)));
         return 0;
     }
 

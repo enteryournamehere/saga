@@ -105,7 +105,7 @@ static inline void FilterEnd(NuPostFilterGen *filter) {
 // ── Post-effect API ─────────────────────────────────────────────────────────
 
 // original 0x2ab9c0
-extern "C" bool NuPostEffectIsInitialised(u32 mask) {
+extern "C" i32 NuPostEffectIsInitialised(u32 mask) {
     return (g_effectFlags & static_cast<i32>(mask)) != 0;
 }
 

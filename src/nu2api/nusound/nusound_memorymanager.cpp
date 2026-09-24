@@ -150,7 +150,7 @@ u32 NuSoundMemoryManager::Init(const char *name, void *memory, u32 size, u32 ali
 }
 
 void NuSoundMemoryManager::EnableDefragOnAlloc(bool value) {
-    this->flags = this->flags & 0xfd | value << 1;
+    this->defrag_on_alloc = value;
 }
 
 NuSoundMemoryManager::NuSoundMemoryManager() {
@@ -488,13 +488,13 @@ u32 NuSoundMemoryManager::CountAdjacentFreeBuffers(NuSoundMemoryBuffer *buffer) 
 // libTTapp.so 0x322750 (EnableDebug). Debug-only flag setter; not transcribed
 // yet.
 void NuSoundMemoryManager::EnableDebug(bool enable) {
-    this->flags = (this->flags & 0xfe) | (enable & 1);
+    this->debug_enabled = enable;
 }
 
 // libTTapp.so 0x322790 (EnableDefragOnFree). Debug-only flag setter; not
 // transcribed yet.
 void NuSoundMemoryManager::EnableDefragOnFree(bool enable) {
-    this->flags = (this->flags & 0xfb) | ((enable & 1) << 2);
+    this->defrag_on_free = enable;
 }
 
 // libTTapp.so 0x3219e0 (FreeAddress). Debug-only; not transcribed yet.

@@ -116,7 +116,7 @@ static char *Attracto_GetGizmoName(GIZMO *gizmo) {
 }
 
 static i32 Attracto_GetOutput(GIZMO *gizmo, i32, i32) {
-    return (static_cast<ATTRACTO *>(gizmo->object)->state_flags >> 2) & 1;
+    return (static_cast<ATTRACTO *>(gizmo->object)->state_flags & 4) != 0;
 }
 
 static char *Attracto_GetOutputName(GIZMO *, i32) {

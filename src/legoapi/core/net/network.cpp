@@ -253,7 +253,7 @@ TTNetwork::TTNetwork() : field_20(0), field_24(0), field_2140(0), my_address(), 
 }
 
 char const *TTNetwork::GetName() {
-    return "";
+    return "Network";
 }
 
 void TTNetwork::Update() {

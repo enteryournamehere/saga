@@ -566,7 +566,7 @@ struct MechObjectInterface : NuMechPtr<MechObjectInterface, 4>::ManagedBase {
         return radius + radius;
     }
     virtual const char *GetTargetName() const {
-        return "";
+        return "???";
     }
     virtual i32 GetObjectType() const {
         return 0;
@@ -941,8 +941,10 @@ DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, temporary_position)
 DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, stick_mode) == 0x8c,
               "Gesture controller stick mode offset");
 DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, active) == 0xa4, "Gesture controller active flag offset");
-DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, field_90) == 0x90, "Gesture controller first touch offset");
-DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, field_94) == 0x94, "Gesture controller second touch offset");
+DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, field_90) == 0x90,
+              "Gesture controller first touch offset");
+DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, field_94) == 0x94,
+              "Gesture controller second touch offset");
 DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, smart_bomb_touch) == 0xa8,
               "Gesture controller smart bomb touch offset");
 DECOMP_ASSERT(offsetof(MechInputTouchGestureBasedController, tag_button) == 0xac,

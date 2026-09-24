@@ -824,8 +824,7 @@ void NuSoundSystem::ResumeUserMusic() {
 }
 
 bool NuSoundSystem::TitleHasUserMusicControl() {
-    STUBBED();
-    return false;
+    return true;
 }
 
 void NuSoundSystem::OnEnterSystemMenu() {

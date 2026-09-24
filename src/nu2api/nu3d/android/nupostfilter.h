@@ -7,7 +7,7 @@
 struct nuframebuffer_s;
 struct nueffecttex_s;
 
-extern "C" bool NuPostEffectIsInitialised(u32 mask);
+extern "C" i32 NuPostEffectIsInitialised(u32 mask);
 extern "C" void NuPostEffectReset(void);
 extern "C" void NuPostEffectEnd(void);
 extern "C" void NuPostEffectAddDynamicLight(void *light);

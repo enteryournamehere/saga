@@ -1576,7 +1576,7 @@ extern "C" {
 
     i32 PlatInstGetHit(i32 index) {
         if (CurTerr != NULL && index >= 0 && index < CurTerr->max_platforms)
-            return (CurTerr->platforms[index].flags >> 1) & 1;
+            return (CurTerr->platforms[index].flags & 2) != 0;
         return 0;
     }
 

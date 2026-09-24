@@ -102,7 +102,7 @@ bool NuSoundDecoder::IsStreamOpen() const {
 }
 
 const char *NuSoundDecoder::GetName() const {
-    return this->source != NULL ? this->source->GetName() : "";
+    return this->source != NULL ? this->source->GetName() : "NuSoundDecoder";
 }
 
 NuSoundSource *NuSoundDecoder::GetEncodedSource() {

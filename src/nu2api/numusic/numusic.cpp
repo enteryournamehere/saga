@@ -698,7 +698,7 @@ load_and_play:
 }
 
 i32 NuMusic::PlayTrack(TRACK_CLASS track) {
-    return PlayTrackI(track, 0);
+    return PlayTrack(static_cast<u32>(track), 0);
 }
 
 i32 NuMusic::PlayTrack(u32 track, u32 unused) {
@@ -1132,10 +1132,10 @@ void NuMusic::Debug(i32, i32 y) {
             NuQFntPrintEx(system_qfont, 4800, y, 0x10, "CLASS:NONE");
         } else {
             NuQFntPrintEx(system_qfont, 4800, y, 0x10, "TRACK:%s",
-                         voice->tracks[voice->track_index]->filenames[voice->track_sub[voice->track_index]]);
+                          voice->tracks[voice->track_index]->filenames[voice->track_sub[voice->track_index]]);
             y += (i32)NuQFntHeight(system_qfont);
             NuQFntPrintEx(system_qfont, 4800, y, 0x10, "CLASS:%s",
-                         class_names[ClassToIX(voice->tracks[voice->track_index]->clazz) + 1]);
+                          class_names[ClassToIX(voice->tracks[voice->track_index]->clazz) + 1]);
         }
         y += (i32)NuQFntHeight(system_qfont);
         NuQFntPrintEx(system_qfont, 4800, y, 0x10, "STATUS:%s", voice_status_txt[voice->status]);

@@ -991,7 +991,7 @@ extern "C" {
         Text3DEx(text, x, y, z, x_scale, y_scale, z_scale, alignment, red, green, blue, alpha);
     }
     void Set3DGameFont(VUFNT *font) {
-        QFont3D = font;
+        QFont3DZ = font;
     }
     void SetGameFont(VUFNT *font) {
         QFont2D = font;

@@ -9062,7 +9062,7 @@ void StartHold(GameObject_s *object) {
     if (LEGOCONTEXT_HOLD != -1 && NewBlockAction(object) != 0) {
         object->context_animation_timer = 0.3f;
         object->character_context = LEGOCONTEXT_HOLD;
-        PlaySabreSfx(NULL, object, NULL, 0);
+        PlaySabreSfx(NULL, object, NULL, 1);
         return;
     }
     object->character_context = -1;

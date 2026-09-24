@@ -342,7 +342,7 @@ void DeathStarEscapeC_Init(WORLDINFO_s *world) {
     blowup = GizmoBlowUp_FindByName(world, "cup_built1");
     if (blowup != NULL)
         blowup->draw_flags |= 2;
-    NuSpecialFind(world->scene, &LevHSpecial[2], "door_push", 1);
+    NuSpecialFind(world->current_gscn, &LevHSpecial[2], "door_push", 1);
     LevPathCnx[0] = AIPAthFindPathCnx(world->ai_sys, world->ai_sys->path_sys->active_path, "droid_rescue_a",
                                       "droid_rescue_b", &LevPathCnxDir);
 }

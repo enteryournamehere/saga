@@ -358,7 +358,7 @@ extern "C" void NuPostEffectSpeedBlur(const NuSpeedBlurParameters *parameters) {
         speedBlurFilter->parameters = parameters;
 }
 
-extern "C" void NuPostEffectEnable(u32 mask) {
+extern "C" void NuPostEffectEnable(i32 mask) {
     if ((g_effectFlags & mask) == 0)
         return;
     switch (mask) {

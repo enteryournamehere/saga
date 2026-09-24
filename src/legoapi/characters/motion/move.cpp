@@ -7377,7 +7377,7 @@ i32 SnapPosTaken(WORLDINFO_s *world, pushblock_s *, nuvec_s *position, i32 exclu
         const f32 dx = block->position->x - position->x;
         const f32 dy = block->position->y - position->y;
         const f32 dz = block->position->z - position->z;
-        if (dx * dx + dy * dy + dz * dz <= 0.0025f) {
+        if (dx * dx + dy * dy + dz * dz <= 0.05f * 0.05f) {
             return 1;
         }
     }

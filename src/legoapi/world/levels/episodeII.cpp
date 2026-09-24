@@ -2357,7 +2357,7 @@ void BonusGunshipB_Update(WORLDINFO_s *world) {
 
 void BonusGunshipB_Panel(WORLDINFO_s *) {
     if (LevFlag.progress == GUNSHIP_ACTIVE) {
-        if (MiscTime > 60.0f)
+        if (MiscTime > 0.0f)
             DrawTimer((i32)MiscTime + 1, 0, 0);
     }
 }

@@ -4762,7 +4762,7 @@ extern "C" {
 
     static __used__ void cbmcfgCameraSpeed(eduimenu_s *, eduiitem_s *item, u32) {
         f32 divisor = 512.0f / static_cast<edui_slider_s *>(item)->value;
-        f32 speed = 12.0f / divisor;
+        f32 speed = 0.2f / divisor;
         edcamSetSpeed(speed, speed, speed, 1.0f / divisor);
     }
 

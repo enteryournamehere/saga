@@ -220,7 +220,7 @@ void MenuDrawSave(MENU_s *menu) {
     header_g = MENUHEADERG;
     header_b = MENUHEADERB;
     if (drawslotsfn != NULL && MenuAlpha > 0.2f && MenuStopDraw == 0) {
-        drawslotsfn(menu, extrasavetext != NULL ? 0.1f : 0.0f);
+        drawslotsfn(menu, extrasavetext != NULL ? 0.25f : 0.0f);
     }
     ++menu->draw_item;
 

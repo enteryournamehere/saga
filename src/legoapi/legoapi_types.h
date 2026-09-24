@@ -2375,8 +2375,8 @@ enum SHADERSEMANTIC_enum : i32 {};
 struct SHARD_s;
 struct SOCKPOSITION_s;
 
-enum STATUS_FLAGS {
-    STATUS_FLAG_DRAW_BACKDROP = 0x04,
+enum STATUS_MODE_FLAGS {
+    STATUS_MODE_SUPERSTORY = 0x04, // STATUSPACKET_s::mode_flags; also draws the backdrop in NuMain
 };
 // Status / achievements screen packet (332 bytes; fields used by NuMain:
 // model ids at 0x9c/0x9e, per-player bytes at 0xa4/0xa5, flags at 0xb1/0xb2).

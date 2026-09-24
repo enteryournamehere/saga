@@ -44,7 +44,6 @@ extern "C" i32 NuMain(i32 argc, char **argv) {
     static i32 frameCount = 0;
     static f32 pastFrameTimes[8] = {-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f};
 
-    GAMEPAD_s *gamepad;
     WORLDINFO_s *world;
     GAMECAMERA_s *gameCam;
     AREADATA *afterArea;
@@ -67,7 +66,6 @@ extern "C" i32 NuMain(i32 argc, char **argv) {
     f32 frameTimeAccumulator;
     f32 shortestFrameTime;
     f32 savedFrametime;
-    u32 pausedRender;
     FADETYPE fadeType;
     nupad_s *pads[2];
     ThingProcessData framePacket;
@@ -408,9 +406,8 @@ giz_freeplay:
                         ((CUTSTOPGAME == 0) || ((i = CutScene_IsSkippable((CUTINFO *)CutStopInfo), i != 0)))) {
                         if ((MiniCutCam == 0) && (CutSceneWaiting == 0)) {
                             if (GameMenu[GameMenuLevel].menu == -1) {
-                                if ((Paused == 0) &&
-                                    (((Player[0] != NULL) && ((char)Player[0]->apiobj.field_0x1f8 < 0)) ||
-                                     ((Player[1] != NULL) && ((char)Player[1]->apiobj.field_0x1f8 < 0)))) {
+                                if ((Paused == 0) && (((Player[0] != NULL) && Player[0]->apiobj.player_controlled) ||
+                                                      ((Player[1] != NULL) && Player[1]->apiobj.player_controlled))) {
                                     PauseGame(1);
                                 }
                             } else {
@@ -445,12 +442,12 @@ giz_freeplay:
 
                     rumblePad1 = NULL;
                     if (((byte)Game.options_save.field1_0x1 != 0) && (Player[1] != NULL) &&
-                        ((char)Player[1]->apiobj.field_0x1f8 < 0)) {
+                        Player[1]->apiobj.player_controlled) {
                         rumblePad1 = Player[1]->pad_gamepad->pad;
                     }
                     rumblePad0 = NULL;
                     if (((byte)Game.options_save.field0_0x0 != 0) && (Player[0] != NULL) &&
-                        ((char)Player[0]->apiobj.field_0x1f8 < 0)) {
+                        Player[0]->apiobj.player_controlled) {
                         rumblePad0 = Player[0]->pad_gamepad->pad;
                     }
                     NuSound3SetRumblePads(rumblePad0, rumblePad1);
@@ -533,37 +530,37 @@ giz_freeplay:
                         ManageGameObjects();
                         UpdateGameObjects(world);
                     } else {
-                        if (((Player[0] != NULL) && ((char)Player[0]->apiobj.field_0x1f8 < 0)) &&
-                            (((gamepad = Player[0]->pad_gamepad) != NULL) && (gamepad->pad != NULL))) {
-                            UpdateRumble(&gamepad->rumble_packet);
+                        if ((Player[0] != NULL) && Player[0]->apiobj.player_controlled &&
+                            (Player[0]->pad_gamepad->pad != NULL)) {
+                            UpdateRumble(&Player[0]->pad_gamepad->rumble_packet);
                         }
-                        if (((Player[1] != NULL) && ((char)Player[1]->apiobj.field_0x1f8 < 0)) &&
-                            (((gamepad = Player[1]->pad_gamepad) != NULL) && (gamepad->pad != NULL))) {
-                            UpdateRumble(&gamepad->rumble_packet);
+                        if ((Player[1] != NULL) && Player[1]->apiobj.player_controlled &&
+                            (Player[1]->pad_gamepad->pad != NULL)) {
+                            UpdateRumble(&Player[1]->pad_gamepad->rumble_packet);
                         }
-                        if (((Player[2] != NULL) && ((char)Player[2]->apiobj.field_0x1f8 < 0)) &&
-                            (((gamepad = Player[2]->pad_gamepad) != NULL) && (gamepad->pad != NULL))) {
-                            UpdateRumble(&gamepad->rumble_packet);
+                        if ((Player[2] != NULL) && Player[2]->apiobj.player_controlled &&
+                            (Player[2]->pad_gamepad->pad != NULL)) {
+                            UpdateRumble(&Player[2]->pad_gamepad->rumble_packet);
                         }
-                        if (((Player[3] != NULL) && ((char)Player[3]->apiobj.field_0x1f8 < 0)) &&
-                            (((gamepad = Player[3]->pad_gamepad) != NULL) && (gamepad->pad != NULL))) {
-                            UpdateRumble(&gamepad->rumble_packet);
+                        if ((Player[3] != NULL) && Player[3]->apiobj.player_controlled &&
+                            (Player[3]->pad_gamepad->pad != NULL)) {
+                            UpdateRumble(&Player[3]->pad_gamepad->rumble_packet);
                         }
-                        if (((Player[4] != NULL) && ((char)Player[4]->apiobj.field_0x1f8 < 0)) &&
-                            (((gamepad = Player[4]->pad_gamepad) != NULL) && (gamepad->pad != NULL))) {
-                            UpdateRumble(&gamepad->rumble_packet);
+                        if ((Player[4] != NULL) && Player[4]->apiobj.player_controlled &&
+                            (Player[4]->pad_gamepad->pad != NULL)) {
+                            UpdateRumble(&Player[4]->pad_gamepad->rumble_packet);
                         }
-                        if (((Player[5] != NULL) && ((char)Player[5]->apiobj.field_0x1f8 < 0)) &&
-                            (((gamepad = Player[5]->pad_gamepad) != NULL) && (gamepad->pad != NULL))) {
-                            UpdateRumble(&gamepad->rumble_packet);
+                        if ((Player[5] != NULL) && Player[5]->apiobj.player_controlled &&
+                            (Player[5]->pad_gamepad->pad != NULL)) {
+                            UpdateRumble(&Player[5]->pad_gamepad->rumble_packet);
                         }
-                        if (((Player[6] != NULL) && ((char)Player[6]->apiobj.field_0x1f8 < 0)) &&
-                            (((gamepad = Player[6]->pad_gamepad) != NULL) && (gamepad->pad != NULL))) {
-                            UpdateRumble(&gamepad->rumble_packet);
+                        if ((Player[6] != NULL) && Player[6]->apiobj.player_controlled &&
+                            (Player[6]->pad_gamepad->pad != NULL)) {
+                            UpdateRumble(&Player[6]->pad_gamepad->rumble_packet);
                         }
-                        if (((Player[7] != NULL) && ((char)Player[7]->apiobj.field_0x1f8 < 0)) &&
-                            (((gamepad = Player[7]->pad_gamepad) != NULL) && (gamepad->pad != NULL))) {
-                            UpdateRumble(&gamepad->rumble_packet);
+                        if ((Player[7] != NULL) && Player[7]->apiobj.player_controlled &&
+                            (Player[7]->pad_gamepad->pad != NULL)) {
+                            UpdateRumble(&Player[7]->pad_gamepad->rumble_packet);
                         }
                     }
 
@@ -691,11 +688,11 @@ giz_freeplay:
                     NuCameraSet(cam);
                     UpdateGameMenu(GamePad, 1);
                     if (Player[0] != NULL) {
-                        UpdateCoinPacket(Player[0]->coinpacket, ((u32)(byte)Player[0]->apiobj.field_0x1f8 >> 7) & 1,
+                        UpdateCoinPacket(Player[0]->coinpacket, Player[0]->apiobj.player_controlled,
                                          (i32)(char)Player[0]->apiobj.field_0x27c);
                     }
                     if (Player[1] != NULL) {
-                        UpdateCoinPacket(Player[1]->coinpacket, ((u32)(byte)Player[1]->apiobj.field_0x1f8 >> 7) & 1,
+                        UpdateCoinPacket(Player[1]->coinpacket, Player[1]->apiobj.player_controlled,
                                          (i32)(char)Player[1]->apiobj.field_0x27c);
                     }
                     Debris(1);
@@ -738,9 +735,8 @@ giz_freeplay:
                                     goto level_fade_still;
                                 }
                                 if (NewLData != level) {
-                                    if ((HUB_LDATA == NewLData) || (HUB_LDATA == level) ||
-                                        (TITLES_LDATA == NewLData) || (TITLES_LDATA == level) ||
-                                        (NewLData == CREDITS_LDATA)) {
+                                    if ((HUB_LDATA == NewLData) || (HUB_LDATA == level) || (TITLES_LDATA == NewLData) ||
+                                        (TITLES_LDATA == level) || (NewLData == CREDITS_LDATA)) {
                                         goto level_fade_wipe;
                                     }
                                     if (SuperStory != 0) {
@@ -823,7 +819,7 @@ giz_freeplay:
                     if ((i32)back_rgba[0] == back_rgba[1]) {
                         NuRndrClear(0x1f00, (i32)back_rgba[0], 1.0f);
                     } else {
-                        NuRndrGradClear(0xf00, (i32)back_rgba[0], (i32)back_rgba[1], 0x3f800000);
+                        NuRndrGradClear(0xf00, (i32)back_rgba[0], (i32)back_rgba[1], 1.0f);
                     }
 
                     if (CUTSTOPGAME == 0) {
@@ -845,64 +841,45 @@ giz_freeplay:
                     Grabber_Draw(world);
                     SetLevelLights(world->rtl_set, 1.0f);
 
-                    if ((editor_active == 0) && (Paused == 0)) {
-                        if (CUTSTOPGAME == 0) {
-                            CharShadows_Update();
-                            GameObjectStuffAfterAnimation();
-                            goto shadows_draw;
-                        }
-                    shadows_screendump:
-                        if (screendump == 0) {
-                            goto grabrender;
-                        }
-                    shadows_paused:
-                        pausedRender = save_paused;
-                    } else {
-                    shadows_draw:
-                        if (CUTSTOPGAME != 0) {
-                            goto shadows_screendump;
-                        }
+                    if ((editor_active == 0) && (Paused == 0) && (CUTSTOPGAME == 0)) {
+                        CharShadows_Update();
+                        GameObjectStuffAfterAnimation();
+                    }
+                    if (CUTSTOPGAME == 0) {
                         CharShadows_Draw();
-                        if (screendump != 0) {
-                            goto shadows_paused;
-                        }
-                    grabrender:
-                        pausedRender = Paused;
                     }
-
+                    if (screendump != 0) {
+                        pauseFlag = save_paused;
+                    } else {
+                        pauseFlag = Paused;
+                    }
                     c = IsGrabbingScreen();
-                    pauseFlag = 0;
-                    if (c == 0) {
-                        pauseFlag = pausedRender;
-                    }
+                    pauseFlag = (c == 0) ? pauseFlag : 0;
 
-                    if (world->lev_objs[1].active == 0) {
-                    draw_world:
-                        if (CUTSTOPGAME == 0) {
-                            if (TimingBarSet == 5) {
-                                TBOPENFN("DrwWld", 5);
-                            }
-                            WorldInfo_DrawScene(world);
-                            if (TimingBarSet == 5) {
-                                TBCLOSEFN("DrwWld", 5);
-                            }
-                            Level_Draw(world);
-                            Faders_Draw(world);
-                            DrawStreaks();
-                            Bolts_Draw(world);
-                            DrawExplosions();
-                            ZipUps_DrawLines();
-                            DrawCables();
-                            Detonators_Draw();
-                            Batarangs_Draw();
-                            TrafficAnimSys_Draw(world->trafficanim_sys);
-                            GizmoSysDraw(world->gizmo_sys, world, FRAMETIME);
-                            SpecialMiniKits_Draw(world);
-                            NuBridgeDraw(0);
-                        }
-                    } else if ((CUTSTOPGAME == 0) || (CUTDRAWWORLD != 0)) {
+                    if ((world->lev_objs[1].active != 0) && ((CUTSTOPGAME == 0) || (CUTDRAWWORLD != 0))) {
                         DrawParallax(&world->lev_objs[1].special);
-                        goto draw_world;
+                    }
+                    if (CUTSTOPGAME == 0) {
+                        if (TimingBarSet == 5) {
+                            TBOPENFN("DrwWld", 5);
+                        }
+                        WorldInfo_DrawScene(world);
+                        if (TimingBarSet == 5) {
+                            TBCLOSEFN("DrwWld", 5);
+                        }
+                        Level_Draw(world);
+                        Faders_Draw(world);
+                        DrawStreaks();
+                        Bolts_Draw(world);
+                        DrawExplosions();
+                        ZipUps_DrawLines();
+                        DrawCables();
+                        Detonators_Draw();
+                        Batarangs_Draw();
+                        TrafficAnimSys_Draw(world->trafficanim_sys);
+                        GizmoSysDraw(world->gizmo_sys, world, FRAMETIME);
+                        SpecialMiniKits_Draw(world);
+                        NuBridgeDraw(0);
                     }
 
                     if (Grass_Available != 0) {
@@ -918,7 +895,7 @@ giz_freeplay:
                     level = world->current_level;
                     if ((((level == TITLES_LDATA) || ((level->flags & LEVEL_STATUS) != 0)) ||
                          (level == CREDITS_LDATA)) ||
-                        ((level == STATUS_LDATA) && ((StatusPacket.status_flags & STATUS_FLAG_DRAW_BACKDROP) != 0))) {
+                        ((level == STATUS_LDATA) && ((StatusPacket.mode_flags & STATUS_MODE_SUPERSTORY) != 0))) {
                         BackDrop_Draw(1.0f, 0);
                     }
 
@@ -1019,24 +996,16 @@ giz_freeplay:
             FRAMETIME = NuFrameEnd();
             edGraDisableTerrainSwap();
 
-            if (DEFAULTFRAMETIME <= FRAMETIME) {
-                if (MAXFRAMETIME < FRAMETIME) {
-                    FRAMETIME = MAXFRAMETIME;
-                }
-                savedFrametime = DEFAULTFRAMETIME;
-                if (DEFAULTFRAMETIME <= FRAMETIME) {
-                    goto frametime_clamp;
-                }
-            } else {
+            if (FRAMETIME < DEFAULTFRAMETIME) {
                 FRAMETIME = DEFAULTFRAMETIME;
-            frametime_clamp:
-                savedFrametime = FRAMETIME;
-                if (MAXFRAMETIME < FRAMETIME) {
-                    FRAMETIME = MAXFRAMETIME;
-                    savedFrametime = FRAMETIME;
-                }
+            } else if (FRAMETIME > MAXFRAMETIME) {
+                FRAMETIME = MAXFRAMETIME;
             }
-            FRAMETIME = savedFrametime;
+            if (FRAMETIME < DEFAULTFRAMETIME) {
+                FRAMETIME = DEFAULTFRAMETIME;
+            } else if (FRAMETIME > MAXFRAMETIME) {
+                FRAMETIME = MAXFRAMETIME;
+            }
 
             if (enable_zero_frametime != 0) {
                 FRAMETIME = 0.0f;

@@ -2289,12 +2289,12 @@ __used__ static i32 Action_BlockPath(AISYS *sys, AISCRIPTPROCESS *processor, AIP
         i32 both_ways = 0;
         i32 blocked = 1;
         for (i32 index = 0; index < param_4; ++index) {
-            char *value = NuStrIStr(params[index], "from=");
+            char *value = NuStrIStr(params[index], "from");
             if (value != NULL) {
                 from = value + 5;
                 continue;
             }
-            value = NuStrIStr(params[index], "to=");
+            value = NuStrIStr(params[index], "to");
             if (value != NULL) {
                 to = value + 3;
             } else if (NuStrICmp(params[index], "bothways") == 0) {
@@ -7577,7 +7577,7 @@ __used__ static i32 Action_SetInvulnerable(AISYS *sys, AISCRIPTPROCESS *processo
     GameObject_s *object = packet != NULL && packet->owner != NULL ? packet->owner->apiobj.objptr : NULL;
     i32 enabled = 1;
     for (i32 index = 0; index < param_4; ++index) {
-        char *value = NuStrIStr(params[index], const_cast<char *>("type="));
+        char *value = NuStrIStr(params[index], const_cast<char *>("type"));
         if (value != NULL) {
             if (LevelCharacterTypeIDFn != NULL && LevelCharacterGlobalIDFn != NULL) {
                 const i32 local_type = static_cast<u8>(LevelCharacterTypeIDFn(value + 5));
@@ -7931,7 +7931,7 @@ __used__ static i32 Action_BigJumpToLocator(AISYS *sys, AISCRIPTPROCESS *process
                 personal = 1;
             } else if (NuStrIStr(params[index], const_cast<char *>("indexed")) != NULL) {
                 indexed = 1;
-            } else if ((value = NuStrIStr(params[index], const_cast<char *>("random="))) != NULL) {
+            } else if ((value = NuStrIStr(params[index], const_cast<char *>("random"))) != NULL) {
                 random_count = static_cast<i32>(AIParamToFloat(processor, value + 9));
             } else if ((value = NuStrIStr(params[index], const_cast<char *>("jump_factor="))) != NULL) {
                 jump_factor = AIParamToFloat(processor, value + 12);

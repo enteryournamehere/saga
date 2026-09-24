@@ -1382,7 +1382,7 @@ void MenuUpdateRestoreNewGame(MENU_s *menu) {
 
     if (menu->selected_item == 0) {
         MenuSFX = GameAudio_GetSfxId(0x30);
-        NuIOS_RecordFlurryEvent("mainmenu_restore");
+        NuIOS_RecordFlurryEvent("menu_restore");
         NuIOS_RestoreInAppPurchases();
         NewMenu(22, -1, -1);
     } else if (menu->selected_item == 1) {

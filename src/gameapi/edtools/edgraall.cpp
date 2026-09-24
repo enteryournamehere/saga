@@ -335,7 +335,7 @@ static void edgracbClumpAreaMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     eduiMenuAddItem(edgra_clumparea_menu, eduiItemCheckCreate(3, colours, GrassClumps[edgra_nearest].unknown_25 == 3, 1,
                                                               edgracbSetClumpArea, "Square"));
     eduiMenuAddItem(edgra_clumparea_menu, eduiItemCheckCreate(4, colours, GrassClumps[edgra_nearest].unknown_25 == 4, 1,
-                                                              edgracbSetClumpArea, "Rectangle"));
+                                                              edgracbSetClumpArea, "Grid"));
     edgraAttachMenu(parent, edgra_clumparea_menu);
 }
 static void edgracbClumpDistMenu(eduimenu_s *parent, eduiitem_s *, u32) {
@@ -646,7 +646,7 @@ static void edgracbClumpPropertiesMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     if (GrassClumps[edgra_nearest].kind == 1)
         eduiMenuAddItem(edgra_clumpproperties_menu,
                         eduiItemSliderCreate(0, colours, 0, edgracbSetClumpWind, 0.01f, 1.99f,
-                                             GrassClumps[edgra_nearest].field_18, "Wind Effect"));
+                                             GrassClumps[edgra_nearest].field_18, "Wind"));
     eduiMenuAddItem(edgra_clumpproperties_menu,
                     eduiItemToggleCreate(0, colours, GrassClumps[edgra_nearest].flags, 1, edgracbToggleClumpReactive,
                                          "Collide with Player"));

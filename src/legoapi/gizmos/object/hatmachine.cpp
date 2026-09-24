@@ -191,7 +191,7 @@ static void HatMachine_Update(void *world_ptr, void *, float elapsed) {
             if (machine->state_elapsed > machine->state_duration) {
                 ++machine->animation_state;
                 if (machine->animation_state == HATMACHINE_ANIMATION_PLAY_HAT_SFX) {
-                    PlaySfx("HatOn", &machine->position);
+                    PlaySfx("SwLever", &machine->position);
                 }
                 machine->state_elapsed = 0.0f;
 

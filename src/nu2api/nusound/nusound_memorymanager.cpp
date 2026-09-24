@@ -601,8 +601,8 @@ NuSoundMemoryBuffer *NuSoundMemoryManager::SwapOrMergeAdjacentBuffers(NuSoundMem
         return this->CheckAndMergeFreeBufferNext(buffer);
     }
 
-    buffer->Lock("NuSoundMemoryManager::SwapOrMergeAdjacentBuffers free");
-    next->Lock("NuSoundMemoryManager::SwapOrMergeAdjacentBuffers allocated");
+    buffer->Lock("SwapOrMergeAdjacentBuffers buffer");
+    next->Lock("SwapOrMergeAdjacentBuffers next");
 
     u32 buffer_size = buffer->GetSize();
     u32 next_size = next->GetSize();
@@ -648,8 +648,8 @@ bool NuSoundMemoryManager::SwapSimilarBuffers(NuSoundMemoryBuffer *a, NuSoundMem
         return false;
     }
 
-    a->Lock("NuSoundMemoryManager::SwapSimilarBuffers allocated");
-    b->Lock("NuSoundMemoryManager::SwapSimilarBuffers free");
+    a->Lock("SwapSimilarBuffers src");
+    b->Lock("SwapSimilarBuffers dest");
 
     void *a_address = a->GetAddress();
     void *b_address = b->GetAddress();

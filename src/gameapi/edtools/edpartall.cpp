@@ -1682,7 +1682,7 @@ static void edpartWorldInstanceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
         }
     }
     if (group == 1)
-        eduiMenuAddItem(edpart_worldinstance_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "No Things"));
+        eduiMenuAddItem(edpart_worldinstance_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "All Instances Filtered"));
     eduiMenuAttach(parent, edpart_worldinstance_menu);
     edpart_worldinstance_menu->x = parent->x + 10;
     edpart_worldinstance_menu->y = parent->y + 40;
@@ -1849,7 +1849,7 @@ static void edpartThingsInstanceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
         }
     }
     if (group == 1)
-        eduiMenuAddItem(edpart_thingsinstance_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "No Things"));
+        eduiMenuAddItem(edpart_thingsinstance_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "All Instances Filtered"));
     eduiMenuAttach(parent, edpart_thingsinstance_menu);
     edpart_thingsinstance_menu->x = parent->x + 10;
     edpart_thingsinstance_menu->y = parent->y + 40;

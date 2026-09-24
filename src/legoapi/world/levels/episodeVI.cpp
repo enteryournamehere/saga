@@ -246,12 +246,25 @@ void LegoCity_Update(WORLDINFO_s *) {
 }
 
 void SenateA_Init(WORLDINFO_s *world) {
-    char *names[] = {
-        "deton_0110", "deton_0111", "deton_011", "deton_012", "deton_013", "deton_014",
-        "deton_015", "deton_017", "deton_018", "deton_019", "console_btm19", "console_btm110",
-        "console_btm11", "console_btm18", "console_btm13", "console_btm16", "console_btm15",
-        "console_btm14", NULL
-    };
+    char *names[] = {"deton_0110",
+                     "deton_0111",
+                     "deton_011",
+                     "deton_012",
+                     "deton_013",
+                     "deton_014",
+                     "deton_015",
+                     "deton_017",
+                     "deton_018",
+                     "deton_019",
+                     "console_btm19",
+                     "console_btm110",
+                     "console_btm11",
+                     "console_btm18",
+                     "console_btm13",
+                     "console_btm16",
+                     "console_btm15",
+                     "console_btm14",
+                     NULL};
     for (i32 i = 0; names[i] != NULL; ++i) {
         GIZMOBLOWUP_s *blowup = GizmoBlowUp_FindByName(world, names[i]);
         if (blowup != NULL)
@@ -260,11 +273,11 @@ void SenateA_Init(WORLDINFO_s *world) {
 }
 
 void NewTown_Init(WORLDINFO_s *world) {
-    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "newtown");
+    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "dummy_exp8");
     char buf[0x18];
     i32 i = 1;
     for (;;) {
-        sprintf(buf, "%i", i);
+        sprintf(buf, "Pop_%d_House_61", i);
         GIZMOBLOWUP_s *g = GizmoBlowUp_FindByName(world, buf);
         if (g == NULL)
             break;

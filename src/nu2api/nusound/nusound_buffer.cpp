@@ -80,7 +80,7 @@ i32 NuSoundBuffer::Allocate(u64 size, NuSoundSystem::MemoryDiscipline disc) {
         }
 
         this->memory_buffer = (NuSoundMemoryBuffer *)NuSoundSystem::_AllocMemory(
-            disc, size, 4, "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound_buffer.cpp :53");
+            disc, size, 4, "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound_buffer.cpp:53");
 
         if (this->memory_buffer == NULL) {
             if (size <= NuSoundSystem::GetFreeMemory(disc)) {

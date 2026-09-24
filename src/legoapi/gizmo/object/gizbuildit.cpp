@@ -443,7 +443,7 @@ void GizBuildIt_Finish(GIZBUILDIT_s *buildit) {
 
 void GizBuildIt_SetHeadTarget(GIZBUILDIT_s *buildit, GameObject_s *player) {
     if (buildit->anim_object_count != 0) {
-        u32 index = buildit->built_object_count;
+        i32 index = buildit->built_object_count;
         if (buildit->anim_object_count <= index)
             index = buildit->anim_object_count - 1;
         GIZBUILDITANIMDATA_s *data = static_cast<GIZBUILDITANIMDATA_s *>(buildit->anim_objects[index]->object_data);

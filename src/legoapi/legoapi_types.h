@@ -5504,7 +5504,7 @@ struct PropertyMenu {
     void AddObject(ClassObject &);
     void ClearObjecs();
     bool ContainsObject(ClassObject &);
-    bool ContainsObject(void *);
+    i32 ContainsObject(void *);
     void Destroy();
     void SelectAttr(i32);
 };

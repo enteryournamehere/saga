@@ -3573,13 +3573,13 @@ void LevelEditor::SetNextMenu(eduimenu_s *menu) {
     edLevelNextMenu = menu;
 }
 
-bool PropertyMenu::ContainsObject(void *object) {
+i32 PropertyMenu::ContainsObject(void *object) {
     for (i32 i = 0; i < object_count; ++i) {
         if (objects[i].object == object) {
-            return true;
+            return 1;
         }
     }
-    return false;
+    return 0;
 }
 
 void PropertyTool::SetMenuControl(eduimenu_s *menu, EdControl *control) {

@@ -788,7 +788,7 @@ struct V2SessionManager {
     }
     virtual i32 VerifyStrings(char **, char **, i32, char *);
 
-    void Log(char *, ...);
+    static void Log(char *, ...);
     void RemoveAllPeers(ePeerLeftReason);
     void Reset();
     void SetHostGameData(i32 *, i32);

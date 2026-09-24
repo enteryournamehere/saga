@@ -3314,22 +3314,22 @@ void edpartDestroy(i32 index) {
 }
 
 void PartCleanupTypes() {
-    static i32 frame = 0;
-    static i32 index = 0;
-    if (++frame > 5) {
-        frame = 0;
-        if (part_types[index].effect_ids[0] != -1 && partglobaltime > part_types[index].last_used_time + 5.0f &&
-            part_types[index].scale != 1.0f) {
+    static i32 pcount1 = 0;
+    static i32 pcount2 = 0;
+    if (++pcount1 > 5) {
+        pcount1 = 0;
+        if (part_types[pcount2].effect_ids[0] != -1 && partglobaltime > part_types[pcount2].last_used_time + 5.0f &&
+            part_types[pcount2].scale != 1.0f) {
             for (i32 i = 0; i < 40; ++i) {
-                if (part_emits[i].effect_id == index)
+                if (part_emits[i].effect_id == pcount2)
                     edpartDestroy(i);
             }
-            part_types[index].name[0] = 0;
-            part_types[index].effect_ids[0] = -1;
+            part_types[pcount2].name[0] = 0;
+            part_types[pcount2].effect_ids[0] = -1;
             --part_types_used;
         }
-        if (++index >= 128)
-            index = 0;
+        if (++pcount2 >= 128)
+            pcount2 = 0;
     }
 }
 

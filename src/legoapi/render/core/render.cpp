@@ -3335,7 +3335,7 @@ static __used__ void DisplayListMaterialClipUpdate(nudisplayscene_s *) {
 
 extern i32 qrand(void);
 
-static NUGSCN *s_backdrop_scene = nullptr;
+static NUGSCN *backdrop_scene = nullptr;
 
 static nuhspecial_s s_backdrop_hspecial[4];
 
@@ -3370,10 +3370,10 @@ static __used__ void BackDrop_Alpha(float *alpha) {
 }
 
 void BackDrop_Init(char *path, variptr_u *buf, variptr_u *buf_end) {
-    NUGSCN *scene = s_backdrop_scene;
+    NUGSCN *scene = backdrop_scene;
     if (scene == NULL) {
         scene = NuGScnRead(buf, *buf_end, path);
-        s_backdrop_scene = scene;
+        backdrop_scene = scene;
     }
     memset(s_backdrop_hspecial, 0, sizeof(s_backdrop_hspecial));
     if (scene == NULL) {
@@ -3386,13 +3386,13 @@ void BackDrop_Init(char *path, variptr_u *buf, variptr_u *buf_end) {
 }
 
 void BackDrop_Dump() {
-    s_backdrop_scene = nullptr;
+    backdrop_scene = nullptr;
     memset(s_backdrop_hspecial, 0, sizeof(s_backdrop_hspecial));
 }
 
 void BackDrop_Update(float dt) {
-    if (s_backdrop_scene != NULL) {
-        NuGScnUpdate(s_backdrop_scene, dt * 60.0f);
+    if (backdrop_scene != NULL) {
+        NuGScnUpdate(backdrop_scene, dt * 60.0f);
     }
 }
 
@@ -3433,7 +3433,7 @@ void BackDrop_UpdateColours(i32 instant) {
 }
 
 void BackDrop_Draw(float alpha, i32 flags) {
-    if (s_backdrop_scene == NULL) {
+    if (backdrop_scene == NULL) {
         return;
     }
     if (flags == 0 && BackDrop_AlphaFn != NULL) {

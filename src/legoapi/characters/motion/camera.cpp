@@ -1659,16 +1659,16 @@ void SpeedBlur_Apply(WORLDINFO_s *world) {
 }
 
 void SpeedBlur_Update() {
-    static NUMTX camera_matrices[2];
-    static i32 last_camera_matrix = -1;
-    if (last_camera_matrix < 0) {
-        camera_matrices[0] = GameCam->render_mtx;
-        camera_matrices[1] = GameCam->render_mtx;
-        last_camera_matrix = 0;
+    static NUMTX cameraMtxs[2];
+    static i32 lastCameraMtx = -1;
+    if (lastCameraMtx < 0) {
+        cameraMtxs[0] = GameCam->render_mtx;
+        cameraMtxs[1] = GameCam->render_mtx;
+        lastCameraMtx = 0;
     }
-    NuLightSpeedBlurOldCameraPos(&camera_matrices[last_camera_matrix]);
-    last_camera_matrix = 1 - last_camera_matrix;
-    camera_matrices[last_camera_matrix] = GameCam->render_mtx;
+    NuLightSpeedBlurOldCameraPos(&cameraMtxs[lastCameraMtx]);
+    lastCameraMtx = 1 - lastCameraMtx;
+    cameraMtxs[lastCameraMtx] = GameCam->render_mtx;
 }
 
 void ViewCamSetActive(i32 mode, GAMEPAD_s *gamepad) {

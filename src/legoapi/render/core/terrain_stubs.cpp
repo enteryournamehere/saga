@@ -705,6 +705,9 @@ void DebrisTimeSlip(i32 group) {
     }
 }
 
+static const char *errstr[] = {"ERR_UNKNOWN", "ERR_NOTERR",      "ERR_MAXTERLIST", "ERR_MAXTERR",
+                               "ERR_INOUT",   "ERR_PLATSKINMAX", "ERR_NOINSTANCE"};
+
 extern "C" {
 
     void DebrisEmitterMomentum(i32 handle, f32 x, f32 y, f32 z) {
@@ -1815,12 +1818,10 @@ extern "C" {
     }
 
     const char *TerrErrorString(i32 error) {
-        static const char *const errors[] = {"ERR_UNKNOWN", "ERR_NOTERR",      "ERR_MAXTERLIST", "ERR_MAXTERR",
-                                             "ERR_INOUT",   "ERR_PLATSKINMAX", "ERR_NOINSTANCE"};
         i32 index = -error;
         if (index >= 7)
             index = 0;
-        return errors[index];
+        return errstr[index];
     }
 
     extern "C++" TERRAIN_TRACK_SLOT *AllocTerrId() {

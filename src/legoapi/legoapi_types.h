@@ -3899,7 +3899,7 @@ struct ClassEditor : BaseEditor {
     static void cbEdClassToolsMenu(eduimenu_s *, eduiitem_s *, u32);
     static void cbEdClassViewMenu(eduimenu_s *, eduiitem_s *, u32);
     i32 cbEdCopySelectedObject(EdInputContext &);
-    i32 cbEdCreateClassNewObject(i32);
+    static i32 cbEdCreateClassNewObject(i32);
     static void cbEdFilterLED(eduimenu_s *, eduiitem_s *, u32);
     void cbEdLevelDeselectAll(eduimenu_s *, eduiitem_s *, u32);
     void cbEdLevelSelectAll(eduimenu_s *, eduiitem_s *, u32);

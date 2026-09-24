@@ -484,8 +484,9 @@ static i32 edpush_Load(void *world_ptr, void *) {
     return 1;
 }
 
+static char outputName[13] = "Any Complete";
+
 char *GizPush_GetOutputName(GIZMO *gizmo, i32 output_index) {
-    static char output_name[13] = "Any Complete";
 
     pushblock_s *push_block = static_cast<pushblock_s *>(gizmo->object);
     if (output_index < 0 || output_index > push_block->output_count) {
@@ -494,9 +495,9 @@ char *GizPush_GetOutputName(GIZMO *gizmo, i32 output_index) {
     if (output_index == 0) {
         return const_cast<char *>("Any Complete");
     }
-    NuIToA(output_index, output_name, 10);
-    NuStrCat(output_name, " Complete");
-    return output_name;
+    NuIToA(output_index, outputName, 10);
+    NuStrCat(outputName, " Complete");
+    return outputName;
 }
 
 static void Push_StoreProgress(void *world_ptr, void *, void *progress_ptr) {

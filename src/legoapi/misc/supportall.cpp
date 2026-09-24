@@ -877,26 +877,26 @@ void DebrisProcessSpheres(uv1deb *data, float time, debinftype *effect, debkeyda
 // Transcribed from the original C-linkage symbols:
 //   NuHtmlBegin    0x2d5ca0   NuHtmlFlush   0x2d5c30
 //   NuHtmlWrite    0x2d5cd0   NuHtmlHeading1 0x2d5d40
-static char nudl_html_buf[0x1000]; // flush threshold leaves room for formatted output
-static char *nudl_html_cursor;     // original @0xb9d720-rel
-static char *nudl_html_end;        // original @0xb9d730-rel
+static char buffer[0x1000]; // flush threshold leaves room for formatted output
+static char *txt;           // original @0xb9d720-rel
+static char *flush;         // original @0xb9d730-rel
 extern "C" {
     NUFILE hfh;
     char unknown[8] = "unknown";
 }
 
 void NuHtmlFlush(i32 force) {
-    if ((nudl_html_cursor > nudl_html_end) | force) {
-        NuFileWriteString(hfh, nudl_html_buf);
-        nudl_html_cursor = nudl_html_buf;
-        nudl_html_end = nudl_html_buf + 0xc00;
+    if ((txt > flush) | force) {
+        NuFileWriteString(hfh, buffer);
+        txt = buffer;
+        flush = buffer + 0xc00;
     }
 }
 
 extern "C" void NuHtmlBegin(void *file) {
     hfh = static_cast<NUFILE>(reinterpret_cast<usize>(file));
-    nudl_html_cursor = nudl_html_buf;
-    nudl_html_end = nudl_html_buf + 0xc00;
+    txt = buffer;
+    flush = buffer + 0xc00;
 }
 
 extern "C" void NuHtmlWrite(const char *text, ...) {
@@ -905,9 +905,9 @@ extern "C" void NuHtmlWrite(const char *text, ...) {
     }
     va_list ap;
     va_start(ap, text);
-    vsprintf(nudl_html_cursor, text, ap);
+    vsprintf(txt, text, ap);
     va_end(ap);
-    nudl_html_cursor += NuStrLen(nudl_html_cursor);
+    txt += NuStrLen(txt);
     NuHtmlFlush(0);
 }
 
@@ -918,9 +918,9 @@ extern "C" void NuHtmlHeading1(const char *fmt, ...) {
     NuHtmlWrite("<table width=100%c bgcolor=#CFCFE5><tr><td><font face=arial size=+3> ", '%');
     va_list ap;
     va_start(ap, fmt);
-    vsprintf(nudl_html_cursor, fmt, ap);
+    vsprintf(txt, fmt, ap);
     va_end(ap);
-    nudl_html_cursor += NuStrLen(nudl_html_cursor);
+    txt += NuStrLen(txt);
     NuHtmlWrite("</font></table>\n");
 }
 
@@ -935,9 +935,9 @@ extern "C" void NuHtmlHeading2(const char *fmt, ...) {
     NuHtmlWrite("<table width=100%c bgcolor=#DFDFE5><tr><td><font face=arial size=+2> ", '%');
     va_list ap;
     va_start(ap, fmt);
-    vsprintf(nudl_html_cursor, fmt, ap);
+    vsprintf(txt, fmt, ap);
     va_end(ap);
-    nudl_html_cursor += NuStrLen(nudl_html_cursor);
+    txt += NuStrLen(txt);
     NuHtmlWrite("</font></table>\n");
 }
 
@@ -948,9 +948,9 @@ extern "C" void NuHtmlHeading3(const char *fmt, ...) {
     NuHtmlWrite("<table width=100%c bgcolor=#FFDFE5><tr><td><font face=arial size=+0> ", '%');
     va_list ap;
     va_start(ap, fmt);
-    vsprintf(nudl_html_cursor, fmt, ap);
+    vsprintf(txt, fmt, ap);
     va_end(ap);
-    nudl_html_cursor += NuStrLen(nudl_html_cursor);
+    txt += NuStrLen(txt);
     NuHtmlWrite("</font></table>\n");
 }
 

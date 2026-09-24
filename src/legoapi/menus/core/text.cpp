@@ -339,7 +339,7 @@ f32 TextPulseTimer(f32 delay) {
     return 1.0f;
 }
 static char **TTab_Original;
-static i32 Text_MaxOverallStrings;
+static i32 Text_MaxStrings_Overall;
 static u32 *Text_StringBits;
 
 void Text_InitTable(TEXTENTRY *entry, i32 first, i32 last) {
@@ -568,7 +568,7 @@ void Text_InitStringTable(i32 count, variptr_u *buf, variptr_u *) {
     usize table_size = (count + 1) * sizeof(char *);
     buf->addr = ALIGN(buf->addr + table_size, 4);
     memset(TTab_Original, 0, table_size);
-    Text_MaxOverallStrings = count;
+    Text_MaxStrings_Overall = count;
     TTab_Original[0] = "Err...";
     TTab = TTab_Original + 1;
 
@@ -687,7 +687,7 @@ void Text_LoadAndFixUpStrings(unsigned char *filename, unsigned char **buffer, c
     *buffer = out;
 }
 i32 Text_GetMaxOverallStrings() {
-    return Text_MaxOverallStrings;
+    return Text_MaxStrings_Overall;
 }
 void Text_LocaliseDecimalPoint(char *text) {
     if ((Text_Language >= 2 && Text_Language <= 5) || Text_Language == 6 || Text_Language == 7 || Text_Language == 8 ||
@@ -1350,7 +1350,7 @@ void MenuDrawViewTextStrings(MENU_s *menu) {
     menu->draw_y = static_cast<f32>(-menu->selected_row) * menu->centre_offset;
 
     char text[2048];
-    for (i32 i = 0; i < Text_MaxOverallStrings; ++i) {
+    for (i32 i = 0; i < Text_MaxStrings_Overall; ++i) {
         dme_sx = 0.6f;
         dme_sy = menu->item_scale;
         dme_align = 0;

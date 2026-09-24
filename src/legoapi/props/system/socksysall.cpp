@@ -1935,20 +1935,20 @@ f32 CalculateDistanceToSpecificSideOrEnd(i32 side, NUVEC *position, SOCKPOSITION
     }
 }
 
-static u32 sock_turnoff_mask[2];
+static u32 SocksOnPreviousStatus[2];
 void TurnOffAllSocksExcept(SOCKSYS *system, i32 exception) {
     for (i32 word = 0; word < 2; ++word)
-        sock_turnoff_mask[word] = 0;
+        SocksOnPreviousStatus[word] = 0;
     for (i32 index = 0; index < 64; ++index) {
         if (!(system->sock[index].flags & 0x100))
-            sock_turnoff_mask[index / 32] |= 1 << (index & 31);
+            SocksOnPreviousStatus[index / 32] |= 1 << (index & 31);
         system->sock[index].flags |= 0x100;
     }
     system->sock[exception].flags &= ~0x100;
 }
 void RestoreLastSocksTurnoff(SOCKSYS *system) {
     for (i32 index = 0; index < 64; ++index) {
-        if (sock_turnoff_mask[index / 32] & (1 << (index & 31)))
+        if (SocksOnPreviousStatus[index / 32] & (1 << (index & 31)))
             system->sock[index].flags &= ~0x100;
     }
 }

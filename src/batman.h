@@ -349,7 +349,7 @@ extern "C" {
     extern i32 NewMode;
     extern i32 nurndr_tritot_this_frame;
     extern void (*NuSoundAppTerminateCallback)(void);
-    extern i32 nuvideo_global_vbcnt;
+    extern volatile i32 nuvideo_global_vbcnt;
     extern i32 PANELOFF;
     extern i32 party_cant_be_under_cover;
     extern i32 peak_poly_count;

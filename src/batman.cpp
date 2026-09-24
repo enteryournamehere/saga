@@ -24,7 +24,7 @@
 // Local statics owned by this TU (original symbols _ZL8frameout,
 // _ZL14frameout_count, _ZL19NuSoundAppTerminatev).
 static i32 frameout;
-static i32 frameout_count[2];
+static i64 frameout_count;
 
 // Original local static of this TU (calls NuSoundSystem::Shutdown).
 namespace {
@@ -71,7 +71,9 @@ extern "C" i32 NuMain(i32 argc, char **argv) {
     FADETYPE fadeType;
     nupad_s *pads[2];
     ThingProcessData framePacket;
-    NUVEC *windObjs[8];
+    // The original realigns the stack to 16 bytes for this array, which is
+    // passed by address to the wind and fade-object updaters.
+    NUVEC *windObjs[8] __attribute__((aligned(16)));
 
     NuSoundAppTerminateCallback = NuSoundAppTerminate;
     NuCommandLine(&argc, &argv);
@@ -112,11 +114,11 @@ extern "C" i32 NuMain(i32 argc, char **argv) {
         Areas_OpenAll(0);
     }
 
-    if (Level == -1) {
+    if (Level != -1) {
+        i = Level * sizeof(LEVELDATA_s);
+    } else {
         Level = 0;
         i = 0;
-    } else {
-        i = Level * sizeof(LEVELDATA_s);
     }
     last_area = -1;
     Area = reinterpret_cast<LEVELDATA_s *>(reinterpret_cast<char *>(LDataList) + i)->area_index;
@@ -323,10 +325,13 @@ giz_freeplay:
         NuRndrSwapStreamBuffers();
 
         frameout = 0;
-        frameout_count[0] = 0;
-        frameout_count[1] = 0;
+        frameout_count = 0;
         display_list_buffer = reinterpret_cast<VARIPTR *>(&rndrstream_free);
         display_list_buffer_end = reinterpret_cast<VARIPTR *>(rndrstream_end.addr);
+        // The original discards three reads of the volatile vblank counter here.
+        (void)nuvideo_global_vbcnt;
+        (void)nuvideo_global_vbcnt;
+        (void)nuvideo_global_vbcnt;
         FRAMETIME = DEFAULTFRAMETIME;
 
         if (reset_load != 0) {
@@ -610,8 +615,8 @@ giz_freeplay:
                         Hint_Process(FRAMETIME);
                         Cheats_Update();
 
-                        if (MechInputTouchMenuController::PackButtonPressed != 0) {
-                            MechInputTouchMenuController::PackButtonPressed = 0;
+                        if (MechInputTouchMenuController::PackButtonPressed) {
+                            MechInputTouchMenuController::PackButtonPressed = false;
                             Hint_CancelCurrent();
                             i = NuIOS_AreInAppPurchasesAvailable();
                             if ((i == 0) || ((i = NuIOS_CanMakeInAppPurchases(), i == 0))) {
@@ -714,88 +719,56 @@ giz_freeplay:
                 GameDisplaySettings(&world->current_level->data_display, (i32 *)&back_rgba);
 
                 if (((NewMode != 0) || (NewLData != NULL)) && (FadeSys.fade == 0.0f)) {
-                    if (((world->current_level == NULL) || ((world->current_level->flags & LEVEL_STATUS) == 0)) ||
-                        (HUB_LDATA == NULL)) {
-                        if (FadeSys.pending_type == FADE_TYPE_NONE) {
-                        level_fade_set:
+                    level = world->current_level;
+                    if ((level != NULL) && ((level->flags & LEVEL_STATUS) != 0) && (HUB_LDATA != NULL) &&
+                        (HUB_LDATA != NewLData) && (NewLData != NULL) && (NewLData->area_index != -1) &&
+                        ((ADataList[NewLData->area_index].flags & AREAFLAG_ENDING_AREA) == 0)) {
+                        FadeSys.fade = 1.0f;
+                        FinishLoop_On = 0;
+                    } else {
+                        if ((FadeSys.pending_type == FADE_TYPE_NONE) ||
+                            ((NewLData != NULL) && (WORLD->current_level != NewLData) && (NewLData == HUB_LDATA))) {
                             level = WORLD->current_level;
-                        level_fade_common:
                             if (level == NULL) {
-                                if (NewLData != NULL) {
-                                    goto level_fade_newl;
+                                if (NewLData == NULL) {
+                                    goto level_fade_still;
                                 }
-                            level_fade_2:
-                                fadeType.type = FADE_TYPE_STILL_WIPE;
                             } else {
                                 if (NewLData == NULL) {
-                                    goto level_fade_2;
+                                    goto level_fade_still;
                                 }
-                                if (NewLData == level) {
-                                level_fade_newl:
-                                    i = (i32)(char)NewLData->area_index;
-                                level_fade_nl:
-                                    if ((i == WORLD->level_sub_id) ||
-                                        ((SuperStory != 0) && ((WORLD->area->flags & AREAFLAG_ENDING_AREA) == 0))) {
-                                        goto level_fade_2;
+                                if (NewLData != level) {
+                                    if ((HUB_LDATA == NewLData) || (HUB_LDATA == level) ||
+                                        (TITLES_LDATA == NewLData) || (TITLES_LDATA == level) ||
+                                        (NewLData == CREDITS_LDATA)) {
+                                        goto level_fade_wipe;
                                     }
-                                } else {
-                                    if ((((HUB_LDATA != NewLData) && (HUB_LDATA != level)) &&
-                                         (TITLES_LDATA != NewLData)) &&
-                                        ((TITLES_LDATA != level) && (CREDITS_LDATA != NewLData))) {
-                                        if (SuperStory == 0) {
-                                            goto level_fade_newl;
-                                        }
-                                        i = (i32)(char)NewLData->area_index;
+                                    if (SuperStory != 0) {
+                                        i = NewLData->area_index;
                                         if (((level->flags & LEVEL_STATUS) != 0) &&
                                             ((ADataList[i].flags & AREAFLAG_ENDING_AREA) != 0)) {
-                                            goto level_fade_1;
+                                            goto level_fade_wipe;
                                         }
-                                        goto level_fade_nl;
+                                        goto level_fade_area;
                                     }
                                 }
-                            level_fade_1:
+                            }
+                            i = NewLData->area_index;
+                        level_fade_area:
+                            if ((i == WORLD->level_sub_id) ||
+                                ((SuperStory != 0) && ((WORLD->area->flags & AREAFLAG_ENDING_AREA) == 0))) {
+                            level_fade_still:
+                                fadeType.type = FADE_TYPE_STILL_WIPE;
+                            } else {
+                            level_fade_wipe:
                                 fadeType.type = FADE_TYPE_WIPE;
                             }
                             FadeSys.SetFade(fadeType, 0);
-                            goto level_fade_stage2;
                         }
-                        if (NewLData != NULL) {
-                            goto level_fade_common;
-                        }
-                    } else {
-                        if (HUB_LDATA == NewLData) {
-                        level_fade_hub:
-                            if (FadeSys.pending_type == FADE_TYPE_NONE) {
-                                goto level_fade_set;
-                            }
-                        level_fade_common2:
-                            level = WORLD->current_level;
-                            if ((level == NewLData) || (HUB_LDATA != NewLData)) {
-                                goto level_fade_stage2;
-                            }
-                        } else {
-                            if (NewLData != NULL) {
-                                const i32 nextAreaIndex = NewLData->area_index;
-                                if ((nextAreaIndex != -1) &&
-                                    ((ADataList[nextAreaIndex].flags & AREAFLAG_ENDING_AREA) == 0)) {
-                                    FadeSys.fade = 1.0f;
-                                    FinishLoop_On = 0;
-                                    goto level_fade_done;
-                                }
-                                goto level_fade_hub;
-                            }
-                            if (FadeSys.pending_type != FADE_TYPE_NONE) {
-                                goto level_fade_stage2;
-                            }
-                            level = WORLD->current_level;
-                        }
-                        goto level_fade_common;
+                        FadeSys.SetStage(2);
                     }
-                level_fade_stage2:
-                    FadeSys.SetStage(2);
                 }
 
-            level_fade_done:
                 if (TimingBarSet == 2) {
                     TBCLOSEFN("GameCd", 2);
                 }
@@ -1032,15 +1005,15 @@ giz_freeplay:
             g_val += 0.002;
             CutScenes_End();
 
-            frameout_count[1] = nuvideo_global_vbcnt >> 0x1f;
-            i = (nuvideo_global_vbcnt - 1) - (i32)frameout_count[0];
+            i = (i32)frameout_count;
+            frameout_count = nuvideo_global_vbcnt;
+            i = (frameout_count - 1) - i;
             frameout = 0;
             if (0 <= i) {
                 frameout = i;
             }
             peak_poly_count = peak_poly_count <= nurndr_tritot_this_frame ? nurndr_tritot_this_frame : peak_poly_count;
             poly_count = nurndr_tritot_this_frame;
-            frameout_count[0] = nuvideo_global_vbcnt;
 
             edGraEnableTerrainSwap();
             FRAMETIME = NuFrameEnd();

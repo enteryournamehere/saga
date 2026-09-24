@@ -413,8 +413,8 @@ struct MechInputTouchMainDummyStick : NuTouchInputElement {
 };
 struct MechInputTouchMenuController {
     static i32 AnyTouchesThisFrame; // original bss, consumed by startup/menu presentation
-    static i32 PackButtonPressed;   // original bss (read/cleared by NuMain)
-    static i32 PackButtonID;        // original bss (menu id for in-app purchase pack)
+    static bool PackButtonPressed;  // original 1-byte bss (read/cleared by NuMain)
+    static i32 PackButtonID;        // original data, initially -1 (menu id for in-app purchase pack)
     void Activate();
     void Deactivate();
     MechInputTouchMenuController(i32);

@@ -491,7 +491,9 @@ void SuperCarry_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
                             object->context_animation = LEGOACT_SUPERCARRY_BASH;
                             object->context_flags &= static_cast<u8>(~0x40);
                             f32 duration = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 1);
-                            object->context_animation_timer = duration <= 0.0f ? 0.5f : duration;
+                            object->context_animation_timer = duration;
+                            if (duration <= 0.0f)
+                                object->context_animation_timer = 0.5f;
                             return;
                         }
                     }
@@ -502,7 +504,9 @@ void SuperCarry_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
                             object->context_animation = LEGOACT_SUPERCARRY_THROW;
                             object->context_flags &= static_cast<u8>(~0x40);
                             f32 duration = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 1);
-                            object->context_animation_timer = duration <= 0.0f ? 0.5f : duration;
+                            object->context_animation_timer = duration;
+                            if (duration <= 0.0f)
+                                object->context_animation_timer = 0.5f;
                         } else {
                             object->character_context = -1;
                             object->field_0xe22 |= 0x80;
@@ -519,7 +523,9 @@ void SuperCarry_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
                         object->field_0x7a3 = 1;
                         object->context_flags &= static_cast<u8>(~0x40);
                         f32 duration = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 1);
-                        object->context_animation_timer = duration <= 0.0f ? 0.5f : duration;
+                        object->context_animation_timer = duration;
+                        if (duration <= 0.0f)
+                            object->context_animation_timer = 0.5f;
                         object->carried_object_drop_position.x = object->apiobj.lower_position.x;
                         object->carried_object_drop_position.y = object->apiobj.field_0x218;
                         object->carried_object_drop_position.z = object->apiobj.lower_position.z;
@@ -632,7 +638,9 @@ void SuperCarry_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
                 goto idle_or_walk;
         landing:
             f32 duration = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 1);
-            object->context_animation_timer = duration <= 0.0f ? 0.5f : duration;
+            object->context_animation_timer = duration;
+            if (duration <= 0.0f)
+                object->context_animation_timer = 0.5f;
             ResetAnimPacket(&object->apiobj.anim_packet, -1);
             object->apiobj.velocity.x = object->apiobj.velocity.z = 0.0f;
             NewBuzzFrames(object->pad_gamepad->pad, object->context_animation == LEGOACT_SUPERCARRY_FALLLAND ? 2 : 1,

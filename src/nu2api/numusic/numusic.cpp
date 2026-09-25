@@ -886,17 +886,12 @@ void NuMusic::SetClassVolume(u32 class_mask, f32 volume) {
     if (this == NULL || the_music_player == NULL) {
         return;
     }
-    if (volume <= 1.0f) {
-        if (volume < 0.0f) {
-            volume = 0.0f;
-        } else if (volume <= 1.0f) {
-            // keep
-        } else {
-            volume = 1.0f;
-        }
-    } else {
+    if (volume > 1.0f)
         volume = 1.0f;
-    }
+    if (volume < 0.0f)
+        volume = 0.0f;
+    if (volume > 1.0f)
+        volume = 1.0f;
 
     if ((class_mask & TRACK_CLASS_QUIET) != 0)
         this->class_volumes[0] = volume;
@@ -916,17 +911,12 @@ void NuMusic::SetMasterVolume(f32 volume) {
     if (this == NULL || the_music_player == NULL) {
         return;
     }
-    if (volume <= 1.0f) {
-        if (volume < 0.0f) {
-            volume = 0.0f;
-        } else if (volume <= 1.0f) {
-            // keep
-        } else {
-            volume = 1.0f;
-        }
-    } else {
+    if (volume > 1.0f)
         volume = 1.0f;
-    }
+    if (volume < 0.0f)
+        volume = 0.0f;
+    if (volume > 1.0f)
+        volume = 1.0f;
     this->master_volume = volume;
 }
 

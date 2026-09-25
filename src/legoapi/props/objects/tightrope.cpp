@@ -591,7 +591,9 @@ jump:
         object->context_animation = 6;
         object->context_animation_timer = 0.0f;
         f32 duration = AnimDuration(object->id, 6, 0.0f, 0.0f, 0);
-        object->airborne_action_duration = duration <= 0.0f ? 1.0f : duration;
+        object->airborne_action_duration = duration;
+        if (duration <= 0.0f)
+            object->airborne_action_duration = 1.0f;
         ResetAnimPacket(&object->apiobj.anim_packet, -1);
     } else {
         StartJump(object, 0);

@@ -7571,7 +7571,9 @@ i32 StartBackFlip(GameObject_s *object) {
     object->context_variant_flags &= ~0x80;
     object->delayed_turn_timer = 0.0f;
     object->airborne_input_timer = 0.0f;
-    object->context_animation_timer = duration <= 0.0f ? 1.0f : duration;
+    object->context_animation_timer = duration;
+    if (object->context_animation_timer <= 0.0f)
+        object->context_animation_timer = 1.0f;
     PlayJumpSfx(object, 2);
     return 1;
 }

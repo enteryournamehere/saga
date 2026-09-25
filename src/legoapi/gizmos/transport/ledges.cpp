@@ -189,7 +189,7 @@ static i32 Ledge_GetNumOutputs(GIZMO *gizmo) {
 static void Ledge_Activate(GIZMO *gizmo, i32 active) {
     if (gizmo != NULL) {
         LEDGE *ledge = static_cast<LEDGE *>(gizmo->object);
-        ledge->state_flags = (ledge->state_flags & ~1) | (active != 0);
+        ledge->active = active != 0;
     }
 }
 
@@ -288,11 +288,12 @@ static void Ledges_Reset(void *world_info, void *, void *progress_data) {
         ledge->bounds_max.z += 0.05f;
         NuVecAdd(&ledge->bounds_min, &ledge->bounds_min, &ledge->position);
         NuVecAdd(&ledge->bounds_max, &ledge->bounds_max, &ledge->position);
-        ledge->state_flags |= 3;
+        ledge->active = 1;
+        ledge->visible = 1;
         if (i < 128 && progress != NULL) {
             u32 mask = 1u << (i & 31);
-            ledge->state_flags = (ledge->state_flags & ~2) | ((progress->state[4 + (i >> 5)] & mask) != 0 ? 2 : 0);
-            ledge->state_flags = (ledge->state_flags & ~1) | ((progress->state[i >> 5] & mask) != 0 ? 1 : 0);
+            ledge->visible = (progress->state[4 + (i >> 5)] & mask) != 0;
+            ledge->active = (progress->state[i >> 5] & mask) != 0;
         }
     }
 }

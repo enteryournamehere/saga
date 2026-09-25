@@ -253,7 +253,9 @@ i32 id_HINT_LSW_AUTOJUMP_FAIL = -1;
 
 void initGameHintSys_LSW() {
     RegisterWithHintSys(DrawHint_LSW, Hints_LSW, Game.hint_completion_bits, 3);
-    reinterpret_cast<u8 *>(&LSW_HintConditions)[0] &= ~7U;
+    LSW_HintConditions.force_used = 0;
+    LSW_HintConditions.tc14_present = 0;
+    LSW_HintConditions.panel_used = 0;
     id_HINT_LSW_AUTOJUMP = 0x620;
     id_HINT_LSW_AUTOJUMP_FAIL = 0x621;
 }

@@ -63,7 +63,13 @@ DECOMP_ASSERT(sizeof(TERRAIN_LAYER_s) == 0x0c, "TERRAIN_LAYER_s ABI");
 typedef i32 (*USING_EXTRA_ACTIONS_FN)(GameObject_s *object);
 
 extern USING_EXTRA_ACTIONS_FN UsingExtraActionsFn;
-extern u32 LSW_HintConditions;
+// Hint preconditions that are only met once the player has done something.
+struct LSW_HINTCONDITIONS_s {
+    u32 force_used : 1;
+    u32 tc14_present : 1;
+    u32 panel_used : 1;
+};
+extern LSW_HINTCONDITIONS_s LSW_HintConditions;
 extern bool (*IsWearingBackPackFn)(GameObject_s *);
 extern i32 (*Jump_PreventJumpFn)(GameObject_s *);
 extern i32 (*CanMagnetClimbFn)(GameObject_s *);

@@ -5347,7 +5347,7 @@ static void ForceCode(GameObject_s *object, i32 pressed, i32 held, i32) {
                 Hint_SetComplete(0x259);
                 if ((object->gizforce_target->config_flags & 0x10) != 0)
                     Hint_SetComplete(0x623);
-                LSW_HintConditions |= 1;
+                LSW_HintConditions.force_used = 1;
             }
         }
     } else if ((object->apiobj.flags_low & 0x80) != 0)

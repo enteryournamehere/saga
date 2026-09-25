@@ -701,7 +701,9 @@ void MenuUpdateNewGame(MENU *menu) {
         GameSetSoundVolume(&Game.options_save);
         legoSetMusicVolume(SuperOptions.music_enabled != 0 ? GameGetMusicVolume(&TempOptions) : 0.0f);
         Hint_LoadAllGameState();
-        LSW_HintConditions |= 7;
+        LSW_HintConditions.force_used = 1;
+        LSW_HintConditions.tc14_present = 1;
+        LSW_HintConditions.panel_used = 1;
         newgamealpha = 0.0f;
 
         u8 brightness = Game.options_save.field12_0xc;

@@ -129,8 +129,7 @@ static void DrawCoinTotal(i32 source, i32 hide_super_story_target) {
 i32 Tag_UpdateHint(HINT_s *hint) {
     if (WORLD->area != NULL && WORLD->area == HUB_ADATA)
         return 0;
-    u8 conditions = static_cast<u8>(LSW_HintConditions);
-    i32 tc14 = (conditions >> 1) & 1;
+    i32 tc14 = LSW_HintConditions.tc14_present;
     auto check_tc14 = [&](GameObject_s *object) {
         if (object != NULL && (object->apiobj.field_0x1f8 & 0x1080) == 0x1080 && object->id == id_TC14)
             tc14 = 1;
@@ -143,7 +142,7 @@ i32 Tag_UpdateHint(HINT_s *hint) {
     check_tc14(Player[5]);
     check_tc14(Player[6]);
     check_tc14(Player[7]);
-    reinterpret_cast<u8 *>(&LSW_HintConditions)[0] = (conditions & ~2) | (tc14 << 1);
+    LSW_HintConditions.tc14_present = tc14;
     switch (hint->control_mode_ids[0]) {
         case 600:
             if (FreePlay == 0)
@@ -185,7 +184,7 @@ i32 Tag_UpdateHint(HINT_s *hint) {
             return (first != NULL && first->field_0xcc0 == NULL) || (second != NULL && second->field_0xcc0 == NULL);
         }
         case 603: {
-            if ((LSW_HintConditions & 4) == 0) {
+            if (!LSW_HintConditions.panel_used) {
                 if (Tag_DoneFirst > 1)
                     Tag_DoneFirst = 1;
                 return 0;

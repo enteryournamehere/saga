@@ -1391,13 +1391,16 @@ u32 GizBuildIts_TotalScore(void *world) {
 }
 
 void CalcAveragePosAndRad(GIZBUILDIT_s &buildit, VuVec &position, float &radius, bool include_built) {
-    u32 first = 0;
+    i32 first = 0;
     if (!include_built)
         first = buildit.built_object_count;
-    position = VuVec(0, 0, 0, 1);
+    position.x = VuVec_Zero.x;
+    position.y = VuVec_Zero.y;
+    position.z = VuVec_Zero.z;
+    position.w = VuVec_Zero.w;
     radius = 0.0f;
     i32 count = 0;
-    for (u32 i = first; i < buildit.anim_object_count; ++i) {
+    for (i32 i = first; i < buildit.anim_object_count; ++i) {
         GAMEANIMOBJ_s *object = buildit.anim_objects[i];
         if (object != NULL) {
             NUMTX *matrix = NuSpecialGetMtx(&object->special);
@@ -1411,15 +1414,14 @@ void CalcAveragePosAndRad(GIZBUILDIT_s &buildit, VuVec &position, float &radius,
     position.y /= static_cast<f32>(count);
     position.z /= static_cast<f32>(count);
     f32 maximum = 0.0f;
-    for (u32 i = first; i < buildit.anim_object_count; ++i) {
+    for (i32 i = first; i < buildit.anim_object_count; ++i) {
         GAMEANIMOBJ_s *object = buildit.anim_objects[i];
         if (object != NULL) {
             NUMTX *matrix = NuSpecialGetMtx(&object->special);
             const f32 x = position.x - matrix->m30;
             const f32 z = position.z - matrix->m32;
             const f32 distance = x * x + 0.0f + z * z;
-            if (maximum <= distance)
-                maximum = distance;
+            maximum = maximum > distance ? maximum : distance;
         }
     }
     if (maximum > 0.0f)

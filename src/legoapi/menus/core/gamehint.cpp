@@ -20,7 +20,7 @@
 #include "nu2api/nucore/nustring.h"
 #include "legoapi/world/mission.h"
 
-u32 LSW_HintConditions;
+LSW_HINTCONDITIONS_s LSW_HintConditions;
 HINTSYS_s hintsys = {};
 HINTUIBUTTON_s *hintUIButton = NULL;
 f32 AlphaBlendTime = 1.0f;

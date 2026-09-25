@@ -4279,8 +4279,31 @@ struct GIZFORCE_s {
     };
     union {
         struct {
-            u8 progress_flags; // 0xa8, GIZFORCE_PROGRESS_FLAGS
-            u8 runtime_flags;  // 0xa9, GIZFORCE_RUNTIME_FLAGS
+            union {
+                u8 progress_flags; // 0xa8, GIZFORCE_PROGRESS_FLAGS
+                struct {
+                    u8 progress_enabled : 1;
+                    u8 progress_visible : 1;
+                    u8 : 2;
+                    u8 progress_reverse_active : 1;
+                    u8 progress_group_member : 1;
+                    u8 progress_animation_reversed : 1;
+                    u8 progress_draw_active : 1;
+                };
+            };
+            union {
+                u8 runtime_flags; // 0xa9, GIZFORCE_RUNTIME_FLAGS
+                struct {
+                    u8 runtime_has_platform : 1;
+                    u8 runtime_reward_released : 1;
+                    u8 runtime_pending_blowup_type : 1;
+                    u8 runtime_along_socket_hidden : 1;
+                    u8 runtime_offset_applied : 1;
+                    u8 runtime_force_range_complete : 1;
+                    u8 runtime_completion_released : 1;
+                    u8 runtime_pending_completion : 1;
+                };
+            };
             union {
                 u8 field_0xaa;
                 u8 state_flags; // GIZFORCE_STATE_FLAGS

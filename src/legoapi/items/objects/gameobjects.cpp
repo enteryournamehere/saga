@@ -2063,14 +2063,14 @@ static u32 AIRespawnOnPath(APIOBJECT *object) {
     }
 
     if (object->respawn_timer > AI_RESPAWN_DELAY) {
-        if ((model_flags & CHARACTER_AI_MODEL_FLAG_SNAP_ON_BIG_JUMP) != 0) {
+        if ((model_flags & CHARACTER_AI_MODEL_FLAG_SNAP_ON_BIG_JUMP) == 0) {
+            StartBigJump(game_object, &object->respawn_position, 0, 0.5f, 1.0f, 0, 0);
+        } else {
             object->start_position = object->respawn_position;
             object->position = object->respawn_position;
             object->velocity = v000;
             ResetPlayerMoves(game_object);
             object->respawn_timer = 0.0f;
-        } else {
-            StartBigJump(game_object, &object->respawn_position, 0, 0.5f, 1.0f, 0, 0);
         }
     }
 

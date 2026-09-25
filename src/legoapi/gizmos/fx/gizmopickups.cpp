@@ -1005,7 +1005,8 @@ void SpecialMiniKits_Draw(WORLDINFO_s *world) {
 
     NUVEC scale = {AreaPickupScale, AreaPickupScale, AreaPickupScale};
     const u16 y_rotation = static_cast<u16>(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 4.0f) * 0.25f * 65536.0f));
-    const u16 x_rotation = static_cast<u16>(NuTrigTable[static_cast<i32>(y_rotation) & 0x7fff] * 1820.0f);
+    const u16 x_rotation =
+        static_cast<u16>(static_cast<i32>(NuTrigTable[static_cast<i32>(y_rotation) & 0x7fff] * 1820.0f));
 
     for (i32 index = 0; index < system->count; ++index) {
         SPECIALMINIKIT_s *item = &system->items[index];

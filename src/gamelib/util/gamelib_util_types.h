@@ -143,7 +143,9 @@ struct ReplicatorData {
 DECOMP_ASSERT(sizeof(ReplicatorData) == 0xc, "ReplicatorData ABI");
 DECOMP_ASSERT(offsetof(ReplicatorData, cursor) == 8, "ReplicatorData cursor offset");
 struct WORLDINFO_s;
-struct ePeerLeftReason {};
+struct ePeerLeftReason {
+    i32 value;
+};
 struct eHostVisibility {
     i32 value;
 };

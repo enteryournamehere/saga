@@ -126,16 +126,24 @@ extern "C" i32 NuMain(i32 argc, char **argv) {
     Area = reinterpret_cast<LEVELDATA_s *>(reinterpret_cast<char *>(LDataList) + i)->area_index;
     LastAData = NULL;
 
-    if ((Area == -1) || ((ADataList[Area].flags & AREAFLAG_BONUS_AREA) == 0)) {
-        if ((1 < GAMEDEMO) || ((GAMEDEMO != 0) && (FreePlay != 0))) {
-            FreePlay = 1;
-            GAMEDEMO = 2;
-        }
-    } else {
-        NextArea_FreePlay = 1;
-        FreePlay = 1;
+    if (Area == -1) {
+        goto check_gamedemo;
     }
-
+    if ((ADataList[Area].flags & AREAFLAG_BONUS_AREA) == 0) {
+        goto check_gamedemo;
+    }
+    NextArea_FreePlay = 1;
+    FreePlay = 1;
+    goto continue_init;
+check_gamedemo:
+    if (1 < GAMEDEMO) {
+        FreePlay = 1;
+        GAMEDEMO = 2;
+    } else if (GAMEDEMO != 0 && FreePlay != 0) {
+        FreePlay = 1;
+        GAMEDEMO = 2;
+    }
+continue_init:
     makefreeplaymodellist = 0;
     if ((HUB_ADATA == NULL) || (Area != (u32)(byte)HUB_ADATA->index)) {
         if (FreePlay != 0) {
@@ -1250,21 +1258,7 @@ after_sound:
         }
     }
 
-    if (netclient == 0) {
-        if ((Area == -1) || (Area != last_area)) {
-            if (0 < PLAYERCOUNT) {
-                UsePlayerList = 2;
-            }
-            MakePlayerList(8);
-            Door_UseCutCam = 0;
-        } else if (new_level_from_menu == 0) {
-            MakePlayerList(8);
-            UsePlayerList = 1;
-        } else {
-            MakePlayerList(8);
-            UsePlayerList = 2;
-        }
-    } else {
+    if (netclient != 0) {
         UsePlayerList = 2;
         PlayerProgress[0].active = status_plr_active[0];
         PlayerProgress[1].active = status_plr_active[1];
@@ -1274,6 +1268,18 @@ after_sound:
         PlayerProgress[5].active = status_plr_active[5];
         PlayerProgress[6].active = status_plr_active[6];
         PlayerProgress[7].active = status_plr_active[7];
+    } else if ((Area == -1) || (Area != last_area)) {
+        if (0 < PLAYERCOUNT) {
+            UsePlayerList = 2;
+        }
+        MakePlayerList(8);
+        Door_UseCutCam = 0;
+    } else if (new_level_from_menu == 0) {
+        MakePlayerList(8);
+        UsePlayerList = 1;
+    } else {
+        MakePlayerList(8);
+        UsePlayerList = 2;
     }
 
     afterArea = HUB_ADATA;

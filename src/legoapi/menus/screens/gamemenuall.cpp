@@ -1715,7 +1715,6 @@ extern "C" {
     }
 
     void Draw_CANCEL(MENU *menu) {
-        extern char *apitxt_CANCEL;
         menu->draw_y = MENUBOTY;
         DrawMenuEntry(menu, apitxt_CANCEL);
     }

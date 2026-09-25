@@ -624,7 +624,7 @@ static void edpartSetSoundID(eduimenu_s *menu, eduiitem_s *item, u32) {
 }
 static void edpartSoundXMenu(eduimenu_s *menu, eduiitem_s *item, u32) {
     if (edpart_nearest_type != NULL) {
-        char title[20];
+        char title[16];
         sprintf(title, "Sound %d Menu", item->data + 1);
         edpart_soundx_menu = eduiMenuCreate(70, 70, 250, 300, ed_fnt, edpartCancelSoundXMenu, title);
         if (edpart_soundx_menu != NULL) {

@@ -139,7 +139,7 @@ static void Pictures_FixUp(WORLDINFO *world) {
     if (world->scene != NULL) {
         Pictures_NumLevels = 0;
         for (i32 episode = 0; episode < EPISODECOUNT; episode++) {
-            char name[72];
+            char name[64];
             sprintf(name, "EP_%i", episode + 1);
             NuSpecialFind(world->scene, &LevHSpecial[10 + episode], name, 1);
 
@@ -163,7 +163,7 @@ static void Pictures_FixUp(WORLDINFO *world) {
 }
 
 static void Titles_Init(WORLDINFO *world) {
-    char title_name[72];
+    char title_name[64];
 
     NewGame();
     switch (Text_Language) {

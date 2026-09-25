@@ -1533,7 +1533,7 @@ static void cbLoad(eduimenu_s *, eduiitem_s *, u32) {
     RefreshUI();
 }
 static void cbSave(eduimenu_s *, eduiitem_s *, u32) {
-    char path[268];
+    char path[256];
     sprintf(path, "%s%s%s", rtlGetEnvPath(), rtlGetEnvSceneName(), rtl_ext);
     rtlSaveSet(path, curr_set);
 }

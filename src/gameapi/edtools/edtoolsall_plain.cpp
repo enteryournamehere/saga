@@ -4029,7 +4029,7 @@ extern "C" {
                 case 6: {
                     edui_slider_s *slider = static_cast<edui_slider_s *>(item);
                     char format[512];
-                    char text[520];
+                    char text[512];
                     NuStrCpy(format, item->text);
                     NuStrCat(format, slider->format);
                     sprintf(text, format, 0, 0x80000000);

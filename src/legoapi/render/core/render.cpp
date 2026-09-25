@@ -1827,7 +1827,7 @@ void DrawMiniKitCount(float position, float scale, i32 count, i32 maximum) {
         DrawPanel3DObjectNoAlpha(x, PANEL_MINIKITY + y, 1.0f, size, size, size, tilt, rotation, 0,
                                  &world->lev_objs[model].special, 2);
     }
-    char text[40];
+    char text[32];
     sprintf(text, "%i/%i", count, maximum);
     const f32 size = scale * PANEL_MINIKITCOUNTSCALE;
     Text3D(text, x, y + PANEL_MINIKITCOUNTY, 1.0f, size, size, size, 0, 255, 0, 127);

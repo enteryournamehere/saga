@@ -4243,12 +4243,12 @@ static i32 edBitIndex;
 
 __attribute__((force_align_arg_pointer)) void EdBitControl::AddMenuItem(eduimenu_s *menu, EdRef *member, void *target) {
     void *memory = theMemoryManager.AllocPool(sizeof(EdBitControl), 1);
-    EdBitControl *control = new (memory) EdBitControl();
+    EdBitControl *control = new (memory) EdBitControl;
     control->reference = member;
     control->object = target;
     control->items = items;
     control->bit_mask = bit_mask;
-    i32 value = 0;
+    i32 value;
     member->GetMemberData(target, EdType_Int, &value, 0);
     control->item =
         eduiItemExpanderCreate(reinterpret_cast<usize>(control), &EdLevelAttr, EdControl::cbSelected, member->name);
@@ -4256,9 +4256,9 @@ __attribute__((force_align_arg_pointer)) void EdBitControl::AddMenuItem(eduimenu
     for (i32 bit = 0; bit < 32; ++bit) {
         if ((control->bit_mask & (1u << bit)) == 0)
             continue;
-        char bit_name[0x10];
+        char bit_name[0x20];
         sprintf(bit_name, "%d", bit);
-        char *text = control->GetEnumString((value >> bit) & 1);
+        char *text = GetEnumString((value >> bit) & 1);
         eduiitem_s *child = eduiItemPropCreateEx(reinterpret_cast<usize>(control), &EdLevelAttr, EdControl::cbSelected,
                                                  cbChanged, cbButton, 1, bit_name, text, bit);
         eduiItemExpanderAddChild(reinterpret_cast<edui_expander_s *>(control->item), child);
@@ -4360,14 +4360,14 @@ void EdDefunctList::ReviveAll(i32 flags) {
 
 void EdEnumControl::AddMenuItem(eduimenu_s *menu, EdRef *member, void *target) {
     void *memory = theMemoryManager.AllocPool(sizeof(EdEnumControl), 1);
-    EdEnumControl *control = new (memory) EdEnumControl();
+    EdEnumControl *control = new (memory) EdEnumControl;
     control->reference = member;
     control->object = target;
     control->items = items;
-    i32 value = 0;
+    i32 value;
     member->GetMemberData(target, EdType_Int, &value, 0);
     control->item = eduiItemPropCreate(reinterpret_cast<usize>(control), &EdLevelAttr, EdControl::cbSelected, cbChanged,
-                                       cbButton, 1, member->name, control->GetEnumString(value));
+                                       cbButton, 1, member->name, GetEnumString(value));
     eduiMenuAddItem(menu, control->item);
 }
 
@@ -6071,16 +6071,17 @@ void EdSpecialObjectControl::cbSelectObject(eduimenu_s *, eduiitem_s *item, u32)
 }
 
 void EdSpecialObjectControl::AddMenuItem(eduimenu_s *parent, EdRef *member, void *target) {
-    void *memory = theMemoryManager.AllocPool(sizeof(EdSpecialObjectControl), 1);
-    EdSpecialObjectControl *control = new (memory) EdSpecialObjectControl();
+    EdSpecialObjectControl *control =
+        new (theMemoryManager.AllocPool(sizeof(EdSpecialObjectControl), 1)) EdSpecialObjectControl();
+    if (!control)
+        return;
     control->reference = member;
     control->object = target;
     nuhspecial_s special;
-    memset(&special, 0, sizeof(special));
     member->GetMemberData(target, EdType_NuHSpecial, &special, 0);
     char *name = NuSpecialGetName(&special);
     if (name == NULL)
-        name = const_cast<char *>("None");
+        name = const_cast<char *>("no name");
     control->item = eduiItemPropCreate(reinterpret_cast<usize>(control), &EdLevelAttr, EdControl::cbSelected, cbChanged,
                                        cbButton, 1, member->name, name);
     eduiMenuAddItem(parent, control->item);

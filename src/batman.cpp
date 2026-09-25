@@ -54,6 +54,7 @@ extern "C" i32 NuMain(i32 argc, char **argv) {
     GIZAIMESSAGE_s *missionModeMessage;
     nupad_s *rumblePad0;
     nupad_s *rumblePad1;
+    GameObject_s *pausePlayer;
     u32 pauseFlag;
     LEVELDATA_s *level;
     i32 currentEpisodeIndex;
@@ -366,17 +367,11 @@ giz_freeplay:
                       ((MiniCutCam == 0) && (i = CutScene_PlayingOrRequested(NULL), i == 0)))) &&
                     (FadeSys.fade == 0.0f)) {
                     EndChallenge(2, 1);
-                    world = WORLD;
-                    UpdateFrameCounters();
-                    if (TimingBarSet == 2) {
-                        TBOPENFN("GameCd", 2);
-                    }
-                } else {
-                    world = WORLD;
-                    UpdateFrameCounters();
-                    if (TimingBarSet == 2) {
-                        TBOPENFN("GameCd", 2);
-                    }
+                }
+                world = WORLD;
+                UpdateFrameCounters();
+                if (TimingBarSet == 2) {
+                    TBOPENFN("GameCd", 2);
                 }
 
                 PortalDoors_Update(world);
@@ -405,12 +400,7 @@ giz_freeplay:
                          ((GamePads_IgnoreInputFn == NULL) || (i = (*GamePads_IgnoreInputFn)(), i == 0))) &&
                         ((CUTSTOPGAME == 0) || ((i = CutScene_IsSkippable((CUTINFO *)CutStopInfo), i != 0)))) {
                         if ((MiniCutCam == 0) && (CutSceneWaiting == 0)) {
-                            if (GameMenu[GameMenuLevel].menu == -1) {
-                                if ((Paused == 0) && (((Player[0] != NULL) && Player[0]->apiobj.player_controlled) ||
-                                                      ((Player[1] != NULL) && Player[1]->apiobj.player_controlled))) {
-                                    PauseGame(1);
-                                }
-                            } else {
+                            if (GameMenu[GameMenuLevel].menu != -1) {
                                 i = MenuInMemoryCard();
                                 if (((i == 0) && (MenuInfo[GameMenu[GameMenuLevel].menu].id != 1)) &&
                                     (MenuInfo[GameMenu[GameMenuLevel].menu].id != 4)) {
@@ -418,6 +408,19 @@ giz_freeplay:
                                 } else {
                                     memcard_autosavedisabled = 0;
                                     memcard_autosaveenabled = 0;
+                                }
+                            } else {
+                                if (Paused == 0) {
+                                    if ((Player[0] != NULL) && Player[0]->apiobj.player_controlled) {
+                                        pausePlayer = Player[0];
+                                    } else if ((Player[1] != NULL) && Player[1]->apiobj.player_controlled) {
+                                        pausePlayer = Player[1];
+                                    } else {
+                                        pausePlayer = NULL;
+                                    }
+                                    if (pausePlayer != NULL) {
+                                        PauseGame(pausePlayer->pad_gamepad - GamePad);
+                                    }
                                 }
                             }
                         }

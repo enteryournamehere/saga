@@ -919,6 +919,13 @@ typedef struct GameObject_s {
     union {
         u8 tag_flags;
         u8 tag_context_flags;
+        struct {
+            u8 tag_active : 1;
+            u8 tag_disabled : 1;
+            u8 tag_pending : 1;
+            u8 tag_blend_camera : 1;
+            u8 : 4;
+        };
     }; // 0x07b5
     u8 pad_7b6[2];
     union {

@@ -3020,7 +3020,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                                 break;
                             }
                             case 0x31: {
-                                if ((api.field_0x1f8 & 0x80) == 0)
+                                if (!api.player_controlled)
                                     goto directional_walking;
                                 const u16 angle = api.movement_facing_angle;
                                 object->target_velocity.x =
@@ -3261,7 +3261,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                     if (direct_turn == 0 && ((CInfo[object->character_context].parameter & 2) != 0 ||
                                              (api.character_data->game_character->flags_090 & 0x100) != 0))
                         walking_angle = api.facing_angle;
-                    if (WORLD->current_level == VADERA_LDATA && (api.field_0x1f8 & 0x80) == 0 &&
+                    if (WORLD->current_level == VADERA_LDATA && !api.player_controlled &&
                         GameCam->sock_position.location.sock == 0)
                         walking_speed *= 1.0416666269302368f;
                     object->target_velocity.x =
@@ -3275,7 +3275,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
     }
     if ((object->field_0xefd & GAMEOBJECT_MOVEMENT_FLAG_REVERSE_VELOCITY) != 0) {
         NuVecRotateY(&object->target_velocity, &object->target_velocity, 0x8000);
-    } else if ((api.field_0x1f8 & 0x80) != 0 && (api.character_data->game_character->flags_090 & 0x100) != 0)
+    } else if (api.player_controlled && (api.character_data->game_character->flags_090 & 0x100) != 0)
         CharPivot_Check(object, &object->target_velocity);
 
     if (object->character_context == 0x4b) {

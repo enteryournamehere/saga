@@ -549,11 +549,11 @@ f32 GetVehicleAreaRememberSpeed() {
 
     f32 speed = 0.0f;
     f32 player_count = 0.0f;
-    if (Player[0] != NULL && (Player[0]->apiobj.field_0x1f8 & 0x80) != 0) {
+    if (Player[0] != NULL && Player[0]->apiobj.player_controlled) {
         speed += Player[0]->field_0xdc8;
         player_count = 1.0f;
     }
-    if (Player[1] != NULL && (Player[1]->apiobj.field_0x1f8 & 0x80) != 0) {
+    if (Player[1] != NULL && Player[1]->apiobj.player_controlled) {
         speed += Player[1]->field_0xdc8;
         player_count = 2.0f;
     }

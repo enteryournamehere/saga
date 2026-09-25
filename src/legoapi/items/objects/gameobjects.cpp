@@ -5031,7 +5031,7 @@ void GameObjectStuffAfterAnimation() {
             part.field_18 = 0.1f;
             part.special = &WORLD->lev_objs[232].special;
             part.field_28 = 232;
-            const bool player = (object->apiobj.field_0x1f8 & 0x80) != 0;
+            const bool player = object->apiobj.player_controlled;
             part.flags = player ? 0xc11b : 0xc31b;
             part.owner = object;
             part.field_90 = static_cast<u8>(object->apiobj.field_0x289);
@@ -5091,7 +5091,7 @@ void GameObjectStuffAfterAnimation() {
                         }
                     }
                 }
-                if ((object->apiobj.field_0x1f8 & 0x80) == 0)
+                if (!object->apiobj.player_controlled)
                     continue;
                 bool hit = false;
                 for (i32 side = 0; side < 2; ++side) {
@@ -5171,7 +5171,7 @@ void GameObjectStuffAfterAnimation() {
         }
         if (VehicleArea != 0 && static_cast<u8>(object->apiobj.field_0x27c) <= 1) {
             i32 *key = &FalconDebKey[static_cast<u8>(object->apiobj.field_0x27c)];
-            if (object->id == id_MILLENNIUMFALCON && (object->apiobj.field_0x1f8 & 0x80) != 0 &&
+            if (object->id == id_MILLENNIUMFALCON && object->apiobj.player_controlled &&
                 (object->field_0xe24 & 8) != 0 && object->apiobj.character_model->points_of_interest[2] != NULL &&
                 object->apiobj.field_0xa8 == 1.0f) {
                 if (*key == -1)
@@ -5810,7 +5810,7 @@ void TakeOverCode(GameObject_s *object, i32 tag_pressed) {
         object->context_animation_timer += FRAMETIME;
         if (object->context_animation_timer >= object->airborne_action_duration) {
             object->character_context = -1;
-            if ((api.field_0x1f8 & 0x80) != 0) {
+            if (api.player_controlled) {
                 if (target->id == id_GRABCONTROL || target->id == id_GRABR2CONTROL) {
                     Hint_SetComplete(0x28a);
                 } else if (target->apiobj.character_data->move_fn == Move_BEAST) {
@@ -5868,7 +5868,7 @@ void TakeOverCode(GameObject_s *object, i32 tag_pressed) {
                     buttons &= ~GAMEPAD_JUMP;
                 if (target->character_context != 0x2a && (buttons & (GAMEPAD_JUMP | GAMEPAD_TAG)) != 0) {
                     ReleaseTakeOver(object, 1);
-                    if ((api.field_0x1f8 & 0x80) != 0)
+                    if (api.player_controlled)
                         Hint_SetComplete(0x25e);
                     return;
                 }
@@ -5896,7 +5896,7 @@ void TakeOverCode(GameObject_s *object, i32 tag_pressed) {
         object->takeover_timer -= FRAMETIME;
         return;
     }
-    if (MiniCutCam != 0 || (api.field_0x1f8 & 0x80) == 0 || api.field_0x287 != 0 || !(object->takeover_timer <= 0.0f) ||
+    if (MiniCutCam != 0 || !api.player_controlled || api.field_0x287 != 0 || !(object->takeover_timer <= 0.0f) ||
         (object->character_context != -1 && (object->character_context != 0 || object->action_movement_state == 3 ||
                                              object->action_movement_state == 4)) ||
         api.field_0x27d == 0) {
@@ -7196,7 +7196,7 @@ void ManageGameObjects() {
                         GetTakeOverPos(vehicle, &object->apiobj.position);
                         TakeOverGameObject(object, object->takeover_source, 0, 1);
                     }
-                    if ((object->apiobj.field_0x1f8 & 0x80) != 0 && WORLD->current_level == SPEEDERCHASEA_LDATA &&
+                    if (object->apiobj.player_controlled && WORLD->current_level == SPEEDERCHASEA_LDATA &&
                         disable_narrow_socks == 0)
                         GameCam_Blend(GameCam, 0.5f, 0.0f, 0);
                 } else if (WORLD->current_level == PODSPRINTA_LDATA) {
@@ -8171,26 +8171,26 @@ void TakeOverGameObject(GameObject_s *rider, GameObject_s *vehicle, i32 blend_ca
 void RegisterTakeOverObject(GameObject_s *object);
 
 void TakeOverGameObject2(GameObject_s *rider, GameObject_s *vehicle, i32 blend_camera) {
-    if (rider == NULL || (rider->apiobj.field_0x1f8 & 1) == 0 || vehicle == NULL ||
-        (vehicle->apiobj.field_0x1f8 & 1) == 0 || rider->field_0xcc0 != NULL || vehicle->field_0xcc0 != NULL) {
+    if (rider == NULL || (rider->apiobj.flags_low & 1) == 0 || vehicle == NULL ||
+        (vehicle->apiobj.flags_low & 1) == 0 || rider->field_0xcc0 != NULL || vehicle->field_0xcc0 != NULL) {
         return;
     }
-    i32 result;
     if ((rider->field_0xf00 & 2) != 0) {
-        result = TakeOverYoda(rider, vehicle, blend_camera, 1);
+        if (TakeOverYoda(rider, vehicle, blend_camera, 1) != 2)
+            return;
     } else {
         if (WORLD->current_level == SPEEDERCHASEA_LDATA && disable_narrow_socks == 0 &&
-            (rider->apiobj.field_0x1f8 & 0x80) != 0) {
+            rider->apiobj.player_controlled) {
             blend_camera = 1;
         }
         RegisterTakeOverObject(vehicle);
-        result = TagCode(rider, vehicle, 1, blend_camera, 1);
+        if (TagCode(rider, vehicle, 1, blend_camera, 1) != 2)
+            return;
     }
-    if (result == 2) {
-        rider->pending_tag_target = vehicle;
-        rider->tag_cooldown = 1.0f;
-        rider->tag_flags |= 0x0c;
-    }
+    rider->tag_pending = 1;
+    rider->pending_tag_target = vehicle;
+    rider->tag_cooldown = 1.0f;
+    rider->tag_blend_camera = 1;
 }
 
 void DeactivateGameObject(GameObject_s *object) {

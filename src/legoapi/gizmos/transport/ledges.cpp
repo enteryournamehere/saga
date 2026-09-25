@@ -380,7 +380,7 @@ void Ledge_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
             if (object->character_context != 0 || !(object->context_animation_timer >= 0.1f))
                 return;
         }
-        if (!(object->apiobj.field_0x1f8 & 0x80) && !(object->field_0xf01 & 0x80))
+        if (!object->apiobj.player_controlled && !(object->field_0xf01 & 0x80))
             return;
         f32 radius = 3.0f * object->apiobj.field_0x1dc;
         NUVEC minimum = {object->apiobj.collision_position.x - radius, object->apiobj.collision_position.y,

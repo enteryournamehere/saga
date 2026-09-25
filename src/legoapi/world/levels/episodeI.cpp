@@ -628,9 +628,9 @@ void PodRaceUpdate(WORLDINFO_s *, float) {
         return;
     avg_currentspeed_mul = 0;
     podrace->lap_display = podrace->prev_lap_display;
-    if (Player[0] != NULL && (Player[0]->apiobj.field_0x1f8 & 0x80))
+    if (Player[0] != NULL && Player[0]->apiobj.player_controlled)
         return;
-    if (Player[1] != NULL && !(Player[1]->apiobj.field_0x1f8 & 0x80))
+    if (Player[1] != NULL && !Player[1]->apiobj.player_controlled)
         Player[1]->field_0xc34 = 0;
     i32 n = (i32)podrace->lap_countdown;
     i32 o = (i32)podrace->lap_display;

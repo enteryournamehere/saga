@@ -755,7 +755,8 @@ void FixUpLevels(LEVELFIXUP *fixup) {
     if (level != NULL) {
         level->update_fn = UpdateStatusScreen;
         level->draw_status_fn = DrawStatusScreen;
-        level->flags = (level->flags & ~(LEVEL_GAMEPLAY | LEVEL_TERRAIN)) | LEVEL_STATUS;
+        level->flags &= ~(LEVEL_GAMEPLAY | LEVEL_TERRAIN);
+        level->flags |= LEVEL_STATUS;
     }
 
     {
@@ -1363,7 +1364,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("NB_Kamino_a", NULL);
-        NB_KAMINOALDATA_LDATA = level;
+        NB_KAMINOALDATA = level;
         if (level != NULL) {
             level->init_fn = NbKaminoA_Init;
             level->always_update_fn = KaminoA_AlwaysUpdate;

@@ -3561,12 +3561,13 @@ __used__ static i32 Action_Respawnable(AISYS *sys, AISCRIPTPROCESS *processor, A
     (void)param_6;
     GameObject_s *object = packet != NULL && packet->owner != NULL ? packet->owner->apiobj.objptr : NULL;
     if (object != NULL && param_5 != 0) {
-        object->field_0xefa = static_cast<u8>((object->field_0xefa & ~0x20u) | 0x10u);
+        object->respawnable = 1;
+        object->respawn_at_origin = 0;
         for (i32 index = 0; index < param_4; ++index) {
             if (NuStrICmp(params[index], "origin") == 0) {
-                object->field_0xefa |= 0x20;
+                object->respawn_at_origin = 1;
             } else if (NuStrICmp(params[index], "false") == 0) {
-                object->field_0xefa &= static_cast<u8>(~0x10u);
+                object->respawnable = 0;
             }
         }
     }

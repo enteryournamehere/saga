@@ -448,7 +448,7 @@ void GunganA_Init(WORLDINFO_s *world) {
         gungan_a.models[2] = id_FALUMPASET;
         gungan_a.models[3] = id_GUNGAN;
         for (i32 i = 0; i < 32; i++) {
-            char buf[16];
+            char buf[32];
             sprintf(buf, "origin_%d", i);
             gungan_a.origins[i] = AIPathFindLocator(world->ai_sys, buf);
             sprintf(buf, "target_%d", i);
@@ -1111,7 +1111,7 @@ void PodRaceInit(WORLDINFO_s *world) {
 void PodRaceCInit(WORLDINFO_s *world) {
     PodRaceInit(world);
     LevFlag.podrace_state = 0;
-    char buf[0x20];
+    char buf[0x100];
     nuhspecial_s *slots = LevHSpecial;
     sprintf(buf, "boost0%i", 1);
     NuSpecialFind(world->current_gscn, &slots[0], buf, 1);

@@ -370,27 +370,26 @@ extern AREADATA *E3CHARACTER_ADATA;
 
 static i32 SetSoundFadeDistCallBackFn_LSW(WORLDINFO_s *) {
     LEVELDATA *level = WORLD->current_level;
-    AREADATA *area = WORLD->area;
 
     if (level == KAMINOE_LDATA) {
         nusound_fade_start = 3.0f;
         nusound_fade_end = 22.5f;
-    } else if (area != NULL && (area == GUNSHIP_ADATA || area == BONUS_GUNSHIP_ADATA)) {
+    } else if (WORLD->area != NULL && (WORLD->area == GUNSHIP_ADATA || WORLD->area == BONUS_GUNSHIP_ADATA)) {
         nusound_fade_start = 25.0f;
         nusound_fade_end = 125.0f;
-    } else if (area != NULL && area == DOGFIGHT_ADATA) {
+    } else if (WORLD->area != NULL && WORLD->area == DOGFIGHT_ADATA) {
         nusound_fade_start = 100.0f;
         nusound_fade_end = 250.0f;
     } else if (level == DEATHSTARRESCUEE_LDATA) {
         nusound_fade_start = 5.0f;
         nusound_fade_end = 50.0f;
-    } else if (area != NULL && area == DEATHSTARESCAPE_ADATA) {
+    } else if (WORLD->area != NULL && WORLD->area == DEATHSTARESCAPE_ADATA) {
         nusound_fade_start = 3.0f;
         nusound_fade_end = 15.0f;
-    } else if (area != NULL && area == ASTEROIDCHASE_ADATA) {
+    } else if (WORLD->area != NULL && WORLD->area == ASTEROIDCHASE_ADATA) {
         nusound_fade_start = 25.0f;
         nusound_fade_end = 150.0f;
-    } else if (area != NULL && area == JABBASPALACE_ADATA) {
+    } else if (WORLD->area != NULL && WORLD->area == JABBASPALACE_ADATA) {
         nusound_fade_start = 3.0f;
         nusound_fade_end = 20.0f;
     } else if (level == SARLACCPITA_LDATA) {
@@ -399,7 +398,7 @@ static i32 SetSoundFadeDistCallBackFn_LSW(WORLDINFO_s *) {
     } else if (level == SARLACCPITC_LDATA) {
         nusound_fade_start = 7.5f;
         nusound_fade_end = 55.0f;
-    } else if (area != NULL && area == SPEEDERCHASE_ADATA) {
+    } else if (WORLD->area != NULL && WORLD->area == SPEEDERCHASE_ADATA) {
         nusound_fade_start = 15.0f;
         nusound_fade_end = 50.0f;
     } else if (level == ENDORBATTLEA_LDATA) {
@@ -411,11 +410,12 @@ static i32 SetSoundFadeDistCallBackFn_LSW(WORLDINFO_s *) {
     } else if (level == ENDORBATTLED_LDATA) {
         nusound_fade_start = 3.0f;
         nusound_fade_end = 12.0f;
-    } else if (area != NULL && area == DEATHSTARBATTLE2_ADATA) {
+    } else if (WORLD->area != NULL && WORLD->area == DEATHSTARBATTLE2_ADATA) {
         nusound_fade_start = 50.0f;
         nusound_fade_end = 200.0f;
-    } else if (area != NULL && (area == E1CHARACTER_ADATA || area == E2CHARACTER_ADATA || area == E3CHARACTER_ADATA ||
-                                area == BONUSKAMINO_ADATA || area == BONUSDAGOBAH_ADATA)) {
+    } else if (WORLD->area != NULL && (WORLD->area == E1CHARACTER_ADATA || WORLD->area == E2CHARACTER_ADATA ||
+                                       WORLD->area == E3CHARACTER_ADATA || WORLD->area == BONUSKAMINO_ADATA ||
+                                       WORLD->area == BONUSDAGOBAH_ADATA)) {
         nusound_fade_start = 4.0f;
         nusound_fade_end = 40.0f;
     } else {

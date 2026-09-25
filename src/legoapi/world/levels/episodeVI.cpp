@@ -197,7 +197,7 @@ static u8 prevOnFireTruck;
 static u8 prevOnLifeBoat;
 
 void LegoCity_Init(WORLDINFO_s *world) {
-    char name[0x18];
+    char name[16];
     i32 i = 1;
     for (;;) {
         sprintf(name, "lamp_%d", i);

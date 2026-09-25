@@ -974,7 +974,7 @@ extern "C" {
     }
     void MenuSmartTextEx(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment, u8 red,
                          u8 green, u8 blue, f32 max_width, i32 max_lines, void *message_box, i32 suppress_draw,
-                         u32 alpha) {
+                         i32 alpha) {
         if (MenuDrawDropShadows != 0) {
             SmartTextEx2(text, x + x_scale * 0.015f, y - y_scale * 0.015f, z, x_scale, y_scale, z_scale, alignment, 0,
                          0, 0, max_width, max_lines, message_box, suppress_draw, alpha >> 2);
@@ -1517,7 +1517,7 @@ void IntroText_Draw(float alpha) {
         return;
     SetQFont2D();
     NuQFntSetSpaceWidth(QFont2D, 8.0f);
-    u16 encoded[134];
+    u16 encoded[128];
     Text3DStringEncode(TTab[IntroText_TextID], encoded);
     NuQFntSetJustifiedTolerances(1.0f, 1.0f);
     u32 colour = (static_cast<i32>(alpha * 128.0f) << 24) | 0x7f5f00;

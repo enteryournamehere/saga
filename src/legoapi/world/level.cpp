@@ -2350,7 +2350,7 @@ void GoToNewLevel(i32 levelIdx) {
 }
 
 void Level_LoadConfigFile(WORLDINFO *world) {
-    char name[140];
+    char name[128];
 
     ConfigBuffer[0] = '\0';
     sprintf(name, "%s.txt", world->config_file);

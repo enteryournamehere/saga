@@ -71,7 +71,6 @@ static i32 PlatCodeCallback;
 static TERRAIN_PLATFORM_CALLBACK PlatCallback[8];
 void ScanTerrIDRemovePlat(i32 platform_index);
 
-u8 TerrainHitInfo[4];
 TERRAIN_SPHERE SphereData[16];
 
 void TerrainSkinAllocate(terrsitu_s *terrain_group) {
@@ -1528,13 +1527,6 @@ extern "C" {
 
     f32 NewShadow(NUVEC *position, f32 height_above, f32 height_below, i32 terrain_mask) {
         return NewShadowEx(position, 0, height_above, height_below, terrain_mask);
-    }
-
-    void NewTerrHitInfo(u8 *info) {
-        info[0] = TerrainHitInfo[0];
-        info[1] = TerrainHitInfo[1];
-        info[2] = TerrainHitInfo[2];
-        info[3] = TerrainHitInfo[3];
     }
 
     void NewTerrainScaleY(NUVEC *position, NUVEC *movement, u8 *hit_flags, i32 object_index, f32 radius,

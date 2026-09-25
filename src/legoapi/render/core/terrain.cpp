@@ -3572,16 +3572,16 @@ void NewTerrStoreAnyInfo() {
     }
 
     if (surface->material[0] != 0) {
-        TerrainHitInfo[0] = surface->material[0];
+        TerrPolyInfo.material[0] = surface->material[0];
     }
     if (surface->material[1] != 0) {
-        TerrainHitInfo[1] = surface->material[1];
+        TerrPolyInfo.material[1] = surface->material[1];
     }
     if (surface->flags != 0) {
-        TerrainHitInfo[2] = surface->flags;
+        TerrPolyInfo.flags = surface->flags;
     }
     if (surface->normal_flags != 0) {
-        TerrainHitInfo[3] = surface->normal_flags;
+        TerrPolyInfo.normal_flags = surface->normal_flags;
     }
 }
 
@@ -5417,13 +5417,20 @@ extern "C" i32 NewTerrainOnAPlatform(void *id) {
     return 0;
 }
 
+extern "C" void NewTerrHitInfo(u8 *info) {
+    info[0] = TerrPolyInfo.material[0];
+    info[1] = TerrPolyInfo.material[1];
+    info[2] = TerrPolyInfo.flags;
+    info[3] = TerrPolyInfo.normal_flags;
+}
+
 extern "C" void NewTerrainScaleYMask(NUVEC *position, NUVEC *movement, u8 *hit_flags, i32 object_index, f32 radius,
                                      f32 collision_radius, f32 object_scale, i32 embedded_retry, i32 scan_flags,
                                      i32 terrain_mask) {
-    TerrainHitInfo[0] = 0;
-    TerrainHitInfo[1] = 0;
-    TerrainHitInfo[2] = 0;
-    TerrainHitInfo[3] = 0;
+    TerrPolyInfo.material[0] = 0;
+    TerrPolyInfo.material[1] = 0;
+    TerrPolyInfo.flags = 0;
+    TerrPolyInfo.normal_flags = 0;
     TerrImpact = 0;
     plathitid = -1;
     TerrPolyObj = -1;

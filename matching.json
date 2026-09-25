@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 59.4245,
+    "fuzzy_match_percent": 59.42728,
     "total_code": "4722419",
     "matched_code": "497186",
     "matched_code_percent": 10.528206,
@@ -74875,7 +74875,7 @@
           "address": 2373360,
           "offset": 1483392,
           "size": 3747,
-          "match_percent": 35.854256
+          "match_percent": 35.8557
         },
         {
           "name": "_Z8DrawItemP12nuhspecial_sP7nuvec_sfffttt",
@@ -77886,7 +77886,7 @@
           "address": 3675664,
           "offset": 2785696,
           "size": 91,
-          "match_percent": 73.0
+          "match_percent": 99.8
         },
         {
           "name": "_Z21TerrainMoveImpactDatav",
@@ -78097,6 +78097,14 @@
           "match_percent": 68.56579
         },
         {
+          "name": "NewTerrHitInfo",
+          "demangled_name": "NewTerrHitInfo",
+          "address": 3690736,
+          "offset": 2800768,
+          "size": 55,
+          "match_percent": 99.666664
+        },
+        {
           "name": "_Z16TerrainSideClampP7nuvec_sS0_",
           "demangled_name": "TerrainSideClamp(nuvec_s*, nuvec_s*)",
           "address": 3690800,
@@ -78134,7 +78142,7 @@
           "address": 3694496,
           "offset": 2804528,
           "size": 2403,
-          "match_percent": 13.430255
+          "match_percent": 16.585463
         },
         {
           "name": "NewRayCastGetTOFI",
@@ -79022,14 +79030,6 @@
           "offset": 2762928,
           "size": 72,
           "match_percent": 87.17647
-        },
-        {
-          "name": "NewTerrHitInfo",
-          "demangled_name": "NewTerrHitInfo",
-          "address": 3690736,
-          "offset": 2800768,
-          "size": 55,
-          "match_percent": 44.75
         },
         {
           "name": "CubeImpact",

@@ -1294,7 +1294,7 @@ i32 (*Bolt_HitPlatFn)(BOLT_s *) = NULL;
 void (*Bolt_HitCustomFn)(BOLT_s *, nuvec_s *) = NULL;
 void (*GizObstacle_SetDefaultSFXFn)(void *, GIZOBSTACLE_s *) = NULL;
 // Original bss @0x6a3f54 / @0x6a3f50.
-i32 LoadPerm_LanguageSelect = 0;
+volatile i32 LoadPerm_LanguageSelect = 0;
 i32 LoadPerm_StringsLoaded = 0;
 // Original bss @0x124f9c0.
 i32 menu_flash = 0;

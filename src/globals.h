@@ -1055,6 +1055,7 @@ extern void (*AIPathCnxHelperSysInitFn)(WORLDINFO_s *);
 // ------------------------------------------------------------------------
 // Loading screen (LoadPerm) globals
 // ------------------------------------------------------------------------
+extern char *lsw_memcard_objname;
 extern LEVELOBJECT ObjTab[0x2ee]; // level-object type table (.data @0x618240, 0xff-terminated)
 extern struct LEVELSPLINE SplTab[26];
 extern CHARCATEGORY LSW_CharCategory[10];
@@ -1082,11 +1083,11 @@ extern i32 (*Bolt_HitPlatFn)(BOLT_s *);
 extern void (*Bolt_HitCustomFn)(BOLT_s *, nuvec_s *);
 extern void (*GizObstacle_SetDefaultSFXFn)(void *, GIZOBSTACLE_s *);
 
-extern i32 PermDataLoaded;          // original .data init 1
-extern i32 LoadPerm_LanguageSelect; // bss
-extern i32 LoadPerm_StringsLoaded;  // bss
-extern i32 menu_flash;              // bss
-extern i32 noscenespecials;         // disables automatic display-scene specials
+extern i32 PermDataLoaded;                   // original .data init 1
+extern volatile i32 LoadPerm_LanguageSelect; // bss
+extern i32 LoadPerm_StringsLoaded;           // bss
+extern i32 menu_flash;                       // bss
+extern i32 noscenespecials;                  // disables automatic display-scene specials
 extern i32 portals_enabled;
 extern i32 portal_special_objects; // portal visibility also filters display-scene specials
 extern u8 PortalVisiFlags[0x271];  // portal-visibility bitset for up to 5000 scene instances

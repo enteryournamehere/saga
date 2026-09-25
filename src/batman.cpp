@@ -40,6 +40,9 @@ char uberShader2[] = {
 // Trailer videos played after the intro.
 char *Trailer[3] = {"demointro", "", NULL};
 
+// Object name the save icon is drawn from.
+char *lsw_memcard_objname = "mem_card";
+
 extern "C" i32 NuMain(i32 argc, char **argv) {
     static i32 frameCount = 0;
     static f32 pastFrameTimes[8] = {-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f};

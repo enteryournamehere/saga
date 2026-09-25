@@ -135,9 +135,8 @@ void NuSoundDecoder::CloseStream() {
 void NuSoundDecoder::Initialise() {
     // 0xe1c is the device-side object size; the host NuThreadSemaphore and
     // weakptr types differ in size, so size the block from the real object.
-    NuSoundDecodeThread *thread = (NuSoundDecodeThread *)NuSoundSystem::_AllocMemory(
-        NuSoundSystem::MemoryDiscipline::SCRATCH, (u32)sizeof(NuSoundDecodeThread), 4,
-        "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/android/nusound_decoder.cpp:69");
+    NuSoundDecodeThread *thread =
+        (NuSoundDecodeThread *)NU_ALLOC(sizeof(NuSoundDecodeThread), 4, 1, "", NUMEMORY_CATEGORY_NUSOUND);
 
     if (thread != NULL) {
         new (thread) NuSoundDecodeThread();

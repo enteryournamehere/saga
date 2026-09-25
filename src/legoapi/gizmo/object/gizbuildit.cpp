@@ -1325,9 +1325,9 @@ static void GizmoBuildit_Activate(GIZMO *gizmo, i32 active) {
 
     buildit->step_timer = 5.0f;
     for (i32 index = 0; index < buildit->anim_object_count; ++index) {
-        scatter_position.x += NuFloatRand(NULL) / 5.0f - 0.1f;
-        scatter_position.y += NuFloatRand(NULL) / 5.0f - 0.1f;
-        scatter_position.z += NuFloatRand(NULL) / 5.0f - 0.1f;
+        scatter_position.x += NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) / 5.0f - 0.1f;
+        scatter_position.y += NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) / 5.0f - 0.1f;
+        scatter_position.z += NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) / 5.0f - 0.1f;
 
         GAMEANIMOBJ_s *object = buildit->anim_objects[index];
         if (buildit->linked_buildit == NULL) {

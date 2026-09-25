@@ -277,13 +277,15 @@ extern "C" nueffecttex_s *NuPostEffectGetDepthBuffer(i32 frame) {
     static nueffecttex_s *depthBufferCopy;
     if (depthFrameId != frame) {
         depthFrameId = frame;
+        nueffecttex_s *texture;
         if (proxyDepthBuffer.texture == NULL) {
             NuFramebufferResolve(4, false);
-            depthBufferCopy = NuFramebufferGetAttachedTex(NuFramebufferGetBound(), 4, NULL, NULL);
+            texture = NuFramebufferGetAttachedTex(NuFramebufferGetBound(), 4, NULL, NULL);
         } else {
             NuPostResolve(&proxyDepthBuffer);
-            depthBufferCopy = proxyDepthBuffer.texture;
+            texture = proxyDepthBuffer.texture;
         }
+        depthBufferCopy = texture;
     }
     return depthBufferCopy;
 }

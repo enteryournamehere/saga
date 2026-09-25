@@ -521,8 +521,6 @@ void NuIOSDLTransformCallback(void *arg) {
         NuShaderManagerSetfv(0x44, &tint.x);
     }
     Nu360SetObjectShadowFactor(shadow_factor);
-
-    Nu360SetObjectShadowFactor(shadow_factor);
     world->m33 = 1.0f;
     world->m23 = 0.0f;
     NuRenderContextSetWorld(world);
@@ -561,8 +559,6 @@ void NuIOSDLTransformParamsCallback(void *arg) {
         NuRenderContextSetZFunc_inline(material->attribs.z_mode);
         NuShaderManagerSetfv(0x44, &tint.x);
     }
-    Nu360SetObjectShadowFactor(shadow_factor);
-
     Nu360SetObjectShadowFactor(shadow_factor);
     stream_matrix->m33 = 1.0f;
     stream_matrix->m32 = 0.0f;

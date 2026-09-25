@@ -180,7 +180,8 @@ static void HatMachine_Update(void *world_ptr, void *, float elapsed) {
                 if (machine->configured_hat_count != 0) {
                     machine->displayed_hat = machine->configured_hat_count;
                 } else {
-                    machine->displayed_hat = static_cast<u8>(NuFloatRand(NULL) * 4.0f) + 1;
+                    machine->displayed_hat =
+                        static_cast<u8>(NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 4.0f) + 1;
                 }
                 machine->hat_delay = 1.0f;
             }

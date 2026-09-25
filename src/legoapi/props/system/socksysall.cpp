@@ -1040,7 +1040,7 @@ extern "C" {
             position->next_segment = 0;
         position->candidate_count = 1;
         position->flags = 0;
-        position->candidate_mask = 1u << (index & 31);
+        position->candidate_mask = 1u << index;
         FillSockPosition(system, position);
         position->camera_position = temp_sockcampos;
         SockSysPointAlongMID(sock, position, &position->midpoint);

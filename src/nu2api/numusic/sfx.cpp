@@ -40,9 +40,9 @@ static i32 NumSfx = 0;
 static i32 NumSfxInst = 0;
 static u32 NumSfxNames = 0;
 
-static char sfx_name[1600][32] = {0};
-static char sfx_filename[1600][64];
-static i32 sfx_refcount[1600] = {0};
+static char sfx_name[1601][32] = {0};
+static char sfx_filename[1601][64];
+static i32 sfx_refcount[1601] = {0};
 
 static char cfgfile_name[256] = "Audio/audio.cfg";
 

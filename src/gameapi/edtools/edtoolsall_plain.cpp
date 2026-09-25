@@ -92,7 +92,7 @@ static f32 edmain_menu_scale = 1.0f;
 static u32 edui_cursor_colour = 0xff000000;
 static char eduiPropTextEdit[256];
 static char eduiPropTextStore[256];
-static char *textrow[8];
+static char *textrow[4];
 static char TextPickCopyBuffer[0x40];
 static i32 cursor_flash;
 static char *edpp_save_names[6];
@@ -944,7 +944,7 @@ extern "C" {
     extern i32 DEBPAGE_GENERAL;
     extern i32 DEBPAGE_CHARACTER;
     extern i32 DEBPAGE_AREA;
-    part_emit_s part_emits[512];
+    part_emit_s part_emits[40];
     i32 part_page_on[8];
     i32 part_page_used[8];
     i32 edpart_instances_used;

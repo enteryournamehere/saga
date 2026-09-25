@@ -722,12 +722,12 @@ extern APICHARACTERMODELLIST_s *CurrentCList;
 extern APICHARACTERMODELLIST_s *CurrentStoryCList;
 extern i32 Area_PlayerModelCount;
 extern i32 Area_StoryModelCount;
-extern i16 Area_PlayerModelList[24];
+extern i16 Area_PlayerModelList[18];
 extern i32 Area_FreePlayModelCount;
 extern i16 Area_FreePlayModelList[104];
 extern i32 hub_freeplaysource;
 extern i32 Area_MissionModelCount;
-extern APICHARACTERMODELLIST_s Area_MissionModelList[52];
+extern APICHARACTERMODELLIST_s Area_MissionModelList[49];
 extern APICHARACTERMODELLIST_s Area_StoryModelList[52];
 
 // ------------------------------------------------------------------------

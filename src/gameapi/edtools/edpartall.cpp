@@ -67,7 +67,7 @@ extern "C" {
     extern i32 edpart_nearest;
     extern part_emit_s *edpart_nearest_emit;
     extern part_type_s part_types[128];
-    extern part_emit_s part_emits[512];
+    extern part_emit_s part_emits[40];
     extern debinftype **debtab;
     extern i32 EDPP_MAX_TYPES;
     extern i32 part_types_used;

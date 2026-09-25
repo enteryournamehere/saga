@@ -141,7 +141,7 @@ extern "C" {
     extern NUGSCN *edbits_base_scene;
     extern NUGSCN *edbits_things_scene;
     extern part_type_s part_types[128];
-    extern part_emit_s part_emits[512];
+    extern part_emit_s part_emits[40];
     extern i32 edpart_emitrotx, edpart_emitroty, edpart_emitrotz;
     extern NUVEC edanim_cam_pos;
     i32 edgra_last_clump_in_buffer = -1;

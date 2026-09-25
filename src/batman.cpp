@@ -23,8 +23,8 @@
 
 // Local statics owned by this TU (original symbols _ZL8frameout,
 // _ZL14frameout_count, _ZL19NuSoundAppTerminatev).
-static i32 frameout;
 static i64 frameout_count;
+static i32 frameout;
 
 // Original local static of this TU (calls NuSoundSystem::Shutdown).
 namespace {

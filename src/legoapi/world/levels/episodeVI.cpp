@@ -548,9 +548,9 @@ void EmperorFightA_Reset(WORLDINFO_s *world) {
     emperorfighta_netpacket->state = 0;
     for (i32 i = 0; i < world->ai_sys->path_sys->active_path->route_count; ++i) {
         if (NuStrICmp(world->ai_sys->path_sys->active_path->routes[i].name, "electric_on") == 0)
-            routemask_efloor_on = static_cast<u64>(1) << (i & 63);
+            routemask_efloor_on = static_cast<u64>(1) << i;
         else if (NuStrICmp(world->ai_sys->path_sys->active_path->routes[i].name, "electric_off") == 0)
-            routemask_efloor_off = static_cast<u64>(1) << (i & 63);
+            routemask_efloor_off = static_cast<u64>(1) << i;
         if (routemask_efloor_on != 0 && routemask_efloor_off != 0)
             break;
     }

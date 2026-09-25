@@ -315,10 +315,10 @@ static void TightRopes_StoreProgress(void *world_info, void *, void *progress_da
 }
 
 TIGHTROPE *TightRope_FindNearest(NUVEC *position, WORLDINFO_s *world, i32 *endpoint, f32 *distance_squared) {
-    TIGHTROPE *nearest = NULL;
     i32 nearest_endpoint = -1;
-    f32 nearest_distance = 1000000000.0f;
     TIGHTROPE *rope = world->tightropes;
+    TIGHTROPE *nearest = NULL;
+    f32 nearest_distance = 1000000000.0f;
     for (i32 index = 0; index < world->tightrope_count; ++index, ++rope) {
         f32 distance = NuVecDistSqr(position, &rope->start, NULL);
         if (nearest_distance > distance) {

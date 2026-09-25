@@ -18,9 +18,6 @@ class SAGA_HOST_PACKED_ALIGN4 NuSoundBuffer {
         u8 flags;
         u8 padding_0x1d[3];
         i32 field5_0x20;
-
-        Context() : read_size(0), size2(0), size3(0), field5_0x18(0), flags(1), field5_0x20(0) {
-        }
     };
 
   private:

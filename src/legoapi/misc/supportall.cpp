@@ -617,7 +617,7 @@ void CheckResetBits() {
     LevHSpecialExists = 0;
     for (i32 i = 0; i < 88; ++i) {
         if (NuSpecialExistsFn(&LevHSpecial[i]) != 0) {
-            LevHSpecialExists |= static_cast<u64>(1) << (i & 63);
+            LevHSpecialExists |= static_cast<u64>(1) << i;
         }
     }
     WORLD->field_0x50d0 = 0;

@@ -381,11 +381,10 @@ static void *Push_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {
 
 static void Push_SetVisibility(GIZMO *gizmo, i32 visible) {
     pushblock_s *push_block = static_cast<pushblock_s *>(gizmo->object);
-    push_block->flags_0ca = (push_block->flags_0ca & ~PUSHBLOCK_FLAG_VISIBLE) | ((visible != 0) << 2);
+    push_block->push_visible = visible != 0;
     NuSpecialSetVisibility(&push_block->special, visible);
     for (i32 index = 0; index < push_block->end_position_count; ++index) {
-        NuSpecialSetVisibility(&push_block->end_position_specials[index],
-                               (push_block->flags_0ca & PUSHBLOCK_FLAG_VISIBLE) >> 2);
+        NuSpecialSetVisibility(&push_block->end_position_specials[index], push_block->push_visible);
     }
 }
 

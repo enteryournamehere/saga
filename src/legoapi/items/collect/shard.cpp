@@ -181,7 +181,7 @@ static void Shard_Activate(GIZMO *gizmo, i32 active) {
 static void Shard_SetVisibility(GIZMO *gizmo, i32 visible) {
     if (gizmo != NULL) {
         SHARD *shard = static_cast<SHARD *>(gizmo->object);
-        shard->state_flags = (shard->state_flags & ~2) | ((visible != 0) << 1);
+        shard->visible = visible != 0;
     }
 }
 

@@ -1584,8 +1584,7 @@ void GizForce_PlayBackwards(GIZFORCE_s *force) {
 void GizForce_SetVisibility(GIZFORCE_s *force, i32 visibility) {
     if (force != NULL) {
         GameAnimSet_SetVisibility(force->anim_set, visibility);
-        force->progress_flags =
-            static_cast<u8>((force->progress_flags & ~GIZFORCE_PROGRESS_VISIBLE) | ((visibility != 0) << 1));
+        force->progress_visible = visibility != 0;
     }
 }
 

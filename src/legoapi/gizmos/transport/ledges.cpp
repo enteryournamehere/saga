@@ -196,7 +196,7 @@ static void Ledge_Activate(GIZMO *gizmo, i32 active) {
 static void Ledge_SetVisibility(GIZMO *gizmo, i32 visible) {
     if (gizmo != NULL) {
         LEDGE *ledge = static_cast<LEDGE *>(gizmo->object);
-        ledge->state_flags = (ledge->state_flags & ~2) | ((visible != 0) << 1);
+        ledge->visible = visible != 0;
     }
 }
 

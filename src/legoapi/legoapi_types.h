@@ -3593,7 +3593,9 @@ struct pushblock_s {
             union {
                 u8 flags_0ca;
                 struct {
-                    u8 fields_0ca_0_3 : 4;
+                    u8 fields_0ca_0_1 : 2;
+                    u8 push_visible : 1;
+                    u8 fields_0ca_3 : 1;
                     u8 config_0ca_4 : 1;
                     u8 config_0ca_5 : 1;
                     u8 config_0ca_6 : 1;

@@ -3363,8 +3363,18 @@ void Asteroid_PartKill(PART_s *part, i32 reason) {
     AddGameDebris(WORLD->debris_sys, 0x5f, &part->position);
     AddPartDebris(WORLD->part_debris_sys, 4, &part->position);
     if (part->force_player_mask == 1) {
-        if (reason == 4 || reason == 5)
-            AddMiscPickups(&part->position, reason - 4, 1000, 0);
+        i32 type;
+        switch (reason) {
+            case 4:
+                type = 0;
+                break;
+            case 5:
+                type = 1;
+                break;
+            default:
+                return;
+        }
+        AddMiscPickups(&part->position, type, 1000, 0);
     } else {
         AddMiscPickups(&part->position, -1, 0, 1);
     }

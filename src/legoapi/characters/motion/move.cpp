@@ -3916,17 +3916,19 @@ i32 GetShootDirection_LSW(GameObject_s *object, nuvec_s *direction) {
         NuVecMtxRotate(direction, direction, &object->joint_matrices[data->weapon_shoot_joints[0]]);
         return NuAtan2D(direction->x, direction->z);
     }
-    i32 angle;
-    if ((model->model_flags & 0x2000) != 0 || (data->flags_090 & 0x80) != 0) {
+    u16 angle;
+    if ((model->model_flags & 0x2000) == 0 && (data->flags_090 & 0x80) == 0) {
+        angle = object->apiobj.movement_facing_angle;
+    } else {
         angle = object->apiobj.facing_angle;
         if (object->character_context == 0x2a &&
-            1.0f - object->context_animation_timer / object->airborne_action_duration >= 0.25f)
+            0.25f <= 1.0f - object->context_animation_timer / object->airborne_action_duration) {
             angle -= 0x8000;
-    } else
-        angle = object->apiobj.movement_facing_angle;
-    direction->x = NuTrigTable[static_cast<u16>(angle) >> 1];
+        }
+    }
+    direction->x = NU_SIN_LUT(angle);
     direction->y = 0.0f;
-    direction->z = NuTrigTable[((static_cast<u16>(angle) + 0x4000) >> 1) & 0x7fff];
+    direction->z = NU_COS_LUT(angle);
     return angle;
 }
 

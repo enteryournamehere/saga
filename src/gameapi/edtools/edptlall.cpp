@@ -791,7 +791,7 @@ static void edptlcbApplyNumGhosts(eduimenu_s *, eduiitem_s *item, u32) {
     }
 
     debinftype *effect = debtab[debkeydata[instance_id].effect_index];
-    effect->trail_count = static_cast<u8>(static_cast<i32>(static_cast<edui_slider_s *>(item)->value));
+    effect->trail_count = static_cast<u8>(static_cast<edui_slider_s *>(item)->value);
     UpdateTotalPtls(effect);
 }
 static void cbPtlChangeIvalOffRan(eduimenu_s *, eduiitem_s *item, u32) {

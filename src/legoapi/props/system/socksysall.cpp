@@ -876,10 +876,10 @@ extern "C" {
                             midpoint = to;
                         } else {
                             ratio = projection / distance;
-                            angles->x += static_cast<u16>(static_cast<i32>(
-                                static_cast<f32>(RotDiff(angles->x, positions[i].midpoint_rotation.x)) * ratio));
-                            angles->y += static_cast<u16>(static_cast<i32>(
-                                static_cast<f32>(RotDiff(angles->y, positions[i].midpoint_rotation.y)) * ratio));
+                            angles->x += static_cast<u16>(
+                                static_cast<f32>(RotDiff(angles->x, positions[i].midpoint_rotation.x)) * ratio);
+                            angles->y += static_cast<u16>(
+                                static_cast<f32>(RotDiff(angles->y, positions[i].midpoint_rotation.y)) * ratio);
                             midpoint.x += (to.x - midpoint.x) * ratio;
                             midpoint.y += (to.y - midpoint.y) * ratio;
                             midpoint.z += (to.z - midpoint.z) * ratio;

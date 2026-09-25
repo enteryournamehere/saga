@@ -62,7 +62,7 @@ f32 CurrentHintAlpha() {
     f32 fade_start = duration - 0.5f;
     if (duration > 0.0f && hintsys.display_elapsed >= fade_start) {
         alpha = 1.0f - (hintsys.display_elapsed - fade_start) / (duration - fade_start);
-        if (alpha < 0.0f)
+        if (alpha <= 0.0f)
             alpha = 0.0f;
     }
     return alpha * hintsys.alpha;

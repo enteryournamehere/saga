@@ -268,7 +268,7 @@ void SetCreatureLights(APIOBJECT_s *object) {
         green = blue = 1.0f - flash;
     } else if (owner->spawn_protection_timer > 0.0f && owner->apiobj.field_0x27c != -1) {
         const f32 phase = NuFmod(2.5f - owner->spawn_protection_timer, 0.5f) * 2.0f;
-        const f32 scale = NuTrigTable[static_cast<u16>(static_cast<i32>(phase * 65536.0f)) >> 1] + 1.0f;
+        const f32 scale = NuTrigTable[static_cast<u16>(phase * 65536.0f) >> 1] + 1.0f;
         red = green = blue = scale;
     }
     if (owner->field_0xd6c > 0.0f) {

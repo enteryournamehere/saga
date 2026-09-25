@@ -126,9 +126,9 @@ static void Shards_Draw(void *context, void *, float) {
             continue;
         NUMTX_ALIGNED16 matrix;
         if (shard->state_flags & 4) {
-            u16 spin = (u16)(i32)((f32)(i32)shard->spin_angle + 98304.0f * shard->collection_time);
+            u16 spin = (u16)((f32)(i32)shard->spin_angle + 98304.0f * shard->collection_time);
             NuMtxSetRotationY(&matrix, spin);
-            u16 tumble = (u16)(i32)(60620.0f * shard->collection_time);
+            u16 tumble = (u16)(60620.0f * shard->collection_time);
             u16 angle_z = shard->angle_z;
             if ((shard->state_flags & 0x40) == 0)
                 angle_z += tumble;

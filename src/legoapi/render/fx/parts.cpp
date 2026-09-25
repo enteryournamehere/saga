@@ -420,7 +420,7 @@ static __used__ void TiePart_Kill(PART_s *part, i32) {
 
 static __used__ void TiePart_Move(PART_s *part, f32 time) {
     part->field_124[3] = -32768;
-    part->field_13c = static_cast<i32>(-32768.0f * FRAMETIME);
+    part->field_13c = static_cast<u16>(-32768.0f * FRAMETIME);
     NUVEC position;
     position.x = part->position.x + part->velocity.x * time;
     position.y = part->position.y + part->velocity.y * time;

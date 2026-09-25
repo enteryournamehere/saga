@@ -5738,8 +5738,9 @@ f32 EdClassInterface::DistanceToObject(VuVec &origin, VuVec &direction, void *ob
         member.reference->GetAttributeData(member.object, 8, EdType_VuVec, &position, 0);
         if (object_class->FindMember(&member, object, 0x40, 1))
             member.reference->GetAttributeData(member.object, 0x40, EdType_Float, &radius, 0);
-        f32 surface_distance = LineToPointDistance(origin, direction, position, NULL) - radius;
-        distance = surface_distance >= 0.0f ? surface_distance : 0.0f;
+        distance = LineToPointDistance(origin, direction, position, NULL) - radius;
+        if (distance < 0.0f)
+            distance = 0.0f;
     }
     if (reference != NULL)
         *reference = NULL;
@@ -5755,9 +5756,13 @@ f32 EdClassInterface::DistanceToObject(VuVec &point, void *object, EdRef **refer
         member.reference->GetAttributeData(member.object, 8, EdType_VuVec, &position, 0);
         if (object_class->FindMember(&member, object, 0x40, 1))
             member.reference->GetAttributeData(member.object, 0x40, EdType_Float, &radius, 0);
-        NUVEC delta{point.x - position.x, point.y - position.y, point.z - position.z};
-        f32 surface_distance = NuVecMag(&delta) - radius;
-        distance = surface_distance >= 0.0f ? surface_distance : 0.0f;
+        VuVec delta;
+        delta.x = point.x - position.x;
+        delta.y = point.y - position.y;
+        delta.z = point.z - position.z;
+        distance = NuVecMag(&delta.xyz) - radius;
+        if (distance < 0.0f)
+            distance = 0.0f;
     }
     if (reference != NULL)
         *reference = NULL;

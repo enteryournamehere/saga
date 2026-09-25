@@ -379,9 +379,8 @@ void SuperCarry_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
             message.red = PlayerRGB[player][0];
             message.green = PlayerRGB[player][1];
             message.blue = PlayerRGB[player][2];
-            const u16 angle =
-                static_cast<u16>(static_cast<i32>(NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f) * 2.0f * 65536.0f));
-            message.alpha = static_cast<u8>(static_cast<i32>(80.0f + 48.0f * NuTrigTable[angle >> 1]));
+            const u16 angle = static_cast<u16>(NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f) * 2.0f * 65536.0f);
+            message.alpha = static_cast<u8>(80.0f + 48.0f * NuTrigTable[angle >> 1]);
             AddGameMsg(&message);
         }
         if ((object->pad_gamepad->buttons_held & GAMEPAD_SPECIAL) != 0)

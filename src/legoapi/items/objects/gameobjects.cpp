@@ -5852,8 +5852,7 @@ void TakeOverCode(GameObject_s *object, i32 tag_pressed) {
         const u16 start_angle = object->takeover_start_angle;
         const i32 difference = RotDiff(start_angle, target->apiobj.field_0x276);
         const f32 blend = 1.0f - (NU_SIN_LUT(static_cast<i32>(phase + 16384.0f)) + 1.0f) * 0.5f;
-        const u16 angle =
-            static_cast<u16>(static_cast<i32>(static_cast<f32>(start_angle) + static_cast<f32>(difference) * blend));
+        const u16 angle = static_cast<u16>(static_cast<f32>(start_angle) + static_cast<f32>(difference) * blend);
         api.field_0x276 = angle;
         api.movement_facing_angle = angle;
         api.facing_angle = angle;
@@ -7830,11 +7829,11 @@ void UpdateGameObjects(WORLDINFO_s *world) {
                 position.y += 0.21f > height ? 0.21f : height;
                 i32 phase = static_cast<u16>(object->apiobj.field_0x289 << 13);
                 f32 amplitude = 0.05f * object->apiobj.field_0x1dc;
-                i32 angle = static_cast<u16>(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 1.5f) / 1.5f * 65536.0f));
+                i32 angle = static_cast<u16>(NuFmod(GameTimer.time_elapsed, 1.5f) / 1.5f * 65536.0f);
                 position.x += amplitude * NuTrigTable[((angle + phase) >> 1) & 0x7fff];
-                angle = static_cast<u16>(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 1.174f) / 1.174f * 65536.0f));
+                angle = static_cast<u16>(NuFmod(GameTimer.time_elapsed, 1.174f) / 1.174f * 65536.0f);
                 position.y += (0.75f * amplitude) * NuTrigTable[((angle + phase) >> 1) & 0x7fff];
-                angle = static_cast<u16>(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 1.259f) / 1.259f * 65536.0f));
+                angle = static_cast<u16>(NuFmod(GameTimer.time_elapsed, 1.259f) / 1.259f * 65536.0f);
                 position.z += amplitude * NuTrigTable[((angle + phase) >> 1) & 0x7fff];
                 char text[64];
                 NuStrCpy(text, ASCII_DOWN);
@@ -7843,7 +7842,7 @@ void UpdateGameObjects(WORLDINFO_s *world) {
                 message.text = text;
                 message.scale = 1.0f;
                 f32 pulse = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f);
-                angle = static_cast<u16>(static_cast<i32>((pulse + pulse) * 65536.0f));
+                angle = static_cast<u16>((pulse + pulse) * 65536.0f);
                 message.alpha = static_cast<u8>(
                     static_cast<i32>((24.0f * NuTrigTable[angle >> 1] + 104.0f) * object->interaction_arrow_blend));
                 message.flags = 0x1083;
@@ -7938,8 +7937,8 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         message.green = PlayerRGB[i][1];
         message.blue = PlayerRGB[i][2];
         f32 pulse = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f);
-        u16 angle = static_cast<u16>(static_cast<i32>((pulse + pulse) * 65536.0f));
-        message.alpha = static_cast<u8>(static_cast<i32>(48.0f * NuTrigTable[angle >> 1] + 80.0f));
+        u16 angle = static_cast<u16>((pulse + pulse) * 65536.0f);
+        message.alpha = static_cast<u8>(48.0f * NuTrigTable[angle >> 1] + 80.0f);
         message.flags = 0x83;
         message.field_0x4f = 4;
         AddGameMsg(&message);

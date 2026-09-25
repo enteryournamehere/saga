@@ -195,7 +195,7 @@ void MechHintUIButton::Render() {
     if (icon->active == 0)
         return;
     const f32 opacity = alpha;
-    const u16 angle = static_cast<u16>(static_cast<i32>((NuFmod(GameTimer.time_elapsed, 2.5f) / 2.5f) * 65536.0f));
+    const u16 angle = static_cast<u16>((NuFmod(GameTimer.time_elapsed, 2.5f) / 2.5f) * 65536.0f);
     DrawPanel3DObject(position.x, position.y, 1.0f, scale, scale, scale, 0, angle, 0, &icon->special, 2, opacity);
 }
 

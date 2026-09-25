@@ -395,7 +395,7 @@ void Bolt_Shoot(GameObject_s *object, i32 type_id, i32 fire_flags) {
                 if (distance > 2.0f)
                     distance = 2.0f;
                 f32 degrees = (flags & 0x200000) != 0 ? -10.0f : -20.0f;
-                pitch = static_cast<u16>(static_cast<i32>(((degrees * distance) * 0.5f * 65536.0f) / 360.0f));
+                pitch = static_cast<u16>(((degrees * distance) * 0.5f * 65536.0f) / 360.0f);
             }
             if (target_position != NULL)
                 heading = NuAtan2D(target_position->x - shot_position->x, target_position->z - shot_position->z);

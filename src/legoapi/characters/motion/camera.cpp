@@ -1382,8 +1382,8 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
         camera->target_mtx = camera->render_mtx;
     } else {
         NuMtxSetRotationZ(&camera->mtx, roll);
-        NuMtxRotateX(&camera->mtx, pitch + static_cast<u16>(static_cast<i32>(camera->field_0x214)));
-        NuMtxRotateY(&camera->mtx, yaw + static_cast<u16>(static_cast<i32>(camera->field_0x218)));
+        NuMtxRotateX(&camera->mtx, pitch + static_cast<u16>(camera->field_0x214));
+        NuMtxRotateY(&camera->mtx, yaw + static_cast<u16>(camera->field_0x218));
         NuMtxTranslate(&camera->mtx, &camera->pos);
         camera->render_mtx = camera->mtx;
         NuMtxSetRotationZ(&camera->target_mtx, roll);
@@ -1402,11 +1402,11 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
             if (camera->judder_reverse)
                 amount = -amount;
             if (camera->judder_axis == 0)
-                NuMtxPreRotateX(&camera->render_mtx, static_cast<u16>(static_cast<i32>(amount)));
+                NuMtxPreRotateX(&camera->render_mtx, static_cast<u16>(amount));
             else if (camera->judder_axis == 1)
-                NuMtxPreRotateY(&camera->render_mtx, static_cast<u16>(static_cast<i32>(amount)));
+                NuMtxPreRotateY(&camera->render_mtx, static_cast<u16>(amount));
             else
-                NuMtxPreRotateZ(&camera->render_mtx, static_cast<u16>(static_cast<i32>(amount)));
+                NuMtxPreRotateZ(&camera->render_mtx, static_cast<u16>(amount));
         }
     }
     GIZMO *window = GizmoFindByName(WORLD->gizmo_sys, blowup_gizmotype_id, "window_frame1");

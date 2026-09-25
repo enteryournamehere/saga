@@ -289,7 +289,7 @@ static void UpdatePacemakerDisplay(void *lev_objs) {
     if (msg != NULL) {
         i32 idx = ((i32)(16384.0f * pod_pacemaker_alpha) >> 1) & 0x7fff;
         msg->icon = 0x134;
-        msg->alpha = (u8)(i32)(128.0f * pacemaker_alpha_table[idx]);
+        msg->alpha = (u8)(128.0f * pacemaker_alpha_table[idx]);
         PACEMAKERDATA_s *data = *(PACEMAKERDATA_s **)lev_objs;
         if (data->enabled != 0) {
             msg->color1 = data->color1;
@@ -660,15 +660,13 @@ void PodRacePanel(WORLDINFO_s *world) {
                 char buf[0x20];
                 sprintf(buf, "%i", (i32)PodRace->lap_display + 1);
                 if (NuFmod(PodRace->lap_display, 1.0f) < 0.7f)
-                    Text3DEx(buf, 0, 0.4f, 1.0f, 0.75f, 0.75f, 0.75f, 0, 0xff, 0x3f, 0,
-                             (u8)(i32)(128.0f * podhurryalpha));
+                    Text3DEx(buf, 0, 0.4f, 1.0f, 0.75f, 0.75f, 0.75f, 0, 0xff, 0x3f, 0, (u8)(128.0f * podhurryalpha));
             }
             if (podstartracealpha > 0.0f && PodRace != NULL && PodRace->lap_countdown > 0.0f) {
                 char buf[0x20];
                 sprintf(buf, "%i", (i32)PodRace->lap_countdown + 1);
                 if (NuFmod(PodRace->lap_countdown, 1.0f) < 0.7f)
-                    Text3DEx(buf, 0, 0.4f, 1.0f, 0.75f, 0.75f, 0.75f, 0, 0, 0, 0,
-                             (u8)(i32)(128.0f * podstartracealpha));
+                    Text3DEx(buf, 0, 0.4f, 1.0f, 0.75f, 0.75f, 0.75f, 0, 0, 0, 0, (u8)(128.0f * podstartracealpha));
             }
         }
     } else {
@@ -677,13 +675,13 @@ void PodRacePanel(WORLDINFO_s *world) {
             char buf[0x20];
             sprintf(buf, "%i", (i32)PodRace->lap_display + 1);
             if (NuFmod(PodRace->lap_display, 1.0f) < 0.7f)
-                Text3DEx(buf, 0, 0.4f, 1.0f, 0.75f, 0.75f, 0.75f, 0, 0xff, 0x3f, 0, (u8)(i32)(128.0f * podhurryalpha));
+                Text3DEx(buf, 0, 0.4f, 1.0f, 0.75f, 0.75f, 0.75f, 0, 0xff, 0x3f, 0, (u8)(128.0f * podhurryalpha));
         }
         if (podstartracealpha > 0.0f && PodRace != NULL && PodRace->lap_countdown > 0.0f) {
             char buf[0x20];
             sprintf(buf, "%i", (i32)PodRace->lap_countdown + 1);
             if (NuFmod(PodRace->lap_countdown, 1.0f) < 0.7f)
-                Text3DEx(buf, 0, 0.4f, 1.0f, 0.75f, 0.75f, 0.75f, 0, 0, 0, 0, (u8)(i32)(128.0f * podstartracealpha));
+                Text3DEx(buf, 0, 0.4f, 1.0f, 0.75f, 0.75f, 0.75f, 0, 0, 0, 0, (u8)(128.0f * podstartracealpha));
         }
     }
 }
@@ -1318,7 +1316,7 @@ speed_section:
                     if (msg != NULL) {
                         msg->icon = 0x134;
                         i32 idx = ((i32)(16384.0f * ps->field_0x80) >> 1) & 0x7fff;
-                        msg->alpha = (u8)(i32)(128.0f * NuTrigTable[idx]);
+                        msg->alpha = (u8)(128.0f * NuTrigTable[idx]);
                         PACEMAKERDATA_s *pd = *(PACEMAKERDATA_s **)world->lev_objs;
                         if (pd->enabled) {
                             msg->color1 = pd->color1;
@@ -1463,7 +1461,7 @@ void PodSprintA_Panel(WORLDINFO_s *world) {
             else
                 m = (m - 0.7f) / -0.1f + 1.0f;
             Text3DEx(buf, 0, 0.425f, 1.0f, m * 0.75f, m * 0.75f, m * 0.75f, 0, 0xff, 0, 0,
-                     (u8)(i32)(128.0f * podstartracealpha));
+                     (u8)(128.0f * podstartracealpha));
         }
     }
     if (podlapalpha > 0.0f) {

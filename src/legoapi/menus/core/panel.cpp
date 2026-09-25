@@ -763,13 +763,15 @@ void DrawTimer(i32 time, i32 expanded, i32 reset) {
     TimerScale = SeekLinearF(TimerScale, 1.0f, FRAMETIME * 2.0f);
     if (FadeSys.fade != 0.0f)
         return;
-    if (TimerAlpha < 1.0f)
-        TimerAlpha = TimerAlpha + FRAMETIME * 2.0f < 1.0f ? TimerAlpha + FRAMETIME * 2.0f : 1.0f;
+    if (TimerAlpha < 1.0f) {
+        TimerAlpha += FRAMETIME * 2.0f;
+        if (TimerAlpha > 1.0f)
+            TimerAlpha = 1.0f;
+    }
     char text[16];
     sprintf(text, "%d", time);
     f32 scale = TimerScale * 0.75f;
-    Text3DEx(text, 0.0f, BOSSICONY, 1.0f, scale, scale, scale, 0, 255, 0, 255,
-             static_cast<u8>(static_cast<i32>(TimerAlpha * 128.0f)));
+    Text3DEx(text, 0.0f, BOSSICONY, 1.0f, scale, scale, scale, 0, 255, 0, 255, static_cast<u8>(TimerAlpha * 128.0f));
 }
 
 void InitPanel(i32) {

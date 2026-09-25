@@ -824,8 +824,7 @@ void NuSoundSystem::ResumeUserMusic() {
 }
 
 bool NuSoundSystem::TitleHasUserMusicControl() {
-    STUBBED();
-    return false;
+    return true;
 }
 
 void NuSoundSystem::OnEnterSystemMenu() {
@@ -953,7 +952,7 @@ bool NuSoundSystem::SourceRequiresDecoder(NuSoundSource *source) {
 template <typename T> void NuSoundMemory::PushNuListNode(NuList<T> &list, T const &value) {
     NuMemoryManager *previous = NuMemoryGet()->SetThreadMem(NuSoundSystem::sScratchMemMgr);
     NuListNode<T> *node = static_cast<NuListNode<T> *>(NuMemoryGet()->GetThreadMem()->_BlockAlloc(
-        sizeof(NuListNode<T>), 4, NuMemoryManager::MEM_ALLOC_SET_TO_ZERO, "_new", NUMEMORY_CATEGORY_NONE));
+        sizeof(NuListNode<T>), 4, NuMemoryManager::MEM_ALLOC_SET_TO_ZERO, "", NUMEMORY_CATEGORY_NONE));
     if (node != NULL) {
         node->SetPrev(NULL);
         node->SetNext(NULL);

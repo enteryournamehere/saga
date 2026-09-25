@@ -138,7 +138,7 @@ static NUVEC pod_old_pos[2] __used__; // _ZL11pod_old_pos (0x18 bytes of .bss)
 // mushroom_time_* are also mutated by Action_MushroomCollapse).
 static CUTINFO *mushroom0_cut;                             // _ZL13mushroom0_cut
 static i32 mushroom_collapse;                              // _ZL17mushroom_collapse
-static i32 mushroom_nattempts_per_increment __used__ = 1;  // _ZL32mushroom_nattempts_per_increment
+static i32 mushroom_nattempts_per_increment;               // _ZL32mushroom_nattempts_per_increment
 static i32 mushroom_n_attempts;                            // _ZL19mushroom_n_attempts
 static float mushroom_countdown = 15.0f;                   // _ZL18mushroom_countdown
 static float mushroom_time_available = 15.0f;              // _ZL23mushroom_time_available

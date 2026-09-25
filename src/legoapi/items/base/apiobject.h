@@ -570,9 +570,9 @@ typedef struct APIOBJECT_s {
     union {
         u32 packed_contact_state; // 0x27c
         struct {
-            char field_0x27c; // player/character slot (0xff = none)
-            u8 field_0x27d;   // terrain/contact flags
-            u8 field_0x27e;   // previous terrain/contact flags
+            i8 field_0x27c; // player/character slot (-1 = none)
+            u8 field_0x27d; // terrain/contact flags
+            u8 field_0x27e; // previous terrain/contact flags
             u8 field_0x27f;
         };
     };

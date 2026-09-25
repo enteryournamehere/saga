@@ -1291,7 +1291,7 @@ void (*CutScene_StoppedFn)(CUTINFO *) = NULL;
 i32 (*CutScene_ReplaceCharacterModelFn)(CUTINFO *, NUGCUTCHAR_s *) = NULL;
 i32 (*InitBolt_AddMomentumType)(BOLT_s *, GameObject_s *, nuvec_s *) = NULL;
 i32 (*Bolt_HitPlatFn)(BOLT_s *) = NULL;
-void (*Bolt_HitCustomFn)(BOLT_s *, nuvec_s *) = NULL;
+i32 (*Bolt_HitCustomFn)(BOLT_s *, nuvec_s *) = NULL;
 void (*GizObstacle_SetDefaultSFXFn)(void *, GIZOBSTACLE_s *) = NULL;
 // Original bss @0x6a3f54 / @0x6a3f50.
 volatile i32 LoadPerm_LanguageSelect = 0;

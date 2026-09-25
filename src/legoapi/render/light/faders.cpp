@@ -1,4 +1,5 @@
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nufile/nufpar.h"
@@ -73,8 +74,7 @@ void Faders_Configure(WORLDINFO_s *world, char *config) {
             continue;
         }
         while (NuFParGetWord(parser) != 0) {
-            if (NuStrICmp(parser->word_buf, const_cast<char *>("while_animating")) == 0 &&
-                NuFParGetWord(parser) != 0) {
+            if (NuStrICmp(parser->word_buf, const_cast<char *>("while_animating")) == 0 && NuFParGetWord(parser) != 0) {
                 NuSpecialFind(world->current_gscn, &fader->while_animating, parser->word_buf, 1);
             }
         }

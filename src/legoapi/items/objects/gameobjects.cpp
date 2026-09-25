@@ -104,7 +104,6 @@ f32 DropInOutScale(GameObject_s *);
 extern f32 rocket_speed;
 extern f32 sabrerubwait;
 NUVEC *GetZapOrigin(GameObject_s *);
-void PowerUp_Particles(WORLDINFO_s *, NUVEC *);
 void PlaySabreSfx(char *, GameObject_s *, NUVEC *, i32);
 i32 testlaser_type;
 i32 lightning_type;
@@ -5799,7 +5798,7 @@ i32 players_cannot_exit_speeder;
 extern i16 id_ATAT, id_SPEEDERBIKE;
 extern "C" i16 id_GRABCONTROL, id_GRABR2CONTROL;
 
-void TakeOverCode(GameObject_s *object, i32 tag_pressed) {
+__attribute__((force_align_arg_pointer)) void TakeOverCode(GameObject_s *object, i32 tag_pressed) {
     APIOBJECT &api = object->apiobj;
     if (object->character_context == 0x3c) {
         GameObject_s *target = object->takeover_entry_target;
@@ -6974,10 +6973,6 @@ draw_icon:
         Tag_DrawIconFn(object);
 }
 
-void PowerUp_AddPart(nuvec_s *, nuvec_s *, float, float) {
-    STUBBED();
-}
-
 void ScaleGameObject(GameObject_s *object) {
     const f32 scale = object->apiobj.field_0xa8;
     CHARACTERDATA *character = object->apiobj.character_data;
@@ -7374,11 +7369,6 @@ void ManageGameObjects() {
         FreeTorpedoPacket(&object->torpedo);
         RemoveGameObject(object, 1);
     }
-}
-
-void PowerUp_Particles(WORLDINFO_s *world, NUVEC *position) {
-    if (VehicleArea == 0 && ParticlesPerSecond(10.0f, FRAMETIME) > 0)
-        AddGameDebris(world->debris_sys, GizBuilditGDeb[qrand() / 10923], position);
 }
 
 extern i32 adaptivedifficulty[3];

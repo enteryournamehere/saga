@@ -621,6 +621,7 @@ static i32 ShootCode(GameObject_s *, i32, i32, i32, i32, i32);
 static void ForcePushed_MoveCode(GameObject_s *);
 static void DeactivatedCode(GameObject_s *);
 static void ZapCode(GameObject_s *, i32, i32);
+static void ShootThisFrame(GameObject_s *, i32, i32);
 static void FireCode(GameObject_s *, i32, i32, f32, i32);
 static void AwkwardShapeCode(GameObject_s *, i32);
 f32 FindGunshipHoverHeight(GameObject_s *);
@@ -9651,11 +9652,17 @@ start_attack:
 }
 
 static __used__ void ShootThisFrame(GameObject_s *object, i32 bolt_id, i32 flags) {
-    if (object == Player[0] && nextShootTarget.Get() != NULL)
-        nextShootTarget = NuMechPtr<MechObjectInterface, 4>();
+    if (object == Player[0] && nextShootTarget.Get() != NULL) {
+        NuMechPtr<MechObjectInterface, 4> empty_target;
+        nextShootTarget = empty_target;
+    }
     if ((object->apiobj.field_0x1f4 & 0x40000) != 0 && object->apiobj.field_0x27c != -1)
         return;
-    NewBuzzFrames(object->pad_gamepad->pad, (object->apiobj.character_data->model_flags & 0x2000) != 0 ? 1 : 2, 0);
+    if ((object->apiobj.character_data->model_flags & 0x2000) == 0) {
+        NewBuzzFrames(object->pad_gamepad->pad, 2, 0);
+    } else {
+        NewBuzzFrames(object->pad_gamepad->pad, 1, 0);
+    }
     object->field_0xef9 |= 8;
     object->quick_shoot_bolt_id = bolt_id;
     object->quick_shoot_flags = flags;

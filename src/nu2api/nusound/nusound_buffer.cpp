@@ -2,7 +2,7 @@
 
 #include "nu2api/nucore/nuthread.h"
 
-static NuCriticalSection sCriticalSection{""};
+NuSoundCriticalSection NuSoundBuffer::sCriticalSection;
 
 NuSoundBuffer::NuSoundBuffer() {
     this->context.read_size = 0;

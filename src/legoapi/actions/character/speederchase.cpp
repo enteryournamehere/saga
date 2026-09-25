@@ -434,9 +434,9 @@ void SpeederChaseA_Reset(WORLDINFO_s *) {
     troopercannons_beenReset = 0;
     InitBikeParts();
     LevAIMessage[0] = CheckGizAIMessage(gizaimessagesys, "SpeedersToKill", NULL);
-    LevAIMessage[1] = CheckGizAIMessage(gizaimessagesys, "BeenKilled", NULL);
+    LevAIMessage[1] = CheckGizAIMessage(gizaimessagesys, "SpeedersKilled", NULL);
     LevAIMessage[2] = CheckGizAIMessage(gizaimessagesys, "Stage", NULL);
-    LevAIMessage[3] = CheckGizAIMessage(gizaimessagesys, "SpeedersKilled", NULL);
+    LevAIMessage[3] = CheckGizAIMessage(gizaimessagesys, "Phase", NULL);
     LevAIMessage[4] = CheckGizAIMessage(gizaimessagesys, "KeepPlayersOnSpeeders", NULL);
     LevAIMessage[5] = CheckGizAIMessage(gizaimessagesys, "SpeederMode", NULL);
     players_going_forward = 1;

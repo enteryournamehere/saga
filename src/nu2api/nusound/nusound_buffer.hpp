@@ -3,6 +3,7 @@
 #include "decomp.h"
 #include "nu2api/nucore/common.h"
 
+#include "nu2api/nusound/nusound_sync.hpp"
 #include "nu2api/nusound/nusound_system.hpp"
 
 // Android x86 naturally uses 4-byte alignment; the host needs the attribute
@@ -23,6 +24,8 @@ class SAGA_HOST_PACKED_ALIGN4 NuSoundBuffer {
     };
 
   private:
+    static NuSoundCriticalSection sCriticalSection;
+
     u64 size;
     void *address;
     NuSoundMemoryBuffer *memory_buffer;

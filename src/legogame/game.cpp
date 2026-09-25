@@ -462,10 +462,10 @@ static void DisguiseAdjust_LSW(i32 character_id, i32 hat, NUVEC *scale, NUVEC *o
     } else if (character_id == id_CLONEARC) {
         scale->x = 5.0f;
     } else if (character_id == id_VULTUREDROID || character_id == id_DROIDTRIFIGHTER ||
-               character_id == id_ANAKINSNEWPOD || character_id == id_ANAKINSNEWPODGREEN) {
+               character_id == id_ANAKINSNEWPOD || character_id == id_ANAKINSNEWPODGREEN ||
+               character_id == id_NEW_REPUBLIC_GUNSHIP || character_id == id_NEW_REPUBLIC_GUNSHIP_GREEN) {
         scale->x = 6.0f;
-    } else if (character_id == id_NEW_REPUBLIC_GUNSHIP || character_id == id_NEW_REPUBLIC_GUNSHIP_GREEN ||
-               character_id == id_NABOOSTARFIGHTER || character_id == id_NABOOSTARFIGHTERLIME) {
+    } else if (character_id == id_NABOOSTARFIGHTER || character_id == id_NABOOSTARFIGHTERLIME) {
         scale->x = 7.0f;
     } else if (character_id == id_ANAKINSSPEEDER || character_id == id_ANAKINSSPEEDER_GREEN) {
         scale->x = 5.0f;
@@ -487,12 +487,12 @@ static void DisguiseAdjust_LSW(i32 character_id, i32 hat, NUVEC *scale, NUVEC *o
     } else if (character_id == id_IMPERIALGUARD) {
         offset->z = 0.015f;
     } else if (character_id == id_UGNAUGHT) {
-        offset->z = -0.0225f;
+        offset->z = -0.03f * 0.75f;
     }
 
     if (scale->x != 1.0f) {
-        scale->y = scale->x;
         scale->z = scale->x;
+        scale->y = scale->x;
     }
 }
 

@@ -4,19 +4,17 @@
 extern "C" {
 
     void StreamCache(void) {
-        STUBBED();
     }
 
-    void StreamCacheCheckComplete(void) {
-        STUBBED();
+    i32 StreamCacheCheckComplete(void) {
+        return 0;
     }
 
-    void StreamRead(void) {
-        STUBBED();
+    i32 StreamRead(void) {
+        return 0;
     }
 
     void StreamSeek(void) {
-        STUBBED();
     }
 
 } // extern "C"

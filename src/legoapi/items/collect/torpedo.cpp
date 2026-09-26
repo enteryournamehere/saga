@@ -572,7 +572,6 @@ void TorpedoHitTarget(BOLT_s *bolt) {
 }
 
 void DrawTorpedoTargetSprite(void *, unsigned char, float) {
-    STUBBED();
 }
 
 void DrawTorpedos(GameObject_s *object) {

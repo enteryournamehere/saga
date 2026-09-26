@@ -8,7 +8,8 @@
 #include "nu2api/nu3d/android/nuptl_android.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nuvec.h"
+#include "nu2api/nucore/bgproc.h"
 
-void bgprocIsFrozen() {
-    STUBBED();
+i32 bgprocIsFrozen() {
+    return bgproc_frozen;
 }

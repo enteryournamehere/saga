@@ -24,6 +24,7 @@
 #include "legoapi/render/fx.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nutrig.h"
+#include "nu2api/numath/nufloat.h"
 #include "nu2api/nu3d/nugscn.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/nuspecial.h"
@@ -113,12 +114,45 @@ i32 AllMiniKitsDone(AREASAVE_s *save) {
     return 1;
 }
 
-void MiniKitDetector(nuvec_s *) {
-    STUBBED();
+char *LEGOASCII_BIGARROW = NULL;
+void GameMsg_Draw_MiniKitDetector(GAMEMESSAGE_s *, nuvec_s *,
+                                  float) __asm__("_ZL28GameMsg_Draw_MiniKitDetectorP13GAMEMESSAGE_sP7nuvec_sf")
+    __attribute__((visibility("hidden")));
+void MiniKitDetector(nuvec_s *position) {
+    ADDGAMEMSG message = AddGameMsg_Default;
+    message.text = LEGOASCII_BIGARROW != NULL ? LEGOASCII_BIGARROW : txt_UNKNOWN;
+    message.position = position;
+    message.flags = 0x40083;
+    message.scale = 0.6f;
+    message.field_0x44 = reinterpret_cast<void *>(GameMsg_Draw_MiniKitDetector);
+    message.field_0x4f = 4;
+    AddGameMsg(&message);
 }
 
-void CharMiniKit_Draw(i32, numtx_s *, i32, float, float) {
-    STUBBED();
+i32 MatrixReflection(NUMTX *, i32, f32, f32, NUMTX *);
+void CharMiniKit_Draw(i32 id, numtx_s *matrix, i32 reflection_axis, float reflection_plane, float reflection_height) {
+    if (Char_MiniKit == NULL)
+        return;
+    HUBMINIKITPIECES_s *kit = Char_MiniKit[id];
+    if (kit == NULL || kit->piece_count == 0)
+        return;
+    bool reflection = reflection_axis != 0 && reflection_plane != 2000000.0f;
+    for (i32 i = 0; i < kit->piece_count; ++i) {
+        HUBMINIKITPIECE_s *piece = &kit->pieces[i];
+        if (NuSpecialExistsFn(&piece->special) == 0)
+            continue;
+        NUMTX draw_matrix = piece->matrix;
+        NuMtxMul(&draw_matrix, &draw_matrix, matrix);
+        NuSpecialDrawAt(&piece->special, &draw_matrix);
+        if (reflection) {
+            NUMTX reflected;
+            if (MatrixReflection(&draw_matrix, reflection_axis, reflection_plane, reflection_height, &reflected) != 0) {
+                NuRndrStartReflectionRender(0);
+                NuSpecialDrawAt(&piece->special, &reflected);
+                NuRndrEndReflectionRender();
+            }
+        }
+    }
 }
 
 extern i32 currentminikit, newminikitcount;
@@ -382,8 +416,26 @@ void MiniKit_LSW_Update(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, float ela
     }
 }
 
-void MiniKit_GameMsg_End(GAMEMESSAGE_s *) {
-    STUBBED();
+extern i32 LEGOOBJ_MINIKIT, LEGOOBJ_CHARKIT;
+void EndChallenge(i32, i32);
+void GameCam_Judder(GAMECAMERA_s *, f32, i32, NUVEC *);
+void GameAudio_PlaySfx(i32, NUVEC *, i32, i32);
+void MiniKit_GameMsg_End(GAMEMESSAGE_s *message) {
+    MiniKitScale = 2.0f;
+    if (WorldInfo_CurrentlyActive()->area != NULL && message->icon != -1) {
+        if (message->icon == LEGOOBJ_MINIKIT) {
+            ++AreaGlobals.values.field_0x14;
+            if (AreaGlobals.values.field_0x14 > AreaGlobals.values.field_0x0c)
+                AreaGlobals.values.field_0x14 = AreaGlobals.values.field_0x0c;
+        } else if (message->icon == LEGOOBJ_CHARKIT && AreaGlobals.values.field_0x20 < AreaGlobals.values.field_0x1c) {
+            ++AreaGlobals.values.field_0x20;
+            if (AreaGlobals.values.field_0x20 == AreaGlobals.values.field_0x1c && AreaGlobals.values.field_0x1c > 9)
+                EndChallenge(2, 1);
+        }
+    }
+    GameAudio_PlaySfx(0x26, NULL, 0, 0);
+    NewRumbleAllPlayers(0.6f, 0.0f, 0, 0);
+    GameCam_Judder(GameCam, -0.2f, 0, NULL);
 }
 
 void ResetMinikitCounter() {
@@ -396,63 +448,62 @@ extern i32 STATUS_R, STATUS_G, STATUS_B;
 
 void AllMiniKits_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 current) {
     char text[60];
-    if (current == 0) {
-        if (stage->field_0x12 == 0)
+    if (current != 0) {
+        if (stage->field_0x14 < 1)
             return;
-        const f32 alpha = getFinishedStatusAlpha(packet);
-        const i32 opacity = static_cast<i32>(alpha * 128.0f);
-        i32 angle = 0x2000;
-        if (GameTimer.time_elapsed_mod_seconds <= 0.25f)
-            angle = (static_cast<i32>(GameTimer.time_elapsed_mod_seconds * 32768.0f + 16384.0f) >> 1) & 0x7fff;
-        if (Game.area_save[packet->area->index].field_0x5[0] == 0) {
-            const f32 size = ((1.0f - fabsf(NuTrigTable[angle])) + 1.0f) * 1.2f;
-            Text3DEx("?", -0.6f, -0.6f, 1.1f, size, size, size, 0, 255, 255, 255, opacity);
-        } else {
-            DrawStatusMiniKit(-0.6f, -0.5f, 1.1f,
-                              NuTrigTable[(static_cast<i32>(alpha * 16384.0f) >> 1) & 0x7fff] * 0.15f, 1.0f,
-                              Game.area_save[packet->area->index].field_0x5[0], packet, 0.0f);
+        const f32 time = stage->field_0x18;
+        f32 title_alpha;
+        f32 icon_alpha = 0.0f;
+        f32 y = 0.225f;
+        if (time < 0.5f)
+            title_alpha = time + time;
+        else if (time < 3.5f)
+            title_alpha = 1.0f;
+        else if (time < 4.0f) {
+            icon_alpha = (time - 3.5f) + (time - 3.5f);
+            title_alpha = 1.0f - icon_alpha;
+            y = (1.0f - NuTrigTable[(static_cast<i32>(icon_alpha * 16384.0f) >> 1) & 0x7fff]) * -0.5f + 0.225f;
+        } else if (time < 6.0f) {
+            title_alpha = 0.0f;
+            icon_alpha = 1.0f;
+            y = (1.0f - NuTrigTable[0x2000]) * -0.5f + 0.225f;
+        } else if (time < 6.5f) {
+            title_alpha = 0.0f;
+            icon_alpha = 1.0f - ((time - 6.0f) + (time - 6.0f));
+            if (icon_alpha <= 0.0f)
+                return;
+        } else
+            title_alpha = 0.0f;
+        if (icon_alpha > 0.0f) {
+            DrawCharIcon(id_SLAVE1, 0.0f, y, 0.0f, 0.4f, 0xa7, icon_alpha, icon_alpha, 1, NULL);
+            SmartTextEx(TTab[CDataList[id_SLAVE1].name_id], 0.0f, -0.1f, 1.0f, 0.6f, 0.6f, 0.6f, 0, STATUS_R, STATUS_G,
+                        STATUS_B, 1.7f, 1, NULL, 0, static_cast<i32>(icon_alpha * 128.0f));
         }
-        if (Game.area_save[packet->area->index].field_0x5[0] == packet->minikit_max) {
-            Text3DEx("$", -0.6f, -0.7f, 1.0f, 0.8f, 0.8f, 0.8f, 0, 255, 0, 127, opacity);
-        } else {
-            sprintf(text, "%i/%i", Game.area_save[packet->area->index].field_0x5[0], packet->minikit_max);
-            Text3DEx(text, -0.6f, -0.8f, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, 0, 127, opacity);
+        if (title_alpha > 0.0f) {
+            Text3DEx(TTab[tALLMINIKITSBUILT], 0.0f, 0.225f, 1.0f, 0.7f, 0.7f, 0.7f, 0, STATUS_R, STATUS_G, STATUS_B,
+                     static_cast<u8>(static_cast<i32>(title_alpha * 128.0f)));
         }
         return;
     }
-    if (stage->field_0x14 < 1)
+    if (stage->field_0x12 == 0)
         return;
-    const f32 time = stage->field_0x18;
-    f32 title_alpha;
-    f32 icon_alpha = 0.0f;
-    f32 y = 0.225f;
-    if (time < 0.5f)
-        title_alpha = time + time;
-    else if (time < 3.5f)
-        title_alpha = 1.0f;
-    else if (time < 4.0f) {
-        icon_alpha = (time - 3.5f) + (time - 3.5f);
-        title_alpha = 1.0f - icon_alpha;
-        y = (1.0f - NuTrigTable[(static_cast<i32>(icon_alpha * 16384.0f) >> 1) & 0x7fff]) * -0.5f + 0.225f;
-    } else if (time < 6.0f) {
-        title_alpha = 0.0f;
-        icon_alpha = 1.0f;
-        y = (1.0f - NuTrigTable[0x2000]) * -0.5f + 0.225f;
-    } else if (time < 6.5f) {
-        title_alpha = 0.0f;
-        icon_alpha = 1.0f - ((time - 6.0f) + (time - 6.0f));
-        if (icon_alpha <= 0.0f)
-            return;
-    } else
-        title_alpha = 0.0f;
-    if (icon_alpha > 0.0f) {
-        DrawCharIcon(id_SLAVE1, 0.0f, y, 0.0f, 0.4f, 0xa7, icon_alpha, icon_alpha, 1, NULL);
-        SmartTextEx(TTab[CDataList[id_SLAVE1].name_id], 0.0f, -0.1f, 1.0f, 0.6f, 0.6f, 0.6f, 0, STATUS_R, STATUS_G,
-                    STATUS_B, 1.7f, 1, NULL, 0, static_cast<i32>(icon_alpha * 128.0f));
+    const f32 alpha = getFinishedStatusAlpha(packet);
+    const i32 opacity = static_cast<i32>(alpha * 128.0f);
+    i32 angle = 0x2000;
+    if (GameTimer.time_elapsed_mod_seconds <= 0.25f)
+        angle = (static_cast<i32>(GameTimer.time_elapsed_mod_seconds * 32768.0f + 16384.0f) >> 1) & 0x7fff;
+    if (Game.area_save[packet->area->index].field_0x5[0] == 0) {
+        const f32 size = ((1.0f - fabsf(NuTrigTable[angle])) + 1.0f) * 1.2f;
+        Text3DEx("?", -0.6f, -0.6f, 1.1f, size, size, size, 0, 255, 255, 255, opacity);
+    } else {
+        DrawStatusMiniKit(-0.6f, -0.5f, 1.1f, NuTrigTable[(static_cast<i32>(alpha * 16384.0f) >> 1) & 0x7fff] * 0.15f,
+                          1.0f, Game.area_save[packet->area->index].field_0x5[0], packet, 0.0f);
     }
-    if (title_alpha > 0.0f) {
-        Text3DEx(TTab[tALLMINIKITSBUILT], 0.0f, 0.225f, 1.0f, 0.7f, 0.7f, 0.7f, 0, STATUS_R, STATUS_G, STATUS_B,
-                 static_cast<i32>(title_alpha * 128.0f));
+    if (Game.area_save[packet->area->index].field_0x5[0] == packet->minikit_max) {
+        Text3DEx("$", -0.6f, -0.7f, 1.0f, 0.8f, 0.8f, 0.8f, 0, 255, 0, 127, opacity);
+    } else {
+        sprintf(text, "%i/%i", Game.area_save[packet->area->index].field_0x5[0], packet->minikit_max);
+        Text3DEx(text, -0.6f, -0.8f, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, 0, 127, opacity);
     }
 }
 
@@ -514,8 +565,10 @@ void CharacterMiniKits_Dump(WORLDINFO_s *world) {
     }
 }
 
-void MiniKit_GameMsg_Update(GAMEMESSAGE_s *) {
-    STUBBED();
+void MiniKit_GameMsg_Update(GAMEMESSAGE_s *message) {
+    i32 angle = static_cast<i32>((NuFmod(GlobalTimer.time_elapsed, 4.0f) * 0.25f) * 65536.0f);
+    message->rotation_y = static_cast<u16>(angle);
+    message->field_0xe0 = static_cast<u16>(NuTrigTable[angle & 0x7fff] * 1820.0f);
 }
 
 void SetEffectVisibility(char *, i32);

@@ -289,10 +289,13 @@ void ObjHitShield(GameObject_s *, GameObject_s *, i32, BOLT_s *);
 i32 CannotKill(GameObject_s *);
 
 static void PartCollide(PART_s *part, i32 three_dimensional) {
-    const NUVEC minimum = {part->position.x - part->field_0e4, part->position.y - part->field_0e4,
-                           part->position.z - part->field_0e4};
-    const NUVEC maximum = {part->position.x + part->field_0e4, part->position.y + part->field_0e4,
-                           part->position.z + part->field_0e4};
+    const f32 radius = part->field_0e4;
+    const f32 minimum_x = part->position.x - radius;
+    const f32 maximum_x = part->position.x + radius;
+    const f32 minimum_y = part->position.y - radius;
+    const f32 maximum_y = part->position.y + radius;
+    const f32 minimum_z = part->position.z - radius;
+    const f32 maximum_z = part->position.z + radius;
     GameObject_s *object = Obj;
     for (i32 i = 0; i < HIGHGAMEOBJECT; ++i, ++object) {
         APIOBJECT_s *api = &object->apiobj;
@@ -315,12 +318,12 @@ static void PartCollide(PART_s *part, i32 three_dimensional) {
             continue;
         if ((part->flags & 4) != 0 && (api->flags_low & 0x80) == 0)
             continue;
-        if (minimum.x > api->collision_max.x || api->collision_min.x > maximum.x || minimum.z > api->collision_max.z ||
-            api->collision_min.z > maximum.z)
+        if (minimum_x > api->collision_max.x || api->collision_min.x > maximum_x || minimum_z > api->collision_max.z ||
+            api->collision_min.z > maximum_z)
             continue;
         if (three_dimensional != 0 &&
             !((api->character_data->model_flags & 0x2000) != 0 && (part->flags & 0x40) != 0)) {
-            if (minimum.y > api->collision_max.y || api->collision_min.y > maximum.y)
+            if (minimum_y > api->collision_max.y || api->collision_min.y > maximum_y)
                 continue;
         }
         if ((part->flags & 0x40) != 0) {
@@ -418,11 +421,19 @@ static void PartCollide(PART_s *part, i32 three_dimensional) {
     }
 }
 
-static __used__ void TiePart_Kill(PART_s *part, i32) {
+void TiePart_Kill(PART_s *, i32) asm("_ZL12TiePart_KillP6PART_si") __attribute__((visibility("hidden")));
+void TiePart_Move(PART_s *, f32) asm("_ZL12TiePart_MoveP6PART_sf") __attribute__((visibility("hidden")));
+void TiePart_Impact(PART_s *) asm("_ZL14TiePart_ImpactP6PART_s") __attribute__((visibility("hidden")));
+void TiePart_KillExplode(PART_s *, i32) asm("_ZL19TiePart_KillExplodeP6PART_si")
+    __attribute__((visibility("hidden")));
+void TieSpinZPart_Move(PART_s *, f32) asm("_ZL17TieSpinZPart_MoveP6PART_sf")
+    __attribute__((visibility("hidden")));
+
+__used__ void TiePart_Kill(PART_s *part, i32) {
     AddGameDebris(WORLD->debris_sys, 0x6a, &part->position);
 }
 
-static __used__ void TiePart_Move(PART_s *part, f32 time) {
+__used__ void TiePart_Move(PART_s *part, f32 time) {
     part->field_124[3] = -32768;
     part->field_13c = static_cast<u16>(-32768.0f * FRAMETIME);
     NUVEC position;
@@ -436,16 +447,16 @@ static __used__ void TiePart_Move(PART_s *part, f32 time) {
     AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[100].effect, &position, 10, FRAMETIME, 0, 0, NULL);
 }
 
-static __used__ void TiePart_Impact(PART_s *part) {
+__used__ void TiePart_Impact(PART_s *part) {
     AddGameDebris(WORLD->debris_sys, 0x6a, &part->position);
 }
 
-static __used__ void TiePart_KillExplode(PART_s *part, i32) {
+__used__ void TiePart_KillExplode(PART_s *part, i32) {
     AddGameDebris(WORLD->debris_sys, 0x6b, &part->position);
     AddPartDebris(WORLD->part_debris_sys, 3, &part->position);
 }
 
-static __used__ void TieSpinZPart_Move(PART_s *part, f32 time) {
+__used__ void TieSpinZPart_Move(PART_s *part, f32 time) {
     static NUVEC vec = {0.0f, 0.0f, -0.05f};
     part->field_124[3] = 200000;
     part->field_13c = static_cast<i32>(200000.0f * FRAMETIME);

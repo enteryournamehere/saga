@@ -93,14 +93,17 @@ static f32 AtOnce_InitialRowDist = 0.75f;
 static f32 AtOnce_RowDist = 0.75f;
 static i32 AtOnce_maxAttackers = 1;
 
-bool oneAtOnce_CanAttack(GameObject_s *object, GameObject_s *opponent) {
+i32 oneAtOnce_CanAttack(GameObject_s *object, GameObject_s *opponent) {
     if (object == NULL) {
-        return false;
+        return 0;
     }
     if ((object->field_0xf01 & 0x20) == 0) {
-        return true;
+        return 1;
     }
-    return object->one_at_once_player != 0xff && Player[object->one_at_once_player] == opponent;
+    if (object->one_at_once_player == 0xff) {
+        return 0;
+    }
+    return Player[object->one_at_once_player] == opponent;
 }
 
 f32 oneAtOnce_GetHoldRange(GameObject_s *object) {
@@ -115,9 +118,7 @@ f32 oneAtOnce_GetHoldRange(GameObject_s *object) {
     i32 unassigned_in_row = 0;
     i32 index = 0;
     GameObject_s *candidate = attackers[index].object;
-    while (candidate != NULL) {
-        if (index > 16)
-            return AtOnce_InitialRowDist;
+    while (candidate != NULL && index < 17) {
         if (candidate == object) {
             return static_cast<f32>(row) * AtOnce_RowDist + AtOnce_InitialRowDist;
         }

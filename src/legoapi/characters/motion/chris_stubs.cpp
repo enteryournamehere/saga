@@ -11,18 +11,22 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
-GameObject_s *AnakinC = NULL;
+GameObject_s *volatile AnakinC = NULL;
+
+void DrawSpaceLevel(spacelevel_s *) __asm__("_ZL14DrawSpaceLevelP12spacelevel_s") __attribute__((visibility("hidden")));
+void ProcessSpaceLevel(spacelevel_s *) __asm__("_ZL17ProcessSpaceLevelP12spacelevel_s")
+    __attribute__((visibility("hidden")));
 
 void ChrisAnakinADraw() {
-    STUBBED();
+    DrawSpaceLevel(WORLD->space_level);
 }
 
 void ChrisAnakinDDraw() {
-    STUBBED();
+    DrawSpaceLevel(WORLD->space_level);
 }
 
 void ChrisAnakinAUpdate(WORLDINFO_s *) {
-    STUBBED();
+    ProcessSpaceLevel(WORLD->space_level);
 }
 
 void ChrisUnallocLevelStuff(WORLDINFO_s *world) {

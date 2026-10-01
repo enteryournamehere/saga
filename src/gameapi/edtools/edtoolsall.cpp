@@ -3591,15 +3591,14 @@ __attribute__((force_align_arg_pointer)) i32 EdManScale::Process(EdInputContext 
                     f32 movement = delta.x * first_axis.x + delta.y * first_axis.y + delta.z * first_axis.z;
                     if (movement == 0.0f)
                         continue;
-                    VuVec local_axis = first_axis;
-                    NuVecInvMtxRotate(reinterpret_cast<NUVEC *>(&local_axis), reinterpret_cast<NUVEC *>(&local_axis),
+                    NuVecInvMtxRotate(reinterpret_cast<NUVEC *>(&first_axis), reinterpret_cast<NUVEC *>(&first_axis),
                                       &matrix);
-                    NuVecNorm(reinterpret_cast<NUVEC *>(&local_axis), reinterpret_cast<NUVEC *>(&local_axis));
+                    NuVecNorm(reinterpret_cast<NUVEC *>(&first_axis), reinterpret_cast<NUVEC *>(&first_axis));
                     f32 scaled_magnitude = Scale * magnitude;
                     f32 change = (scaled_magnitude + movement) / scaled_magnitude - 1.0f;
-                    scale_x = local_axis.x * change + 1.0f;
-                    scale_y = local_axis.y * change + 1.0f;
-                    scale_z = local_axis.z * change + 1.0f;
+                    scale_x = first_axis.x * change + 1.0f;
+                    scale_y = first_axis.y * change + 1.0f;
+                    scale_z = first_axis.z * change + 1.0f;
                     break;
                 }
                 case 4:
@@ -3616,15 +3615,14 @@ __attribute__((force_align_arg_pointer)) i32 EdManScale::Process(EdInputContext 
                     movement += delta.x * second_axis.x + delta.y * second_axis.y + delta.z * second_axis.z;
                     if (movement == 0.0f)
                         continue;
-                    VuVec local_axis = first_axis;
-                    NuVecInvMtxRotate(reinterpret_cast<NUVEC *>(&local_axis), reinterpret_cast<NUVEC *>(&local_axis),
+                    NuVecInvMtxRotate(reinterpret_cast<NUVEC *>(&first_axis), reinterpret_cast<NUVEC *>(&first_axis),
                                       &matrix);
-                    NuVecNorm(reinterpret_cast<NUVEC *>(&local_axis), reinterpret_cast<NUVEC *>(&local_axis));
+                    NuVecNorm(reinterpret_cast<NUVEC *>(&first_axis), reinterpret_cast<NUVEC *>(&first_axis));
                     f32 scaled_magnitude = Scale * magnitude;
                     f32 change = (scaled_magnitude + movement) / scaled_magnitude - 1.0f;
-                    scale_x = local_axis.x * change + second_axis.x * change + 1.0f;
-                    scale_y = local_axis.y * change + second_axis.y * change + 1.0f;
-                    scale_z = local_axis.z * change + second_axis.z * change + 1.0f;
+                    scale_x = first_axis.x * change + second_axis.x * change + 1.0f;
+                    scale_y = first_axis.y * change + second_axis.y * change + 1.0f;
+                    scale_z = first_axis.z * change + second_axis.z * change + 1.0f;
                     break;
                 }
                 case 7: {

@@ -8451,3 +8451,44 @@ and all five checks pass.
   `GizForce_FindBestForceTarget`, `edanimLoadPage`, `WorldInfo_Init`,
   `StoreLevelProgressFn` and `HeadMovement` found no substantive
   missing closure; no trials.
+
+## PR 121 rebase onto main a496c28b
+
+Main advanced through PR 122 while checkpoint 12 was running. Preserve its
+source restructuring, host hooks, bitfields and optimization map; regenerate
+reports rather than replaying obsolete generated scores. The refreshed main
+baseline is **68.002460%**, **6,290** exact functions; the next two-point
+threshold is **70.002460%**. The rebased checkpoint measures **68.440850%**,
+**6,292** exacts, with no loss among main's mapped exact functions. Historical
+batch scores above describe the earlier baseline, not additive current gains.
+
+Resolve source conflicts narrowly: retain pulse captures/reloads alongside
+upstream guards, language-count revalidation, audio state publication, force
+target comparisons/animation precedence, thermal surface and callback ordering,
+techno control-pointer reloads, and bounded canonical spline overrides. Pickup
+loading combines the original old-version floor with upstream's unordered
+fallback. Pulse timer/protection and pickup NaN behavior are explicitly tested
+as preserved upstream policy, not asserted to equal retail on those inputs.
+
+Root independently reruns fresh exact-body diagnostics with current headers:
+pulses (14 retained-contract cases plus five unordered-policy probes), language
+setup (eight cases), splines (38), force targets (8,969), thermal update (27,207)
+and impact (68,394), techno (1,622,293), pickup loading (46,529 calls), and audio
+stream opening. Host sanitizer and i386 diagnostics pass; force, pickup, techno
+and audio i386 use refreshed production NDK actions, while thermal/spline/pulse/
+language i386 are host SSE diagnostics. These remain bounded service fixtures,
+not full-game integration. Rebased target/native builds and all five checks pass.
+
+## Batch 284: shared scale-axis lifetime
+
+`EdManScale::Process` transforms and normalizes the selected first axis in place
+in both axis groups and retains that result across selected entries, as the
+original does. Remove only the per-entry copy; preserve second-axis behavior,
+matrix/attribute operations, guards and the pre-existing ABI attribute.
+Whole-owner gain **103.088993 weighted bytes**; all 74 isolated exacts retained.
+The full owner baseline and production compile action remain byte-identical
+after rebase. Linked global **68.443030%**, **6,292** exacts; no mapped exact loss
+from the rebased checkpoint. Root reruns current-header full ASan/UBSan and
+host i386 SSE fixtures: **290 cases / 9,986 checks** each. Actual math/attribute/
+average-position helpers execute; manipulator/registry services are bounded
+diagnostic seams. No complete editor or nonfinite-input equivalence is claimed.

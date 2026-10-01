@@ -878,10 +878,10 @@ static void edpartDieDebrisMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     if (edpart_diedebris_menu != NULL) {
         eduiMenuAddItem(edpart_diedebris_menu,
                         eduiItemSelCreate(1, edblack, 0, 0, edpartGeneralDebrisIndexMenu, "General List..."));
-        bool level = edpart_nearest_type->field_b3 == 1;
-        eduiMenuAddItem(edpart_diedebris_menu,
-                        eduiItemSelCreate(1, level ? edblack : edgrey, 0, 0, level ? edpartLevelDebrisIndexMenu : NULL,
-                                          "Level List..."));
+        if (edpart_nearest_type->field_b3 == 1)
+            eduiMenuAddItem(edpart_diedebris_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartLevelDebrisIndexMenu, "Level List..."));
+        else
+            eduiMenuAddItem(edpart_diedebris_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Level List..."));
     }
     eduiMenuAttach(menu, edpart_diedebris_menu);
     edpart_diedebris_menu->x = menu->x + 10;
@@ -999,10 +999,10 @@ static void edpartImpactPartMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     if (edpart_impactpart_menu != NULL) {
         eduiMenuAddItem(edpart_impactpart_menu,
                         eduiItemSelCreate(1, edblack, 0, 0, edpartGeneralPartIndexMenu, "General List..."));
-        bool level = edpart_nearest_type->field_b3 == 1;
-        eduiMenuAddItem(edpart_impactpart_menu,
-                        eduiItemSelCreate(1, level ? edblack : edgrey, 0, 0, level ? edpartLevelPartIndexMenu : NULL,
-                                          "Level List..."));
+        if (edpart_nearest_type->field_b3 == 1)
+            eduiMenuAddItem(edpart_impactpart_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartLevelPartIndexMenu, "Level List..."));
+        else
+            eduiMenuAddItem(edpart_impactpart_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Level List..."));
     }
     eduiMenuAttach(menu, edpart_impactpart_menu);
     edpart_impactpart_menu->x = menu->x + 10;
@@ -1367,10 +1367,10 @@ static void edpartImpactDebrisMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     if (edpart_impactdebris_menu != NULL) {
         eduiMenuAddItem(edpart_impactdebris_menu,
                         eduiItemSelCreate(1, edblack, 0, 0, edpartGeneralDebrisIndexMenu, "General List..."));
-        bool level = edpart_nearest_type->field_b3 == 1;
-        eduiMenuAddItem(edpart_impactdebris_menu,
-                        eduiItemSelCreate(1, level ? edblack : edgrey, 0, 0, level ? edpartLevelDebrisIndexMenu : NULL,
-                                          "Level List..."));
+        if (edpart_nearest_type->field_b3 == 1)
+            eduiMenuAddItem(edpart_impactdebris_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartLevelDebrisIndexMenu, "Level List..."));
+        else
+            eduiMenuAddItem(edpart_impactdebris_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Level List..."));
     }
     eduiMenuAttach(menu, edpart_impactdebris_menu);
     edpart_impactdebris_menu->x = menu->x + 10;
@@ -1427,10 +1427,10 @@ static void edpartTrail1DebrisMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     if (edpart_trail1debris_menu != NULL) {
         eduiMenuAddItem(edpart_trail1debris_menu,
                         eduiItemSelCreate(1, edblack, 0, 0, edpartGeneralDebrisIndexMenu, "General List..."));
-        bool level = edpart_nearest_type->field_b3 == 1;
-        eduiMenuAddItem(edpart_trail1debris_menu,
-                        eduiItemSelCreate(1, level ? edblack : edgrey, 0, 0, level ? edpartLevelDebrisIndexMenu : NULL,
-                                          "Level List..."));
+        if (edpart_nearest_type->field_b3 == 1)
+            eduiMenuAddItem(edpart_trail1debris_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartLevelDebrisIndexMenu, "Level List..."));
+        else
+            eduiMenuAddItem(edpart_trail1debris_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Level List..."));
         eduiMenuAddItem(edpart_trail1debris_menu,
                         eduiItemSliderCreateInt(
                             0, edblack, 0, edpartChangeDebrisPerSec, 0, static_cast<i32>(edpart_superscale * 1200.0f),
@@ -1449,10 +1449,10 @@ static void edpartTrail2DebrisMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     if (edpart_trail2debris_menu != NULL) {
         eduiMenuAddItem(edpart_trail2debris_menu,
                         eduiItemSelCreate(1, edblack, 0, 0, edpartGeneralDebrisIndexMenu, "General List..."));
-        bool level = edpart_nearest_type->field_b3 == 1;
-        eduiMenuAddItem(edpart_trail2debris_menu,
-                        eduiItemSelCreate(1, level ? edblack : edgrey, 0, 0, level ? edpartLevelDebrisIndexMenu : NULL,
-                                          "Level List..."));
+        if (edpart_nearest_type->field_b3 == 1)
+            eduiMenuAddItem(edpart_trail2debris_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartLevelDebrisIndexMenu, "Level List..."));
+        else
+            eduiMenuAddItem(edpart_trail2debris_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Level List..."));
         eduiMenuAddItem(edpart_trail2debris_menu,
                         eduiItemSliderCreateInt(
                             0, edblack, 0, edpartChangeDebrisPerSec, 0, static_cast<i32>(edpart_superscale * 1200.0f),
@@ -1560,10 +1560,10 @@ static void edpartEmitterDebrisMenu(eduimenu_s *menu, eduiitem_s *, u32) {
     if (edpart_emitterdebris_menu != NULL) {
         eduiMenuAddItem(edpart_emitterdebris_menu,
                         eduiItemSelCreate(1, edblack, 0, 0, edpartGeneralDebrisIndexMenu, "General List..."));
-        bool level = edpart_nearest_type->field_b3 == 1;
-        eduiMenuAddItem(edpart_emitterdebris_menu,
-                        eduiItemSelCreate(1, level ? edblack : edgrey, 0, 0, level ? edpartLevelDebrisIndexMenu : NULL,
-                                          "Level List..."));
+        if (edpart_nearest_type->field_b3 == 1)
+            eduiMenuAddItem(edpart_emitterdebris_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartLevelDebrisIndexMenu, "Level List..."));
+        else
+            eduiMenuAddItem(edpart_emitterdebris_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Level List..."));
     }
     eduiMenuAttach(menu, edpart_emitterdebris_menu);
     edpart_emitterdebris_menu->x = menu->x + 10;

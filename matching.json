@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 67.377,
+    "fuzzy_match_percent": 67.4014,
     "total_code": "4722419",
     "matched_code": "525273",
     "matched_code_percent": 11.122965,
@@ -43294,7 +43294,7 @@
           "address": 3584336,
           "offset": 2694368,
           "size": 5342,
-          "match_percent": 58.571846
+          "match_percent": 80.14078
         },
         {
           "name": "_Z14SpecialSfxLoadPcP11WORLDINFO_s",

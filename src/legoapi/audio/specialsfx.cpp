@@ -430,20 +430,20 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
     effect->jib_x_amplitude = EdFileReadFloat();
     effect->jib_y_frequency = EdFileReadFloat();
     effect->jib_y_amplitude = EdFileReadFloat();
-    if (version < 33) {
-        for (i32 i = 0; i < 8; ++i) {
-            effect->colour_keys[i].time = EdFileReadFloat();
-            effect->colour_keys[i].red = static_cast<u8>(static_cast<i32>(EdFileReadFloat()));
-            effect->colour_keys[i].green = static_cast<u8>(static_cast<i32>(EdFileReadFloat()));
-            effect->colour_keys[i].blue = static_cast<u8>(static_cast<i32>(EdFileReadFloat()));
-        }
-    } else {
+    if (version >= 33) {
         for (i32 i = 0; i < 8; ++i) {
             effect->colour_keys[i].time = EdFileReadFloat();
             effect->colour_keys[i].red = EdFileReadUnsignedChar();
             effect->colour_keys[i].green = EdFileReadUnsignedChar();
             effect->colour_keys[i].blue = EdFileReadUnsignedChar();
             effect->colour_keys[i].alpha = EdFileReadUnsignedChar();
+        }
+    } else {
+        for (i32 i = 0; i < 8; ++i) {
+            effect->colour_keys[i].time = EdFileReadFloat();
+            effect->colour_keys[i].red = static_cast<u8>(static_cast<i32>(EdFileReadFloat()));
+            effect->colour_keys[i].green = static_cast<u8>(static_cast<i32>(EdFileReadFloat()));
+            effect->colour_keys[i].blue = static_cast<u8>(static_cast<i32>(EdFileReadFloat()));
         }
     }
     for (i32 i = 0; i < 8; ++i) {
@@ -454,7 +454,8 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
         effect->field_140 = EdFileReadFloat();
         effect->field_144 = EdFileReadFloat();
     } else {
-        effect->field_140 = effect->field_144 = 0.125f;
+        effect->field_140 = 0.125f;
+        effect->field_144 = 0.125f;
     }
     effect->min_size = EdFileReadFloat();
     effect->max_size = EdFileReadFloat();
@@ -472,8 +473,14 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
         effect->rotation_keys[i].time = EdFileReadFloat();
         effect->rotation_keys[i].value = EdFileReadFloat();
     }
-    for (usize i = 0; i < sizeof(effect->fields_218) / sizeof(f32); ++i)
-        reinterpret_cast<f32 *>(effect->fields_218)[i] = EdFileReadFloat();
+    for (i32 i = 0; i < 8; ++i) {
+        effect->field_218_keys[i].time = EdFileReadFloat();
+        effect->field_218_keys[i].value = EdFileReadFloat();
+    }
+    for (i32 i = 0; i < 8; ++i) {
+        effect->field_258_keys[i].time = EdFileReadFloat();
+        effect->field_258_keys[i].value = EdFileReadFloat();
+    }
     effect->texture_u0 = EdFileReadFloat();
     effect->texture_v0 = EdFileReadFloat();
     effect->texture_u1 = EdFileReadFloat();
@@ -499,7 +506,9 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
         effect->repeat_box.z = EdFileReadFloat();
     } else {
         effect->use_explicit_clip_box = 0;
-        effect->repeat_box.x = effect->repeat_box.y = effect->repeat_box.z = 1.0f;
+        effect->repeat_box.x = 1.0f;
+        effect->repeat_box.y = 1.0f;
+        effect->repeat_box.z = 1.0f;
     }
     effect->thinning = version >= 36 ? EdFileReadFloat() : 4.0f;
     if (version == 36 && effect->thinning < 4.0f)

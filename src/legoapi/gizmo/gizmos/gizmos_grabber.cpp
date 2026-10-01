@@ -230,7 +230,7 @@ void Grabber_Update(WORLDINFO_s *world) {
             next.z = 10.125f;
             g->target_velocity.z = g->velocity.z = 0.0f;
         }
-        if (next.y < -4.85f) {
+        if (!(next.y >= -4.85f)) {
             next.y = -4.85f;
             g->target_velocity.y = g->velocity.y = 0.0f;
         } else if (next.y > -3.9f) {

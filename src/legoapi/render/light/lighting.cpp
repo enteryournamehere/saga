@@ -293,7 +293,7 @@ __attribute__((force_align_arg_pointer)) void SetCreatureLights(APIOBJECT_s *obj
         const f32 flash = owner->field_0x1024 / 0.4f;
         red = 1.0f + flash;
         green = blue = 1.0f - flash;
-    } else if (Lighting_HighlightFlash != 0 && owner->apiobj.player_controlled && owner->timer_d5c > 0.0f &&
+    } else if (Lighting_HighlightFlash != 0 && owner->apiobj.player_controlled && !(owner->timer_d5c <= 0.0f) &&
                (owner->timer_d5c >= 2.0f || NuFmod(owner->timer_d5c, 0.4f) >= 0.2f)) {
         if (owner->apiobj.field_0x27c != 1) {
             red = 1.4f;
@@ -348,7 +348,7 @@ __attribute__((force_align_arg_pointer)) void SetCreatureLights(APIOBJECT_s *obj
         red *= GhostLightMul;
         green *= GhostLightMul;
         blue *= GhostLightMul;
-        if (red > 2.0f)
+        if (!(red <= 2.0f))
             red = 2.0f;
         if (green > 2.0f)
             green = 2.0f;

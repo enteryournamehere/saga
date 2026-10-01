@@ -659,12 +659,12 @@ void SuperCarry_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
             return;
     }
 idle_or_walk:
-    if (object->pad_gamepad->input_magnitude > 0.0f) {
-        object->field_0x7a3 = 3;
-        object->context_animation = LEGOACT_SUPERCARRY_WALK;
-    } else {
+    if (!(object->pad_gamepad->input_magnitude > 0.0f)) {
         object->field_0x7a3 = 2;
         object->context_animation = LEGOACT_SUPERCARRY_IDLE;
+    } else {
+        object->field_0x7a3 = 3;
+        object->context_animation = LEGOACT_SUPERCARRY_WALK;
     }
 }
 

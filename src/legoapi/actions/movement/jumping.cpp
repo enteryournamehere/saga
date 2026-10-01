@@ -281,9 +281,13 @@ i32 StartBigJump(GameObject_s *object, NUVEC *destination, i32 mode, f32 height,
     if (object->field_0x7aa != 0) {
         f32 distance = NuVecXZDist(&object->external_force, &object->launch_origin, NULL);
         f32 speed = object->apiobj.character_data->game_character->run_speed;
-        f32 duration = distance == 0.0f || speed == 0.0f ? 0.0f : distance / speed;
-        if (!(object->airborne_action_duration > duration))
-            object->airborne_action_duration = duration;
+        f32 duration;
+        if (distance == 0.0f || speed == 0.0f)
+            duration = 0.0f;
+        else
+            duration = distance / speed;
+        object->airborne_action_duration =
+            object->airborne_action_duration > duration ? object->airborne_action_duration : duration;
         if (object->field_0x7aa == 2) {
             if (LEGOACT_JUMP2 != -1 && object->apiobj.character_model->model_data_b[LEGOACT_JUMP2] != NULL)
                 height *= 1.5f;
@@ -312,7 +316,9 @@ i32 StartBigJump(GameObject_s *object, NUVEC *destination, i32 mode, f32 height,
     object->ai.movement_event_flags |= 2;
     object->ai.field_0x180 = NULL;
     object->context_variant_flags &= ~1;
-    object->big_jump_height = height < 0.0f ? 0.0f : height;
+    if (height < 0.0f)
+        height = 0.0f;
+    object->big_jump_height = height;
     return 1;
 }
 

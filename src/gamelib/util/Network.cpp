@@ -690,7 +690,10 @@ i32 NetworkObjectManager::GetNextGuid() {
     i32 group_start = guid_group << 10;
     i32 group_end = (guid_group + 1) << 10;
     if (next_guid < 0) {
-        next_guid = group_start == 0 ? 0 : group_start - 1;
+        if (group_start == 0)
+            next_guid = 0;
+        else
+            next_guid = group_start - 1;
     }
 
     i32 attempts = 0;

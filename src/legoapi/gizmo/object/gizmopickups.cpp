@@ -134,8 +134,10 @@ void AddPickups(i32 coins, i32 hearts, i32 torpedoes, i32 powerups, nuvec_s *pos
         if (player_id == -1) {
             if (player2 != NULL)
                 player_id = qrand() / 32768;
+            else if (Player[0] != NULL && Player[0]->apiobj.player_controlled)
+                player_id = 0;
             else
-                player_id = Player[0] != NULL && Player[0]->apiobj.player_controlled ? 0 : 1;
+                player_id = 1;
         }
     } else if (world->area != NULL && (world->area->flags & 0x100) != 0) {
         player_id = qrand() / 32768;

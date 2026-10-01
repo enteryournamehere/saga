@@ -366,13 +366,19 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
 
     effect->generator_type = static_cast<u8>(EdFileReadChar());
     effect->momentum_adjustment_type = static_cast<u8>(EdFileReadChar());
-    effect->cutscene_only = version >= 35 ? static_cast<u8>(EdFileReadChar()) : 0;
+    if (version >= 35)
+        effect->cutscene_only = static_cast<u8>(EdFileReadChar());
+    else
+        effect->cutscene_only = 0;
     effect->disabled = 0;
     effect->particle_type = static_cast<u8>(EdFileReadChar());
     if (version < 39)
         EdFileReadChar();
     effect->status = 1;
-    effect->camera_facing = version >= 40 ? static_cast<u8>(EdFileReadChar()) : 0;
+    if (version >= 40)
+        effect->camera_facing = static_cast<u8>(EdFileReadChar());
+    else
+        effect->camera_facing = 0;
 
     *reinterpret_cast<f32 *>(effect->fields_030) = EdFileReadFloat();
     if (version >= 6) {
@@ -382,9 +388,18 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
         effect->cut_on = 0.0f;
         effect->clip_extent = 25.0f;
     }
-    effect->sound_range = version >= 10 ? EdFileReadFloat() : 0.0f;
-    effect->sound_range_override = version >= 23 ? EdFileReadFloat() : 0.0f;
-    effect->field_044 = version >= 24 ? EdFileReadFloat() : 0.5f;
+    if (version >= 10)
+        effect->sound_range = EdFileReadFloat();
+    else
+        effect->sound_range = 0.0f;
+    if (version >= 23)
+        effect->sound_range_override = EdFileReadFloat();
+    else
+        effect->sound_range_override = 0.0f;
+    if (version >= 24)
+        effect->field_044 = EdFileReadFloat();
+    else
+        effect->field_044 = 0.5f;
     if (version < 7) {
         EdFileReadInt();
         EdFileReadInt();
@@ -495,10 +510,16 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
     } else {
         effect->process_spheres = 0;
     }
-    effect->time_group = version >= 17 ? static_cast<i8>(EdFileReadChar()) : 0;
+    if (version >= 17)
+        effect->time_group = static_cast<i8>(EdFileReadChar());
+    else
+        effect->time_group = 0;
     if (effect->particle_type == 7)
         effect->time_group = 2;
-    effect->field_2f2 = version >= 31 ? static_cast<u8>(EdFileReadChar()) : 3;
+    if (version >= 31)
+        effect->field_2f2 = static_cast<u8>(EdFileReadChar());
+    else
+        effect->field_2f2 = 3;
     if (version >= 32) {
         effect->use_explicit_clip_box = static_cast<u8>(EdFileReadChar());
         effect->repeat_box.x = EdFileReadFloat();
@@ -510,7 +531,10 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
         effect->repeat_box.y = 1.0f;
         effect->repeat_box.z = 1.0f;
     }
-    effect->thinning = version >= 36 ? EdFileReadFloat() : 4.0f;
+    if (version >= 36)
+        effect->thinning = EdFileReadFloat();
+    else
+        effect->thinning = 4.0f;
     if (version == 36 && effect->thinning < 4.0f)
         effect->thinning = 4.0f;
     if (!(version >= 30)) {
@@ -586,7 +610,10 @@ void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
         effect->radial_segments = 5;
         effect->radial_floor = 0.5f;
     }
-    effect->scale_in_time = version >= 26 ? EdFileReadFloat() : 0.0f;
+    if (version >= 26)
+        effect->scale_in_time = EdFileReadFloat();
+    else
+        effect->scale_in_time = 0.0f;
     effect->scale = 1.0f;
     effect->unscaled_effect_index = 0;
     if (NuStrCmp(effect->name, (char *)"STARDESTROYER") == 0)

@@ -407,7 +407,10 @@ void UpdateCables() {
             }
             if (cable->source != NULL && cable->target != NULL) {
                 for (i32 i = 0; i < cable->point_count; ++i)
-                    cable->velocities[i] = i == 0 ? cable->source->apiobj.velocity : cable->target->apiobj.velocity;
+                    if (i == 0)
+                        cable->velocities[i] = cable->source->apiobj.velocity;
+                    else
+                        cable->velocities[i] = cable->target->apiobj.velocity;
             }
         }
     }

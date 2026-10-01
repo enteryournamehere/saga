@@ -326,7 +326,10 @@ static i32 Ledges_Load(void *world_info, void *) {
         if (version > 1) {
             ledge->field_0x1c = EdFileReadShort();
             ledge->field_0x1e = EdFileReadShort();
-            ledge->flags = version == 2 ? 0 : EdFileReadUnsignedChar();
+            if (version == 2)
+                ledge->flags = 0;
+            else
+                ledge->flags = EdFileReadUnsignedChar();
         } else {
             ledge->field_0x1c = -1;
             ledge->field_0x1e = -1;

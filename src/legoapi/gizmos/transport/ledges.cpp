@@ -405,10 +405,14 @@ static inline void Ledge_TryAttach(WORLDINFO_s *world, GameObject_s *object) {
         object->external_force.z - NU_COS_LUT(object->apiobj.movement_facing_angle) * object->apiobj.field_0x1dc;
 }
 
+static inline void Ledge_UpdateUnattached(WORLDINFO_s *world, GameObject_s *object) {
+    if (object->apiobj.field_0x27d == 0 && object->apiobj.velocity.y <= 0.0f)
+        Ledge_TryAttach(world, object);
+}
+
 void Ledge_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
     if (object->character_context != 0x5b) {
-        if (object->apiobj.field_0x27d == 0 && object->apiobj.velocity.y <= 0.0f)
-            Ledge_TryAttach(world, object);
+        Ledge_UpdateUnattached(world, object);
         return;
     }
     if (object->pad_gamepad->buttons_pressed & GAMEPAD_JUMP) {

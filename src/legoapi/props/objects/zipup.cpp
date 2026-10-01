@@ -792,6 +792,84 @@ void InitRopeMtl(char *name, variptr_u *buffer, variptr_u *buffer_end) {
     }
 }
 
+// The retail rope draw inlines these numtx rotations (other units call the
+// exported versions), so this unit carries local copies of their bodies.
+static void RopeMtxSetRotationZ(NUMTX *m, NUANG a) {
+    m->m00 = m->m11 = NU_COS_LUT(a);
+    m->m01 = NU_SIN_LUT(a);
+    m->m10 = -m->m01;
+    m->m22 = 1.0;
+    m->m02 = m->m12 = m->m03 = m->m23 = m->m20 = m->m21 = m->m13 = m->m30 = m->m31 = m->m32 = 0.0f;
+    m->m33 = 1.0;
+}
+
+static void RopeMtxRotateX(NUMTX *m, NUANG a) {
+    f32 cosx = NU_COS_LUT(a);
+    f32 sinx = NU_SIN_LUT(a);
+    f32 m01 = m->m01;
+    f32 m11 = m->m11;
+    f32 m21 = m->m21;
+    f32 m31 = m->m31;
+
+    m->m01 = m01 * cosx - m->m02 * sinx;
+    m->m02 = m01 * sinx + m->m02 * cosx;
+    m->m11 = m11 * cosx - m->m12 * sinx;
+    m->m12 = m11 * sinx + m->m12 * cosx;
+    m->m21 = m21 * cosx - m->m22 * sinx;
+    m->m22 = m21 * sinx + m->m22 * cosx;
+    m->m31 = m31 * cosx - m->m32 * sinx;
+    m->m32 = m31 * sinx + m->m32 * cosx;
+}
+
+static void RopeMtxRotateY(NUMTX *m, NUANG a) {
+    f32 cosx = NU_COS_LUT(a);
+    f32 sinx = NU_SIN_LUT(a);
+    f32 m00 = m->m00;
+    f32 m10 = m->m10;
+    f32 m20 = m->m20;
+    f32 m30 = m->m30;
+
+    m->m00 = m00 * cosx + m->m02 * sinx;
+    m->m02 = m->m02 * cosx - m00 * sinx;
+    m->m10 = m10 * cosx + m->m12 * sinx;
+    m->m12 = m->m12 * cosx - m10 * sinx;
+    m->m20 = m20 * cosx + m->m22 * sinx;
+    m->m22 = m->m22 * cosx - m20 * sinx;
+    m->m30 = m30 * cosx + m->m32 * sinx;
+    m->m32 = m->m32 * cosx - m30 * sinx;
+}
+
+static void RopeMtxRotateZ(NUMTX *m, NUANG a) {
+    f32 cosx = NU_COS_LUT(a);
+    f32 sinx = NU_SIN_LUT(a);
+    f32 m00 = m->m00;
+    f32 m10 = m->m10;
+    f32 m20 = m->m20;
+    f32 m30 = m->m30;
+
+    m->m00 = m00 * cosx - m->m01 * sinx;
+    m->m01 = m00 * sinx + m->m01 * cosx;
+    m->m10 = m10 * cosx - m->m11 * sinx;
+    m->m11 = m10 * sinx + m->m11 * cosx;
+    m->m20 = m20 * cosx - m->m21 * sinx;
+    m->m21 = m20 * sinx + m->m21 * cosx;
+    m->m30 = m30 * cosx - m->m31 * sinx;
+    m->m31 = m30 * sinx + m->m31 * cosx;
+}
+
+static inline void SetRopeVertex(NURND_VERTEX3D *vertex, f32 x, f32 y, f32 z, f32 normal_x, f32 normal_z, u32 colour,
+                                 f32 u, f32 v) {
+    vertex->position.x = x;
+    vertex->position.y = y;
+    vertex->position.z = z;
+    vertex->normal.x = normal_x;
+    vertex->normal.y = 0.0f;
+    vertex->normal.z = normal_z;
+    vertex->colour = colour;
+    vertex->u = u;
+    vertex->v = v;
+}
+
 void DrawRopeSingle(nuvec_s *start, nuvec_s *end, float amount, numtl_s *material, float time, float grow_time,
                     float spacing, float scale) {
     static f32 ROPELEN;
@@ -806,22 +884,26 @@ void DrawRopeSingle(nuvec_s *start, nuvec_s *end, float amount, numtl_s *materia
     NUVEC direction = {end->x - start->x, end->y - start->y, end->z - start->z};
     f32 length = NuVecMag(&direction) * amount;
     f32 repeats = length / ROPELEN;
-    NURND_VERTEX3D vertices[10] = {
-        {{-0.01f, 0.0f, 0.01f}, {-0.7071068286895752f, 0.0f, 0.7071068286895752f}, ropedif, 0.0f, 0.0f},
-        {{-0.01f, length, 0.01f}, {-0.7071068286895752f, 0.0f, 0.7071068286895752f}, ropedif, repeats, 0.0f},
-        {{0.01f, 0.0f, 0.01f}, {0.7071068286895752f, 0.0f, 0.7071068286895752f}, ropedif, 0.0f, 1.0f},
-        {{0.01f, length, 0.01f}, {0.7071068286895752f, 0.0f, 0.7071068286895752f}, ropedif, repeats, 1.0f},
-        {{0.01f, 0.0f, -0.01f}, {0.7071068286895752f, 0.0f, -0.7071068286895752f}, ropedif, 0.0f, 2.0f},
-        {{0.01f, length, -0.01f}, {0.7071068286895752f, 0.0f, -0.7071068286895752f}, ropedif, repeats, 2.0f},
-        {{-0.01f, 0.0f, -0.01f}, {-0.7071068286895752f, 0.0f, -0.7071068286895752f}, ropedif, 0.0f, 3.0f},
-        {{-0.01f, length, -0.01f}, {-0.7071068286895752f, 0.0f, -0.7071068286895752f}, ropedif, repeats, 3.0f},
-        {{-0.01f, 0.0f, 0.01f}, {-0.7071068286895752f, 0.0f, 0.7071068286895752f}, ropedif, 0.0f, 4.0f},
-        {{-0.01f, length, 0.01f}, {-0.7071068286895752f, 0.0f, 0.7071068286895752f}, ropedif, repeats, 4.0f}};
+    NURND_VERTEX3D vertices[10];
+    SetRopeVertex(&vertices[0], -0.01f, 0.0f, 0.01f, -0.7071068286895752f, 0.7071068286895752f, ropedif, 0.0f, 0.0f);
+    SetRopeVertex(&vertices[1], -0.01f, length, 0.01f, -0.7071068286895752f, 0.7071068286895752f, ropedif, repeats,
+                  0.0f);
+    SetRopeVertex(&vertices[2], 0.01f, 0.0f, 0.01f, 0.7071068286895752f, 0.7071068286895752f, ropedif, 0.0f, 1.0f);
+    SetRopeVertex(&vertices[3], 0.01f, length, 0.01f, 0.7071068286895752f, 0.7071068286895752f, ropedif, repeats, 1.0f);
+    SetRopeVertex(&vertices[4], 0.01f, 0.0f, -0.01f, 0.7071068286895752f, -0.7071068286895752f, ropedif, 0.0f, 2.0f);
+    SetRopeVertex(&vertices[5], 0.01f, length, -0.01f, 0.7071068286895752f, -0.7071068286895752f, ropedif, repeats,
+                  2.0f);
+    SetRopeVertex(&vertices[6], -0.01f, 0.0f, -0.01f, -0.7071068286895752f, -0.7071068286895752f, ropedif, 0.0f, 3.0f);
+    SetRopeVertex(&vertices[7], -0.01f, length, -0.01f, -0.7071068286895752f, -0.7071068286895752f, ropedif, repeats,
+                  3.0f);
+    SetRopeVertex(&vertices[8], -0.01f, 0.0f, 0.01f, -0.7071068286895752f, 0.7071068286895752f, ropedif, 0.0f, 4.0f);
+    SetRopeVertex(&vertices[9], -0.01f, length, 0.01f, -0.7071068286895752f, 0.7071068286895752f, ropedif, repeats,
+                  4.0f);
     u16 x_rotation, z_rotation;
     FindAnglesZX(&direction, &x_rotation, &z_rotation);
     NUMTX matrix;
-    NuMtxSetRotationZ(&matrix, z_rotation);
-    NuMtxRotateX(&matrix, x_rotation);
+    RopeMtxSetRotationZ(&matrix, z_rotation);
+    RopeMtxRotateX(&matrix, x_rotation);
     NuMtxTranslate(&matrix, start);
     NuRndrTriStrip3dClip(vertices, 10, &matrix, material);
     if (Cheat_IsOn(3) == 0 || VehicleArea != 0)
@@ -841,9 +923,9 @@ void DrawRopeSingle(nuvec_s *start, nuvec_s *end, float amount, numtl_s *materia
         rotation = (u16)(rotation + 0x5555);
         NuMtxSetScale(&matrix, &size);
         NuMtxTranslate(&matrix, &position);
-        NuMtxRotateY(&matrix, rotation);
-        NuMtxRotateZ(&matrix, z_rotation);
-        NuMtxRotateX(&matrix, x_rotation);
+        RopeMtxRotateY(&matrix, rotation);
+        RopeMtxRotateZ(&matrix, z_rotation);
+        RopeMtxRotateX(&matrix, x_rotation);
         NuMtxTranslate(&matrix, start);
         NuSpecialDrawAt(&WORLD->lev_objs[0x124].special, &matrix);
         NuSpecialDrawAt(&WORLD->lev_objs[0x125].special, &matrix);

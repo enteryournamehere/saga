@@ -37,7 +37,7 @@ static NUFRUSTRUM *allocateFrustrum(i16 plane_count, i16 room_id) {
     return frustum;
 }
 
-static __used__ void transposeClipPlanes(NUFRUSTRUM *frustum) {
+static void transposeClipPlanes(NUFRUSTRUM *frustum) {
     f32 cam_a = cam_plane.a;
     frustum->transposed_planes[3] = cam_a;
     f32 cam_d = cam_plane.d;
@@ -119,7 +119,7 @@ static void transformFrustrumPlane(NUPLANE *plane) {
         -(local_inv_view_mtx.m30 * plane->a + local_inv_view_mtx.m31 * plane->b + local_inv_view_mtx.m32 * plane->c);
 }
 
-static __used__ NUFRUSTRUM *buildFrustrum(NUVEC *minimum, NUVEC *maximum, i16 room_id) {
+static NUFRUSTRUM *buildFrustrum(NUVEC *minimum, NUVEC *maximum, i16 room_id) {
     NUFRUSTRUM *frustum = allocateFrustrum(4, room_id);
     frustum->minimum = *minimum;
     frustum->maximum = *maximum;
@@ -214,7 +214,7 @@ static NUFRUSTRUM *copyFrustrum(NUFRUSTRUM *source, i16 room_id) {
     return copy;
 }
 
-static __used__ void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_id, i16 previous_room, i32 depth) {
+static void roomRecursive(NUGSCN *scene, NUFRUSTRUM *frustum, i16 room_id, i16 previous_room, i32 depth) {
     if (depth >= 2) {
         for (i32 i = 0; i < depth - 1; ++i) {
             if (rooms_visited[i] == room_id) {

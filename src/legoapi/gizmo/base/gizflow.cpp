@@ -99,7 +99,7 @@ static NUFPCOMJMP cfgtab_Gizmo[] = {
     {NULL, NULL},
 };
 
-static __used__ void xGizmo(nufpar_s *parser) {
+static void xGizmo(nufpar_s *parser) {
     if (load_flowbox == NULL)
         return;
     FLOWBOXGIZMODATA_s *data = load_flowbox->data;
@@ -175,7 +175,7 @@ static i32 load_parents[16];
 static i32 load_children[32];
 static u8 load_parent_output_ix[16];
 
-static __used__ void remapChildren(i32 id) {
+static void remapChildren(i32 id) {
     for (i32 i = 0; load_nchildren < 32 && remap[~id].children[i] != id; ++i) {
         i32 child = remap[~id].children[i];
         if (child < 0)
@@ -185,7 +185,7 @@ static __used__ void remapChildren(i32 id) {
     }
 }
 
-static __used__ void remapParent(i32 id) {
+static void remapParent(i32 id) {
     for (i32 i = 0; load_nparents < 16 && remap[~id].parents[i] != id; ++i) {
         i32 parent = remap[~id].parents[i];
         if (parent < 0)
@@ -198,7 +198,7 @@ static __used__ void remapParent(i32 id) {
     }
 }
 
-static __used__ void xChild(nufpar_s *parser) {
+static void xChild(nufpar_s *parser) {
     if (load_nchildren < 32) {
         i32 child = NuFParGetInt(parser);
         if (child < 0)
@@ -208,7 +208,7 @@ static __used__ void xChild(nufpar_s *parser) {
     }
 }
 
-static __used__ void xParent(nufpar_s *parser) {
+static void xParent(nufpar_s *parser) {
     if (load_nparents < 16) {
         i32 parent = NuFParGetInt(parser);
         if (parent < 0) {
@@ -250,7 +250,7 @@ static NUFPCOMJMP cfgtab_Collapse[] = {
     {NULL, NULL},
 };
 
-static __used__ void xCollapse(nufpar_s *parser) {
+static void xCollapse(nufpar_s *parser) {
     load_nparents = 0;
     load_nchildren = 0;
     NuFParPushCom(parser, cfgtab_Collapse);
@@ -310,7 +310,7 @@ static NUFPCOMJMP cfgtab_Condition[] = {
     {NULL, NULL},
 };
 
-static __used__ void xCondition(nufpar_s *parser) {
+static void xCondition(nufpar_s *parser) {
     if (load_flowbox == NULL)
         return;
     load_flowbox->type = 1;

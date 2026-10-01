@@ -87,60 +87,58 @@ void UpdateRadios() {
 }
 
 void PlayRadio(char *special_name, char *blowup_name, i32 play) {
-    if (special_name == NULL && blowup_name == NULL) {
-        return;
-    }
-
-    if (play != 0) {
-        RadioEntry *radio = NULL;
-        for (i32 i = 0; i < 8; i++) {
-            if (radios[i].time <= 0.0f) {
-                radio = &radios[i];
-                break;
+    if (!(special_name == NULL && blowup_name == NULL)) {
+        if (play != 0) {
+            RadioEntry *radio = NULL;
+            for (i32 i = 0; i < 8; i++) {
+                if (radios[i].time <= 0.0f) {
+                    radio = &radios[i];
+                    break;
+                }
             }
-        }
-        if (radio == NULL) {
+            if (radio == NULL) {
+                return;
+            }
+
+            if (blowup_name != NULL) {
+                GIZMO *gizmo = GizmoFindByName(WORLD->gizmo_sys, blowup_gizmotype_id, blowup_name);
+                if (gizmo == NULL) {
+                    return;
+                }
+                radio->blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
+            } else {
+                if (special_name == NULL || NuSpecialFind(WORLD->current_gscn, &radio->special, special_name, 1) == 0) {
+                    return;
+                }
+            }
+            radio->time = 20.0f;
+            radios_playing = 1;
             return;
         }
 
-        if (blowup_name != NULL) {
-            GIZMO *gizmo = GizmoFindByName(WORLD->gizmo_sys, blowup_gizmotype_id, blowup_name);
-            if (gizmo == NULL) {
-                return;
+        if (blowup_name == NULL) {
+            return;
+        }
+        for (i32 i = 0; i < 8; i++) {
+            RadioEntry *radio = &radios[i];
+            bool match = radio->blowup != NULL && NuStrICmp(radio->blowup->name, blowup_name) == 0;
+            if (!match && special_name != NULL) {
+                char *name = NuSpecialGetName(&radio->special);
+                match = name != NULL && NuStrICmp(name, special_name) == 0;
             }
-            radio->blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
-        } else {
-            if (special_name == NULL || NuSpecialFind(WORLD->current_gscn, &radio->special, special_name, 1) == 0) {
-                return;
+            if (!match) {
+                continue;
             }
-        }
-        radio->time = 20.0f;
-        radios_playing = 1;
-        return;
-    }
 
-    if (blowup_name == NULL) {
-        return;
-    }
-    for (i32 i = 0; i < 8; i++) {
-        RadioEntry *radio = &radios[i];
-        bool match = radio->blowup != NULL && NuStrICmp(radio->blowup->name, blowup_name) == 0;
-        if (!match && special_name != NULL) {
-            char *name = NuSpecialGetName(&radio->special);
-            match = name != NULL && NuStrICmp(name, special_name) == 0;
+            if (radio->blowup != NULL) {
+                GizmoBlowupUpdateMatrix(radio->blowup);
+                radio->blowup->state_flags |= 1;
+            } else {
+                *NuSpecialGetInstanceMtx(&radio->special) = *NuSpecialGetMtx(&radio->special);
+                NuSpecialUpdate(&radio->special);
+            }
+            memset(radio, 0, sizeof(*radio));
+            return;
         }
-        if (!match) {
-            continue;
-        }
-
-        if (radio->blowup != NULL) {
-            GizmoBlowupUpdateMatrix(radio->blowup);
-            radio->blowup->state_flags |= 1;
-        } else {
-            *NuSpecialGetInstanceMtx(&radio->special) = *NuSpecialGetMtx(&radio->special);
-            NuSpecialUpdate(&radio->special);
-        }
-        memset(radio, 0, sizeof(*radio));
-        return;
     }
 }

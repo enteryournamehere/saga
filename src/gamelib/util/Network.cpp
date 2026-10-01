@@ -1543,15 +1543,14 @@ i32 NetworkObjectManager::SendPushMessage(NetMessage *message, NetPeerPush const
 }
 
 void NetworkObjectManager::Start(NOSContext const &new_context) {
-    if (active != 0) {
-        return;
+    if (active == 0) {
+        active = 1;
+        memmove(&context, &new_context, sizeof(context));
+        NetMessage message;
+        message.Write8(9);
+        message.Write(&context, sizeof(context));
+        theNetwork.ReliableBroadcast(message, 3);
     }
-    active = 1;
-    memmove(&context, &new_context, sizeof(context));
-    NetMessage message;
-    message.Write8(9);
-    message.Write(&context, sizeof(context));
-    theNetwork.ReliableBroadcast(message, 3);
 }
 
 NetworkObjectManager::PendingObject *NetworkObjectManager::StealPendingObject() {
@@ -1566,16 +1565,15 @@ NetworkObjectManager::PendingObject *NetworkObjectManager::StealPendingObject() 
 }
 
 void NetworkObjectManager::Stop() {
-    if (active == 0) {
-        return;
-    }
-    active = 0;
-    NetMessage message;
-    message.Write8(10);
-    theNetwork.ReliableBroadcast(message, 3);
-    for (i32 i = 0; i < 8; i++) {
-        if (peer_push[i].peer != NULL) {
-            peer_push[i].Stop();
+    if (active != 0) {
+        active = 0;
+        NetMessage message;
+        message.Write8(10);
+        theNetwork.ReliableBroadcast(message, 3);
+        for (i32 i = 0; i < 8; i++) {
+            if (peer_push[i].peer != NULL) {
+                peer_push[i].Stop();
+            }
         }
     }
 }

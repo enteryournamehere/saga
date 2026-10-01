@@ -68,103 +68,103 @@ void Pulses_AddSfx(PULSESYS_s *pulse_sys, i32 *sfx_ids, i32 *sfx_count, i32 max_
 }
 
 void Pulses_Update(PULSESYS_s *pulse_sys) {
-    if (pulse_sys == NULL) {
-        return;
-    }
-
-    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
-    if (pulse_sys->pulse_count == 0) {
-        return;
-    }
-
-    NUVEC hit_direction = {pulse_sys->hit_direction_line, 0.0f, pulse_sys->hit_direction_radius_origin};
-    NuVecRotateY(&hit_direction, &hit_direction, 0x4000);
-
-    for (i32 i = 0; i < pulse_sys->pulse_count; ++i) {
-        if (pulse_sys->pulses[i].gizmo != NULL &&
-            GizmoGetVisibility(world->gizmo_sys, pulse_sys->pulses[i].gizmo) == 0) {
-            pulse_sys->pulses[i].disabled = 1;
-            NuSpecialSetVisibility(&pulse_sys->pulses[i].special, 0);
-        }
-        if (pulse_sys->pulses[i].disabled != 0) {
-            continue;
+    if (pulse_sys != NULL) {
+        WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+        if (pulse_sys->pulse_count == 0) {
+            return;
         }
 
-        NUVEC *pulse_position = NuSpecialGetDrawPos(&pulse_sys->pulses[i].special);
-        pulse_sys->pulses[i].timer -= FRAMETIME;
-        if (pulse_sys->pulses[i].timer <= 0.0f && netclient == 0) {
-            if (pulse_sys->pulses[i].active != 0) {
-                pulse_sys->pulses[i].active = 0;
-                pulse_sys->pulses[i].timer = pulse_sys->pulses[i].off_time;
-                GameAudio_PlaySfxById(pulse_sys->sfx_turn_off, pulse_position, 0, 0);
-            } else {
-                pulse_sys->pulses[i].active = 1;
-                pulse_sys->pulses[i].timer = pulse_sys->pulses[i].on_time;
-                GameAudio_PlaySfxById(pulse_sys->sfx_turn_on, pulse_position, 0, 0);
+        NUVEC hit_direction = {pulse_sys->hit_direction_line, 0.0f, pulse_sys->hit_direction_radius_origin};
+        NuVecRotateY(&hit_direction, &hit_direction, 0x4000);
+
+        for (i32 i = 0; i < pulse_sys->pulse_count; ++i) {
+            if (pulse_sys->pulses[i].gizmo != NULL &&
+                GizmoGetVisibility(world->gizmo_sys, pulse_sys->pulses[i].gizmo) == 0) {
+                pulse_sys->pulses[i].disabled = 1;
+                NuSpecialSetVisibility(&pulse_sys->pulses[i].special, 0);
             }
-
-            NuSpecialSetVisibility(&pulse_sys->pulses[i].special, pulse_sys->pulses[i].active);
-            if (pulse_sys->pulses[i].active != 0) {
-                GameAudio_PlaySfxById(pulse_sys->sfx_on_loop, pulse_position, 0, 0);
-            } else {
-                GameAudio_PlaySfxById(pulse_sys->sfx_off_loop, pulse_position, 0, 0);
-            }
-        }
-
-        if (pulse_sys->pulses[i].active == 0) {
-            continue;
-        }
-
-        for (i32 player_index = 0; player_index < 2; ++player_index) {
-            GameObject_s *player = Player[player_index];
-            if (player == NULL || !player->apiobj.player_controlled || player->apiobj.field_0x287 != 0 ||
-                (LEGOCONTEXT_DOOMED != -1 && player->character_context == LEGOCONTEXT_DOOMED) ||
-                player->flicker_timer > 0.0f || player->spawn_protection_timer > 0.0f ||
-                (player->field_0xefe & 0x40) != 0) {
+            if (pulse_sys->pulses[i].disabled != 0) {
                 continue;
             }
 
-            NUVEC direction = hit_direction;
-            if (pulse_sys->radial_hit_direction != 0) {
-                direction.x = pulse_position->x - hit_direction.x;
-                direction.y = 0.0f;
-                direction.z = pulse_position->z - hit_direction.z;
-                NuVecNorm(&direction, &direction);
+            NUVEC *pulse_position = NuSpecialGetDrawPos(&pulse_sys->pulses[i].special);
+            pulse_sys->pulses[i].timer -= FRAMETIME;
+            if (pulse_sys->pulses[i].timer <= 0.0f && netclient == 0) {
+                if (pulse_sys->pulses[i].active != 0) {
+                    pulse_sys->pulses[i].active = 0;
+                    pulse_sys->pulses[i].timer = pulse_sys->pulses[i].off_time;
+                    GameAudio_PlaySfxById(pulse_sys->sfx_turn_off, pulse_position, 0, 0);
+                } else {
+                    pulse_sys->pulses[i].active = 1;
+                    pulse_sys->pulses[i].timer = pulse_sys->pulses[i].on_time;
+                    GameAudio_PlaySfxById(pulse_sys->sfx_turn_on, pulse_position, 0, 0);
+                }
+
+                NuSpecialSetVisibility(&pulse_sys->pulses[i].special, pulse_sys->pulses[i].active);
+                if (pulse_sys->pulses[i].active != 0) {
+                    GameAudio_PlaySfxById(pulse_sys->sfx_on_loop, pulse_position, 0, 0);
+                } else {
+                    GameAudio_PlaySfxById(pulse_sys->sfx_off_loop, pulse_position, 0, 0);
+                }
             }
 
-            NUVEC offset;
-            NuVecSub(&offset, &player->apiobj.collision_position, pulse_position);
-            f32 distance = direction.x * offset.x + direction.z * offset.z;
-            if (pulse_sys->radial_hit_direction == 1) {
-                if (distance < 0.0f) {
+            if (pulse_sys->pulses[i].active == 0) {
+                continue;
+            }
+
+            for (i32 player_index = 0; player_index < 2; ++player_index) {
+                GameObject_s *player = Player[player_index];
+                if (player == NULL || !player->apiobj.player_controlled || player->apiobj.field_0x287 != 0 ||
+                    (LEGOCONTEXT_DOOMED != -1 && player->character_context == LEGOCONTEXT_DOOMED) ||
+                    player->flicker_timer > 0.0f || player->spawn_protection_timer > 0.0f ||
+                    (player->field_0xefe & 0x40) != 0) {
                     continue;
                 }
-                NuVecRotateY(&offset, &offset, 0x4000);
-                distance = direction.x * offset.x + direction.z * offset.z;
-            }
 
-            if (NuFabs(distance) >= pulse_sys->collide_radius) {
-                continue;
-            }
-            if (pulse_sys->radial_hit_direction == 0 &&
-                offset.x * pulse_sys->hit_direction_line + offset.z * pulse_sys->hit_direction_radius_origin < 0.0f) {
-                continue;
-            }
+                NUVEC direction = hit_direction;
+                if (pulse_sys->radial_hit_direction != 0) {
+                    direction.x = pulse_position->x - hit_direction.x;
+                    direction.y = 0.0f;
+                    direction.z = pulse_position->z - hit_direction.z;
+                    NuVecNorm(&direction, &direction);
+                }
 
-            GameAudio_PlaySfxById(pulse_sys->sfx_hit_player, &player->apiobj.collision_position, 0, 0);
-            if (ObjHitObj(NULL, player, 1, 0, 0, 1) == 2) {
-                KillRumble(player);
-                continue;
+                NUVEC offset;
+                NuVecSub(&offset, &player->apiobj.collision_position, pulse_position);
+                f32 distance = direction.x * offset.x + direction.z * offset.z;
+                if (pulse_sys->radial_hit_direction == 1) {
+                    if (distance < 0.0f) {
+                        continue;
+                    }
+                    NuVecRotateY(&offset, &offset, 0x4000);
+                    distance = direction.x * offset.x + direction.z * offset.z;
+                }
+
+                if (NuFabs(distance) >= pulse_sys->collide_radius) {
+                    continue;
+                }
+                if (pulse_sys->radial_hit_direction == 0 &&
+                    offset.x * pulse_sys->hit_direction_line + offset.z * pulse_sys->hit_direction_radius_origin <
+                        0.0f) {
+                    continue;
+                }
+
+                GameAudio_PlaySfxById(pulse_sys->sfx_hit_player, &player->apiobj.collision_position, 0, 0);
+                if (ObjHitObj(NULL, player, 1, 0, 0, 1) == 2) {
+                    KillRumble(player);
+                    continue;
+                }
+
+                TakeHitRumble(player, 0.7f);
+                player->apiobj.velocity.x = 0.0f;
+                player->apiobj.velocity.z = 0.0f;
+                player->flicker_flags = (player->flicker_flags & ~7) | (distance >= 0.0f ? 4 : 3);
+
+                i32 debris_handle = -1;
+                AddFiniteShotDebrisEffect(&debris_handle,
+                                          world->debris_sys->entries[pulse_sys->debris_hit_player].effect,
+                                          &player->apiobj.collision_position, 1);
             }
-
-            TakeHitRumble(player, 0.7f);
-            player->apiobj.velocity.x = 0.0f;
-            player->apiobj.velocity.z = 0.0f;
-            player->flicker_flags = (player->flicker_flags & ~7) | (distance >= 0.0f ? 4 : 3);
-
-            i32 debris_handle = -1;
-            AddFiniteShotDebrisEffect(&debris_handle, world->debris_sys->entries[pulse_sys->debris_hit_player].effect,
-                                      &player->apiobj.collision_position, 1);
         }
     }
 }

@@ -208,68 +208,66 @@ extern "C" void NuRndrParticleGroup(uv1debdata *chunks, PartHeader *header, NUMT
         g_lastPartEffect = NULL;
         return;
     }
-    if (material == NULL || material->particle_type_tag == -105) {
-        return;
-    }
+    if (!(material == NULL || material->particle_type_tag == -105)) {
+        if (header != g_lastPartEffect) {
+            if (material->attribs.unknown_2_1_2 != 2 || material->attribs.unknown_2_4 == 0) {
+                material->attribs.unknown_2_1_2 = 2;
+                material->attribs.unknown_2_4 = 1;
+                NuMtlUpdate(material);
+            }
+            if (NuRndr_DebrisRotMtxPtr == NULL) {
+                NuMtxCalcDebrisFaceOn(&NuRndr_DebrisMtx);
+            } else {
+                NuRndr_DebrisMtx = *NuRndr_DebrisRotMtxPtr;
+            }
 
-    if (header != g_lastPartEffect) {
-        if (material->attribs.unknown_2_1_2 != 2 || material->attribs.unknown_2_4 == 0) {
-            material->attribs.unknown_2_1_2 = 2;
-            material->attribs.unknown_2_4 = 1;
-            NuMtlUpdate(material);
+            NUCAMERA camera;
+            NuCameraGet(&camera);
+            NuRndr_DebrisPlane.x = camera.mtx.m20;
+            NuRndr_DebrisPlane.y = camera.mtx.m21;
+            NuRndr_DebrisPlane.z = camera.mtx.m22;
+            NuRndr_DebrisPlane.w =
+                -(camera.mtx.m30 * camera.mtx.m20 + camera.mtx.m31 * camera.mtx.m21 + camera.mtx.m32 * camera.mtx.m22);
+            header->last_render_time = time;
+
+            VARIPTR *buffer = NuDisplayListGetBuffer();
+            g_ParticleGroup = static_cast<nunativedebrisdata_s *>(buffer->void_ptr);
+            buffer->addr += sizeof(nunativedebrisdata_s);
+            g_ParticleGroup->vertex_buffer_index = static_cast<u8>(g_CurrentDebriVBIndex);
+            g_ParticleGroup->use_system_memory_vb = g_UseSysMemVB;
+            g_ParticleGroup->first_vertex = static_cast<i32>(g_CurrentVBVertexCount);
+            g_ParticleGroup->vertex_count = 0;
+            g_ParticleGroup->material = material;
+            if (g_pVBData == NULL) {
+                g_pVBData = g_debrisUploadBuffer;
+            }
+            AddParticleGroupToDisplayList(g_ParticleGroup);
+            g_lastPartEffect = header;
         }
-        if (NuRndr_DebrisRotMtxPtr == NULL) {
-            NuMtxCalcDebrisFaceOn(&NuRndr_DebrisMtx);
-        } else {
-            NuRndr_DebrisMtx = *NuRndr_DebrisRotMtxPtr;
-        }
 
-        NUCAMERA camera;
-        NuCameraGet(&camera);
-        NuRndr_DebrisPlane.x = camera.mtx.m20;
-        NuRndr_DebrisPlane.y = camera.mtx.m21;
-        NuRndr_DebrisPlane.z = camera.mtx.m22;
-        NuRndr_DebrisPlane.w =
-            -(camera.mtx.m30 * camera.mtx.m20 + camera.mtx.m31 * camera.mtx.m21 + camera.mtx.m32 * camera.mtx.m22);
-        header->last_render_time = time;
-
-        VARIPTR *buffer = NuDisplayListGetBuffer();
-        g_ParticleGroup = static_cast<nunativedebrisdata_s *>(buffer->void_ptr);
-        buffer->addr += sizeof(nunativedebrisdata_s);
-        g_ParticleGroup->vertex_buffer_index = static_cast<u8>(g_CurrentDebriVBIndex);
-        g_ParticleGroup->use_system_memory_vb = g_UseSysMemVB;
-        g_ParticleGroup->first_vertex = static_cast<i32>(g_CurrentVBVertexCount);
-        g_ParticleGroup->vertex_count = 0;
-        g_ParticleGroup->material = material;
-        if (g_pVBData == NULL) {
-            g_pVBData = g_debrisUploadBuffer;
-        }
-        AddParticleGroupToDisplayList(g_ParticleGroup);
-        g_lastPartEffect = header;
-    }
-
-    dma_particle_chunk_s *chunk = reinterpret_cast<dma_particle_chunk_s *>(chunks);
-    i32 done = 0;
-    i32 count = 0;
-    while (done == 0) {
-        i32 command = static_cast<i8>(chunk->command);
-        dma_particle_chunk_s *next = chunk->next;
-        switch (command) {
-            case 0x4e:
-                if (next != NULL) {
+        dma_particle_chunk_s *chunk = reinterpret_cast<dma_particle_chunk_s *>(chunks);
+        i32 done = 0;
+        i32 count = 0;
+        while (done == 0) {
+            i32 command = static_cast<i8>(chunk->command);
+            dma_particle_chunk_s *next = chunk->next;
+            switch (command) {
+                case 0x4e:
+                    if (next != NULL) {
+                        BuildDebrisVerts(header, reinterpret_cast<uv1debdata *>(chunk), material, time, matrix,
+                                         particle_type, a, b, c, near_clip);
+                        chunk = next;
+                    }
+                    break;
+                case 0x52:
                     BuildDebrisVerts(header, reinterpret_cast<uv1debdata *>(chunk), material, time, matrix,
                                      particle_type, a, b, c, near_clip);
-                    chunk = next;
-                }
-                break;
-            case 0x52:
-                BuildDebrisVerts(header, reinterpret_cast<uv1debdata *>(chunk), material, time, matrix, particle_type,
-                                 a, b, c, near_clip);
-                done = 1;
+                    done = 1;
+                    break;
+            }
+            if (++count > 0x100)
                 break;
         }
-        if (++count > 0x100)
-            break;
     }
 }
 void BuildDebrisVerts(PartHeader *header, uv1debdata *chunk_data, NUMTL *material, f32 time, NUMTX *matrix,

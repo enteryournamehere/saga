@@ -563,51 +563,50 @@ void NuSound3ResumeStereoStream(i32 stream_index) {
 void NuSound3CreateVoice(nuvec_s *pos, i32 index, f32 falloff_a, f32 falloff_b, i32 volume_left, i32 volume_right,
                          f32 pitch, bool loop) {
     (void)volume_right;
-    if (NuSound.GetNumAvailableOutputDevices() < 1 || index < 0 || index >= static_cast<i32>(g_NuSoundSamples.length)) {
-        return;
-    }
-
-    NuSoundSource *source = g_NuSoundSamples.data[index].sample;
-    NuSoundSample *sample = (NuSoundSample *)source;
-    if (sample == NULL || sample->GetLoadState() != NuSoundSample::LoadState::LOADED ||
-        sample->GetResourceCount() < 1) {
-        return;
-    }
-
-    i32 in_flight = g_NuSoundVoicesPendingPlayback.length + g_NuSoundVoicesActive.length;
-    i32 source_voice_count = sample->field_0x18;
-    for (NuSound3Voice *entry = g_NuSoundVoicesPendingPlayback.Front(); entry != g_NuSoundVoicesPendingPlayback.End();
-         entry = entry->intrusive_next) {
-        if (entry->source == source) {
-            source_voice_count++;
-        }
-    }
-    if (source_voice_count > 2 || in_flight > 15) {
-        if (loop || g_NuSoundSamples.data[index].field7_0x1c == 0 || source_voice_count <= 2) {
+    if (!(NuSound.GetNumAvailableOutputDevices() < 1 || index < 0 ||
+          index >= static_cast<i32>(g_NuSoundSamples.length))) {
+        NuSoundSource *source = g_NuSoundSamples.data[index].sample;
+        NuSoundSample *sample = (NuSoundSample *)source;
+        if (sample == NULL || sample->GetLoadState() != NuSoundSample::LoadState::LOADED ||
+            sample->GetResourceCount() < 1) {
             return;
         }
 
-        f32 oldest_time;
-        NuSoundVoice *oldest_voice = NuSound.GetOldestVoice(sample, oldest_time);
-        if (oldest_voice != NULL) {
-            NuSound3StopVoice(oldest_voice);
+        i32 in_flight = g_NuSoundVoicesPendingPlayback.length + g_NuSoundVoicesActive.length;
+        i32 source_voice_count = sample->field_0x18;
+        for (NuSound3Voice *entry = g_NuSoundVoicesPendingPlayback.Front();
+             entry != g_NuSoundVoicesPendingPlayback.End(); entry = entry->intrusive_next) {
+            if (entry->source == source) {
+                source_voice_count++;
+            }
         }
-    }
+        if (source_voice_count > 2 || in_flight > 15) {
+            if (loop || g_NuSoundSamples.data[index].field7_0x1c == 0 || source_voice_count <= 2) {
+                return;
+            }
 
-    NuSound3Voice *voice = new NuSound3Voice();
-    voice->source = source;
-    voice->pitch = pitch;
-    voice->volume = volume_left;
-    voice->falloff_a = falloff_a;
-    voice->falloff_b = falloff_b;
-    voice->loop = loop;
-    voice->source_position = pos;
-    if (pos != NULL) {
-        voice->position = *pos;
-    }
-    voice->pause_counter = 0;
+            f32 oldest_time;
+            NuSoundVoice *oldest_voice = NuSound.GetOldestVoice(sample, oldest_time);
+            if (oldest_voice != NULL) {
+                NuSound3StopVoice(oldest_voice);
+            }
+        }
 
-    StreamListPushBack(&g_NuSoundVoicesPendingPlayback, voice);
+        NuSound3Voice *voice = new NuSound3Voice();
+        voice->source = source;
+        voice->pitch = pitch;
+        voice->volume = volume_left;
+        voice->falloff_a = falloff_a;
+        voice->falloff_b = falloff_b;
+        voice->loop = loop;
+        voice->source_position = pos;
+        if (pos != NULL) {
+            voice->position = *pos;
+        }
+        voice->pause_counter = 0;
+
+        StreamListPushBack(&g_NuSoundVoicesPendingPlayback, voice);
+    }
 }
 
 extern "C" void NuSound3Play3dLoopSfx(nuvec_s *position, i32 sample_index, f32 falloff_near, f32 falloff_far,

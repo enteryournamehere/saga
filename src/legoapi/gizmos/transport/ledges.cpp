@@ -377,36 +377,38 @@ ADDGIZMOTYPE *Ledges_RegisterGizmo(i32 type_id) {
     return &addtype;
 }
 
+static inline void Ledge_TryAttach(WORLDINFO_s *world, GameObject_s *object) {
+    if (object->character_context != 0x43 && object->character_context != -1) {
+        if (object->character_context != 0 || !(object->context_animation_timer >= 0.1f))
+            return;
+    }
+    if (!object->apiobj.player_controlled && !(object->field_0xf01 & 0x80))
+        return;
+    f32 radius = 3.0f * object->apiobj.field_0x1dc;
+    NUVEC minimum = {object->apiobj.collision_position.x - radius, object->apiobj.collision_position.y,
+                     object->apiobj.collision_position.z - radius};
+    NUVEC maximum = {object->apiobj.collision_position.x + radius, object->apiobj.upper_position.y,
+                     object->apiobj.collision_position.z + radius};
+    NUVEC position = {(maximum.x + minimum.x) * 0.5f, (maximum.y + minimum.y) * 0.5f, (maximum.z + minimum.z) * 0.5f};
+    u16 angle;
+    if (Ledge_AttachPoint(world, &position, &minimum, &maximum, &angle) == NULL)
+        return;
+    object->character_context = 0x5b;
+    object->context_animation = 0x9d;
+    object->apiobj.velocity = v000;
+    object->external_force = position;
+    object->apiobj.movement_facing_angle = angle + 0x8000;
+    object->launch_origin.x =
+        object->external_force.x - NU_SIN_LUT(object->apiobj.movement_facing_angle) * object->apiobj.field_0x1dc;
+    object->launch_origin.y = object->external_force.y;
+    object->launch_origin.z =
+        object->external_force.z - NU_COS_LUT(object->apiobj.movement_facing_angle) * object->apiobj.field_0x1dc;
+}
+
 void Ledge_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
     if (object->character_context != 0x5b) {
-        if (object->apiobj.field_0x27d != 0 || !(object->apiobj.velocity.y <= 0.0f))
-            return;
-        if (object->character_context != 0x43 && object->character_context != -1) {
-            if (object->character_context != 0 || !(object->context_animation_timer >= 0.1f))
-                return;
-        }
-        if (!object->apiobj.player_controlled && !(object->field_0xf01 & 0x80))
-            return;
-        f32 radius = 3.0f * object->apiobj.field_0x1dc;
-        NUVEC minimum = {object->apiobj.collision_position.x - radius, object->apiobj.collision_position.y,
-                         object->apiobj.collision_position.z - radius};
-        NUVEC maximum = {object->apiobj.collision_position.x + radius, object->apiobj.upper_position.y,
-                         object->apiobj.collision_position.z + radius};
-        NUVEC position = {(maximum.x + minimum.x) * 0.5f, (maximum.y + minimum.y) * 0.5f,
-                          (maximum.z + minimum.z) * 0.5f};
-        u16 angle;
-        if (Ledge_AttachPoint(world, &position, &minimum, &maximum, &angle) == NULL)
-            return;
-        object->character_context = 0x5b;
-        object->context_animation = 0x9d;
-        object->apiobj.velocity = v000;
-        object->external_force = position;
-        object->apiobj.movement_facing_angle = angle + 0x8000;
-        object->launch_origin.x =
-            object->external_force.x - NU_SIN_LUT(object->apiobj.movement_facing_angle) * object->apiobj.field_0x1dc;
-        object->launch_origin.y = object->external_force.y;
-        object->launch_origin.z =
-            object->external_force.z - NU_COS_LUT(object->apiobj.movement_facing_angle) * object->apiobj.field_0x1dc;
+        if (object->apiobj.field_0x27d == 0 && object->apiobj.velocity.y <= 0.0f)
+            Ledge_TryAttach(world, object);
         return;
     }
     if (object->pad_gamepad->buttons_pressed & GAMEPAD_JUMP) {

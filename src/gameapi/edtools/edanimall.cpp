@@ -524,15 +524,15 @@ static __attribute__((used)) void edanimcbLocalSoundTypeMenu(eduimenu_s *parent,
     }
 
     for (i32 index = 0; index < edSfxAllCount; ++index) {
-        if (AnimParams[edanim_nearest_param_id].sound_ids[edanim_nearest_sound] == index) {
+        if (AnimParams[edanim_nearest_param_id].sound_ids[edanim_nearest_sound] != index) {
+            eduiMenuAddItem(
+                edanim_localsoundtype_menu,
+                eduiItemCheckCreate(index, colours, 0, 1, edanimcbSetLocalSoundType, edbitsGetSoundName(index)));
+        } else {
             eduiMenuAddItem(
                 edanim_localsoundtype_menu,
                 eduiItemCheckCreate(index, colours, 1, 1, edanimcbSetLocalSoundType, edbitsGetSoundName(index)));
             edanim_localsoundtype_menu->selected = edui_last_item;
-        } else {
-            eduiMenuAddItem(
-                edanim_localsoundtype_menu,
-                eduiItemCheckCreate(index, colours, 0, 1, edanimcbSetLocalSoundType, edbitsGetSoundName(index)));
         }
     }
 
@@ -584,13 +584,13 @@ static __attribute__((used)) void edanimcbParticleTypeMenu(eduimenu_s *parent, e
         if (!debtab[index]) {
             continue;
         }
-        if (edanim_particle_type == index) {
+        if (edanim_particle_type != index) {
+            eduiMenuAddItem(edanim_particletype_menu,
+                            eduiItemCheckCreate(index, colours, 0, 1, edanimcbSetParticleType, debtab[index]->name));
+        } else {
             eduiMenuAddItem(edanim_particletype_menu,
                             eduiItemCheckCreate(index, colours, 1, 1, edanimcbSetParticleType, debtab[index]->name));
             edanim_particletype_menu->selected = edui_last_item;
-        } else {
-            eduiMenuAddItem(edanim_particletype_menu,
-                            eduiItemCheckCreate(index, colours, 0, 1, edanimcbSetParticleType, debtab[index]->name));
         }
     }
 

@@ -720,10 +720,10 @@ i32 NetworkObjectManager::GetPeerStatus() {
     i32 status = 0;
     for (i32 i = 0; i < 8; i++) {
         if (peer_push[i].peer != NULL && peer_push[i].stage != 3) {
-            if (status == 0 && (peer_push[i].stage == 1 || peer_push[i].stage == 2)) {
-                status = 1;
-            } else {
+            if (!(status == 0 && (peer_push[i].stage == 1 || peer_push[i].stage == 2))) {
                 status = 2;
+            } else {
+                status = 1;
             }
         }
     }
@@ -1654,10 +1654,10 @@ void NetworkObjectManager::Update() {
                 object_count = local_object_count;
             }
 
-            if (object_index >= local_object_count) {
-                push->NextStage();
-            } else {
+            if (!(object_index >= local_object_count)) {
                 push->field_10 = object_index;
+            } else {
+                push->NextStage();
             }
         }
         push->FlushMessages();

@@ -160,7 +160,21 @@ void ResetPushProgress(WORLDINFO_s *world, void *progress_data) {
                 continue;
             }
             nuinstanim_s *animation = NuSpecialGetInstAnim(&block->special);
-            if ((block->flags_0ca & 4) == 0 && animation != NULL) {
+            if (!((block->flags_0ca & 4) == 0 && animation != NULL)) {
+                NUMTX *matrix = NuSpecialGetInstanceMtx(&block->special);
+                matrix->m30 = progress->positions[index].x;
+                matrix->m31 = progress->positions[index].y;
+                matrix->m32 = progress->positions[index].z;
+                NuSpecialUpdate(&block->special);
+                for (i32 output = 0; output < block->end_position_count; ++output) {
+                    matrix = NuSpecialGetInstanceMtx(&block->end_position_specials[output]);
+                    const NUVEC &position = progress->end_positions[output][index];
+                    matrix->m30 = position.x;
+                    matrix->m31 = position.y;
+                    matrix->m32 = position.z;
+                    NuSpecialUpdate(&block->end_position_specials[output]);
+                }
+            } else {
                 NUMTX evaluated;
                 NUMTX *matrix = NuSpecialGetInstanceMtx(&block->special);
                 EvalAnim(&block->special, 1.0f, &evaluated, 0);
@@ -176,20 +190,6 @@ void ResetPushProgress(WORLDINFO_s *world, void *progress_data) {
                     matrix->m31 = evaluated.m31;
                     matrix->m32 = evaluated.m32;
                     NuSpecialUpdate(special);
-                }
-            } else {
-                NUMTX *matrix = NuSpecialGetInstanceMtx(&block->special);
-                matrix->m30 = progress->positions[index].x;
-                matrix->m31 = progress->positions[index].y;
-                matrix->m32 = progress->positions[index].z;
-                NuSpecialUpdate(&block->special);
-                for (i32 output = 0; output < block->end_position_count; ++output) {
-                    matrix = NuSpecialGetInstanceMtx(&block->end_position_specials[output]);
-                    const NUVEC &position = progress->end_positions[output][index];
-                    matrix->m30 = position.x;
-                    matrix->m31 = position.y;
-                    matrix->m32 = position.z;
-                    NuSpecialUpdate(&block->end_position_specials[output]);
                 }
             }
         }

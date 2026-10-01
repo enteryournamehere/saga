@@ -412,21 +412,21 @@ void LoadAreaCharacters() {
         Area_Configure(Area, Level, ExtraModelList, id_DEFAULTCHARACTER);
     }
 
-    if (Area != -1) {
-        const u16 area_flags = ADataList[Area].flags;
-        if ((area_flags & AREAFLAG_VEHICLE_AREA) != 0) {
-            VehicleArea = 1;
-        } else {
-            VehicleArea = 0;
-        }
-        if ((area_flags & AREAFLAG_BONUS_AREA) != 0) {
-            BonusArea = 1;
-        } else {
-            BonusArea = 0;
-        }
-    } else {
+    if (Area == -1) {
         VehicleArea = 0;
         BonusArea = 0;
+    } else {
+        const u16 area_flags = ADataList[Area].flags;
+        if ((area_flags & AREAFLAG_VEHICLE_AREA) == 0) {
+            VehicleArea = 0;
+        } else {
+            VehicleArea = 1;
+        }
+        if ((area_flags & AREAFLAG_BONUS_AREA) == 0) {
+            BonusArea = 0;
+        } else {
+            BonusArea = 1;
+        }
     }
     AreaGlobals.values.field_0x04 = VehicleArea != 0 && BonusArea == 0;
     loadareacharacters_loadedlevel = 0;
@@ -496,14 +496,14 @@ load_type_done:
             "Ep1_TextCrawl", "Ep2_TextCrawl", "Ep3_TextCrawl", "Ep4_TextCrawl", "Ep5_TextCrawl", "Ep6_TextCrawl",
         };
         const i32 episode = Area == -1 ? -1 : static_cast<i8>(ADataList[Area].episode_index);
-        if (Arcade == 0 && episode != -1) {
+        if (!(Arcade == 0 && episode != -1)) {
+            GamePlayMusic(TITLES_LDATA, 0, &Game.options_save);
+        } else {
             const i32 handle = music_man.GetTrackHandle(TRACK_CLASS_QUIET, crawl_music[episode]);
             music_man.SelectTrackByHandle(TRACK_CLASS_QUIET, handle);
             if (music_man.GetTrackHandle(TRACK_CLASS_QUIET, NULL) != -1) {
                 music_man.PlayTrack(TRACK_CLASS_QUIET);
             }
-        } else {
-            GamePlayMusic(TITLES_LDATA, 0, &Game.options_save);
         }
     }
     bgPostRequest(LoadAreaData, NULL, NULL, 0);
@@ -626,7 +626,9 @@ load_type_done:
         music_man.Process(FRAMETIME);
 
         NuRndrBeginScene(-1);
-        if (load_type == 2) {
+        if (load_type != 2) {
+            NuRndrGradClear(0xf00, static_cast<i32>(0x80000000u), static_cast<i32>(0x80000000u), 1.0f);
+        } else {
             const u32 top_colour = 0x80000000u | (static_cast<u32>(backdrop_top_b) & 0xff) << 16 |
                                    (static_cast<u32>(backdrop_top_g) & 0xff) << 8 |
                                    (static_cast<u32>(backdrop_top_r) & 0xff);
@@ -634,8 +636,6 @@ load_type_done:
                                       (static_cast<u32>(backdrop_bot_g) & 0xff) << 8 |
                                       (static_cast<u32>(backdrop_bot_r) & 0xff);
             NuRndrGradClear(0xf00, static_cast<i32>(top_colour), static_cast<i32>(bottom_colour), 1.0f);
-        } else {
-            NuRndrGradClear(0xf00, static_cast<i32>(0x80000000u), static_cast<i32>(0x80000000u), 1.0f);
         }
         if (load_type == 2) {
             const f32 backdrop_alpha =

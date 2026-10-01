@@ -174,19 +174,7 @@ static void Signals_Update(void *world_info, void *, float) {
         }
 
         f32 target_scale = 0.0f;
-        if ((signal->flags & SIGNAL::FLAG_IN_USE) == 0) {
-            ADDGAMEMSG message = AddGameMsg_Default;
-            message.text = TTab[*signal->suit->text_id];
-            message.position = &signal->target_position;
-            message.scale = 1.0f;
-            message.red = 0xff;
-            message.green = 0xff;
-            message.blue = 0;
-            message.alpha = 0x30;
-            message.flags = 0x87;
-            AddGameMsg(&message);
-            target_scale = 1.0f;
-        } else {
+        if ((signal->flags & SIGNAL::FLAG_IN_USE) != 0) {
             i32 player_index;
             for (player_index = 0; player_index < 8; ++player_index) {
                 GameObject_s *player = Player[player_index];
@@ -207,6 +195,18 @@ static void Signals_Update(void *world_info, void *, float) {
             if (player_index == 8) {
                 signal->flags &= ~SIGNAL::FLAG_IN_USE;
             }
+        } else {
+            ADDGAMEMSG message = AddGameMsg_Default;
+            message.text = TTab[*signal->suit->text_id];
+            message.position = &signal->target_position;
+            message.scale = 1.0f;
+            message.red = 0xff;
+            message.green = 0xff;
+            message.blue = 0;
+            message.alpha = 0x30;
+            message.flags = 0x87;
+            AddGameMsg(&message);
+            target_scale = 1.0f;
         }
         signal->scale = SeekLinearF(signal->scale, target_scale, 3.0f * FRAMETIME);
     }

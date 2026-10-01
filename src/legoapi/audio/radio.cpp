@@ -53,16 +53,23 @@ void UpdateRadios() {
         }
 
         radio->time -= FRAMETIME;
-        if (radio->time >= 0.0f) {
-            radios_playing = 1;
-        } else {
+        if (!(radio->time >= 0.0f)) {
             radio->time = 0.0f;
+        } else {
+            radios_playing = 1;
         }
 
         f32 phase = NuFmod(radio->time, 0.5f);
         i32 angle = static_cast<i32>(phase * 65536.0f) >> 1;
         NUMTX *matrix;
-        if (radio->blowup == NULL) {
+        if (radio->blowup != NULL) {
+            GizmoBlowupUpdateMatrix(radio->blowup);
+            f32 scale_value = NuTrigTable[angle & 0x7fff] * 0.1f + 1.0f;
+            NUVEC scale = {scale_value, scale_value, scale_value};
+            matrix = &radio->blowup->transform;
+            NuMtxPreScale(matrix, &scale);
+            radio->blowup->state_flags |= 1;
+        } else {
             if (NuSpecialExistsFn(&radio->special) == 0) {
                 continue;
             }
@@ -74,13 +81,6 @@ void UpdateRadios() {
                 NuMtxPreScale(matrix, &scale);
                 NuSpecialUpdate(&radio->special);
             }
-        } else {
-            GizmoBlowupUpdateMatrix(radio->blowup);
-            f32 scale_value = NuTrigTable[angle & 0x7fff] * 0.1f + 1.0f;
-            NUVEC scale = {scale_value, scale_value, scale_value};
-            matrix = &radio->blowup->transform;
-            NuMtxPreScale(matrix, &scale);
-            radio->blowup->state_flags |= 1;
         }
         PlaySfx("swdisco", reinterpret_cast<NUVEC *>(&matrix->m30));
     }

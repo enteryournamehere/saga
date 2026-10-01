@@ -234,15 +234,7 @@ static i32 Batarang_FindTarget(WORLDINFO_s *world, GameObject_s *object, i32 aut
             continue;
         }
         NUVEC delta;
-        if (automatic == 0) {
-            if (fabsf(candidate->camera_screen_position.x - batarang->sight_position.x) < 0.1f &&
-                fabsf(candidate->camera_screen_position.y - batarang->sight_position.y) < 0.2f &&
-                NuVecDistSqr(&candidate->apiobj.collision_position, &object->apiobj.collision_position, &delta) <
-                    selected_distance) {
-                first_object = candidate;
-                break;
-            }
-        } else {
+        if (automatic != 0) {
             f32 distance =
                 NuVecDistSqr(&candidate->apiobj.collision_position, &object->apiobj.collision_position, &delta);
             if (delta.x * forward.x + delta.z * forward.z <= 0.0f) {
@@ -251,6 +243,14 @@ static i32 Batarang_FindTarget(WORLDINFO_s *world, GameObject_s *object, i32 aut
             if (distance < nearest_distance) {
                 nearest_distance = distance;
                 nearest_object = candidate;
+            }
+        } else {
+            if (fabsf(candidate->camera_screen_position.x - batarang->sight_position.x) < 0.1f &&
+                fabsf(candidate->camera_screen_position.y - batarang->sight_position.y) < 0.2f &&
+                NuVecDistSqr(&candidate->apiobj.collision_position, &object->apiobj.collision_position, &delta) <
+                    selected_distance) {
+                first_object = candidate;
+                break;
             }
         }
     }
@@ -309,16 +309,7 @@ static i32 Batarang_FindTarget(WORLDINFO_s *world, GameObject_s *object, i32 aut
             continue;
         }
         NUVEC delta;
-        if (automatic != 0) {
-            f32 distance = NuVecDistSqr(&candidate->mid_position, &object->apiobj.collision_position, &delta);
-            if (delta.x * forward.x + delta.z * forward.z <= 0.0f) {
-                continue;
-            }
-            if (distance < nearest_distance) {
-                nearest_distance = distance;
-                nearest_blowup = candidate;
-            }
-        } else {
+        if (automatic == 0) {
             if (0.1f <= fabsf(candidate->screen_position.x - batarang->sight_position.x) ||
                 0.1f <= fabsf(candidate->screen_position.y - batarang->sight_position.y)) {
                 continue;
@@ -327,6 +318,15 @@ static i32 Batarang_FindTarget(WORLDINFO_s *world, GameObject_s *object, i32 aut
                 selected_distance) {
                 first_blowup = candidate;
                 break;
+            }
+        } else {
+            f32 distance = NuVecDistSqr(&candidate->mid_position, &object->apiobj.collision_position, &delta);
+            if (delta.x * forward.x + delta.z * forward.z <= 0.0f) {
+                continue;
+            }
+            if (distance < nearest_distance) {
+                nearest_distance = distance;
+                nearest_blowup = candidate;
             }
         }
     }

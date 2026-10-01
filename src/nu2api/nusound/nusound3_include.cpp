@@ -662,12 +662,12 @@ void NuSound3Update(void) {
     }
 
     // The listener focus follows the player (NULL on the title screen).
-    if (player == NULL) {
-        g_NuSoundListener.DisableFocusPosition();
-    } else {
+    if (player != NULL) {
         g_NuSoundFocusPosition = player->apiobj.position;
         g_NuSoundListener.SetFocusPosition((const VuVec *)&g_NuSoundFocusPosition);
         g_NuSoundListener.EnableFocusPosition();
+    } else {
+        g_NuSoundListener.DisableFocusPosition();
     }
 
     NuSound.mutex.Lock();
@@ -770,14 +770,14 @@ void NuSound3Update(void) {
                 }
             }
         } else if (stream->field_0xd != 0) {
-            if (NuSound3Stream::mVoice.obj != NULL) {
+            if (NuSound3Stream::mVoice.obj == NULL) {
+                // The voice was released elsewhere; retire the stream.
+                NuSound3StopStereoStream(i);
+            } else {
                 ((NuSoundVoice *)NuSound3Stream::mVoice.obj)->SetVolume(PS2VolumeToScalar(stream->ps2volume));
                 if (((NuSoundVoice *)NuSound3Stream::mVoice.obj)->GetState() == NuSoundVoice::PLAYSTATE_STOPPED) {
                     NuSound3StopStereoStream(i);
                 }
-            } else {
-                // The voice was released elsewhere; retire the stream.
-                NuSound3StopStereoStream(i);
             }
         }
 
@@ -802,10 +802,10 @@ void NuSound3Update(void) {
             if (!g_NuSoundLoadTrigger.a) {
                 bool broadcast = g_NuSoundLoadTrigger.b;
                 g_NuSoundLoadTrigger.a = true;
-                if (broadcast) {
-                    pthread_cond_broadcast(&g_NuSoundLoadTrigger.cond);
-                } else {
+                if (!broadcast) {
                     pthread_cond_signal(&g_NuSoundLoadTrigger.cond);
+                } else {
+                    pthread_cond_broadcast(&g_NuSoundLoadTrigger.cond);
                 }
             }
             pthread_mutex_unlock(&g_NuSoundLoadTrigger.mutex);
@@ -866,12 +866,12 @@ void NuSound3SetSampleTable(nusound_filename_info_s *info, variptr_u *buffer_sta
 
     for (; info->index != -1; info++) {
         // TODO: dont cast classes
-        if (info->index < 0x1000) {
-            info->sample = (NuSoundStreamingSample *)NuSound.AddSample(info->filename, NuSoundSystem::FileType::OGG,
-                                                                       NuSoundSource::FeedType::STREAMING);
-        } else {
+        if (!(info->index < 0x1000)) {
             info->sample = (NuSoundStreamingSample *)NuSound.AddSample(info->filename, NuSoundSystem::FileType::WAV,
                                                                        NuSoundSource::FeedType::ZERO);
+        } else {
+            info->sample = (NuSoundStreamingSample *)NuSound.AddSample(info->filename, NuSoundSystem::FileType::OGG,
+                                                                       NuSoundSource::FeedType::STREAMING);
         }
 
         g_NuSoundSamples.PushBack(*info);

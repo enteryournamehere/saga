@@ -1200,16 +1200,7 @@ void DebrisProcessGeneration() {
             f32 pause = 0.0f;
             i32 transitions = 100;
             while (emission_time >= key->field_1e4 && emission_time >= key->emission_time && --transitions != 0) {
-                if (key->emission_time < key->field_1e4) {
-                    key->previous_emission_time = key->emission_time;
-                    pause =
-                        effect->emission_pause_random + NuRandFloatSeeded(&debrisseed) * effect->start_offset_random;
-                    key->emission_time = key->field_1e4 + pause;
-                    if (key->field_184 == 2)
-                        key->field_184 = 0;
-                    if (key->process_collision_sound != 0 && key->field_184 != 0 && sound_range > key->cutoff_distance)
-                        DebrisEmissionSound(key, effect, 2, volume);
-                } else {
+                if (!(key->emission_time < key->field_1e4)) {
                     key->field_1e4 = key->emission_time + effect->emission_period_random +
                                      NuRandFloatSeeded(&debrisseed) * effect->emission_pause;
                     if (key->field_1d4 > 0) {
@@ -1226,6 +1217,15 @@ void DebrisProcessGeneration() {
                     if (key->process_collision_sound != 0 && key->field_184 != 0 && sound_range > key->cutoff_distance)
                         DebrisEmissionSound(key, effect, 1, volume);
                     pause = 0.0f;
+                } else {
+                    key->previous_emission_time = key->emission_time;
+                    pause =
+                        effect->emission_pause_random + NuRandFloatSeeded(&debrisseed) * effect->start_offset_random;
+                    key->emission_time = key->field_1e4 + pause;
+                    if (key->field_184 == 2)
+                        key->field_184 = 0;
+                    if (key->process_collision_sound != 0 && key->field_184 != 0 && sound_range > key->cutoff_distance)
+                        DebrisEmissionSound(key, effect, 2, volume);
                 }
             }
             if (pause > 0.0f) {

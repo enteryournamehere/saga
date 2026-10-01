@@ -1576,17 +1576,17 @@ static void cbPtlTextureMenu(eduimenu_s *menu, eduiitem_s *, u32) {
                                                              cbPtlSelTextureType, "Modulative"));
             eduiMenuAddItem(texturemenu, eduiItemCheckCreate(3, colours, effect->particle_type == 3, 1,
                                                              cbPtlSelTextureType, "Subtractive"));
-            if (effect->generator_type == 0 || effect->generator_type == 8) {
+            if (!(effect->generator_type == 0 || effect->generator_type == 8)) {
+                eduiMenuAddItem(texturemenu, eduiItemSelCreate(7, edgrey, 0, 0, NULL, "Glass"));
+            } else {
                 eduiMenuAddItem(texturemenu, eduiItemCheckCreate(7, colours, effect->particle_type == 7, 1,
                                                                  cbPtlSelTextureType, "Glass"));
-            } else {
-                eduiMenuAddItem(texturemenu, eduiItemSelCreate(7, edgrey, 0, 0, NULL, "Glass"));
             }
-            if (effect->particle_type == 7) {
-                eduiMenuAddItem(texturemenu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Texture Selector..."));
-            } else {
+            if (effect->particle_type != 7) {
                 eduiMenuAddItem(texturemenu,
                                 eduiItemSelCreate(1, colours, 0, 0, cbPtlTextureSelectMenu, "Texture Selector..."));
+            } else {
+                eduiMenuAddItem(texturemenu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Texture Selector..."));
             }
             eduiMenuAddItem(texturemenu, eduiItemToggleCreate(0, edblack, static_cast<i8>(effect->camera_facing), 2,
                                                               cbPtlSetXZFacing, "Default to XZ Plane"));

@@ -398,29 +398,29 @@ static i32 ZipUps_Load(void *world_ptr, void *) {
         world->zipups[index].flags =
             static_cast<u8>((world->zipups[index].flags & ~ZIPUP_FLAG_CONFIG_3) | (config_3 << 3));
 
-        if (version <= 1) {
-            world->zipups[index].flags |= ZIPUP_FLAG_CONFIG_4;
-            world->zipups[index].flags &= ~ZIPUP_FLAG_CONFIG_5;
-            world->zipups[index].flags |= ZIPUP_FLAG_CONFIG_2;
-        } else {
+        if (!(version <= 1)) {
             const u8 config_4 = EdFileReadUnsignedChar() != 0;
             world->zipups[index].flags =
                 static_cast<u8>((world->zipups[index].flags & ~ZIPUP_FLAG_CONFIG_4) | (config_4 << 4));
-            if (version == 2) {
-                world->zipups[index].flags &= ~ZIPUP_FLAG_CONFIG_5;
-                world->zipups[index].flags |= ZIPUP_FLAG_CONFIG_2;
-            } else {
+            if (version != 2) {
                 const u8 config_5 = EdFileReadUnsignedChar() != 0;
                 world->zipups[index].flags =
                     static_cast<u8>((world->zipups[index].flags & ~ZIPUP_FLAG_CONFIG_5) | (config_5 << 5));
-                if (version == 3) {
-                    world->zipups[index].flags |= ZIPUP_FLAG_CONFIG_2;
-                } else {
+                if (version != 3) {
                     const u8 config_2 = EdFileReadUnsignedChar() != 0;
                     world->zipups[index].flags =
                         static_cast<u8>((world->zipups[index].flags & ~ZIPUP_FLAG_CONFIG_2) | (config_2 << 2));
+                } else {
+                    world->zipups[index].flags |= ZIPUP_FLAG_CONFIG_2;
                 }
+            } else {
+                world->zipups[index].flags &= ~ZIPUP_FLAG_CONFIG_5;
+                world->zipups[index].flags |= ZIPUP_FLAG_CONFIG_2;
             }
+        } else {
+            world->zipups[index].flags |= ZIPUP_FLAG_CONFIG_4;
+            world->zipups[index].flags &= ~ZIPUP_FLAG_CONFIG_5;
+            world->zipups[index].flags |= ZIPUP_FLAG_CONFIG_2;
         }
     }
     return 1;

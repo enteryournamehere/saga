@@ -87,12 +87,12 @@ __attribute__((force_align_arg_pointer)) void pathEditorDrawNode(nuvec_s *positi
                                                                  float upper_height, u32 colour, numtl_s *material,
                                                                  i32 segments, i32 solid) {
     NUVEC centre = {position->x, position->y + aiEditor_DrawYOffset, position->z};
-    if (solid == 0) {
-        LocaledbitsDrawCircleXY(&centre, radius, colour, static_cast<i32>(reinterpret_cast<uintptr_t>(material)),
-                                segments);
-    } else {
+    if (solid != 0) {
         LocaledbitsDrawSolidCircleXY(&centre, radius, lower_height, upper_height, colour,
                                      static_cast<i32>(reinterpret_cast<uintptr_t>(material)), segments);
+    } else {
+        LocaledbitsDrawCircleXY(&centre, radius, colour, static_cast<i32>(reinterpret_cast<uintptr_t>(material)),
+                                segments);
     }
 }
 

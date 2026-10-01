@@ -103,7 +103,13 @@ void CalcSplinePoint(flightspline_s *spline, _vuv_s *result, float along) {
     _vuv_s last __attribute__((aligned(16)));
     NUVEC_ALIGNED16 direction;
     _vuv_s *previous;
-    if (index <= 0) {
+    if (!(index <= 0)) {
+        // Retail retains the pre-clamp fraction and permits index == count;
+        // callers must supply the corresponding neighboring point storage.
+        if (index > spline->point_count)
+            index = spline->point_count;
+        previous = &spline->points[index - 1];
+    } else {
         direction.x = spline->points[0].x - spline->points[1].x;
         direction.y = spline->points[0].y - spline->points[1].y;
         direction.z = spline->points[0].z - spline->points[1].z;
@@ -117,20 +123,12 @@ void CalcSplinePoint(flightspline_s *spline, _vuv_s *result, float along) {
         first.w = spline->points[0].w;
         previous = &first;
         index = 0;
-    } else {
-        // Retail retains the pre-clamp fraction and permits index == count;
-        // callers must supply the corresponding neighboring point storage.
-        if (index > spline->point_count)
-            index = spline->point_count;
-        previous = &spline->points[index - 1];
     }
 
     _vuv_s *current = &spline->points[index];
     _vuv_s *next = &spline->points[index + 1];
     _vuv_s *following;
-    if (index < spline->point_count - 2) {
-        following = &spline->points[index + 2];
-    } else {
+    if (!(index < spline->point_count - 2)) {
         const i32 end = spline->point_count - 1;
         direction.x = spline->points[end].x - spline->points[end - 1].x;
         direction.y = spline->points[end].y - spline->points[end - 1].y;
@@ -145,6 +143,8 @@ void CalcSplinePoint(flightspline_s *spline, _vuv_s *result, float along) {
         last.z = end_point->z + direction.z;
         last.w = end_point->w;
         following = &last;
+    } else {
+        following = &spline->points[index + 2];
     }
 
     const _vuv_s after = *following;

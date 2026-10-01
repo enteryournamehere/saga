@@ -202,11 +202,7 @@ void AddPickups(i32 coins, i32 hearts, i32 torpedoes, i32 powerups, nuvec_s *pos
     if (static_cast<u32>(player_id) >= 2)
         player_id = -1;
     NUVEC velocity;
-    if (to_panel != 0) {
-        if (has_coins)
-            DrawBuildUpTime = COINMSGTIME + 1.0f;
-        AddCoinsToPanel(coins, position, player_id, speed, owner, 0);
-    } else {
+    if (to_panel == 0) {
         for (i32 i = 0; i < 4; ++i) {
             i32 type = CoinTab[i];
             for (i32 j = 0; j < counts[type]; ++j) {
@@ -214,6 +210,10 @@ void AddPickups(i32 coins, i32 hearts, i32 torpedoes, i32 powerups, nuvec_s *pos
                 AddCoinsAsParts(type, position, &velocity, lifetime, scale);
             }
         }
+    } else {
+        if (has_coins)
+            DrawBuildUpTime = COINMSGTIME + 1.0f;
+        AddCoinsToPanel(coins, position, player_id, speed, owner, 0);
     }
     if (hearts > 0) {
         bool both_players = false;
@@ -266,10 +266,10 @@ void AddPickups(i32 coins, i32 hearts, i32 torpedoes, i32 powerups, nuvec_s *pos
 }
 
 void AddMiscPickups(nuvec_s *position, i32 player_id, i32 coins, i32 torpedoes) {
-    if (torpedoes == 0) {
-        AddPickups(coins, ReleaseHearts(), 0, 0, position, &v010, 5.0f, player_id, 1.0f, 2000000.0f, NULL, 1, 0, true);
-    } else {
+    if (torpedoes != 0) {
         AddPickups(coins, 0, torpedoes, 0, position, &v010, 5.0f, player_id, 1.0f, 2000000.0f, NULL, 1, 0, true);
+    } else {
+        AddPickups(coins, ReleaseHearts(), 0, 0, position, &v010, 5.0f, player_id, 1.0f, 2000000.0f, NULL, 1, 0, true);
     }
 }
 

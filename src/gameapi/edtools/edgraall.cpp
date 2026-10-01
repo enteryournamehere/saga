@@ -703,26 +703,8 @@ void edgraDoInput(nupad_s *pad) {
             }
         }
 
-        if (edgra_editormode == 1) {
-            if (edgra_nearest_instance == -1) {
-                edgraDetermineNearestInstance(-1.0f);
-            } else if (edgra_nearest != -1) {
-                const i32 count = GrassClumps[edgra_nearest].element_count;
-                if (pressed & 8) {
-                    ++edgra_nearest_instance;
-                    if (edgra_nearest_instance == count)
-                        edgra_nearest_instance = 0;
-                }
-                if (pressed & 2) {
-                    --edgra_nearest_instance;
-                    if (edgra_nearest_instance == -1)
-                        edgra_nearest_instance = count - 1;
-                }
-            }
-        } else {
-            if (edgra_nearest == -1) {
-                edgraDetermineNearestClump(-1.0f);
-            } else {
+        if (edgra_editormode != 1) {
+            if (edgra_nearest != -1) {
                 if (pressed & 8) {
                     do {
                         ++edgra_nearest;
@@ -738,6 +720,24 @@ void edgraDoInput(nupad_s *pad) {
                             edgra_nearest = EDGRA_MAX_CLUMPS - 1;
                     } while (!GrassClumps[edgra_nearest].element_count);
                     edgraSortVectorBuffer(edgra_nearest);
+                }
+            } else {
+                edgraDetermineNearestClump(-1.0f);
+            }
+        } else {
+            if (edgra_nearest_instance == -1) {
+                edgraDetermineNearestInstance(-1.0f);
+            } else if (edgra_nearest != -1) {
+                const i32 count = GrassClumps[edgra_nearest].element_count;
+                if (pressed & 8) {
+                    ++edgra_nearest_instance;
+                    if (edgra_nearest_instance == count)
+                        edgra_nearest_instance = 0;
+                }
+                if (pressed & 2) {
+                    --edgra_nearest_instance;
+                    if (edgra_nearest_instance == -1)
+                        edgra_nearest_instance = count - 1;
                 }
             }
         }
@@ -823,34 +823,20 @@ void edgraDoInput(nupad_s *pad) {
             }
         }
         if (pressed & 0x10) {
-            if (edgra_editormode == 1) {
-                if (edgra_nearest_instance != -1)
-                    edgraInstanceDestroy(edgra_nearest_instance);
-                edgra_nearest_instance = -1;
-            } else {
+            if (edgra_editormode != 1) {
                 if (edgra_nearest != -1)
                     edgraClumpDestroy(edgra_nearest);
                 edgra_nearest = -1;
+            } else {
+                if (edgra_nearest_instance != -1)
+                    edgraInstanceDestroy(edgra_nearest_instance);
+                edgra_nearest_instance = -1;
             }
         }
     }
 
     if (edgra_dpadmode == 0) {
-        if (edgra_mode == 3) {
-            if (edgra_nearest != -1 && edgra_nearest_instance != -1) {
-                edgra_clump_s &clump = GrassClumps[edgra_nearest];
-                GetIndGrassClump(clump.individual_index, edgra_nearest_instance)->field_0c +=
-                    static_cast<f32>(pad->analog_left_pad_up) / 5000.0f;
-                GetIndGrassClump(clump.individual_index, edgra_nearest_instance)->field_0c -=
-                    static_cast<f32>(pad->analog_left_pad_down) / 5000.0f;
-                if (GetIndGrassClump(clump.individual_index, edgra_nearest_instance)->field_0c > 1.0f)
-                    GetIndGrassClump(clump.individual_index, edgra_nearest_instance)->field_0c = 1.0f;
-                if (GetIndGrassClump(clump.individual_index, edgra_nearest_instance)->field_0c < 0.1f)
-                    GetIndGrassClump(clump.individual_index, edgra_nearest_instance)->field_0c = 0.1f;
-            }
-            if (pad->analog_left_pad_up || pad->analog_left_pad_down)
-                edgraInitAllClumps();
-        } else {
+        if (edgra_mode != 3) {
             edgra_size += static_cast<f32>(pad->analog_left_pad_up) / 5000.0f;
             edgra_size -= static_cast<f32>(pad->analog_left_pad_down) / 5000.0f;
             if (edgra_size < 0.1f)
@@ -865,6 +851,20 @@ void edgraDoInput(nupad_s *pad) {
                 edgra_clump_size = 4;
             if (edgra_clump_size > 256)
                 edgra_clump_size = 256;
+        } else {
+            if (edgra_nearest != -1 && edgra_nearest_instance != -1) {
+                edgra_clump_s &clump = GrassClumps[edgra_nearest];
+                GetIndGrassClump(clump.individual_index, edgra_nearest_instance)->field_0c +=
+                    static_cast<f32>(pad->analog_left_pad_up) / 5000.0f;
+                GetIndGrassClump(clump.individual_index, edgra_nearest_instance)->field_0c -=
+                    static_cast<f32>(pad->analog_left_pad_down) / 5000.0f;
+                if (GetIndGrassClump(clump.individual_index, edgra_nearest_instance)->field_0c > 1.0f)
+                    GetIndGrassClump(clump.individual_index, edgra_nearest_instance)->field_0c = 1.0f;
+                if (GetIndGrassClump(clump.individual_index, edgra_nearest_instance)->field_0c < 0.1f)
+                    GetIndGrassClump(clump.individual_index, edgra_nearest_instance)->field_0c = 0.1f;
+            }
+            if (pad->analog_left_pad_up || pad->analog_left_pad_down)
+                edgraInitAllClumps();
         }
     } else if (edgra_dpadmode == 1) {
         edgra_roty += pad->analog_left_pad_right - pad->analog_left_pad_left;

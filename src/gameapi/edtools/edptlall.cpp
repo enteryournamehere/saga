@@ -602,15 +602,15 @@ static void edptlcbSoundIDMenu(eduimenu_s *parent, eduiitem_s *item, u32) {
     for (i32 sound = 0; sound < 1600; ++sound) {
         if (g_soundInfo[sound].sfx_name == NULL)
             continue;
-        if (effect->sound_data[item->data * 3] == sound) {
+        if (effect->sound_data[item->data * 3] != sound) {
+            eduiMenuAddItem(edptl_soundid_menu,
+                            eduiItemCheckCreate((item->data << 16) + sound, colours, 0, 1, edptlcbSetSoundID,
+                                                const_cast<char *>(g_soundInfo[sound].sfx_name)));
+        } else {
             eduiMenuAddItem(edptl_soundid_menu,
                             eduiItemCheckCreate((item->data << 16) + sound, colours, 1, 1, edptlcbSetSoundID,
                                                 const_cast<char *>(g_soundInfo[sound].sfx_name)));
             edptl_soundid_menu->selected = edui_last_item;
-        } else {
-            eduiMenuAddItem(edptl_soundid_menu,
-                            eduiItemCheckCreate((item->data << 16) + sound, colours, 0, 1, edptlcbSetSoundID,
-                                                const_cast<char *>(g_soundInfo[sound].sfx_name)));
         }
     }
     eduiMenuAttach(parent, edptl_soundid_menu);

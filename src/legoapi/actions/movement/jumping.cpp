@@ -328,7 +328,13 @@ i32 StartFallLand(GameObject_s *object, i32 action) {
         return 0;
     }
     void **animations = object->apiobj.character_model->model_data_b;
-    if (action == -1 || animations[action] == NULL) {
+    if (!(action == -1 || animations[action] == NULL)) {
+        object->context_animation = action;
+        if (animations[object->context_animation] == NULL) {
+            object->movement_runtime_flags &= ~4;
+            return 0;
+        }
+    } else {
         if (IsWearingBackPackFn != NULL && IsWearingBackPackFn(object) && LEGOACT_BACKPACKFALLLAND != -1 &&
             animations[LEGOACT_BACKPACKFALLLAND] != NULL) {
             object->context_animation = LEGOACT_BACKPACKFALLLAND;
@@ -345,12 +351,6 @@ i32 StartFallLand(GameObject_s *object, i32 action) {
                 object->movement_runtime_flags &= ~4;
                 return 0;
             }
-        }
-    } else {
-        object->context_animation = action;
-        if (animations[object->context_animation] == NULL) {
-            object->movement_runtime_flags &= ~4;
-            return 0;
         }
     }
     object->character_context = LEGOCONTEXT_LAND_JUMP;

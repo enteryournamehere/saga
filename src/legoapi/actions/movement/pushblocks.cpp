@@ -484,11 +484,11 @@ i32 GizPushBlock_EndFrameCompleted(pushblock_s *push_block, i32 output_index) {
         return -1;
     }
 
-    if (output_index == 0) {
-        return (push_block->completion_flags & PUSH_BLOCK_ANY_OUTPUT_MASK) != 0;
+    if (output_index != 0) {
+        const u8 completed_outputs = push_block->completion_flags / PUSH_BLOCK_FIRST_OUTPUT_FLAG;
+        return (completed_outputs >> output_index) & 1;
     }
-    const u8 completed_outputs = push_block->completion_flags / PUSH_BLOCK_FIRST_OUTPUT_FLAG;
-    return (completed_outputs >> output_index) & 1;
+    return (push_block->completion_flags & PUSH_BLOCK_ANY_OUTPUT_MASK) != 0;
 }
 
 i32 PushBlock(GameObject_s *object) {

@@ -131,9 +131,14 @@ i32 GizmoPickup_NumberOfType(WORLDINFO_s *world, i32 type_index, char type_code)
     }
 
     i32 count = 0;
-    for (i32 index = 0; index < runtime->pickup_count; ++index, ++pickup) {
-        if (type_code != 0 ? pickup->type_code == type_code : pickup->type_index == type_index) {
-            ++count;
+    const i32 pickup_count = runtime->pickup_count;
+    if (pickup_count > 0) {
+        if (type_code != 0) {
+            for (i32 index = 0; index != pickup_count; ++index, ++pickup)
+                count = pickup->type_code == type_code ? count + 1 : count;
+        } else {
+            for (i32 index = 0; index != pickup_count; ++index, ++pickup)
+                count = pickup->type_index == type_index ? count + 1 : count;
         }
     }
     return count;

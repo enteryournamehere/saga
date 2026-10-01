@@ -347,36 +347,33 @@ TIGHTROPE *TightRope_InRange(GameObject_s *object, WORLDINFO_s *world, NUVEC *po
     f32 width = 3.0f * object->apiobj.field_0x1dc;
     NUVEC origin = object->apiobj.collision_position;
     for (i32 index = 0; index < world->tightrope_count; ++index, ++rope) {
-        if (rope->enabled == 0 || rope->available == 0) {
-            continue;
-        }
-        NUVEC offset;
-        offset.x = origin.x - rope->start.x;
-        offset.y = 0.0f;
-        offset.z = origin.z - rope->start.z;
-        NuVecRotateY(&offset, &offset, -rope->rotation);
-        if (!(offset.z >= 0.0f && rope->horizontal_length >= offset.z && offset.x >= -width && width >= offset.x)) {
-            continue;
-        }
-        offset.x = 0.0f;
-        offset.y = (rope->end.y - rope->start.y) * (offset.z / rope->horizontal_length) + rope->start.y;
-        if (!(object->apiobj.field_0x1e0 > fabsf(offset.y - origin.y))) {
-            continue;
-        }
-        if (position != NULL) {
-            f32 margin = (object->apiobj.character_data->game_character->flags_090 & 0x10000000) != 0
-                             ? object->apiobj.field_0x1e0
-                             : object->apiobj.field_0x1dc;
-            if (offset.z > rope->horizontal_length - margin) {
-                offset.z = rope->horizontal_length - margin;
-            } else if (margin > offset.z) {
-                offset.z = margin;
+        if (!(rope->enabled == 0 || rope->available == 0)) {
+            NUVEC offset;
+            offset.x = origin.x - rope->start.x;
+            offset.y = 0.0f;
+            offset.z = origin.z - rope->start.z;
+            NuVecRotateY(&offset, &offset, -rope->rotation);
+            if (offset.z >= 0.0f && rope->horizontal_length >= offset.z && offset.x >= -width && width >= offset.x) {
+                offset.x = 0.0f;
+                offset.y = (rope->end.y - rope->start.y) * (offset.z / rope->horizontal_length) + rope->start.y;
+                if (object->apiobj.field_0x1e0 > fabsf(offset.y - origin.y)) {
+                    if (position != NULL) {
+                        f32 margin = (object->apiobj.character_data->game_character->flags_090 & 0x10000000) != 0
+                                         ? object->apiobj.field_0x1e0
+                                         : object->apiobj.field_0x1dc;
+                        if (offset.z > rope->horizontal_length - margin) {
+                            offset.z = rope->horizontal_length - margin;
+                        } else if (margin > offset.z) {
+                            offset.z = margin;
+                        }
+                        NuVecRotateY(position, &offset, rope->rotation);
+                        position->x += rope->start.x;
+                        position->z += rope->start.z;
+                    }
+                    return rope;
+                }
             }
-            NuVecRotateY(position, &offset, rope->rotation);
-            position->x += rope->start.x;
-            position->z += rope->start.z;
         }
-        return rope;
     }
     return NULL;
 }

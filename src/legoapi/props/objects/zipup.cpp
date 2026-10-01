@@ -939,20 +939,20 @@ void ZipUps_DrawLines() {
     for (i32 i = 0; i < HIGHGAMEOBJECT; ++i, ++object) {
         NURND_VERTEX3D start, end;
         if (object->character_context == 0x47) {
-            if (object->action_movement_state != 0)
-                continue;
-            ZipUp_GetStartPoint(object, &start.position);
-            f32 time = object->context_animation_timer;
-            start.colour = 0xffffffff;
-            end.position = static_cast<ZIPUP *>(object->field_0x788)->hook_position;
-            if (time < 0.2f) {
-                f32 fraction = time / 0.2f;
-                end.position.x = (end.position.x - start.position.x) * fraction + start.position.x;
-                end.position.y = (end.position.y - start.position.y) * fraction + start.position.y;
-                end.position.z = (end.position.z - start.position.z) * fraction + start.position.z;
+            if (object->action_movement_state == 0) {
+                ZipUp_GetStartPoint(object, &start.position);
+                f32 time = object->context_animation_timer;
+                start.colour = 0xffffffff;
+                end.position = static_cast<ZIPUP *>(object->field_0x788)->hook_position;
+                if (time < 0.2f) {
+                    f32 fraction = time / 0.2f;
+                    end.position.x = (end.position.x - start.position.x) * fraction + start.position.x;
+                    end.position.y = (end.position.y - start.position.y) * fraction + start.position.y;
+                    end.position.z = (end.position.z - start.position.z) * fraction + start.position.z;
+                }
+                end.colour = 0xff808080;
+                DrawRopeSingle(&start.position, &end.position, 1.0f, ropemtl, time, 0.2f, 3.5f, 1.0f);
             }
-            end.colour = 0xff808080;
-            DrawRopeSingle(&start.position, &end.position, 1.0f, ropemtl, time, 0.2f, 3.5f, 1.0f);
         } else if (object->character_context == 0x35) {
             end.position = object->external_force;
             start.colour = 0xffffffff;

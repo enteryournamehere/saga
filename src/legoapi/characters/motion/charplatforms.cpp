@@ -151,22 +151,17 @@ void CharPlatforms_Configure(WORLDINFO_s *world, char *config) {
         if (NuFParGetWord(parser) == 0) {
             break;
         }
-        if (NuStrICmp(parser->word_buf, const_cast<char *>("char_platform")) != 0 || NuFParGetWord(parser) == 0) {
-            continue;
+        if (!(NuStrICmp(parser->word_buf, const_cast<char *>("char_platform")) != 0 || NuFParGetWord(parser) == 0)) {
+            CHARPLATFORM_s *platform = &system->platforms[system->platform_count];
+            platform->object_id = CharIDFromName(parser->word_buf);
+            if (!(platform->object_id == -1 || NuFParGetWord(parser) == 0)) {
+                if (NuSpecialFind(world->current_gscn, &platform->special, parser->word_buf, 1) != 0) {
+                    platform->platform_id = -1;
+                    platform->object = NULL;
+                    ++system->platform_count;
+                }
+            }
         }
-
-        CHARPLATFORM_s *platform = &system->platforms[system->platform_count];
-        platform->object_id = CharIDFromName(parser->word_buf);
-        if (platform->object_id == -1 || NuFParGetWord(parser) == 0) {
-            continue;
-        }
-        if (NuSpecialFind(world->current_gscn, &platform->special, parser->word_buf, 1) == 0) {
-            continue;
-        }
-
-        platform->platform_id = -1;
-        platform->object = NULL;
-        ++system->platform_count;
     }
 
     NuFParDestroy(parser);

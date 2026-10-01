@@ -410,7 +410,7 @@ bool TouchHacks::CheckJumpForLandingSpot(GameObject_s &object, float maximum_dro
         if (GameRayCast(&position.xyz, &displacement.xyz, 0.0f, 0) != 0) {
             VuVec normal = VuVec_Zero;
             NewRayCastGetImpactNormal(&normal.xyz);
-            if (normal.y > 0.8f && GameShadow(&object, &position.xyz, 5.0f, -1) != 2000000.0f) {
+            if (!(normal.y <= 0.8f) && GameShadow(&object, &position.xyz, 5.0f, -1) != 2000000.0f) {
                 const u32 layer = EShadowInfo();
                 if (layer <= 16 && (TerLayer[layer].flags & 1) == 0) {
                     return true;

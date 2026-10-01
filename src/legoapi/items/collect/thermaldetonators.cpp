@@ -251,7 +251,7 @@ i32 ThermalDetonator_MoveCode(GameObject_s *object) {
         }
     }
     object->context_animation_timer -= FRAMETIME;
-    if (object->context_animation_timer <= 0.0f) {
+    if (!(object->context_animation_timer > 0.0f)) {
         object->character_context = -1;
         if ((object->context_flags & 0x40) == 0) {
             object->movement_runtime_flags |= 0x40;
@@ -262,7 +262,7 @@ i32 ThermalDetonator_MoveCode(GameObject_s *object) {
             if (frame != NULL && *frame > 0.0f && *frame >= release_frame) {
                 object->movement_runtime_flags |= 0x40;
             }
-        } else if (object->context_animation_timer < 0.5f) {
+        } else if (!(object->context_animation_timer >= 0.5f)) {
             object->movement_runtime_flags |= 0x40;
         }
     }

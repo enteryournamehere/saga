@@ -130,7 +130,7 @@ void DoInput(WORLDINFO_s *world) {
             continue;
         }
         if (NewMode != 0 || NewLData != NULL || FadeSys.fade != 0.0f || editor_active != 0 ||
-            GameTimer.time_elapsed <= 0.0f || world == NULL || world->current_level == NULL ||
+            !(GameTimer.time_elapsed > 0.0f) || world == NULL || world->current_level == NULL ||
             world->current_level == TITLES_LDATA) {
             continue;
         }
@@ -144,8 +144,8 @@ void DoInput(WORLDINFO_s *world) {
             continue;
         }
         if (GameMenu[GameMenuLevel].menu != -1 || CutSceneWaiting != 0 || MiniCutCam != 0 ||
-            memcard_autosavestarted != 0 || memcard_autosavepostdelay > 0.0f || memcard_autosavepredelay > 0.0f ||
-            GameTimer.update_count == 0) {
+            memcard_autosavestarted != 0 || !(memcard_autosavepostdelay <= 0.0f) ||
+            !(memcard_autosavepredelay <= 0.0f) || GameTimer.update_count == 0) {
             continue;
         }
         if (CUTSTOPGAME != 0 && !CutScene_IsSkippable(static_cast<CUTINFO *>(CutStopInfo))) {

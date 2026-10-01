@@ -274,7 +274,7 @@ void SuperCarry_Start(GameObject_s *object, GIZMOBLOWUP_s *blowup, i32 immediate
             object->context_animation = LEGOACT_SUPERCARRY_PICKUP;
             object->field_0x7a3 = 0;
             f32 duration = AnimDuration(object->id, LEGOACT_SUPERCARRY_PICKUP, 0.0f, 0.0f, 1);
-            if (duration <= 0.0f)
+            if (!(duration > 0.0f))
                 duration = 0.5f;
             object->context_animation_timer = duration;
             object->apiobj.movement_facing_angle =

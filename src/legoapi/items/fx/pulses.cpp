@@ -89,7 +89,7 @@ void Pulses_Update(PULSESYS_s *pulse_sys) {
 
             NUVEC *pulse_position = NuSpecialGetDrawPos(&pulse_sys->pulses[i].special);
             pulse_sys->pulses[i].timer -= FRAMETIME;
-            if (pulse_sys->pulses[i].timer <= 0.0f && netclient == 0) {
+            if (!(pulse_sys->pulses[i].timer > 0.0f) && netclient == 0) {
                 if (pulse_sys->pulses[i].active != 0) {
                     pulse_sys->pulses[i].active = 0;
                     pulse_sys->pulses[i].timer = pulse_sys->pulses[i].off_time;
@@ -116,7 +116,7 @@ void Pulses_Update(PULSESYS_s *pulse_sys) {
                 GameObject_s *player = Player[player_index];
                 if (player == NULL || !player->apiobj.player_controlled || player->apiobj.field_0x287 != 0 ||
                     (LEGOCONTEXT_DOOMED != -1 && player->character_context == LEGOCONTEXT_DOOMED) ||
-                    player->flicker_timer > 0.0f || player->spawn_protection_timer > 0.0f ||
+                    !(player->flicker_timer <= 0.0f) || !(player->spawn_protection_timer <= 0.0f) ||
                     (player->field_0xefe & 0x40) != 0) {
                     continue;
                 }
@@ -133,7 +133,7 @@ void Pulses_Update(PULSESYS_s *pulse_sys) {
                 NuVecSub(&offset, &player->apiobj.collision_position, pulse_position);
                 f32 distance = direction.x * offset.x + direction.z * offset.z;
                 if (pulse_sys->radial_hit_direction == 1) {
-                    if (distance < 0.0f) {
+                    if (!(distance >= 0.0f)) {
                         continue;
                     }
                     NuVecRotateY(&offset, &offset, 0x4000);

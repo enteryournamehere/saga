@@ -230,7 +230,7 @@ uv1deb *GenDebIndexBounceY(debkeydatatype_s *key, debinftype *effect, float time
     if (SolveQuadratic(effect->field_0a0, particle->momentum.y, particle->position.y - key->collision_plane, &first,
                        &second)) {
         f32 collision_time = first > second ? first : second;
-        if (collision_time > 0.0f && effect->particle_lifetime > collision_time) {
+        if (!(collision_time <= 0.0f) && effect->particle_lifetime > collision_time) {
             DebrisGetControlStackLock();
             if (freechunkcontrolsptr < debrischunks + debrischunksglass) {
                 debris_chunk_control_s *control = freechunkcontrols[freechunkcontrolsptr];

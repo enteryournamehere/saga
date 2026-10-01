@@ -382,7 +382,7 @@ void Batarang_MoveCode(GameObject_s *object) {
         if (AnimPlaying(&object->apiobj.anim_packet, object->context_animation, 0, 0) == NULL) {
             return;
         }
-        if (object->pad_gamepad->input_magnitude <= 0.0f) {
+        if (!(object->pad_gamepad->input_magnitude > 0.0f)) {
             object->context_animation_timer -= FRAMETIME;
             if (0.0f < object->context_animation_timer) {
                 return;
@@ -401,7 +401,7 @@ void Batarang_MoveCode(GameObject_s *object) {
         GAMECHARACTERDATA *runtime = object->apiobj.character_data->game_character;
         if (!object->apiobj.player_controlled || (runtime->flags_090 & 0x20000000) == 0 ||
             object->use_model_origin == 0 || (object->field_0xe24 & 8) == 0 || object->apiobj.model_draw_result == 0 ||
-            object->field_0xc54 <= 0.0f || object->hold_timer < 0.25f || object->apiobj.field_0x27d == 0 ||
+            !(object->field_0xc54 > 0.0f) || !(object->hold_timer >= 0.25f) || object->apiobj.field_0x27d == 0 ||
             ObjLandReady(object) == 0) {
             return;
         }
@@ -419,14 +419,14 @@ void Batarang_MoveCode(GameObject_s *object) {
             StartJump(object, 0);
             return;
         }
-        if ((object->pad_gamepad->buttons_held & GAMEPAD_ACTION) != 0 || object->context_animation_timer < 0.3f) {
+        if ((object->pad_gamepad->buttons_held & GAMEPAD_ACTION) != 0 || !(object->context_animation_timer >= 0.3f)) {
             if (object->apiobj.character_model->model_data_b[object->context_animation] == NULL ||
                 AnimPlaying(&object->apiobj.anim_packet, object->context_animation, 1, 0) != NULL) {
                 GAMEPAD_s *pad = object->pad_gamepad;
                 object->context_animation_timer += FRAMETIME;
                 f32 x = pad->input_direction_z * 1.25f;
                 f32 y = 1.25f * pad->input_direction_x;
-                if (object->context_animation_timer < 0.25f) {
+                if (!(object->context_animation_timer >= 0.25f)) {
                     x = x * object->context_animation_timer * 4.0f;
                     y = y * object->context_animation_timer * 4.0f;
                 }

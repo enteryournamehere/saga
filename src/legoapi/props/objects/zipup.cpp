@@ -501,7 +501,7 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
                 bool animation_fraction = false;
                 if (playing != NULL && *playing > 0.0f) {
                     f32 frame = AnimListFrame(api.character_model, object->context_animation, 0);
-                    if (frame > 1.0f && AnimEndFrame(api.character_model, object->context_animation) > frame) {
+                    if (!(frame <= 1.0f) && AnimEndFrame(api.character_model, object->context_animation) > frame) {
                         f32 progress = (*playing - 1.0f) / (frame - 1.0f);
                         fraction = progress < 1.0f ? progress : 1.0f;
                         animation_fraction = true;
@@ -518,7 +518,7 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
                     object->context_animation = LEGOACT_WHIP_SWING_SWING;
                     f32 duration = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 0);
                     object->airborne_action_duration = duration;
-                    if (duration <= 0.0f)
+                    if (!(duration > 0.0f))
                         object->airborne_action_duration = 1.0f;
                     GameAudio_PlaySfx(0x4d, &api.collision_position, GameAudio_GetPlrSfxBits(object), 0);
                 }
@@ -533,7 +533,7 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
                     object->context_animation = LEGOACT_WHIP_SWING_JUMP;
                     f32 duration = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 0);
                     object->airborne_action_duration = duration;
-                    if (duration <= 0.0f)
+                    if (!(duration > 0.0f))
                         object->airborne_action_duration = 1.0f;
                     PlayJumpSfx(object, 0);
                 }
@@ -555,7 +555,7 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
         NUVEC *hook = &zipup->hook_origin;
         NUVEC *destination = object->field_0x7a3 == 0 ? &zipup->upper_position : &zipup->lower_position;
         if ((zipup->flags & 1) == 0) {
-            if (NuVecDistSqr(&api.position, hook, NULL) < 0.01f || object->context_animation_timer >= 5.0f) {
+            if (NuVecDistSqr(&api.position, hook, NULL) < 0.01f || !(object->context_animation_timer < 5.0f)) {
                 StartJump(object, 6);
                 PlaySfx("GrapDetach", &api.collision_position);
                 if ((api.flags_low & 0x80) != 0)
@@ -586,7 +586,7 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
             PlaySfx("GrapWindLp", &api.collision_position);
             return;
         }
-        if (object->context_animation_timer >= 1.5f) {
+        if (!(object->context_animation_timer < 1.5f)) {
             object->context_animation_timer = 0.0f;
             object->character_context = -1;
             zipup->occupant = NULL;
@@ -625,7 +625,7 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
         NuVecAdd(&zipup->rider_target_position, hook, &zipup->rider_target_position);
         f32 old_time = object->context_animation_timer;
         object->context_animation_timer += FRAMETIME;
-        if (old_time < 0.55f && object->context_animation_timer >= 0.55f)
+        if (!(old_time >= 0.55f) && !(object->context_animation_timer < 0.55f))
             PlaySfx("GrapSwing", &api.collision_position);
         return;
     }
@@ -644,7 +644,7 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
     ZIPUP *zipup = ZipUp_FindNearest(WORLD, &api.lower_position, api.collision_radius, NULL, &endpoint, object, false);
     if (objInNetWaitContext(object, 0x47)) {
         object->context_animation_timer -= FRAMETIME;
-        if (object->context_animation_timer <= 0.0f)
+        if (!(object->context_animation_timer > 0.0f))
             object->character_context = -1;
     }
     if (zipup == NULL)
@@ -676,7 +676,7 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
         object->context_animation = LEGOACT_WHIP_SWING_START;
         f32 duration = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 0);
         object->airborne_action_duration = duration;
-        if (duration <= 0.0f)
+        if (!(duration > 0.0f))
             object->airborne_action_duration = 0.5f;
         object->zipup_entry_position = api.position;
         ZIPUP *current = static_cast<ZIPUP *>(object->field_0x788);

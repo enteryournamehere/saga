@@ -563,14 +563,14 @@ void DrawSuperStoryTime(f32 y, f32 timer, f32 target, i32 target_above, i32 show
     Text_MakeTime(timer, show_hours, 1, 1, time);
 
     i32 green = 191;
-    if (target > 0.0f) {
+    if (!(target <= 0.0f)) {
         if (target <= timer) {
             green = 31;
         }
     }
     Text3DEx(time, 0.0f, y, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, green, 0, 128);
 
-    if (target > 0.0f) {
+    if (!(target <= 0.0f)) {
         char target_time[256];
         Text_MakeTime(target, show_hours, 1, 1, time);
         NuStrCpy(target_time, const_cast<char *>("("));
@@ -997,7 +997,7 @@ void DrawPanel() {
                     f32 name_x = -(ICONX + 0.075f);
                     if (object->apiobj.player_controlled && object->apiobj.character_data->name_id != -1) {
                         bool draw_name = paused != 0;
-                        if (!draw_name && object->hud_icon_timer > 0.0f && object->hud_icon_timer < 2.0f)
+                        if (!draw_name && !(object->hud_icon_timer <= 0.0f) && !(object->hud_icon_timer >= 2.0f))
                             draw_name = NuFmod(object->hud_icon_timer, 0.4f) < 0.2f;
                         if (draw_name) {
                             f32 width = Game.options_save.widescreen ? 0.7f : 0.5f;
@@ -1009,9 +1009,9 @@ void DrawPanel() {
                     }
                     if (!paused && FadeSys.fade == 0.0f && object->apiobj.player_controlled &&
                         MechSystems::Get()->PlayerButton().panel_state == NULL) {
-                        if (ONEPLAYERPOWERUPS && object->field_0xdec > 0.0f) {
+                        if (ONEPLAYERPOWERUPS && !(object->field_0xdec <= 0.0f)) {
                             if (!FindGameMsgsWithID(7, 0, object->apiobj.field_0x27c, NULL) &&
-                                (object->field_0xdec >= 3.0f ||
+                                (!(object->field_0xdec < 3.0f) ||
                                  PickupFlickerFrame % PickUpFlickerFrames < PickUpFlickerTest)) {
                                 nuhspecial_s *special = &WORLD->lev_objs[0xd0].special;
                                 u16 angle = PowerUp_PanelYRot[0];
@@ -1151,7 +1151,7 @@ void DrawPanel() {
                                                      &WORLD->lev_objs[0xd2].special, 2);
                         }
                     }
-                    if (DoubleScoreTime > 0.0f)
+                    if (!(DoubleScoreTime <= 0.0f))
                         DrawInDoubleScoreZone(DoubleScoreTime);
                 }
                 if (BonusArea && WORLD->area != NULL && (WORLD->area->flags & 0x104) == 4) {
@@ -1160,7 +1160,7 @@ void DrawPanel() {
                     i32 active1 = Player[0] != NULL && Player[0]->apiobj.player_controlled;
                     DrawBonusScore(status_y, active1, active2, 1.0f, scores);
                 }
-                if (HUB_ADATA != NULL && WORLD->area == HUB_ADATA && goldbricktime > 0.0f) {
+                if (HUB_ADATA != NULL && WORLD->area == HUB_ADATA && !(goldbricktime <= 0.0f)) {
                     f32 y =
                         (STATSPOS2Y - STATSPOSY) * NU_SIN_LUT(static_cast<i32>(goldbricktime * 16384.0f)) - STATSPOS2Y;
                     Hub_DrawImportantBrick(0xd3, 0.0f, y, 1.0f, Game.gold_bricks, GOLDBRICKPOINTS);
@@ -1206,7 +1206,7 @@ void DrawPanel() {
             } else if (ChallengeMode) {
                 f32 remaining =
                     static_cast<f32>(ADataList[WORLD->level_sub_id].challenge_trial_time) - ChallengeTimer.time_elapsed;
-                if (remaining < 0.0f)
+                if (!(remaining >= 0.0f))
                     remaining = 0.0f;
                 Text_MakeTime(remaining, 0, 1, 1, text);
                 f32 y = NU_SIN_LUT(static_cast<i32>(statstime * 16384.0f)) * (STATSPOSY - STATSPOS2Y) + STATSPOS2Y;
@@ -1216,7 +1216,7 @@ void DrawPanel() {
                 i32 mission_index = static_cast<i8>(MissionSys->mission->count);
                 f32 remaining = static_cast<f32>(static_cast<u16>(MissionSys->missions[mission_index].time)) -
                                 MissionSys->timer.time_elapsed;
-                if (remaining < 0.0f)
+                if (!(remaining >= 0.0f))
                     remaining = 0.0f;
                 Text_MakeTime(remaining, 0, 1, 1, text);
                 Text3D(text, 0.0f, status_y, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 191, 0);
@@ -1252,7 +1252,7 @@ void DrawPanel() {
                                     distance = distance2;
                             }
                             distance = NuFsqrt(distance);
-                            if (distance > 10.0f)
+                            if (!(distance <= 10.0f))
                                 distance = 10.0f;
                             alpha *= 1.0f - distance / 10.0f;
                         } else

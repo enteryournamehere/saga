@@ -410,7 +410,7 @@ void Ledge_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
         StartJump(object, 0);
         object->movement_runtime_flags |= 0x10;
         f32 height = 0.2f + object->external_force.y - object->jump_start_height;
-        if (height > 0.0f) {
+        if (!(height <= 0.0f)) {
             object->apiobj.velocity.y =
                 NuFsqrt(-2.0f * object->apiobj.character_data->game_character->gravity * height);
         }

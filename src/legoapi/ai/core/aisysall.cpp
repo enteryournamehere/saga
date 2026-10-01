@@ -772,9 +772,9 @@ void AIRetreatFromDestination(AISYS_s *system, AIPACKET_s *packet, APIOBJECT_s *
                                  packet->fallback_path_info.dist > packet->path_info.dist);
     } else {
         f32 parameter = packet->path_info.dist;
-        if (parameter > 1.0f) {
+        if (!(parameter <= 1.0f)) {
             parameter = 1.0f;
-        } else if (parameter < 0.0f) {
+        } else if (!(parameter >= 0.0f)) {
             parameter = 0.0f;
         }
         f32 remaining_parameter = 1.0f - parameter;

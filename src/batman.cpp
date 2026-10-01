@@ -816,7 +816,7 @@ giz_freeplay:
 
             world = WORLD;
             if ((pause_rndr_on == 0) || (FadeSys.pending_type == FADE_TYPE_WIPE)) {
-                if (!(MainRenderTime <= 0.0f)) {
+                if (MainRenderTime > 0.0f) {
                     GameFog_Update(WORLD);
                     GameFog_Set();
                     SetLevelLights(world->rtl_set, 1.0f);

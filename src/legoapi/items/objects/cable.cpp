@@ -184,7 +184,7 @@ void UpdateCables() {
                 };
                 if (cable->wrap_count == 0) {
                     f32 nearest = NuVecDistSqr(&path[0], locator(0), &delta);
-                    if (!(nearest < 1000000000.0f))
+                    if (nearest >= 1000000000.0f)
                         nearest = 1000000000.0f;
                     i32 selected = 0;
                     for (i32 i = 1; i < 4; ++i) {
@@ -376,7 +376,7 @@ void UpdateCables() {
                 cable->max_length = remaining;
                 for (i32 i = 0; i < path_count - 1; ++i) {
                     f32 length = NuVecDist(&path[i + 1], &path[i], &delta);
-                    if (!(remaining >= length)) {
+                    if (remaining < length) {
                         cable->segment_lengths[i] = remaining;
                         cable->total_length += remaining;
                         f32 scale = length == 0.0f || remaining == 0.0f ? 0.0f : remaining / length;

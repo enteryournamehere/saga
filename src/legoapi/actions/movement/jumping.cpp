@@ -315,7 +315,7 @@ i32 StartBigJump(GameObject_s *object, NUVEC *destination, i32 mode, f32 height,
     object->ai.movement_event_flags |= 2;
     object->ai.field_0x180 = NULL;
     object->context_variant_flags &= ~1;
-    if (height < 0.0f)
+    if (!(height >= 0.0f))
         height = 0.0f;
     object->big_jump_height = height;
     return 1;

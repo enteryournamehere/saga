@@ -247,7 +247,7 @@ void UpdatePushBlocks(void *world_ptr, void *, float) {
             p->ground_height = p->position->y + p->supporting_block->bounds_max.y;
             p->ground_offset = (p->position->y + p->bounds_min.y) - p->ground_height;
         }
-        if (p->ground_offset > 0.01f)
+        if (!(p->ground_offset <= 0.01f))
             p->runtime_flags_0c8 |= 8;
         else if (p->runtime_flags_0c8 & 8) {
             p->runtime_flags_0c9 |= 8;
@@ -260,7 +260,8 @@ void UpdatePushBlocks(void *world_ptr, void *, float) {
                 ++safe;
         bool reset = safe != 4;
         if (world->current_level == HOTHESCAPEB_LDATA && NuVecXZDistSqr(p->position, &hothbtestpos, NULL) < 1.0f) {
-            if (!(corners[0].z < 13.2f && corners[1].z < 13.2f && corners[2].z < 13.2f && corners[3].z < 13.2f))
+            if (!(corners[0].z < 13.2f && !(corners[1].z >= 13.2f) && !(corners[2].z >= 13.2f) &&
+                  !(corners[3].z >= 13.2f)))
                 reset = true;
         }
         if (reset)

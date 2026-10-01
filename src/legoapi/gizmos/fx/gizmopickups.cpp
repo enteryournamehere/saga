@@ -816,7 +816,7 @@ static i32 GizmoPickups_Load(void *world_ptr, void *) {
         AreaPickupScale = 1.0f;
     }
 
-    if (pickup_sys->draw_distance < 10.0f) {
+    if (!(pickup_sys->draw_distance >= 10.0f)) {
         pickup_sys->draw_distance = 10.0f;
     }
     if (version == 6 && (ADataList[world->level_sub_id].flags & AREAFLAG_NOPICKUPGRAVITY) != 0 &&

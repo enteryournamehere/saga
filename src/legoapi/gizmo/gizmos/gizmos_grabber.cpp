@@ -180,18 +180,18 @@ void Grabber_Update(WORLDINFO_s *world) {
     } else
         pad = control->pad_gamepad;
     if (control != NULL && control->field_0xcc0 != NULL && (control->apiobj.player_controlled)) {
-        if (pad->input_magnitude > 0.0f) {
-            if (Grab_grabber->move_xy) {
-                g->target_velocity.y = pad->input_direction_x * g->speed;
-                g->target_velocity.x = 0.0f;
-                g->target_velocity.z =
-                    Grab_grabber->invert_x ? -(g->speed * pad->input_direction_z) : g->speed * pad->input_direction_z;
-            } else {
+        if (!(pad->input_magnitude <= 0.0f)) {
+            if (!Grab_grabber->move_xy) {
                 u16 angle = GamePad_InputAngle(control, pad);
                 g->target_velocity.x = NU_SIN_LUT(angle) * g->speed;
                 if (Grab_grabber->invert_x)
                     g->target_velocity.x = -g->target_velocity.x;
                 g->target_velocity.z = g->speed * NU_SIN_LUT(angle + 0x4000);
+            } else {
+                g->target_velocity.y = pad->input_direction_x * g->speed;
+                g->target_velocity.x = 0.0f;
+                g->target_velocity.z =
+                    Grab_grabber->invert_x ? -(g->speed * pad->input_direction_z) : g->speed * pad->input_direction_z;
             }
         }
     } else {
@@ -299,10 +299,7 @@ void Grabber_Update(WORLDINFO_s *world) {
     NuSpecialUpdate(&g->special);
     switch (g->state) {
         case 0:
-            if (pad != NULL) {
-                if (!(pad->buttons_pressed & (GAMEPAD_SPECIAL | GAMEPAD_ACTION)))
-                    break;
-            } else {
+            if (pad == NULL) {
                 if ((g->flags_559 & 4) && g->action_switch && (g->action_switch->progress_flags & 2) &&
                     GameAnimSet_IsAnimationReset(g->action_switch->anim_set))
                     g->flags_559 &= ~4;
@@ -310,6 +307,9 @@ void Grabber_Update(WORLDINFO_s *world) {
                     break;
                 if (!g->action_switch || !(g->action_switch->progress_flags & 2) ||
                     (g->action_switch->anim_set->flags & 1))
+                    break;
+            } else {
+                if (!(pad->buttons_pressed & (GAMEPAD_SPECIAL | GAMEPAD_ACTION)))
                     break;
             }
             if (g->character_model && g->character_model->model_data_b[102]) {

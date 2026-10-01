@@ -1014,50 +1014,57 @@ void SpecialMiniKits_Draw(WORLDINFO_s *world) {
         NUVEC *position;
 
         if ((item->flags & 0x20) != 0) {
-            if (!(item->special_gizmo == NULL || GizmoGetVisibility(world->gizmo_sys, item->special_gizmo) == 0)) {
-                position = GizmoGetPos(world->gizmo_sys, item->special_gizmo);
-                if (position != NULL) {
-                    NuMtxSetScale(&matrix, &scale);
-                    NuMtxTranslate(&matrix, position);
-                }
+            if (item->special_gizmo == NULL || GizmoGetVisibility(world->gizmo_sys, item->special_gizmo) == 0) {
+                continue;
             }
+            position = GizmoGetPos(world->gizmo_sys, item->special_gizmo);
+            if (position == NULL) {
+                continue;
+            }
+            NuMtxSetScale(&matrix, &scale);
+            NuMtxTranslate(&matrix, position);
         } else {
-            if (NuSpecialGetVisibilityFn(&item->special) != 0) {
-                nuinstanim_s *animation = static_cast<nuinstanim_s *>(item->inst_anim);
-                bool draw = (item->flags & 1) != 0 || animation == NULL || item->anim_data == NULL;
-                if (!draw && (animation->flags & NUINSTANIM_FLAG_REPEATING) == 0) {
-                    draw = ((item->flags & 2) != 0 && animation->ltime <= 1.0f) ||
-                           ((item->flags & 8) != 0 && item->end_frame <= animation->ltime);
-                }
-                if (!draw && (item->flags & 4) != 0 && (animation->flags & NUINSTANIM_FLAG_PLAYING) != 0) {
-                    draw = true;
-                }
-                if (draw) {
-                    position = NuSpecialGetDrawPos(&item->special);
-                    matrix = *NuSpecialGetDrawMtx(&item->special);
-                    NuVecNorm(NUMTX_GET_ROW_VEC(&matrix, 0), NUMTX_GET_ROW_VEC(&matrix, 0));
-                    NuVecNorm(NUMTX_GET_ROW_VEC(&matrix, 1), NUMTX_GET_ROW_VEC(&matrix, 1));
-                    NuVecNorm(NUMTX_GET_ROW_VEC(&matrix, 2), NUMTX_GET_ROW_VEC(&matrix, 2));
-                    NuMtxPreScale(&matrix, &scale);
-                }
+            if (NuSpecialGetVisibilityFn(&item->special) == 0) {
+                continue;
             }
+
+            nuinstanim_s *animation = static_cast<nuinstanim_s *>(item->inst_anim);
+            bool draw = (item->flags & 1) != 0 || animation == NULL || item->anim_data == NULL;
+            if (!draw && (animation->flags & NUINSTANIM_FLAG_REPEATING) == 0) {
+                draw = ((item->flags & 2) != 0 && animation->ltime <= 1.0f) ||
+                       ((item->flags & 8) != 0 && item->end_frame <= animation->ltime);
+            }
+            if (!draw && (item->flags & 4) != 0 && (animation->flags & NUINSTANIM_FLAG_PLAYING) != 0) {
+                draw = true;
+            }
+            if (!draw) {
+                continue;
+            }
+
+            position = NuSpecialGetDrawPos(&item->special);
+            matrix = *NuSpecialGetDrawMtx(&item->special);
+            NuVecNorm(NUMTX_GET_ROW_VEC(&matrix, 0), NUMTX_GET_ROW_VEC(&matrix, 0));
+            NuVecNorm(NUMTX_GET_ROW_VEC(&matrix, 1), NUMTX_GET_ROW_VEC(&matrix, 1));
+            NuVecNorm(NUMTX_GET_ROW_VEC(&matrix, 2), NUMTX_GET_ROW_VEC(&matrix, 2));
+            NuMtxPreScale(&matrix, &scale);
         }
 
-        if (item->pickup_gizmo != NULL) {
-            GIZMOPICKUP_s *pickup = static_cast<GIZMOPICKUP_s *>(item->pickup_gizmo->object);
-            i32 type_index = pickup->type_index;
-            if ((pickup->state_flags & GIZMOPICKUP_STATE_ALTERNATE_TYPE) != 0 && GizmoPickupSys->alternate_type != -1) {
-                type_index = GizmoPickupSys->alternate_type;
-            }
-            GIZMO_PICKUP_TYPE *type = &GizmoPickupSys->types[type_index];
-
-            if ((item->flags & 0x10) == 0) {
-                NuMtxSetScale(&matrix, &scale);
-                NuMtxRotateY(&matrix, y_rotation);
-                NuMtxRotateX(&matrix, x_rotation);
-                NuMtxTranslate(&matrix, position);
-            }
-            NuSpecialDrawAt(&world->lev_objs[type->first_model_id].special, &matrix);
+        if (item->pickup_gizmo == NULL) {
+            continue;
         }
+        GIZMOPICKUP_s *pickup = static_cast<GIZMOPICKUP_s *>(item->pickup_gizmo->object);
+        i32 type_index = pickup->type_index;
+        if ((pickup->state_flags & GIZMOPICKUP_STATE_ALTERNATE_TYPE) != 0 && GizmoPickupSys->alternate_type != -1) {
+            type_index = GizmoPickupSys->alternate_type;
+        }
+        GIZMO_PICKUP_TYPE *type = &GizmoPickupSys->types[type_index];
+
+        if ((item->flags & 0x10) == 0) {
+            NuMtxSetScale(&matrix, &scale);
+            NuMtxRotateY(&matrix, y_rotation);
+            NuMtxRotateX(&matrix, x_rotation);
+            NuMtxTranslate(&matrix, position);
+        }
+        NuSpecialDrawAt(&world->lev_objs[type->first_model_id].special, &matrix);
     }
 }

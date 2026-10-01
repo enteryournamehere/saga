@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 67.93273,
+    "fuzzy_match_percent": 67.93933,
     "total_code": "4722419",
     "matched_code": "525971",
     "matched_code_percent": 11.137746,
@@ -52310,6 +52310,14 @@
           "match_percent": 99.90909
         },
         {
+          "name": "_ZL10loadSumBoxP8nufpar_s",
+          "demangled_name": "loadSumBox(nufpar_s*)",
+          "address": 4923888,
+          "offset": 4033920,
+          "size": 40,
+          "match_percent": 99.90909
+        },
+        {
           "name": "_ZL18xRand_OutputChanceP8nufpar_s",
           "demangled_name": "xRand_OutputChance(nufpar_s*)",
           "address": 4923936,
@@ -54596,7 +54604,7 @@
           "address": 2272240,
           "offset": 1382272,
           "size": 597,
-          "match_percent": 86.50769
+          "match_percent": 92.57692
         },
         {
           "name": "_Z13Grabber_ResetP11WORLDINFO_s",
@@ -54604,7 +54612,7 @@
           "address": 2272848,
           "offset": 1382880,
           "size": 1293,
-          "match_percent": 67.97744
+          "match_percent": 68.353386
         },
         {
           "name": "_Z14Grabber_UpdateP11WORLDINFO_s",
@@ -54612,7 +54620,7 @@
           "address": 2275024,
           "offset": 1385056,
           "size": 7117,
-          "match_percent": 42.569386
+          "match_percent": 46.371246
         },
         {
           "name": "_Z12Grabber_DrawP11WORLDINFO_s",
@@ -122706,18 +122714,6 @@
       ]
     },
     {
-      "name": "_ZL10loadSumBoxP8nufpar_s",
-      "demangled_name": "loadSumBox(nufpar_s*)",
-      "address": 4923888,
-      "offset": 4033920,
-      "size": 40,
-      "match_percent": 99.90909,
-      "candidate_units": [
-        "legoapi/gizmo/base/gizflow.cpp.o",
-        "legoapi/world/levelconfig.cpp.o"
-      ]
-    },
-    {
       "name": "_ZNK4Fade11GetFadeTypeEv",
       "demangled_name": "Fade::GetFadeType() const",
       "address": 5240304,
@@ -127567,8 +127563,8 @@
   "summary": {
     "bazel_units": 452,
     "functions": 13454,
-    "assigned_functions": 12664,
-    "ambiguous_functions": 257,
+    "assigned_functions": 12665,
+    "ambiguous_functions": 256,
     "unassigned_functions": 533
   }
 }

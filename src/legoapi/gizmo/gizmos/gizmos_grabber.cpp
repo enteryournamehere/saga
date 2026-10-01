@@ -50,7 +50,7 @@ void Grabber_StoreProgress(WORLDINFO_s *world, LEVEL_PROGRESS_s *progress) {
 
 // Static grabber victim-pos helper. Moved from gizmisc_stubs.cpp.
 
-static __used__ void Grabber_SetVictimPos(GRABBER_s *grabber) {
+static void Grabber_SetVictimPos(GRABBER_s *grabber) {
     if (grabber->victim != NULL) {
         NUVEC position = *Grabber_GetGrabPos(grabber, NULL);
         GameObject_s *victim = grabber->victim;
@@ -87,7 +87,7 @@ static __used__ void Grabber_SetVictimPos(GRABBER_s *grabber) {
 extern ADDPART_s Default_ADDPART;
 extern "C" PART_s *AddPart(ADDPART_s *);
 void PartKill_Grabber(PART_s *, i32);
-static __used__ void Grabber_Drop(GRABBER_s *grabber, NUVEC *previous_position) {
+static void Grabber_Drop(GRABBER_s *grabber, NUVEC *previous_position) {
     grabber->flags_559 |= 2;
     if (grabber->victim != NULL) {
         if (grabber->character_id == id_GRABMAGNET && grabber->victim->field_0x7a3 != 0)
@@ -158,7 +158,7 @@ void NewRumbleAllPlayers(f32, f32, i32, i32);
 void Hint_SetComplete(i32);
 i32 GameAnimSet_IsAnimationReset(GAMEANIMSET_s *);
 GIZMOBLOWUP_s *FindNearestGizmoBlowUp(WORLDINFO_s *, NUVEC *, f32);
-static __used__ i32 IsGrabbable(GameObject_s *object) {
+static i32 IsGrabbable(GameObject_s *object) {
     return (object->apiobj.character_data->game_character->flags_090 & GAMECHARACTER_FLAG_GRAB_DISABLED) == 0;
 }
 void Grabber_Update(WORLDINFO_s *world) {

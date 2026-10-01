@@ -99,7 +99,7 @@ static NUFPCOMJMP cfgtab_Gizmo[] = {
     {NULL, NULL},
 };
 
-static void xGizmo(nufpar_s *parser) {
+static __used__ void xGizmo(nufpar_s *parser) {
     if (load_flowbox == NULL)
         return;
     FLOWBOXGIZMODATA_s *data = load_flowbox->data;
@@ -175,7 +175,7 @@ static i32 load_parents[16];
 static i32 load_children[32];
 static u8 load_parent_output_ix[16];
 
-static void remapChildren(i32 id) {
+static __used__ void remapChildren(i32 id) {
     for (i32 i = 0; load_nchildren < 32 && remap[~id].children[i] != id; ++i) {
         i32 child = remap[~id].children[i];
         if (child < 0)

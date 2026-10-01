@@ -802,10 +802,10 @@ void NuSound3Update(void) {
             if (!g_NuSoundLoadTrigger.a) {
                 bool broadcast = g_NuSoundLoadTrigger.b;
                 g_NuSoundLoadTrigger.a = true;
-                if (!broadcast) {
-                    pthread_cond_signal(&g_NuSoundLoadTrigger.cond);
-                } else {
+                if (broadcast) {
                     pthread_cond_broadcast(&g_NuSoundLoadTrigger.cond);
+                } else {
+                    pthread_cond_signal(&g_NuSoundLoadTrigger.cond);
                 }
             }
             pthread_mutex_unlock(&g_NuSoundLoadTrigger.mutex);

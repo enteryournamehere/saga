@@ -6,6 +6,7 @@
 #include "legoapi/gizmos/traps/gizforce.h"
 #include "legoapi/gizmos/traps/gizturrets.h"
 #include "legoapi/characters/motion.h"
+#include "legoapi/characters/core/players.h"
 
 u32 GizmoBlowups_TotalScore(void *world);
 extern i32 DoubleScore;
@@ -438,7 +439,7 @@ void Collection_CreateCustom(char *name, i16 *id_list, COLLECTION_s *collection,
             if (id < 0) {
                 continue;
             }
-            if (excluded_model_flags != 0 && (CDataList[id].model_flags & excluded_model_flags) != 0) {
+            if (excluded_model_flags != 0 && (apicharsys->char_data[id].model_flags & excluded_model_flags) != 0) {
                 continue;
             }
             if (require_buyable != 0 && source.can_buy == 0) {
@@ -459,7 +460,7 @@ void Collection_CreateCustom(char *name, i16 *id_list, COLLECTION_s *collection,
                 (CDataList[id].model_flags & required_model_flags) != required_model_flags) {
                 continue;
             }
-            if (excluded_model_flags != 0 && (CDataList[id].model_flags & excluded_model_flags) != 0) {
+            if (excluded_model_flags != 0 && (apicharsys->char_data[id].model_flags & excluded_model_flags) != 0) {
                 continue;
             }
             if (required_game_flags != 0 && (GCDataList[id].flags_090 & required_game_flags) != required_game_flags) {

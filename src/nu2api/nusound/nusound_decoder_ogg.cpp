@@ -144,9 +144,7 @@ u64 NuSoundDecoderOGG::Decode(NuSoundSource &source, NuSoundBuffer &buffer, bool
 
     if (this->locked_buffer == NULL) {
         for (i32 i = 0; i < source.GetNumInitialBuffers(); i++) {
-            NuSoundWeakPtr<NuSoundBufferCallback> callback;
-            callback.Set(this);
-            source.RequestBuffer(loop, callback);
+            source.RequestBuffer(loop, NuSoundWeakPtr<NuSoundBufferCallback>(this));
         }
         this->locked_buffer = this->encoded_buffers[this->ring_read_pos % 4];
         __sync_fetch_and_add(&this->ring_read_pos, 1);

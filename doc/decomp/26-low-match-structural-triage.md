@@ -7459,3 +7459,167 @@ repository checks pass. Original ownership, ABI, compiler options and scoring
 are unchanged. Except for the explicitly NDK-compiled techno body, the new
 i386 runtime fixtures use host GCC/SSE; production builds and isolated gates
 still use unchanged NDK r8e GCC 4.7. A fresh main fetch remains `2a57d7b7`.
+
+### Bounded follow-up gates after batch 238
+
+`MenuUpdateEpisodes` is already closure-complete from batch 95; its current
+32.405% agrees with that recorded baseline. `ManageGameObjects` already has
+negative pointer-walk/layout reserves. Do not repeat either audit or trial
+without new evidence. A bounded `Tag_Check` raw/source audit finds no missing
+supported state/service path; eleven retail pack probes versus the current
+counted loop explain much of the size difference. No fanout trial or runtime
+validation follows this triage.
+
+`TrueHero_LSW_Draw` has a real missing `" - "` title separator. The single
+literal-only whole-TU trial changes no instruction/relocation body and gains
+zero weighted bytes; it remains reserved without fixtures. Retail's local
+text buffer is 252 bytes, not a guessed 256. No resize or NaN-to-int trial is
+warranted.
+
+`eduicbRenderTextPick` queries cursor length/prefix/glyph/baseline/height before
+the no-draw guard in retail. One bounded service-order restoration loses
+**436.64 original-weighted bytes**, with all 31 exact owner functions preserved;
+it remains reserved without fixtures or a second shape trial. Actual font
+query helpers do not draw or mutate editor state, so this is not a claimed
+visual-output correction or production callback-mutation test. The initial
+`eduicbRenderGraph` call census finds its services present, not exhaustive
+semantic equivalence.
+
+`NuRndrSetDebBox`'s suspected multiplication grouping difference is a Ghidra
+flattening artifact. Raw producers multiply range by the matrix before the
+near/far factor, as current code does. MINSS/MAXSS retain the prior accumulator
+on equal/unordered comparisons, also as current code does. No trial follows.
+`NuRndrCircle` is byte-identical to its earlier audited source baseline; the
+raw count-minus-one denominator, separate trig calls, triangle/UV stream and
+integer return are represented. No repeat export or compiler trial follows.
+
+## Batch 239: custom-collection exclusion source
+
+`Collection_CreateCustom` now reads excluded model flags from the runtime
+character system's `char_data`, not the permanent `CDataList`. Required model
+and game masks still use their original permanent tables. Both master-list
+and all-character modes retain existing ID/buffer contracts and mask-zero
+short circuits. Linked matching improves **34.426605% to 37.717125%**, with
+the other 21 isolated owner functions unchanged.
+
+Frozen actual-body host sanitizer and host i386 SSE fixtures pass **8,196
+cases** each, including distinct runtime/permanent tables, both modes, mask
+combinations, buyability, retained negative-master-ID safety, zero counts,
+alignment, arena canaries and cursor advancement. The old body fails the first
+independent differing-table assertion. Character IDs and output allocation
+remain valid caller preconditions; optional tables may be null only when their
+corresponding masks are zero. No full collection-menu gameplay test is claimed.
+
+Linked matching reaches **67.447770%**, **+0.319695 percentage points** from main,
+with **6,278** exact functions. Target/native builds and all five repository
+checks pass. Checkpoint `1b43572c` has all eleven GitHub checks successful on
+that exact head; this newer local unit awaits the next push.
+
+## Batch 240: coin-pickup bounds, sources and message capture
+
+`GizmoPickup_CollectCoin` rejects negative player indices with the original
+unsigned admission guard. It reads `DoubleScoreTime` independently of
+`BonusTimer`, uses the direct `GizmoPickupType` array, sign-extends the model
+ID before testing the minus-one sentinel and sets both HUD lifetimes to
+`1.0f + COINMSGTIME`. Target scale is captured before the message template is
+copied after the active-model gate. Linked matching improves **20.913420% to
+36.601730%**, with no isolated owner collateral changes.
+
+Frozen actual-body host sanitizer and host i386 SSE fixtures pass **2,970
+cases** each, including all signed player bytes, independent score/bonus
+timers, the five actual main-total routing modes, area/rumble masks, score
+doublings, direct-table alias distinction, signed model sentinels and exact
+message fields/event order. Actual routing, random and buzz helpers are
+included. Independent old-body probes fail for the invalid index, lifetime,
+sound source, table alias and model sentinel. Service mutation probes are
+diagnostic only; actual routing does not perform those mutations. Type/model
+indices and world allocations remain valid caller preconditions. No full
+terrain/audio/gameplay validation is claimed.
+
+Linked matching reaches **67.451000%**, **+0.322925 percentage points** from main,
+with **6,278** exact functions. Target/native builds and all five repository
+checks pass.
+
+`GizForces_BoltHit` has a real missing world-context type lookup, and its Hit
+helper lacks retail's animation-set null guard. The one combined original-
+backed gate remains neutral at the BoltHit zero-score floor; other runtime
+functions outside those two are unchanged. The repair remains reserved
+without fixtures or further variants. The lookup is a pure table query, not
+a fabricated callback mutation; private helper ABI/name discrepancies are
+not permission to force calling conventions or clone names.
+
+`eduicbInteractProp` has retail-backed label-interior hitbox, held-button,
+menu-capture, row-refresh and canonical flag-access discrepancies. The single
+combined gate loses **34.485 original-weighted matched bytes** across its
+owner TU; all 31 existing exact functions remain exact. It stays reserved
+without fixtures, integration or another variant. Callback mutation was not
+demonstrated in production. `eduicbColourSlider`'s bounded raw/source audit
+finds its supported services present, not exhaustive semantic equivalence.
+
+## Batch 241: BEAST unordered comparisons and metadata reads
+
+`Animate_BEAST` restores retail's unordered-inclusive idle comparison and
+ordered walk threshold. Canonical character metadata is loaded where consumed;
+pad suppression and the both-clip threshold use the live pad owner, while the
+positive-input admission retains the captured pad. Actual idle/fall queries
+are pure; reloads are not claimed as production callback mutations. The single
+unchanged-action owner gate changes only BEAST and gains approximately **32.12
+original-weighted matched bytes**. Original ABI/options and safety contracts
+are unchanged.
+
+Frozen actual-body host sanitizer, host i386 SSE and production-NDK i386
+fixtures each pass **100,000 cases**: 28,784 finite and 71,216 safe unordered.
+The old body diverges on 8,482 cases, with zero finite divergences. Actual
+`MoveAnim_Check` and `UseFallAnim` bodies are included; default-idle and idle-
+scheduler boundaries are explicitly limited to valid standard-idle metadata
+and requests 1/25. No full idle scheduler, pointer mutation or gameplay
+validation is claimed.
+
+The linked report reaches **67.451690%**, **+0.323615 percentage points** from
+main, with **6,278** exact functions. Target/native builds and all five
+repository checks pass.
+
+## Batch 242: OGG outgoing weak-pointer lifetime
+
+`NuSoundDecoderOGG::Decode` now passes the callback weak pointer as a direct
+temporary, matching retail's single outgoing live node instead of a named
+local plus its by-value copy. The canonical weak-pointer implementation and
+the already-correct `Read` call remain unchanged. Other owner function bodies
+and the symbol surface are unchanged. Linked Decode improves **13.232484%
+to 48.318470%**.
+
+Frozen actual Decode/SubmitBuffer bodies and canonical weak-pointer code pass
+**12,000 cases** each on host sanitizers and host i386. Cases check live weak
+counts with/without resident pointers, destruction, ring requests, locks,
+flags, buffer canaries, rounding and 64-bit accounting. The old body fails the
+independent callback count assertion. Host fixtures explicitly seed valid
+canonical sentinel nodes because the existing biased `+8` constructor is
+32-bit-specific; i386 tests that unchanged constructor. Decoder/audio service
+boundaries are mocked; actual Vorbis/audio playback is not claimed.
+
+Linked matching reaches **67.460880%**, **+0.332805 percentage points** from
+main, with **6,278** exact functions. Target/native builds and all five
+repository checks pass.
+
+## Batch 243: debris metadata reads across lock acquisition
+
+`DebReAlloc2` reads the originally selected effect's particle type and time
+group after acquiring the control-stack lock, separately reloads the current
+effect-table entry for lifetime/trail arithmetic, and uses fresh effect entries
+for orphan rendering. Acquisition can yield through `NuThreadSleep`; actual
+list-insertion helpers do not publish metadata. Existing capacity/arena and
+null-render-slot guards remain unchanged. Linked matching improves
+**19.470210% to 41.668278%**; the other eleven isolated owner functions and
+their symbols remain unchanged.
+
+Frozen actual-body host sanitizer and production-action i386 fixtures pass
+**63,888 cases / 17,764,560 checks** each. Cases cover all chunk counts 0..32,
+both pools, uneven/zero particle counts, capacity boundaries, render slots,
+matrix/position fields, counters, retained chunks and service order. Four
+synchronous mock-lock publications exercise changed metadata/table entries;
+the old body fails 586,368 expectations. No concurrent threads or C++ race-
+safety claim is made; production helpers are not invented mutation callbacks.
+
+Linked matching reaches **67.472560%**, **+0.344485 percentage points** from
+main, with **6,278** exact functions. Target/native builds and all five
+repository checks pass. Batches 239–243 form the next verified checkpoint.

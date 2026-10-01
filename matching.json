@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 67.473236,
+    "fuzzy_match_percent": 67.49654,
     "total_code": "4722419",
-    "matched_code": "525310",
-    "matched_code_percent": 11.123748,
+    "matched_code": "525442",
+    "matched_code_percent": 11.126544,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6284,
-    "matched_functions_percent": 46.68995,
+    "matched_functions": 6285,
+    "matched_functions_percent": 46.69738,
     "total_units": 1
   },
   "text": {
@@ -60182,7 +60182,7 @@
           "address": 1538768,
           "offset": 648800,
           "size": 495,
-          "match_percent": 27.359375
+          "match_percent": 56.429688
         },
         {
           "name": "_ZL12AI_AddGizmosP10GIZMOSYS_siPvS1_",
@@ -60190,7 +60190,7 @@
           "address": 1539264,
           "offset": 649296,
           "size": 132,
-          "match_percent": 99.60526
+          "match_percent": 100.0
         },
         {
           "name": "_Z16AI_RegisterGizmoi",
@@ -72655,7 +72655,7 @@
           "address": 4744704,
           "offset": 3854736,
           "size": 678,
-          "match_percent": 8.684211
+          "match_percent": 96.02631
         },
         {
           "name": "_Z10Door_Resetv",
@@ -72727,7 +72727,7 @@
           "address": 4750128,
           "offset": 3860160,
           "size": 864,
-          "match_percent": 12.515837
+          "match_percent": 54.642532
         },
         {
           "name": "_Z18Door_RegisterGizmoi",

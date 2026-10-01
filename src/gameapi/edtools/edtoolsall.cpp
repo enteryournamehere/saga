@@ -4520,13 +4520,13 @@ void EdManipulator::DrawAxis(VuVec &origin, VuMtx *matrix) {
     }
     EdDrawEnd();
     EdDrawBegin(0);
-    const float arrow_half_size = Scale * 0.25f * 0.5f;
-    const float arrow_radius = Scale * 0.25f * 0.2f;
+    const float arrow_size = Scale * 0.25f;
+    const float arrow_radius = arrow_size * 0.2f;
     for (i32 axis = 1; axis <= 3; ++axis) {
         const VuVec &point = points[axis];
         const VuVec &center = points[7];
-        const VuVec offset((point.x - center.x) * arrow_half_size, (point.y - center.y) * arrow_half_size,
-                           (point.z - center.z) * arrow_half_size, 0.0f);
+        const VuVec offset((point.x - center.x) * arrow_size * 0.5f, (point.y - center.y) * arrow_size * 0.5f,
+                           (point.z - center.z) * arrow_size * 0.5f, 0.0f);
         const VuVec start(point.x - offset.x, point.y - offset.y, point.z - offset.z, 0.0f);
         const VuVec end(point.x + offset.x, point.y + offset.y, point.z + offset.z, 0.0f);
         const i32 colour = *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(this) + 8) != 0

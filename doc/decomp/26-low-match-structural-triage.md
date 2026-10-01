@@ -8102,3 +8102,195 @@ The complete retail mode-transition, live-pad and fresh-selection guard unit
 loses **74.087909 weighted bytes**, **28.468966% to 25.141378%**, preserving
 all 74 exacts. No passing-fixture claim is made for either version; no further
 shape trial is run after the complete correction's negative gate.
+
+## Batch 264: minikit text opacity conversion
+
+`MiniKit_LSW_Draw` restores signed intermediate conversion and canonical
+byte-width opacity at its four text sites, including the active title.
+Linked matching reaches **39.006943%**; the unchanged-action whole-owner gate
+gains **46.672798 weighted bytes**, with all 24 neighboring scores retained.
+Root independently runs actual-body sanitizer and production-NDK i386
+diagnostics: **144,242 checks / 15,218 calls** each. The actual finished-alpha
+helper and independent modulo-byte oracle cover finite timer/count paths;
+negative inactive timing demonstrates a real 384-versus-128 prior witness.
+Active clamping is unchanged. No renderer fidelity or out-of-domain conversion
+claim is made. Target/native builds and all five checks pass; global matching
+**67.524420%**, retaining **6,278** exact functions.
+
+## Batch 265: cutscene completion independent of playback rate
+
+`CutScenes_Update` limits the ordered positive-rate condition to sound cues,
+not completion, restores strict previous-frame comparison and live instance
+reads after services, and retains missing-instance guards. Linked matching
+reaches **48.951218%**; unchanged-action whole-owner gain **46.545643 weighted
+bytes**, with all other bodies retained. Root independently runs full-body
+sanitizer and production-NDK i386 diagnostics: **100,000 cases** each.
+The same-oracle old-body NDK control fails finite zero-rate finished case 2:
+three instances queued instead of four. Non-stopcut, music-status-zero paths
+include negative/NaN rates and separately labelled callback/invalid-instance
+diagnostics; stopcut transitions and active-music paths are not covered.
+No real audio/concurrency claim is made. Target/native builds and all five
+checks pass; global matching **67.525430%**, retaining **6,278** exacts.
+
+## Batch 266: canonical material texture-wrap fields
+
+`NuShaderObjectGLSLSetupTextureStates` uses existing canonical material
+bitfields instead of hard-coded byte offset 0x41 in its four diffuse cases.
+Both wrap values remain captured after binding and before parameter calls.
+Linked matching reaches **61.951122%**; the unchanged-action full-owner gate
+gains **71.645974 weighted bytes**, preserving all 31 other scorable functions
+and six exacts. Root independently runs sanitizer and production-NDK i386
+candidate fixtures: **22,800 cases / 785,589 checks** each. Target baseline
+also passes; host64 baseline reports **30,824** argument/order failures because
+canonical attributes move from offset 64 to 80 with host pointer width.
+Recorded GL/texture/wind services include diagnostic mutation seams, not GPU
+validation. Existing cube-cache valid-unit bounds remain prerequisites.
+Target/native builds and all five checks pass; global matching **67.526930%**,
+retaining **6,278** exact functions.
+
+## Batch 267: complete shop item confirmation and clamp placement
+
+`ItemMenu` restores guarded per-store clamp calls, including repeated picked-
+item clamps, and limits entry-selection reset to the two special picked 0/5
+routes. Valid pending picked=-1 confirmation retains a fresh menu-column
+candidate. The initial clamp-only proposal is superseded: its actual-body
+oracle exposed the preexisting reset omission, and the complete corrected unit
+was remeasured before integration. Linked matching reaches **81.129590%**;
+unchanged-action full-owner gain **1,321.714337 weighted bytes**, with all 25
+neighboring scores retained and no exact loss. Twenty-two disassembly-level
+owner changes are relocation/compiler collateral, not 22 source edits.
+
+Root independently runs host sanitizer and host i386 SSE diagnostics:
+**20,000 complete-body cases** each, including actual ten-flag input, clamp
+and sine helpers; 39 prior reset counterexamples; code/submenu transitions;
+cancel returns; menu-stack/state bytes; and full recorded hint/audio/camera/
+math arguments. Finite conversions, valid arrays and menu-stack bounds are
+prerequisites. Math services are pure, not invented mutation seams; real
+camera/audio/gameplay is not validated. Target/native builds and all five
+checks pass; global matching **67.555020%**, retaining **6,278** exacts.
+
+## Batch 268: signed terrain loader count
+
+`TerrainInitEx` captures the loader return in an ordinary signed-16-bit local,
+as in retail, before failure testing and group loops. The real untouched
+loader returns only -1 or 0..32767 because its chunk count is signed 16-bit
+and it admits at most one group per chunk. This is same-domain type/source
+reconstruction, not a gameplay repair. Linked matching reaches **33.995697%**;
+whole-owner gain **77.235392 weighted bytes**, preserving all other scores
+and four exacts. Root independently runs full baseline/candidate sanitizer
+and NDK-action i386 diagnostics: **2,115 cases**, **148,641,356** and
+**142,919,612 checks** respectively (including byte-range lengths). Canonical
+scene/terrain records, real sqrt, valid loader-domain counts, geometry,
+material/version, scene/remap/display and allocation paths are compared.
+Three maximum-count cases use synthetic disabled groups; file loading,
+allocation and flush remain diagnostic services. Hook-only prior line wrapping
+is reconciled with normalized full-source identity. Target/native builds and
+all five checks pass; global matching **67.556650%**, **6,278** exacts.
+
+## Batch 269: editor axis arrow association
+
+`EdManipulator::DrawAxis` restores `(delta * (Scale * 0.25)) * 0.5` rather
+than precombining the half-size; its captured radius and service fanout remain.
+Linked matching reaches **25.883648%**; whole-owner gain **2.505193 weighted
+bytes**, preserving all neighboring scores and 74 exacts. Root independently
+runs actual-body sanitizer and host i386 SSE: **29 cases** each, with actual
+axis-locator/identity helpers and recorded complete renderer sequence. Finite
+large/underflow scales, matrix modes and colour paths are covered; the old
+body fails the finite Scale=4e19 -2e38-versus-negative-infinity witness.
+Existing host64 class-offset limitations are explicitly accommodated, not
+repaired or hidden. A separate Scale-mutation probe is diagnostic only; no
+real renderer validation is claimed. Target/native builds and all five
+checks pass; global matching **67.556720%**, retaining **6,278** exacts.
+
+## Batch 270: canonical startup configuration stores
+
+`InitGameAfterConfig` restores eleven existing canonical camera, icon, input,
+screen, targeting, grass, powerup-text and last-coin stores. Public types and
+headers remain unchanged. Whole-owner gain **133.749248 weighted bytes**;
+all other 45 scores retained. Linked target **70.670820%**, global
+**67.559660%**, **6,278** exacts. Root independently runs actual complete-body
+sanitizer and host i386 SSE diagnostics: **4,352 cases** each. The old i386
+body fails the first camera-reset case. Canonical backing records, typed
+service traces, the preconfigure checkpoint and changed final states are
+covered. Missing private redirect/callback ownership is not claimed closed;
+real startup/game integration remains unvalidated. Target/native and all five
+checks pass.
+
+## Batch 271: force loader version-fourteen sound reset
+
+`GizForces_Load` retains all three embedded-name reads but clears the three
+signed sound IDs for version 14, restoring the original legacy-config
+fallback eligibility. Along-socket traversal and existing guards remain.
+Whole-owner gain **21.378491 weighted bytes**, other 50 text bodies retained;
+linked target **25.851393%**, global **67.560104%**, **6,278** exacts.
+Root reruns sanitizer and production-NDK i386 actual-body fixtures:
+**9,223 calls / 1,227,507 checks** each, with actual animation-file, callback
+and name-reading helpers. Versions, optional sound masks, socket/world-area
+paths, parsed fields and complete stream consumption are checked. Old-body
+version-14 control fails. Other lookup services are deterministic typed seams,
+not real gameplay/audio validation. Target/native and all five checks pass.
+
+## Batch 272: terrain quad transform sequence
+
+`TerrDrawPlatCol` transforms the fourth quad vertex regardless of the rotating
+flag, and transforms normal zero again rather than normal one. A nonnull
+matrix guard preserves existing safety. Whole-owner gain **59.476257 weighted
+bytes**, four owner exacts retained; linked target **36.043780%**, global
+**67.561356%**, **6,278** exacts. The independent signed-loader-count change
+from batch 268 is preserved when reconciling the frozen owner snapshot.
+Root runs actual full-body sanitizer and production-NDK i386 diagnostics:
+**8,195 cases / 424,760 checks** each; old-body misses **3,156** finite cases
+(1,577 rotating, 1,579 nonrotating). Actual alias-safe four-row matrix math,
+all matrix fields, threshold-adjacent finite geometry, colours, transform/
+render ordering and input preservation are covered. Rendering is recorded,
+not GPU validation; unordered threshold behavior is unchanged. Target/native
+and all five checks pass.
+
+## Batch 273: editor locator-set allocation failure
+
+`AISYSRebuildFromEditorData` skips set population when its real fallible
+allocator returns NULL, but still rebuilds creatures, invokes the game
+callback, rebuilds antinodes and selects the level path. Whole-owner gain
+**65.138520 weighted bytes**; neighboring direction score unchanged, no exact
+loss. Linked target **48.211000%**, global **67.562740%**, **6,278** exacts.
+Root verifies actual-body/helper freezes and runs sanitizer and host i386 SSE:
+**10,723 checks** each. Real allocator boundary cases, subsequent smaller
+creature allocation, normal areas/locators/creatures/antinodes and 64-member
+limits are covered; old-body control dereferences the failed set allocation.
+List/path/lookup services are diagnostic seams; replacement callbacks are
+explicit boundary probes, not established production mutations. Target/native
+and all five checks pass.
+
+## Batch 274: packed texture codec argument
+
+`NuGScnReadTexturesPS` passes retail's literal `true` to `NuTexCreatePS`;
+the sign-derived boolean still controls six-slot cube bookkeeping. Whole-owner
+gain **6.244578 weighted bytes**, all 20 neighboring scores and six exacts
+retained. Linked target **50.330738%**, global **67.562874%**, **6,278** exacts.
+Root verifies exact loader/callee freezes and reruns sanitizer and production-
+NDK i386: **14,150 cases / 16,076,467 checks** each. Actual texture/platform
+dispatch bodies, valid packed streams, all platforms, hash mode, cube slots,
+payload arena restoration and fallback are covered; baseline routes positive
+ATITC entries through DDS. Codec/GPU services are mocked. Existing malformed-
+stream and unchecked payload bounds are not claimed repaired. Target/native
+and all five checks pass.
+
+## Additional bounded reserves after batch 263
+
+- `FindGameObject`: complete guarded alive/CInfo closure costs **16.70 weighted
+  bytes** (26.043083% to 25.086168%); no exact loss. Reserve without fixtures.
+- `routeEditor_Process`: the original-backed nearest-node selection changes
+  no fuzzy score or whole-owner weight. Reserve without fixtures or variants.
+- `MenuUpdateStore`: original fixed-eight purchase pulse costs **66.416941
+  weighted bytes** (21.447887% to 17.873240%); all 54 other scores retained.
+  Reserve without fixtures or source-form retries.
+- `instNuGCutLocatorUpdate` complete dispatch correction costs **419.844400
+  weighted bytes** (25.215881% to zero); exacts retained. Reserve the complete
+  unit without cherry-picking. Look-at closure additionally requires canonical
+  matrix-helper returns and private state ownership; no forged compiler clone,
+  ABI shortcut or artificial helper fanout is authorized.
+- Complete bounded raw/source censuses of `SubItemMenu`, `TextCrawl_Draw`,
+  `Tag_UpdateHint` (including decoded jump table), `Dodge_UpdateHint`,
+  `KillGameObject`, `GameObjectRotation`, `GizPanel_FindNearest`,
+  `Batarangs_Draw`, `NuAnimBuffEvaluate_3`, `NuAnimBuffEvaluate_QuatB` and
+  `AISysCharacterTestPathCnx` found no substantive missing closure. No trials.

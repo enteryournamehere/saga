@@ -1296,12 +1296,12 @@ i32 ItemMenu(MENU_s *menu) {
         } else if (input.value[8] != 0) {
             if (picked == 0) {
                 picked = 1;
+                candidate = entry_picked;
             } else if (picked == 5) {
                 picked = SHOPGOLDBRICKS != 0 ? 4 : 3;
+                candidate = entry_picked;
             } else
                 selection = picked;
-            if (selection == -1)
-                candidate = entry_picked;
         } else if (input.value[9] != 0) {
             cancel = 1;
         }
@@ -1351,16 +1351,20 @@ i32 ItemMenu(MENU_s *menu) {
         enteredshop = 0;
     else if ((lastitem != picked || enteredshop) && !SubMenu) {
         const f32 reverse_phase = slidetimer * 8.0f;
-        const f32 old_factor = ShopClamp01(1.0f - ShopSinePhase(1.0f - reverse_phase));
-        const f32 forward_factor = ShopClamp01(1.0f - ShopSinePhase(reverse_phase));
+        f32 old_factor = 1.0f - ShopSinePhase(1.0f - reverse_phase);
+        f32 forward_factor = 1.0f - ShopSinePhase(reverse_phase);
 
         if (lastitem != -1) {
+            old_factor = ShopClamp01(old_factor);
             topscale[lastitem] = TopBigScale[lastitem] + (TopShelfScale[lastitem] - TopBigScale[lastitem]) * old_factor;
+            forward_factor = ShopClamp01(forward_factor);
             toppush[lastitem] = TopBigPush[lastitem] + (TopShelfPush[lastitem] - TopBigPush[lastitem]) * forward_factor;
         }
 
         if (picked != -1 && lastitem != -1) {
+            old_factor = ShopClamp01(old_factor);
             topscale[picked] = TopShelfScale[picked] + (TopBigScale[picked] - TopShelfScale[picked]) * old_factor;
+            forward_factor = ShopClamp01(forward_factor);
             toppush[picked] = TopShelfPush[picked] + (TopBigPush[picked] - TopShelfPush[picked]) * forward_factor;
         }
     }

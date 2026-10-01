@@ -1864,30 +1864,33 @@ extern "C" {
                 // The original reserves 0x3c bytes per set, but indexes records at the 0x1c-byte stride.
                 system->locator_sets = static_cast<AILOCATORSET *>(
                     AISysBufferAlloc(&system->storage_cursor, &system->storage_end, system->locator_set_count * 0x3c));
-                i32 index = 0;
-                for (EDLOCATORSET_s *set =
-                         reinterpret_cast<EDLOCATORSET_s *>(NuLinkedListGetHead(&aieditor->locator_sets));
-                     set != NULL; set = reinterpret_cast<EDLOCATORSET_s *>(
-                                      NuLinkedListGetNext(&aieditor->locator_sets, &set->link))) {
-                    AILOCATORSET *runtime = &system->locator_sets[index++];
-                    strcpy(runtime->name, set->name);
-                    runtime->locator_count = 0;
-                    for (i32 member = 0; member < 64 && set->locators[member] != NULL; ++member) {
-                        if (set->locators[member]->runtime_index != 0xff) {
-                            ++runtime->locator_count;
-                        }
-                    }
-                    if (runtime->locator_count != 0) {
-                        runtime->locator_entries = static_cast<u8 *>(
-                            AISysBufferAlloc(&system->storage_cursor, &system->storage_end, runtime->locator_count));
-                        for (i32 member = 0; member < runtime->locator_count; ++member) {
+                // Retail skips locator-set population when the buffer allocation fails.
+                if (system->locator_sets != NULL) {
+                    i32 index = 0;
+                    for (EDLOCATORSET_s *set =
+                             reinterpret_cast<EDLOCATORSET_s *>(NuLinkedListGetHead(&aieditor->locator_sets));
+                         set != NULL; set = reinterpret_cast<EDLOCATORSET_s *>(
+                                          NuLinkedListGetNext(&aieditor->locator_sets, &set->link))) {
+                        AILOCATORSET *runtime = &system->locator_sets[index++];
+                        strcpy(runtime->name, set->name);
+                        runtime->locator_count = 0;
+                        for (i32 member = 0; member < 64 && set->locators[member] != NULL; ++member) {
                             if (set->locators[member]->runtime_index != 0xff) {
-                                runtime->locator_entries[member] = set->locators[member]->runtime_index;
+                                ++runtime->locator_count;
                             }
                         }
-                        runtime->assigned = static_cast<u8 *>(
-                            AISysBufferAlloc(&system->storage_cursor, &system->storage_end, runtime->locator_count));
-                        memset(runtime->assigned, 0, runtime->locator_count);
+                        if (runtime->locator_count != 0) {
+                            runtime->locator_entries = static_cast<u8 *>(AISysBufferAlloc(
+                                &system->storage_cursor, &system->storage_end, runtime->locator_count));
+                            for (i32 member = 0; member < runtime->locator_count; ++member) {
+                                if (set->locators[member]->runtime_index != 0xff) {
+                                    runtime->locator_entries[member] = set->locators[member]->runtime_index;
+                                }
+                            }
+                            runtime->assigned = static_cast<u8 *>(AISysBufferAlloc(
+                                &system->storage_cursor, &system->storage_end, runtime->locator_count));
+                            memset(runtime->assigned, 0, runtime->locator_count);
+                        }
                     }
                 }
             }

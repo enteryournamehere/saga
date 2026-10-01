@@ -1363,6 +1363,11 @@ static i32 GizForces_Load(void *world_ptr, void *data) {
                 force.stop_sfx_id = static_cast<i16>(GetSfxId(sfx_name));
             }
         }
+        if (version == 14) {
+            force.start_sfx_id = -1;
+            force.loop_sfx_id = -1;
+            force.stop_sfx_id = -1;
+        }
 
         if ((force.config_flags & GIZFORCE_CONFIG_ALONG_SOCKET) != 0) {
             for (GAMEANIMOBJ_s *object = force.anim_set->objects; object != NULL; object = object->next) {

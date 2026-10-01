@@ -232,17 +232,20 @@ void MiniKit_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 current
         }
         if (Game.area_save[packet->area->index].field_0x5[0] == 0) {
             const f32 size = ((1.0f - fabsf(NuTrigTable[angle])) + 1.0f) * 1.2f;
-            Text3DEx("?", -0.6f, -0.6f, 1.1f, size, size, size, 0, 255, 255, 255, static_cast<i32>(alpha * 128.0f));
+            Text3DEx("?", -0.6f, -0.6f, 1.1f, size, size, size, 0, 255, 255, 255,
+                     static_cast<u8>(static_cast<i32>(alpha * 128.0f)));
         } else if (alpha > 0.0f) {
             DrawStatusMiniKit(-0.6f, -0.5f, 1.1f,
                               NuTrigTable[(static_cast<i32>(alpha * 16384.0f) >> 1) & 0x7fff] * 0.15f, 1.0f,
                               Game.area_save[packet->area->index].field_0x5[0], packet, 0.0f);
         }
         if (packet->minikit_max == Game.area_save[packet->area->index].field_0x5[0]) {
-            Text3DEx("$", -0.6f, -0.7f, 1.0f, 0.8f, 0.8f, 0.8f, 0, 255, 0, 127, static_cast<i32>(alpha * 128.0f));
+            Text3DEx("$", -0.6f, -0.7f, 1.0f, 0.8f, 0.8f, 0.8f, 0, 255, 0, 127,
+                     static_cast<u8>(static_cast<i32>(alpha * 128.0f)));
         } else {
             sprintf(text, "%i/%i", Game.area_save[packet->area->index].field_0x5[0], packet->minikit_max);
-            Text3DEx(text, -0.6f, -0.8f, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, 0, 127, static_cast<i32>(alpha * 128.0f));
+            Text3DEx(text, -0.6f, -0.8f, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, 0, 127,
+                     static_cast<u8>(static_cast<i32>(alpha * 128.0f)));
         }
         return;
     }
@@ -337,7 +340,7 @@ void MiniKit_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 current
     }
     title_alpha = title_alpha < 0.0f ? 0.0f : title_alpha > 1.0f ? 1.0f : title_alpha;
     Text3DEx(TTab[tMINIKIT], 0.0f, STATUS_TITLE_Y, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, 255, 255,
-             static_cast<i32>(title_alpha * 128.0f));
+             static_cast<u8>(static_cast<i32>(title_alpha * 128.0f)));
 }
 
 void MiniKit_LSW_Skip(STATUS_STAGE_s *stage, STATUSPACKET_s *packet) {

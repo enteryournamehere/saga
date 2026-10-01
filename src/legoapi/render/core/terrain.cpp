@@ -788,8 +788,8 @@ extern "C" void *TerrainInitEx(i32 level_num, void *buf, void *buf_end, i32 opti
     TerrWallInfo = 0;
     PlatImpactId = -1;
 
-    const i32 group_count =
-        ReadTerrain(reinterpret_cast<unsigned char *>(path), 0, reinterpret_cast<i16 **>(cursor), terrain);
+    const i16 group_count = static_cast<i16>(
+        ReadTerrain(reinterpret_cast<unsigned char *>(path), 0, reinterpret_cast<i16 **>(cursor), terrain));
     terrain->group_count = static_cast<i16>(group_count);
     if (group_count < 0) {
         *cursor = saved_cursor;
@@ -3135,10 +3135,11 @@ void TerrDrawPlatCol(tertype *terrain, i16 index, i32 colour) {
         NuVec4MtxTransformVU0(&points[1], &points[1], matrix);
         NuVec4MtxTransformVU0(&points[2], &points[2], matrix);
         NuVec4MtxTransformVU0(&normals[0], &normals[0], matrix);
-        if (quad) {
-            NuVec4MtxTransformVU0(&points[3], &points[3], matrix);
-            NuVec4MtxTransformVU0(&normals[1], &normals[1], matrix);
-        }
+    }
+    if (quad && platform.scene_object != NULL) {
+        NUMTX *matrix = static_cast<NUMTX *>(platform.scene_object);
+        NuVec4MtxTransformVU0(&points[3], &points[3], matrix);
+        NuVec4MtxTransformVU0(&normals[0], &normals[0], matrix);
     }
 
     const NUVEC &origin = group.origin;

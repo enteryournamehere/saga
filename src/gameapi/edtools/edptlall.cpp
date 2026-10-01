@@ -411,16 +411,16 @@ static void edptlcbBounceMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     if (!(edpp_nearest == -1 || edpp_ptls[edpp_nearest].instance_id == -1)) {
         debkeydatatype_s *key = &debkeydata[edpp_ptls[edpp_nearest].instance_id];
         edptl_bounce_menu = eduiMenuCreate(70, 70, 200, 300, ed_fnt, edptlcbCancelBounceMenu, "Particle Bounce");
-        if (edptl_bounce_menu == NULL)
-            return;
-        eduiMenuAddItem(edptl_bounce_menu,
-                        eduiItemSliderCreate(0, colours, 0, edptlcbApplyBounceOffset, -10.0f * edptl_superscale,
-                                             10.0f * edptl_superscale, key->collision_plane, "Plane Offset"));
-        eduiMenuAddItem(edptl_bounce_menu, eduiItemSliderCreate(0, colours, 0, edptlcbApplyBounceFactor, 0.0f, 2.0f,
-                                                                key->reflection_scale, "Bounce Factor"));
-        eduiMenuAttach(parent, edptl_bounce_menu);
-        edptl_bounce_menu->x = parent->x + 10;
-        edptl_bounce_menu->y = parent->y + 40;
+        if (edptl_bounce_menu != NULL) {
+            eduiMenuAddItem(edptl_bounce_menu,
+                            eduiItemSliderCreate(0, colours, 0, edptlcbApplyBounceOffset, -10.0f * edptl_superscale,
+                                                 10.0f * edptl_superscale, key->collision_plane, "Plane Offset"));
+            eduiMenuAddItem(edptl_bounce_menu, eduiItemSliderCreate(0, colours, 0, edptlcbApplyBounceFactor, 0.0f, 2.0f,
+                                                                    key->reflection_scale, "Bounce Factor"));
+            eduiMenuAttach(parent, edptl_bounce_menu);
+            edptl_bounce_menu->x = parent->x + 10;
+            edptl_bounce_menu->y = parent->y + 40;
+        }
     }
 }
 static void edptlcbDetailMenu(eduimenu_s *parent, eduiitem_s *, u32) {

@@ -256,6 +256,7 @@ extern FadeSystem FadeSys;
 
 void Collection_Draw(COLLECTION_s *collection, float x, float y, float scale, APICHARACTERMODELLIST_s *models,
                      float alpha, i32 hide_selected) {
+    const f32 base_dy = COLLECTION_DY;
     nuhspecial_s *special = collection_draw_hspecial;
     i32 (*valid)(COLLECTION_s *, i32) = collection_draw_IsValidFn;
     collection_draw_hspecial = NULL;
@@ -291,7 +292,7 @@ void Collection_Draw(COLLECTION_s *collection, float x, float y, float scale, AP
                 }
         }
     }
-    const f32 dy = COLLECTION_DY * scale;
+    const f32 dy = base_dy * scale;
     collection->field_14 = dy;
     if (alpha > 1.0f)
         alpha = 1.0f;
@@ -329,7 +330,7 @@ void Collection_Draw(COLLECTION_s *collection, float x, float y, float scale, AP
                 id = -1;
             }
             opacity *= alpha;
-            if (opacity <= 0.0f)
+            if (!(opacity > 0.0f))
                 continue;
             u32 neighbours = 0;
             for (i32 player = 0; player < 2; ++player) {

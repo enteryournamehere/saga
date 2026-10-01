@@ -107,16 +107,8 @@ void Torpedo_UpdateJobbies(GameObject_s *object) {
         u16 target_z_rotation;
         u16 target_y_rotation;
 
-        if (index != 0) {
-            NUVEC direction;
-            NuVecSub(&direction, &packet->pickup_positions[index], &packet->pickup_positions[index - 1]);
-            GetRotationAngles(&direction, &target_z_rotation, &target_y_rotation);
-            AddVariableShotDebrisEffectTimed1(
-                WORLD->debris_sys->entries[129].effect, &packet->pickup_positions[index - 1], 90, FRAMETIME,
-                static_cast<i16>(target_y_rotation), static_cast<i16>(target_z_rotation), NULL);
-        }
-
-        const f32 distance = object->apiobj.field_0x1dc * (1.5f + static_cast<f32>(index) * 1.25f);
+        const f32 distance =
+            1.5f * object->apiobj.field_0x1dc + static_cast<f32>(index) * object->apiobj.field_0x1dc * 1.25f;
         const u16 z_rotation = static_cast<u16>(packet->pickup_data[index]);
         const u16 y_rotation = static_cast<u16>(packet->pickup_flags[index]);
         NUVEC position;
@@ -144,6 +136,15 @@ void Torpedo_UpdateJobbies(GameObject_s *object) {
 
         packet->pickup_data[index] = SeekRot(static_cast<u16>(packet->pickup_data[index]), target_z_rotation, 5.0f);
         packet->pickup_flags[index] = SeekRot(static_cast<u16>(packet->pickup_flags[index]), target_y_rotation, 5.0f);
+
+        if (index != 0) {
+            NUVEC direction;
+            NuVecSub(&direction, &packet->pickup_positions[index], &packet->pickup_positions[index - 1]);
+            GetRotationAngles(&direction, &target_z_rotation, &target_y_rotation);
+            AddVariableShotDebrisEffectTimed1(
+                WORLD->debris_sys->entries[129].effect, &packet->pickup_positions[index - 1], 90, FRAMETIME,
+                static_cast<i16>(target_z_rotation), static_cast<i16>(target_y_rotation), NULL);
+        }
 
         if (index == 0) {
             AddVariableShotDebrisEffectTimed1(WORLD->debris_sys->entries[129].effect, &object->apiobj.position, 90,
@@ -593,7 +594,7 @@ void DrawTorpedos(GameObject_s *object) {
         NUMTX matrix;
         NuMtxSetIdentity(&matrix);
         NuMtxPreRotateX(&matrix, static_cast<u16>(x_rotation));
-        NuMtxPreRotateY(&matrix, static_cast<u16>(packet->pickup_data[index]));
+        NuMtxRotateY(&matrix, static_cast<u16>(packet->pickup_data[index]));
         NuMtxTranslate(&matrix, &packet->pickup_positions[index]);
 
         f32 blend = 1.0f;
@@ -606,7 +607,7 @@ void DrawTorpedos(GameObject_s *object) {
 
         if (WORLD->lev_objs[0x79].active != 0)
             NuSpecialDrawAt(&WORLD->lev_objs[0x79].special, &matrix);
-        else if (WORLD->lev_objs[0x7a].active != 0)
+        if (WORLD->lev_objs[0x7a].active != 0)
             NuSpecialDrawAt(&WORLD->lev_objs[0x7a].special, &matrix);
     }
 }

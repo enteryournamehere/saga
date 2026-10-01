@@ -444,7 +444,7 @@ void Animate_JEDI(GameObject_s *object) {
         object->fall_animation_timer = 0.0f;
     }
 
-    if (object->id == id_IMPERIALGUARD || object->weapon_scale <= 0.0f) {
+    if (object->id == id_IMPERIALGUARD || !(object->weapon_scale > 0.0f)) {
         return;
     }
 

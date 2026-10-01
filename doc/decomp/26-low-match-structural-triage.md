@@ -7623,3 +7623,232 @@ safety claim is made; production helpers are not invented mutation callbacks.
 Linked matching reaches **67.472560%**, **+0.344485 percentage points** from
 main, with **6,278** exact functions. Target/native builds and all five
 repository checks pass. Batches 239–243 form the next verified checkpoint.
+
+## Batch 244: security-door visibility and floor-marker rotation
+
+`SecurityDoors_Draw` keeps active, unopened floor markers inside the captured
+entry-visibility gate. Rotation uses retail's squared-distance divided by six,
+clamped to one, followed by the original 16384/49152 offsets. Actual nearest-
+character and matrix helpers remain unchanged, including existing null-chain
+safety. Linked matching improves **30.198381% to 76.522270%**; all other isolated
+owner functions are unchanged.
+
+Frozen actual-body host sanitizer and production-NDK i386 fixtures each pass
+**24,751 cases**, covering visibility, opened/active doors, finite rotation and
+alpha boundaries, nearest-player flags and missing chains, geometry and map
+failures. Renderer services are typed recorders, not gameplay validation.
+Independent old-body probes fail hidden-marker and finite-alpha expectations.
+Target/native builds and all five checks pass. Global matching reaches
+**67.483510%**, **+0.355435 points** from main, with **6,278** exact functions.
+
+## Batch 245: torpedo update service order and radius rounding
+
+`Torpedo_UpdateJobbies` updates position and both seek rotations before the
+nonfirst-item angle/debris services, passes the two angle outputs in retail
+order and preserves the separately rounded radius expression. Owner snapshots,
+steal filters and existing bounds/null guards remain unchanged. Linked matching
+improves **36.174603% to 43.203705%**; the other 21 isolated functions retain
+their scores.
+
+Frozen actual-body host sanitizer and host i386 SSE fixtures each pass
+**4,121 cases / 39 transfers**. Three isolated old-behavior probes independently
+fail order, angle and radius assertions. Finite math, valid packet allocations
+and counts 0..5 are fixture contracts; angle/debris services are recorders, not
+fabricated owner mutations or full gameplay. Target/native builds and all five
+checks pass. Global matching reaches **67.485950%**, **+0.357875 points** from
+main, with **6,278** exact functions.
+
+## Batch 246: Jedi ordered weapon-sound admission
+
+`Animate_JEDI` rejects unordered weapon scale along with nonpositive scale,
+matching retail's `UCOMISS/JBE` before audio services. This one-predicate patch
+preserves BEAST and every other owner body, literal and symbol. Linked JEDI
+reaches **32.829365%**; the isolated score improves **29.559525% to 32.551586%**.
+
+Frozen actual-body host sanitizer, host i386 SSE and production-action NDK
+i386 fixtures each pass **100,000 cases**: 77,778 non-NaN and 22,222 unordered.
+Independent audio/packet/fall-timer assertions pass; old audio differs in
+17,777 cases and never on non-NaN cases. Actual movement/jump/manage helpers
+are included; pure idle-query and scheduler boundaries remain limited to
+valid standard-idle metadata. No NaN-consuming audio-engine or gameplay claim
+is made. Target/native builds and all five checks pass. Global matching reaches
+**67.486660%**, **+0.358585 points** from main, with **6,278** exact functions.
+
+## Batch 247: KillParts caller-service closure
+
+`KillParts` restores calls to the existing TIE-fighter and AT-AT helpers,
+the Boba/Sarlacc/story exclusion, MiniDroideka minikit exception, byte-96 layer
+flags, `VehicleArea` gating and original five/six-unit vertical impulses.
+Random angles use retail constants and signed truncation before unsigned
+narrowing; variant selection divides by 21846 and starts from zero-initialized
+BSS. Generic mode admission uses equality to zero. Existing safety guards,
+helper definitions and the ordinary bounded retry loop remain unchanged.
+Linked matching improves **32.056168% to 43.350426%**; the single whole-TU gate
+gains **442.394 original-weighted matched bytes**, preserving all seven exact
+functions and every neighboring score.
+
+Actual caller plus existing TIE/AT-AT/momentum helper fixtures pass **35 cases**
+on host sanitizers and host i386 SSE. Five independent baseline groups fail.
+Math/render/audio/animation services are controlled substitutes; pointer reload
+and default-packet timing are not claimed exhaustive, and no production
+callback mutation or gameplay validation is inferred. Target/native builds and
+all five checks pass. Global matching reaches **67.496100%**, **+0.368025 points**
+from main, with **6,278** exact functions.
+
+## Batch 248: menu render live state
+
+`eduiMenuRender` reloads selection for each row, uses live menu origin/width
+for the final vertical extent, and reloads arrow centre between line services.
+It preserves the initial selection-presence snapshot and all existing callback
+contracts. Linked matching improves **32.652300% to 33.163450%**; the other
+compared original-backed owner functions retain their scores.
+
+Actual-body host, sanitizer and host i386 SSE fixtures each pass **29,000 cases**
+against an independent full-flow reference. Real item/clipped-font bodies and
+canonical lock-pointer types are used. Renderer/font mutations are reload
+diagnostics, not production-mutation claims; callback ABI discrepancies are
+unchanged. Valid live lists, bounded geometry and representable conversions
+remain prerequisites. Target/native builds and all five checks pass. Global
+matching reaches **67.496414%**, **+0.368339 points** from main, with **6,278**
+exact functions.
+
+## Batch 249: collection opacity and spacing snapshot
+
+`Collection_Draw` captures vertical spacing before the selecting-player query
+and rejects unordered final opacity. The initial alpha and fade guards retain
+their different retail unordered behavior. Linked matching improves
+**31.768518% to 37.192593%**; neighboring owner scores and symbols are unchanged.
+
+Actual-body host sanitizer and host i386 SSE fixtures each pass **389 cases**,
+plus a separate diagnostic spacing-snapshot probe. Actual collection/list/model
+helpers are included; rendering and area/fmod boundaries are controlled.
+Independent baseline NaN-opacity and snapshot assertions fail. No production
+callback mutation or full collection-menu gameplay claim is made.
+Target/native builds and all five checks pass. Global matching reaches
+**67.499504%**, **+0.371429 points** from main, with **6,278** exact functions.
+
+## Reserved caller and collision corrections after batch 243
+
+`Bolt_HitGameObjectRC` omits owner rumble after its deactivation/buzz path.
+Removing only the premature jump is negative: **32.506268% to 17.180450%**,
+with all 65 owner neighbors unchanged. `DebrisSingleTorusCollisionCheckScaleYFlag`
+has unordered-age admission discrepancies; its one correction loses **9.981834
+weighted bytes**, preserving all 49 neighbors and five exact functions.
+`DebrisSingleCollisionCheckScaleYFlag` has ordered-age and finite vertical-
+rounding discrepancies, but the single combined gate remains neutral at zero,
+with all 49 neighbors and five exact functions unchanged.
+
+`NuSoundMemoryManager::MoveLargestTrailingBufferIntoBuffer` incorrectly counts
+first-candidate adjacency and repeats a later tie query; its one complete
+selection correction loses **2.727533 weighted bytes**, with 51 scored neighbors
+unchanged. The real adjacency helper is pure; a valid-pool witness is not a
+runtime test. `SetComboOpponent` admits unordered range; its single predicate
+correction loses **4.246980 weighted bytes**, with all neighbors unchanged.
+Private ABI and prior negative placement trials are untouched.
+
+All five corrections remain reserved without runtime fixtures, integration
+or repeated shape variants. Bounded full-raw caller reviews of `MovePlayer`,
+`Move_DROIDEKA`, `Technos_Draw` and `eduicbRenderTexturePick` identify no new
+substantive omission; they are not claims of byte-exact/runtime equivalence.
+
+## Batch 250: techno reset floor sentinel
+
+`Technos_Reset` tests retail's explicit 2000000 floor-height sentinel and clears
+ground offset after either reset branch. NaN retains its ordinary branch;
+existing platform and null guards remain unchanged. Linked matching improves
+**81.766990% to 83.165050%**, with all isolated neighboring runtime bodies
+unchanged. Actual-body host sanitizer and production-NDK i386 fixtures each
+pass **60,485 cases**, including sentinel/ordinary/unordered heights, canonical
+angle math, progress boundaries, canaries and recorded shadow/platform calls.
+Old-body finite-height and offset assertions fail. Shadow services are mocks,
+not world collision validation. Target/native builds and all five checks pass.
+Global matching reaches **67.499626%**, **+0.371551 points** from main.
+
+## Batch 251: torpedo draw matrix and model fallthrough
+
+`DrawTorpedos` uses retail's post-rotation Y matrix operation and independent
+second model test. Both retail models can draw in one call; existing counts,
+guards and prior torpedo-update changes remain unchanged. Linked matching
+improves **27.065727% to 27.981220%**; the other 21 owner functions retain their
+scores. Actual-body host sanitizer and host i386 SSE fixtures each pass
+**4,321 cases / 2,700 paired draws**. Independent old rotation and model tests
+fail. Finite angles/timers/scales and valid counts 0..5 remain prerequisites;
+draw services are recorders, not Android rendering. Target/native builds and
+all five checks pass. Global matching reaches **67.499800%**, **+0.371725 points**.
+
+## Batch 252: PVR face metadata and upload service closure
+
+`NuIOS_CreateGLTexFromPVRInMemory` restores per-call cube-face metadata order,
+cube binding-cache predicates, platform/default-flag compressed admission and
+unconditional uncompressed uploads. Compressed fallback receives the actual
+face target twice. New metadata parsing checks complete record headers and
+declared payload bounds and uses memcpy for unaligned records. Existing
+format guards and ownership/ABI/options remain unchanged. Linked matching
+improves **27.199627% to 29.662313%**; all 47 other scored isolated owner
+functions retain their scores.
+
+Actual-body host sanitizer and production-action NDK i386 fixtures each pass
+**40,522 cases / 3,754,140 checks**. Four independent baseline assertions fail
+on both ABIs. Coverage includes all 720 face permutations, multiple/unaligned/
+truncated records, platform and format combinations, cache/service ordering,
+mips and dimensions. Recording services do not test a GPU or codec. Callers
+still supply an allocated aligned 52-byte header, declared metadata and enough
+pixel data, valid dimensions, fewer than 32 mips and at most six faces. No
+arbitrary malformed-allocation safety is claimed. Formats 4/5 preserve the
+existing guarded surface; retail table evidence establishes only entries 0..3.
+The cross-owner retail-byte/current-i32 `comeFromHash` discrepancy is untouched.
+Target/native builds and all five checks pass. Global matching reaches
+**67.501080%**, **+0.373005 points** from main, with **6,278** exact functions.
+
+## Batch 253: AI area inside-mask signed widening
+
+`GameAISysStartFrame` reproduces retail's wrapping unsigned 32-bit inside bit
+followed by explicit signed widening. Outside removal retains its separate
+full 64-bit bit. Valid area indices remain 0..63; no signed-shift overflow or
+shift-by-32 expression is introduced. Existing geometry, timer/null/client
+guards, paths, service boundaries and ABI/options remain unchanged. Linked
+matching reaches **40.463688%**; isolated matching improves **37.164806% to
+40.337990%**, with all other 359 owner units retaining their scores.
+
+Actual-body host sanitizer and host i386 SSE fixtures each pass **106,826
+cases** across all 64 indices, masks, inclusive/outside positions, eligibility,
+cardinal rotations, guards, traversal, path bookkeeping and processor order.
+The independent baseline occupancy assertion fails. Actual vector helpers are
+included; path-update/script services are probes, not full AI emulation or
+fabricated production mutation. Existing NaN geometry and callback path-owner
+reload questions are outside this patch. Target/native builds and all five
+checks pass. Global matching reaches **67.501980%**, **+0.373905 points** from
+main, with **6,278** exact functions. Batches 244–253 form the next checkpoint.
+
+## Further reserved gates after batch 249
+
+`Batarangs_Update` has finite timer-clamp, lost-target skip and feedback-order
+discrepancies; its one combined gate regresses **33.885323% to 21.155964%**,
+with all 18 neighboring functions unchanged. The separate existing lost-target
+index-5 out-of-bounds risk is not permission to reproduce retail adjacent-byte
+access. `eduicbRenderExpander`'s child-chain traversal and portable canonical
+hover-bit repair lose **4.663985 weighted bytes**, preserving all neighboring
+scores and exact functions. Neither trial has runtime fixtures or integration.
+
+`edppLoadPage`'s two orphan-counter references and `ZapCode`'s two byte-offset/
+typed-animation-index corrections are independently retail-backed but neutral
+at **31.903720%** and **49.138410%** respectively. Neighboring scores and exact
+functions are preserved; no fixtures or further variants are run. The private
+loader helper and Zap ABI discrepancies remain untouched.
+
+`Move_WEIRDO`'s retail caller-side context guard is same-semantics with the
+current early-return helper, but loses **17.903518 weighted bytes**; every
+neighboring body remains identical. `eduicbRenderGraph`'s 1.125 row multiplier,
+font query order and signed arithmetic half correction lose **8.884740 weighted
+bytes**, with all neighboring scores and exacts preserved. Its separate missing
+sixth callback parameter remains unresolved; no signature/ABI workaround is
+trialed. Both negative proposals are frozen without fixtures or variants.
+
+`GizBombGens_Update` omits the verified `dragbomb` spawn-script literal in three
+calls. A combined ordinary Player-load/control/literal gate loses **153.545172
+weighted bytes**. A separately authorized literal-only contract gate is neutral,
+with every original-backed score unchanged. Both remain reserved without
+fixtures; no production Player mutation is invented. `DeactivatedCode`'s
+proposed unordered predicate change was withdrawn before editing or compilation:
+the complete raw branch truth table confirms the existing predicate already
+has the relevant behavior. This is an audit retraction, not a compiled gate.

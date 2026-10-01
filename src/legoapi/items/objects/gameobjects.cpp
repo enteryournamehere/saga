@@ -4086,6 +4086,10 @@ void GameAISysStartFrame(AISYS_s *system) {
         AIAREA *area = &system->areas[system->next_area_check];
         const i32 area_index = static_cast<i32>(area - WORLD->ai_sys->areas);
         const u64 area_bit = 1ULL << area_index;
+        // Inside occupancy uses the signed, wrapping 32-bit area bit; outside
+        // removal still addresses the corresponding full 64-bit bit.
+        const u32 inside_area_low = 1u << (area_index & 31);
+        const u32 inside_area_high = static_cast<u32>(static_cast<i64>(static_cast<i32>(inside_area_low)) >> 32);
         area->runtime_flags &= static_cast<u8>(
             ~(AIAREA_RUNTIME_PLAYER_PRESENT | AIAREA_RUNTIME_OBJECT_STATE_CLEAR | AIAREA_RUNTIME_OBJECT_STATE_SET));
 
@@ -4112,8 +4116,8 @@ void GameAISysStartFrame(AISYS_s *system) {
                 continue;
             }
 
-            object->apiobj.ai_area_mask_low |= static_cast<u32>(area_bit);
-            object->apiobj.ai_area_mask_high |= static_cast<u32>(area_bit >> 32);
+            object->apiobj.ai_area_mask_low |= inside_area_low;
+            object->apiobj.ai_area_mask_high |= inside_area_high;
             if ((object->apiobj.flags_low & APIOBJECT_FLAG_PLAYER_ACTIVE) != 0) {
                 area->runtime_flags |= AIAREA_RUNTIME_PLAYER_PRESENT;
             }

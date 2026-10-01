@@ -4308,8 +4308,7 @@ extern "C" {
         eduiitem_s *item = menu->field_0c;
         i32 max_item_height = 0;
         if (item) {
-            eduiitem_s *selected = menu->selected;
-            bool find_selected = selected != NULL;
+            bool find_selected = menu->selected != NULL;
 
             if (item != menu->first) {
                 const i32 scroll_height = static_cast<i32>(NuQFntHeight(edui_font) * 0.125f);
@@ -4328,12 +4327,13 @@ extern "C" {
                 if (!edui_donotdraw) {
                     NuRndrRect2di(x << 4, y << 3, menu->width << 4, scroll_height << 3, 0x80000000, uimtls[ui_bgmtl]);
                 }
-                const i32 centre = (x * 2 + menu->width) << 3;
+                i32 centre = (x * 2 + menu->width) << 3;
                 const i32 top = (y << 3) + 8;
                 const i32 bottom = ((y + scroll_height) << 3) - 16;
                 if (!edui_donotdraw) {
                     NuRndrLine2di(centre, top, centre - ((scroll_height - 2) << 4), bottom, 0x80ffffff, uimtls[0]);
                 }
+                centre = (x * 2 + menu->width) << 3;
                 if (!edui_donotdraw) {
                     NuRndrLine2di(centre, top, centre + ((scroll_height - 2) << 4), bottom, 0x80ffffff, uimtls[0]);
                 }
@@ -4343,7 +4343,7 @@ extern "C" {
             menu->field_10 = item;
             while (item) {
                 i32 is_selected = 0;
-                if (item == selected) {
+                if (item == menu->selected) {
                     find_selected = false;
                     if (!menu->child)
                         is_selected = 1;
@@ -4392,12 +4392,13 @@ extern "C" {
                         NuRndrRect2di(x << 4, y << 3, menu->width << 4, scroll_height << 3, 0x80000000,
                                       uimtls[ui_bgmtl]);
                     }
-                    const i32 centre = (x * 2 + menu->width) << 3;
+                    i32 centre = (x * 2 + menu->width) << 3;
                     const i32 top = (y << 3) + 8;
                     const i32 bottom = ((y + scroll_height - 2) << 3);
                     if (!edui_donotdraw) {
                         NuRndrLine2di(centre, bottom, centre - ((scroll_height - 2) << 4), top, 0x80ffffff, uimtls[0]);
                     }
+                    centre = (x * 2 + menu->width) << 3;
                     if (!edui_donotdraw) {
                         NuRndrLine2di(centre, bottom, centre + ((scroll_height - 2) << 4), top, 0x80ffffff, uimtls[0]);
                     }
@@ -4411,7 +4412,7 @@ extern "C" {
         }
 
         if (!(menu->flags & 2))
-            x += menu->width;
+            x = menu->x + menu->width;
         else
             y += max_item_height;
         menu->field_24 = x - menu->x;

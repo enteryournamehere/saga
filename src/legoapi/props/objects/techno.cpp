@@ -136,13 +136,13 @@ static void Technos_Reset(void *world_ptr, void *, void *progress_ptr) {
 
         NewTerrPlatformsOff();
         const f32 floor_height = GameShadow(NULL, &techno.ground_position, 5.0f, -1);
-        if (floor_height == floor_height) {
+        if (floor_height == 2000000.0f) {
             techno.ground_position.y = 2000000.0f;
-            techno.ground_offset = 0.0f;
         } else {
             techno.ground_position.y = floor_height + 0.005f;
             FindAnglesZX(&ShadNorm, &techno.ground_x_rotation, &techno.ground_z_rotation);
         }
+        techno.ground_offset = 0.0f;
 
         techno.flags =
             static_cast<u8>((techno.flags | TECHNO_FLAG_ACTIVE | TECHNO_FLAG_VISIBLE) & ~TECHNO_FLAG_USED_THIS_FRAME);

@@ -716,28 +716,28 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
     i32 pitch = 0x4000 - (angle < 0 ? -angle : angle);
     object->magnet_surface_angle = angle < 0 ? -pitch : pitch;
     zipup = static_cast<ZIPUP *>(object->field_0x788);
-    if ((zipup->flags & 1) != 0) {
-        NuVecSub(&zipup->rider_start_offset, start, hook);
-        NUVEC end_offset;
-        NuVecSub(&end_offset, destination, hook);
-        end_offset.y += 0.5f;
-        f32 rider_height = 0.5f * api.scaled_height;
-        zipup->rider_start_offset.x *= 0.9f;
-        zipup->rider_start_offset.y *= 0.9f;
-        zipup->rider_start_offset.y = rider_height + zipup->rider_start_offset.y;
-        zipup->rider_start_offset.z *= 0.9f;
-        i32 yaw = -static_cast<u16>(NuAtan2D(zipup->rider_start_offset.x, zipup->rider_start_offset.z));
-        NUVEC start_offset = zipup->rider_start_offset;
-        NuVecRotateY(&start_offset, &start_offset, yaw);
-        NuVecRotateY(&end_offset, &end_offset, yaw);
-        NuVecNorm(&start_offset, &start_offset);
-        NuVecNorm(&end_offset, &end_offset);
-        static_cast<ZIPUP *>(object->field_0x788)->pitch_adjustment =
-            NuACos(start_offset.y * end_offset.y + start_offset.z * end_offset.z);
-        zipup = static_cast<ZIPUP *>(object->field_0x788);
-        zipup->rider_target_position = zipup->rider_start_offset;
-        NuVecAdd(&zipup->rider_target_position, hook, &zipup->rider_target_position);
-    }
+    if ((zipup->flags & 1) == 0)
+        return;
+    NuVecSub(&zipup->rider_start_offset, start, hook);
+    NUVEC end_offset;
+    NuVecSub(&end_offset, destination, hook);
+    end_offset.y += 0.5f;
+    f32 rider_height = 0.5f * api.scaled_height;
+    zipup->rider_start_offset.x *= 0.9f;
+    zipup->rider_start_offset.y *= 0.9f;
+    zipup->rider_start_offset.y = rider_height + zipup->rider_start_offset.y;
+    zipup->rider_start_offset.z *= 0.9f;
+    i32 yaw = -static_cast<u16>(NuAtan2D(zipup->rider_start_offset.x, zipup->rider_start_offset.z));
+    NUVEC start_offset = zipup->rider_start_offset;
+    NuVecRotateY(&start_offset, &start_offset, yaw);
+    NuVecRotateY(&end_offset, &end_offset, yaw);
+    NuVecNorm(&start_offset, &start_offset);
+    NuVecNorm(&end_offset, &end_offset);
+    static_cast<ZIPUP *>(object->field_0x788)->pitch_adjustment =
+        NuACos(start_offset.y * end_offset.y + start_offset.z * end_offset.z);
+    zipup = static_cast<ZIPUP *>(object->field_0x788);
+    zipup->rider_target_position = zipup->rider_start_offset;
+    NuVecAdd(&zipup->rider_target_position, hook, &zipup->rider_target_position);
 }
 
 static void ZipUp_GetStartPoint(GameObject_s *object, NUVEC *position) {

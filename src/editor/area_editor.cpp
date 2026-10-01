@@ -424,10 +424,10 @@ eduimenu_s *areaEditor_Process(nupad_s *pad) {
         for (EDAIAREA_s *area = area_head(); area != NULL; area = area_next(area)) {
             NUVEC difference;
             f32 current = NuVecXZDistSqr(&aieditor->camera_position, &area->position, &difference);
-            if (current < distance) {
-                nearest = area;
-                distance = current;
-            }
+            if (!(current < distance))
+                continue;
+            nearest = area;
+            distance = current;
         }
         area_selected() = nearest;
         if (nearest != NULL) {

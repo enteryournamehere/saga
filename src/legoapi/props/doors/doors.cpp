@@ -658,15 +658,15 @@ DOOR_s *Door_FindByIndex(WORLDINFO_s *world, i32 area, i32 level, NUVEC *positio
     for (i32 i = 0; i < world->door_count; ++i, ++door) {
         if ((door->flags & 4) != 0 || door->level == -1)
             continue;
-        if ((level != -1 && door->level == level) || (area != -1 && LDataList[door->level].area_index == area)) {
-            if (position == NULL)
-                return door;
-            f32 distance = NuVecDistSqr(position, &door->pos, NULL);
-            if (distance < best_distance) {
-                best_distance = distance;
-                best = door;
-            }
-        }
+        if (!((level != -1 && door->level == level) || (area != -1 && LDataList[door->level].area_index == area)))
+            continue;
+        if (position == NULL)
+            return door;
+        f32 distance = NuVecDistSqr(position, &door->pos, NULL);
+        if (!(distance < best_distance))
+            continue;
+        best_distance = distance;
+        best = door;
     }
     return best;
 }

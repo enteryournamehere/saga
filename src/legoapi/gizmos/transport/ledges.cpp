@@ -109,18 +109,18 @@ static LEDGE *Ledge_AttachPoint(WORLDINFO_s *world, NUVEC *position, NUVEC *boun
                 endpoint_angle = ledge->y_rotation;
             }
         }
-        if (check_end) {
-            f32 distance = NuVecDistSqr(&local, &piece->end, NULL);
-            if (distance < endpoint_distance) {
-                NuVecRotateY(&local, &piece->end, ledge->y_rotation);
-                NuVecAdd(&endpoint_position, &local, &ledge->position);
-                nearest_endpoint = ledge;
-                endpoint_distance = distance;
-                endpoint_angle = ledge->y_rotation;
-                if (piece->field_0x3 == 0)
-                    endpoint_angle += piece->field_0x1c;
-            }
-        }
+        if (!check_end)
+            continue;
+        f32 distance = NuVecDistSqr(&local, &piece->end, NULL);
+        if (!(distance < endpoint_distance))
+            continue;
+        NuVecRotateY(&local, &piece->end, ledge->y_rotation);
+        NuVecAdd(&endpoint_position, &local, &ledge->position);
+        nearest_endpoint = ledge;
+        endpoint_distance = distance;
+        endpoint_angle = ledge->y_rotation;
+        if (piece->field_0x3 == 0)
+            endpoint_angle += piece->field_0x1c;
     }
     if (nearest_segment != NULL) {
         *position = segment_position;
@@ -158,15 +158,15 @@ static void Ledges_Draw(void *world_info, void *, float) {
     LEDGE *ledge = static_cast<LEDGE *>(world->ledges);
     // Retail realigns the stack and places this matrix at the aligned ESP+0x20.
     NUMTX matrix __attribute__((aligned(16)));
-    if (ledge != NULL) {
-        i32 count = world->ledge_count;
-        for (i32 i = 0; i < count; ++i, ++ledge) {
-            if ((ledge->state_flags & 2) != 0 && world->lev_objs[LedgePiece[ledge->type_index].field_0x0].active != 0) {
-                NuMtxSetRotationY(&matrix, ledge->y_rotation);
-                NuMtxTranslate(&matrix, &ledge->position);
-                NuSpecialDrawAt(&world->lev_objs[LedgePiece[ledge->type_index].field_0x0].special, &matrix);
-                count = world->ledge_count;
-            }
+    if (ledge == NULL)
+        return;
+    i32 count = world->ledge_count;
+    for (i32 i = 0; i < count; ++i, ++ledge) {
+        if ((ledge->state_flags & 2) != 0 && world->lev_objs[LedgePiece[ledge->type_index].field_0x0].active != 0) {
+            NuMtxSetRotationY(&matrix, ledge->y_rotation);
+            NuMtxTranslate(&matrix, &ledge->position);
+            NuSpecialDrawAt(&world->lev_objs[LedgePiece[ledge->type_index].field_0x0].special, &matrix);
+            count = world->ledge_count;
         }
     }
 }

@@ -624,11 +624,11 @@ i32 StarWars_PrepareJump(AIPACKET_s *packet, APIOBJECT_s *object, i32 checks) {
                         !(height + owner->apiobj.scaled_height >= other->apiobj.collision_min.y)) {
                         continue;
                     }
-                    if (clearance * clearance > offset.x * offset.x + offset.z * offset.z) {
-                        packet->path_connection_state = 1;
-                        object->collision_priority |= 0x2000;
-                        return 1;
-                    }
+                    if (!(clearance * clearance > offset.x * offset.x + offset.z * offset.z))
+                        continue;
+                    packet->path_connection_state = 1;
+                    object->collision_priority |= 0x2000;
+                    return 1;
                 }
             }
             SetSpecialMove(owner, destination, NULL, 1);

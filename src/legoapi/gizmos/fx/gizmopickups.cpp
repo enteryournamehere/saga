@@ -453,9 +453,9 @@ static void GizmoPickups_Update(void *world_ptr, void *, float) {
     if (pickup_sys->pickups != NULL && Missions_PickupsOff(MissionSys) == 0) {
         UpdatePickupList(world, pickup_sys->pickups, pickup_sys->pickup_count, true);
     }
-    if (pickup_sys->temporary_pickups != NULL && Missions_PickupsOff(MissionSys) == 0) {
-        UpdatePickupList(world, pickup_sys->temporary_pickups, GIZMOPICKUP_TEMPORARY_CAPACITY, false);
-    }
+    if (!(pickup_sys->temporary_pickups != NULL && Missions_PickupsOff(MissionSys) == 0))
+        return;
+    UpdatePickupList(world, pickup_sys->temporary_pickups, GIZMOPICKUP_TEMPORARY_CAPACITY, false);
 }
 
 static void GizmoPickups_Draw(void *world_ptr, void *, float) {

@@ -11,10 +11,10 @@ i32 Area_CharIDInCurrentList(i32 character_id) {
     i32 result = -1;
     if (CurrentCList != NULL) {
         for (i32 index = 0; CurrentStoryCList[index].model_id != -1 && index != 64; ++index) {
-            if (CurrentStoryCList[index].model_id == character_id) {
-                result = index;
-                break;
-            }
+            if (CurrentStoryCList[index].model_id != character_id)
+                continue;
+            result = index;
+            break;
         }
     }
     return result;

@@ -58,10 +58,10 @@ void AddCoinsToPanel(i32 coins, nuvec_s *position, i32 player, float, GameObject
         while (coins > 0) {
             i32 type = GetRandomCoinType();
             i32 remaining = coins - GizmoPickupType[type].score;
-            if (remaining >= 0) {
-                ++counts[type];
-                coins = remaining;
-            }
+            if (!(remaining >= 0))
+                continue;
+            ++counts[type];
+            coins = remaining;
         }
     } else if (coins > 0) {
         for (i32 i = 3; coins > 0; --i) {

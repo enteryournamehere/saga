@@ -560,9 +560,9 @@ void AIMoveToDestination(AISYS_s *system, AIPACKET_s *packet, APIOBJECT_s *objec
                     attempted_routes |= 1u << packet->current_route;
                 }
                 AISysFindRoute(packet);
-                if (((attempted_routes >> packet->current_route) & 1) != 0) {
-                    return;
-                }
+                if (((attempted_routes >> packet->current_route) & 1) == 0)
+                    continue;
+                return;
             }
             packet->goal_path_node = &path->nodes[goal_index];
             AISysCharacterSetPathCnx(packet, &object->position, connection, direction);

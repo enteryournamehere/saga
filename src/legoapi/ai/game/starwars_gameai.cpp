@@ -565,11 +565,11 @@ i32 StarWars_PrepareJump(AIPACKET_s *packet, APIOBJECT_s *object, i32 checks) {
                 } else if (!(jump_distance > distance - destination->radius)) {
                     break;
                 }
-                if (distance > owner->jump_destination_distance) {
+                if (!(distance > owner->jump_destination_distance)) {
+                    owner->jump_destination_distance = distance;
+                } else {
                     packet->path_connection_state = 4;
                     owner->jump_destination_distance = 0.0f;
-                } else {
-                    owner->jump_destination_distance = distance;
                 }
             }
             break;

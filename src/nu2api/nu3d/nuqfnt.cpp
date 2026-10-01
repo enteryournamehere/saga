@@ -578,12 +578,12 @@ NUQFNT *NuQFntReadBuffer(VARIPTR *font, VARIPTR *buf, VARIPTR buf_end) {
         for (i = 0; i < relocation_count; i++, relocation_entry.addr += 4) {
             pointer.addr = relocation_entry.addr + *(i32 *)relocation_entry.void_ptr;
             relocations[i].pointer = pointer.addr - font->addr;
-            if (*(i32 *)pointer.void_ptr != 0) {
+            if (*(i32 *)pointer.void_ptr == 0) {
+                relocations[i].target = 0;
+            } else {
                 target.addr = pointer.addr + *(i32 *)pointer.void_ptr;
                 relocations[i].target = target.addr - font->addr;
                 *(usize *)pointer.void_ptr = target.addr;
-            } else {
-                relocations[i].target = 0;
             }
         }
     }

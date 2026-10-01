@@ -902,13 +902,7 @@ void InitGameAfterConfig(void) {
                         GOLDBRICKPOINTS = GOLDBRICKPOINTS + 1;
                     }
 
-                    if ((areaFlags & 0x10) == 0) {
-                        if ((areaFlags & 0x4000) != 0) {
-                            COMPLETIONPOINTS = COMPLETIONPOINTS + POINTS_PER_TRUEJEDI;
-                            CompletionPointInfo[1] = POINTS_PER_TRUEJEDI + CompletionPointInfo[1];
-                            GOLDBRICKPOINTS = GOLDBRICKPOINTS + 1;
-                        }
-                    } else {
+                    if ((areaFlags & 0x10) != 0) {
                         i32 local_24 = COMPLETIONPOINTS + POINTS_PER_MINIKIT + POINTS_PER_TRUEJEDI;
                         i32 local_28 = POINTS_PER_MINIKIT + POINTS_PER_TRUEJEDI + CompletionPointInfo[1];
                         i32 iVar4 = GOLDBRICKPOINTS + 2;
@@ -921,6 +915,12 @@ void InitGameAfterConfig(void) {
                         COMPLETIONPOINTS = POINTS_PER_REDBRICK + local_24 + POINTS_PER_CHALLENGE;
                         CompletionPointInfo[1] = POINTS_PER_REDBRICK + POINTS_PER_CHALLENGE + local_28;
                         if (GOLDBRICKFORCHALLENGE != 0) {
+                            GOLDBRICKPOINTS = GOLDBRICKPOINTS + 1;
+                        }
+                    } else {
+                        if ((areaFlags & 0x4000) != 0) {
+                            COMPLETIONPOINTS = COMPLETIONPOINTS + POINTS_PER_TRUEJEDI;
+                            CompletionPointInfo[1] = POINTS_PER_TRUEJEDI + CompletionPointInfo[1];
                             GOLDBRICKPOINTS = GOLDBRICKPOINTS + 1;
                         }
                     }

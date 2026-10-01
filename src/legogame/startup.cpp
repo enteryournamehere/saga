@@ -577,12 +577,12 @@ void LoadPerm(void) {
                         const f32 aspect = NuIOS_GetAspectRatio();
                         f32 half_w;
                         f32 half_h;
-                        if (!(aspect > 1.7777778f)) {
-                            half_w = 0.5f;
-                            half_h = aspect * 0.5f / 1.7777778f;
-                        } else {
+                        if (!(!(aspect > 1.7777778f))) {
                             half_h = 0.5f;
                             half_w = aspect * 0.5f / 1.7777778f;
+                        } else {
+                            half_w = 0.5f;
+                            half_h = aspect * 0.5f / 1.7777778f;
                         }
 
                         NuRndrClear(0xb00, 0, 1.0f);

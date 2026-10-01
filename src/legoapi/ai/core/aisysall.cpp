@@ -679,12 +679,12 @@ void AIMoveToDestination(AISYS_s *system, AIPACKET_s *packet, APIOBJECT_s *objec
                 packet->frame_state = flags;
                 return;
             }
-            if ((packet->capabilities & flags) != 0) {
-                packet->navigation_flags |= 1;
-            } else {
+            if ((packet->capabilities & flags) == 0) {
                 packet->runtime_flags |= 0x60;
                 packet->frame_state = next->traversal_flags[direction];
                 next = NULL;
+            } else {
+                packet->navigation_flags |= 1;
             }
         }
         if (next != NULL) {

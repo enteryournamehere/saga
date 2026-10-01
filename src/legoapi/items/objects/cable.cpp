@@ -200,7 +200,27 @@ void UpdateCables() {
                 }
                 i32 last = cable->wrap_indices[cable->wrap_count - 1];
                 NUVEC *last_position = reinterpret_cast<NUVEC *>(&target->joint_matrices[atat_locators[last]].m30);
-                if (cable->wrap_count > 1) {
+                if (!(cable->wrap_count > 1)) {
+                    f32 along0, along1;
+                    i32 next = (last + 1) & 3;
+                    i32 previous = (last + 3) & 3;
+                    // Preserve the reverse-edge locators across the first intersection callback.
+                    i32 previous_locator = atat_locators[previous];
+                    i32 opposite_locator = atat_locators[(previous + 3) & 3];
+                    if (XZLinesIntersect(
+                            &path[0], last_position,
+                            reinterpret_cast<NUVEC *>(&target->joint_matrices[atat_locators[next]].m30),
+                            reinterpret_cast<NUVEC *>(&target->joint_matrices[atat_locators[(last + 2) & 3]].m30),
+                            &along0, &along1)) {
+                        cable->wrap_indices[cable->wrap_count++] = static_cast<u8>(next);
+                    } else if (XZLinesIntersect(
+                                   &path[0], last_position,
+                                   reinterpret_cast<NUVEC *>(&target->joint_matrices[previous_locator].m30),
+                                   reinterpret_cast<NUVEC *>(&target->joint_matrices[opposite_locator].m30), &along0,
+                                   &along1)) {
+                        cable->wrap_indices[cable->wrap_count++] = static_cast<u8>(previous);
+                    }
+                } else {
                     i32 previous = cable->wrap_indices[cable->wrap_count - 2];
                     i32 next = (last + 1) & 3;
                     i32 direction = 1;
@@ -236,26 +256,6 @@ void UpdateCables() {
                                 cable->wrap_indices[cable->wrap_count] = 0xff;
                             --cable->wrap_count;
                         }
-                    }
-                } else {
-                    f32 along0, along1;
-                    i32 next = (last + 1) & 3;
-                    i32 previous = (last + 3) & 3;
-                    // Preserve the reverse-edge locators across the first intersection callback.
-                    i32 previous_locator = atat_locators[previous];
-                    i32 opposite_locator = atat_locators[(previous + 3) & 3];
-                    if (XZLinesIntersect(
-                            &path[0], last_position,
-                            reinterpret_cast<NUVEC *>(&target->joint_matrices[atat_locators[next]].m30),
-                            reinterpret_cast<NUVEC *>(&target->joint_matrices[atat_locators[(last + 2) & 3]].m30),
-                            &along0, &along1)) {
-                        cable->wrap_indices[cable->wrap_count++] = static_cast<u8>(next);
-                    } else if (XZLinesIntersect(
-                                   &path[0], last_position,
-                                   reinterpret_cast<NUVEC *>(&target->joint_matrices[previous_locator].m30),
-                                   reinterpret_cast<NUVEC *>(&target->joint_matrices[opposite_locator].m30), &along0,
-                                   &along1)) {
-                        cable->wrap_indices[cable->wrap_count++] = static_cast<u8>(previous);
                     }
                 }
             } else if (target->id == id_DRAGBOMB) {
@@ -369,17 +369,7 @@ void UpdateCables() {
                 }
             }
             cable->total_length = 0.0f;
-            if (cable->max_length == 1000000000.0f) {
-                cable->point_count = static_cast<u8>(path_count);
-                for (i32 i = 0; i < path_count; ++i) {
-                    cable->points[i] = path[i];
-                    if (i < path_count - 1) {
-                        f32 length = NuVecDist(&path[i + 1], &path[i], &delta);
-                        cable->segment_lengths[i] = length;
-                        cable->total_length = length + cable->total_length;
-                    }
-                }
-            } else {
+            if (cable->max_length != 1000000000.0f) {
                 f32 remaining = cable->max_length + FRAMETIME * cable_speed;
                 cable->points[0] = path[0];
                 cable->point_count = 1;
@@ -402,6 +392,16 @@ void UpdateCables() {
                     if (i == path_count - 2) {
                         cable->max_length = 1000000000.0f;
                         PlaySfx("TowCable_Latch", &path[i + 1]);
+                    }
+                }
+            } else {
+                cable->point_count = static_cast<u8>(path_count);
+                for (i32 i = 0; i < path_count; ++i) {
+                    cable->points[i] = path[i];
+                    if (i < path_count - 1) {
+                        f32 length = NuVecDist(&path[i + 1], &path[i], &delta);
+                        cable->segment_lengths[i] = length;
+                        cable->total_length = length + cable->total_length;
                     }
                 }
             }

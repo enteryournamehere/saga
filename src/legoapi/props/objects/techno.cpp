@@ -598,7 +598,27 @@ i32 Techno_isReady(TECHNO_s *techno) {
 }
 
 void Techno_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
-    if (object->character_context != 0x51) {
+    if (object->character_context == 0x51) {
+        TECHNO *techno = static_cast<TECHNO *>(object->field_0x788);
+        techno->flags |= TECHNO_FLAG_USED_THIS_FRAME;
+
+        if (object->apiobj.character_model->model_data_b[object->context_animation] != NULL &&
+            AnimPlaying(&object->apiobj.anim_packet, object->context_animation, 1, 0) == NULL) {
+            return;
+        }
+
+        object->context_animation_timer += FRAMETIME;
+        if ((object->pad_gamepad->buttons_pressed & GAMEPAD_TAG) != 0 ||
+            (!object->apiobj.player_controlled && object->use_action != 2)) {
+            GameCam_Blend(GameCam, 0.5f, 0.0f, 1);
+            object->character_context = -1;
+            object->tag_flags |= 1;
+            object->apiobj.movement_facing_angle += 0x8000;
+            Technos_MoveTarget(techno, NULL);
+        } else {
+            Technos_MoveTarget(techno, object);
+        }
+    } else {
         if ((object->apiobj.player_controlled || object->use_action == 2) && object->suit != NULL &&
             (static_cast<SUIT_s *>(object->suit)->flags & 0x20) != 0) {
             f32 distance;
@@ -631,26 +651,6 @@ void Techno_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
             } else {
                 GameAudio_PlaySfx(0x32, &techno->position, 0, 0);
             }
-        }
-    } else {
-        TECHNO *techno = static_cast<TECHNO *>(object->field_0x788);
-        techno->flags |= TECHNO_FLAG_USED_THIS_FRAME;
-
-        if (object->apiobj.character_model->model_data_b[object->context_animation] != NULL &&
-            AnimPlaying(&object->apiobj.anim_packet, object->context_animation, 1, 0) == NULL) {
-            return;
-        }
-
-        object->context_animation_timer += FRAMETIME;
-        if ((object->pad_gamepad->buttons_pressed & GAMEPAD_TAG) != 0 ||
-            (!object->apiobj.player_controlled && object->use_action != 2)) {
-            GameCam_Blend(GameCam, 0.5f, 0.0f, 1);
-            object->character_context = -1;
-            object->tag_flags |= 1;
-            object->apiobj.movement_facing_angle += 0x8000;
-            Technos_MoveTarget(techno, NULL);
-        } else {
-            Technos_MoveTarget(techno, object);
         }
     }
 }

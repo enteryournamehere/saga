@@ -8275,12 +8275,165 @@ ATITC entries through DDS. Codec/GPU services are mocked. Existing malformed-
 stream and unchecked payload bounds are not claimed repaired. Target/native
 and all five checks pass.
 
+## Batch 275: reset progress slot reloads
+
+`CheckResetBits` in `supportall.cpp` reloads the canonical signed-byte level
+index for progress clearing, animation restoration and gizmo reset rather
+than retaining a local across those services. Whole-owner gain **59.409745
+weighted bytes**; other 49 scores retained. Linked target **70.430885%**,
+global **67.564100%**, **6,278** exacts. Root verifies full reference/raw/body
+and real callees, then runs sanitizer and host i386 SSE: **4,352 checks** each.
+Valid slots, reset masks and player counts are covered. Callback replacement
+probes are diagnostic, not established production mutations; populated AI
+reinitialization is not covered. Target/native and all five checks pass.
+
+## Batch 276: reserved editor animation service-loop form
+
+`edanimUpdateObjects` captures particle/sound bounds and reloads them after
+emission, lookup, erasure and playback at the original service boundaries.
+Whole-owner gain **564.163253 weighted bytes**, including a **1.178294-byte**
+isolated neighbor loss; 576 other isolated scores retained. Linked target
+**61.763863%**, global **67.576100%**, **6,277** exacts. The linked neighbor
+`edbitsRegisterSaveFormat` loses exact status (**100% to 99.638560%**), unlike
+its already-inexact isolated baseline. The complete candidate is therefore
+reserved and removed from the working tree; no neighbor tweaks or variants.
+Root verifies whole
+owner/body freezes, complete raw instructions and real erase helpers, then
+runs sanitizer and production-NDK i386: **100,000 cases** each. Baseline NDK
+also passes with identical event counts, supporting source-form equivalence.
+Bounded effect counts, finite intervals and existing scene prerequisites are
+covered; pure math/render services are diagnostic seams. No arbitrary count
+mutation or full-engine proof is claimed. Target/native and all five checks
+pass. These figures describe the reserved trial, not an accepted global gain.
+
+## Batch 277: obstacle loader version contracts
+
+`GizObstacles_Load` restores early-version default extents and unconditional
+flags reads, the `GizObstacle` diagnostic prefix, **12 / 1.75** legacy scatter
+heights, and default sound setup only through version twelve. Existing guards
+and ABI are retained. Whole-owner gain **676.075866 weighted bytes**, all 47
+other retail scores and ten isolated exacts retained. Linked target
+**83.821580%**. Root verifies complete reference/raw/body/callback/helper
+freezes and runs sanitizer and production-NDK i386: **15,127 calls /
+1,725,439 checks** each. Valid versioned streams, all fields, consumption,
+animation callbacks, actual error log and sound-default helper are covered.
+Old-body sound control fails; low-level lookup/allocation/file services are
+explicit diagnostic seams. No malformed-stream/full-engine claim. Target/
+native and all five checks pass. Batch 278 below records the accepted combined
+global after removing the reserved batch 276 trial.
+
+## Batch 278: spline forward traversal loop form
+
+`MoveSplinePosition` spells the already-guarded positive traversal as do/while
+with the existing interpolation exit. Signed strides/segments, endpoint
+stores, guards and unordered predicates are unchanged. Whole-owner gain
+**76.965291 weighted bytes**, other scores and four isolated exacts retained.
+Linked target **20.012987%**; accepted global **67.580124%**, **6,278** exacts,
+with the batch 276 candidate removed and `edbitsRegisterSaveFormat` restored
+to **100%**. Root verifies full raw/reference/body/real math freezes and runs
+sanitizer and production-NDK i386: **30,421 cases / 1,395,093 checks** each.
+Independent traversal oracle, both strides, loop flags, boundaries, endpoints,
+NaNs, safe guards, state bytes/canaries and vector-service order are covered.
+Both actual baseline and candidate agree; no gameplay callback mutation or
+full-game proof is claimed. Target/native and all five checks pass.
+
+## Batch 279: locator editor modifier dispatch
+
+`locatorEditor_Process` admits all held-`0x100` input into the modifier branch,
+queries nearest only for pressed-`0x100` there, and routes idle modifier input
+to hover refresh. The unrelated pressed-`0x01` query is removed. Existing
+navigation priority, guards, ABI/options and menu/rotation bodies are retained.
+Whole-owner gain **59.325738 weighted bytes**, all other 29 scores and the
+isolated exact retained. Linked target **45.213470%**, global **67.581380%**,
+**6,278** exacts. Root reads full reference/literals/raw/body/helpers/types,
+verifies frozen source identity, and runs sanitizer and host i386 SSE:
+**1,637 checks** each. Actual list/nearest/angle/distance/rotation bodies run;
+camera/creature/menu seams are diagnostic. Host alignment sanitizer alone is
+disabled for the existing raw pointer store at editor offset `0x3692c`; target
+layout coverage uses i386. Unrelated creation/reordering paths and retail sine
+table bits are not claimed verified. Target/native and all five checks pass.
+
+## Batch 280: canonical AI full-mask source
+
+`InitPlayerAI` reads `_0xffffffffffffffff` for FreePlay and character types
+above 63, matching the original GOT/data source instead of synthesizing ones.
+Default global remains all ones; no production mutation is claimed. Whole-
+owner gain **25.863665 weighted bytes**, all other 62 normalized functions
+and exacts retained. Linked target **52.976190%**, global **67.581924%**,
+**6,278** exacts. Root verifies complete reference/raw/body/GOT/data/helpers
+and runs host sanitizer **2,048** FreePlay cases plus host i386 SSE **8,192**
+all-mode/all-type cases. Full publication equivalence is covered; capabilities,
+lever and final reset services are recorders. Existing raw pointer alignment
+and widened packet offsets restrict host coverage to equivalence; final mask
+oracle and callback paths use i386. Target/native and all five checks pass.
+
+## Batch 281: editor animation cursor source form
+
+`edanimDrawCursor` uses original direct component additions for the emitter
+endpoint and one parameter-admission branch enclosing detail printing. The
+initialized render packet, live index reload, ABI/options and all other
+services remain unchanged. Whole-owner gain **142.998673 weighted bytes**;
+the changed neighboring body retains its original score. Linked target
+**67.516230%**, global
+**67.584990%**, **6,278** exacts. Root verifies complete raw/reference/literals,
+body/owner freezes and actual rotation/addition math, then runs sanitizer and
+production-NDK i386 **100,000 cases** each. Root baseline NDK control also
+passes **100,000**, supporting same-semantics source reconstruction. Complete
+packets, materials, service order and typed print arguments are checked using
+pure recorders and diagnostic sine-table data; GPU/font/scene traversal and
+libc null-string formatting are not validated. Target/native and all five
+checks pass.
+
+## Batch 282: pickup loader versioned distance and area scale
+
+`GizmoPickups_Load` floors draw distance at ten through version five, then at
+one hundred for valid vehicle areas through version six. Newer versions keep
+the file distance. The existing single-caller version-five scale helper now
+returns one for an out-of-range area index, matching the original guards.
+Whole-owner gain **122.212684 weighted bytes**, ten isolated exacts retained;
+two small collateral scratch-register operand score shifts are included.
+Linked target **42.035713%**, global **67.587610%**, **6,278** exacts. Root verifies full reference/
+raw/body/helper identities and runs sanitizer and production-NDK i386:
+**46,463 calls / 1,541,347 checks** each. Full valid-stream version/count/
+distance/scale/flags/area-boundary matrix, byte consumption and record/tail
+preservation are covered. Root old-body version-six control fails. Gravity
+is a typed service recorder; its unchanged actual helper was inspected, not
+executed. Invalid baseline area dereferences and full-game behavior are not
+tested. Target/native and all five checks pass.
+
+## Batch 283: recycled creature input mode and empty animations
+
+`InitCreature` assigns canonical gamepad `input_mode = 1` instead of retaining
+stale mode bits, and keeps animation one when all 233 animation slots are
+empty. The existing canonical `model_data_b` replaces its raw offset access;
+all null/table guards remain. Real allocation/reset helpers were inspected:
+they do not clear the recycled input-mode byte. Whole-owner gain **17.264399
+weighted bytes**, all other 50 normalized functions retained. Linked global
+**67.587975%**, **6,278** exacts. Root verifies full reference/raw/literals,
+body/helper freezes and actual service contracts, then runs host sanitizer
+and host i386 SSE **196,952 cases** each. Complete state and service order,
+all mode bytes, valid layer branches, empty/first/final animation slots and
+invalid IDs are covered. Services are typed recorders; unchanged layer helpers
+execute. Host full baseline equivalence is restricted to null-model paths
+because the old raw pointer access is not valid under widened host layout;
+i386 checks both full bodies. No full-game behavior is claimed. Target/native
+and all five checks pass.
+
 ## Additional bounded reserves after batch 263
 
+- `HatMachine_Draw`: the complete original-backed idle frame/negative timer/
+  zero-boundary/32768-phase correction costs **22.564519 weighted bytes**
+  (55.755726% to 55.025955%); all 25 other scores and seven exacts retained.
+  Reserve the complete unit without variants or runtime fixtures.
 - `FindGameObject`: complete guarded alive/CInfo closure costs **16.70 weighted
   bytes** (26.043083% to 25.086168%); no exact loss. Reserve without fixtures.
 - `routeEditor_Process`: the original-backed nearest-node selection changes
   no fuzzy score or whole-owner weight. Reserve without fixtures or variants.
+- `antinodeEditor_Process`: the original-backed opposite-direction rotation
+  timer reset is whole-owner neutral; reserve without fixtures or variants.
+- `unref`: the original-backed pointer-bound copy-loop form costs **73.150788
+  weighted bytes** (20.411112% to 14%); other 49 scores retained. Reserve
+  without fixtures or variants. Existing overlap semantics are already present.
 - `MenuUpdateStore`: original fixed-eight purchase pulse costs **66.416941
   weighted bytes** (21.447887% to 17.873240%); all 54 other scores retained.
   Reserve without fixtures or source-form retries.
@@ -8294,3 +8447,7 @@ and all five checks pass.
   `KillGameObject`, `GameObjectRotation`, `GizPanel_FindNearest`,
   `Batarangs_Draw`, `NuAnimBuffEvaluate_3`, `NuAnimBuffEvaluate_QuatB` and
   `AISysCharacterTestPathCnx` found no substantive missing closure. No trials.
+- Fresh complete censuses of `Action_GetLocatorFromSet`,
+  `GizForce_FindBestForceTarget`, `edanimLoadPage`, `WorldInfo_Init`,
+  `StoreLevelProgressFn` and `HeadMovement` found no substantive
+  missing closure; no trials.

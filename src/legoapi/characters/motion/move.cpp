@@ -2250,10 +2250,10 @@ void MoveSplinePosition(SPLINEPOS_s *position, f32 distance) {
         return;
     NUVEC offset;
     if (distance > 0.0f) {
-        while (distance > 0.0f) {
+        do {
             position->segment_distance += distance;
             if (!(position->segment_distance >= position->segment_length))
-                break;
+                goto interpolate;
             distance = position->segment_distance - position->segment_length;
             i16 previous = position->segment;
             position->segment++;
@@ -2276,9 +2276,8 @@ void MoveSplinePosition(SPLINEPOS_s *position, f32 distance) {
             if (distance == 0.0f)
                 position->position = *current;
             spline = position->spline;
-        }
-        if (!(distance > 0.0f))
-            goto update_along;
+        } while (distance > 0.0f);
+        goto update_along;
     } else if (distance < 0.0f && position->segment >= 0) {
         for (;;) {
             position->segment_distance += distance;
@@ -2309,16 +2308,16 @@ void MoveSplinePosition(SPLINEPOS_s *position, f32 distance) {
         }
     } else
         goto update_along;
-    {
-        NUVEC *current = (NUVEC *)((u8 *)spline->pts + position->segment * (i16)spline->pt_size);
-        NUVEC *next = (NUVEC *)((u8 *)spline->pts + ((position->segment + 1) % spline->length) * (i16)spline->pt_size);
-        NuVecSub(&offset, next, current);
-        f32 fraction = 0.0f;
-        if (position->segment_length != 0.0f)
-            fraction = position->segment_distance / position->segment_length;
-        NuVecScale(&offset, &offset, fraction);
-        NuVecAdd(&position->position, current, &offset);
-    }
+interpolate: {
+    NUVEC *current = (NUVEC *)((u8 *)spline->pts + position->segment * (i16)spline->pt_size);
+    NUVEC *next = (NUVEC *)((u8 *)spline->pts + ((position->segment + 1) % spline->length) * (i16)spline->pt_size);
+    NuVecSub(&offset, next, current);
+    f32 fraction = 0.0f;
+    if (position->segment_length != 0.0f)
+        fraction = position->segment_distance / position->segment_length;
+    NuVecScale(&offset, &offset, fraction);
+    NuVecAdd(&position->position, current, &offset);
+}
 update_along:
     position->along = (position->segment_distance / position->segment_length + position->segment) / segments;
 }

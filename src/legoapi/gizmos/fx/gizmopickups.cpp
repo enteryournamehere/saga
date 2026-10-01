@@ -235,6 +235,9 @@ namespace {
     }
 
     f32 GetAreaPickupScale(const WORLDINFO *world) {
+        if (world->level_sub_id < 0 || world->level_sub_id >= AREACOUNT) {
+            return 1.0f;
+        }
         const u16 flags = ADataList[world->level_sub_id].flags;
         if ((flags & AREAFLAG_NOPICKUPGRAVITY) != 0) {
             return 6.0f;
@@ -821,11 +824,11 @@ static i32 GizmoPickups_Load(void *world_ptr, void *) {
         AreaPickupScale = 1.0f;
     }
 
-    if (!(pickup_sys->draw_distance >= 10.0f)) {
+    if (version < 6 && !(pickup_sys->draw_distance >= 10.0f)) {
         pickup_sys->draw_distance = 10.0f;
     }
-    if (version == 6 && (ADataList[world->level_sub_id].flags & AREAFLAG_NOPICKUPGRAVITY) != 0 &&
-        pickup_sys->draw_distance < 100.0f) {
+    if (version <= 6 && world->level_sub_id >= 0 && world->level_sub_id < AREACOUNT &&
+        (ADataList[world->level_sub_id].flags & AREAFLAG_VEHICLE_AREA) != 0 && pickup_sys->draw_distance < 100.0f) {
         pickup_sys->draw_distance = 100.0f;
     }
     SetAreaPickupGravity(world->level_sub_id, world->level_idx);

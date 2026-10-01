@@ -573,15 +573,14 @@ void CheckResetBits() {
         BonusCoinTotal = 0;
     }
 
-    const i32 progress_index = WORLD->current_level->area_level_index;
     if (WORLD->api_object_sys != NULL)
         WORLD->api_object_sys->flags_210 &= ~1;
     if ((ResetBits & RESETBIT_CLEAR_LEVEL_PROGRESS) != 0) {
-        GizmoSysClearLevelProgress(WORLD, progress_index);
+        GizmoSysClearLevelProgress(WORLD, WORLD->current_level->area_level_index);
     }
 
-    GameAnimSys_ReStoreProgress(WORLD->game_anim_sys, progress_index);
-    GizmoSysReset(WORLD->gizmo_sys, WORLD, progress_index);
+    GameAnimSys_ReStoreProgress(WORLD->game_anim_sys, WORLD->current_level->area_level_index);
+    GizmoSysReset(WORLD->gizmo_sys, WORLD, WORLD->current_level->area_level_index);
 
     if ((ResetBits & RESETBIT_REINITIALISE_LEVEL) != 0) {
         DrawBossHitPoints(NULL);

@@ -861,7 +861,7 @@ i32 InitCreature(GameObject_s *obj, i32 id, i32 param) {
     }
 
     obj->pad_gamepad = GamePad_Allocate();
-    obj->pad_gamepad->unknown_24 |= 0x100;
+    obj->pad_gamepad->input_mode = 1;
     obj->hitpoints = game_character_data->hitpoints;
     obj->current_hp = game_character_data->hitpoints;
     ResetPlayerPacket(reinterpret_cast<PLAYERPACKET_s *>(obj->player_packet),
@@ -892,9 +892,8 @@ i32 InitCreature(GameObject_s *obj, i32 id, i32 param) {
 
     i32 reset_animation = 1;
     if (obj->apiobj.character_model != NULL) {
-        void **animation_table = *reinterpret_cast<void ***>(reinterpret_cast<u8 *>(obj->apiobj.character_model) + 0xc);
+        void **animation_table = obj->apiobj.character_model->model_data_b;
         if (animation_table != NULL && animation_table[1] == NULL) {
-            reset_animation = 0;
             for (i32 i = 0; i < 0xe9; i++) {
                 if (animation_table[i] != NULL) {
                     obj->apiobj.anim_packet.animation_index = static_cast<u16>(i);

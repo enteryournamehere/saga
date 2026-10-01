@@ -1903,7 +1903,9 @@ void edanimDrawCursor() {
         NuVecRotateZ(&direction, &direction, edanim_emitrotz);
         NuVecRotateY(&direction, &direction, edanim_emitroty);
         line[0].position = edanim_cam_pos;
-        NuVecAdd(&line[1].position, &edanim_cam_pos, &direction);
+        line[1].position.x = edanim_cam_pos.x + direction.x;
+        line[1].position.y = edanim_cam_pos.y + direction.y;
+        line[1].position.z = edanim_cam_pos.z + direction.z;
         line[0].colour = line[1].colour = 0xff0000ff;
         NuRndrLine3d(line, edanim_mtl, NULL);
     }
@@ -1926,8 +1928,10 @@ void edanimDrawCursor() {
         NuGScnGetSpecial(&special, edbits_base_scene, edanim_nearest);
         NuQFntPrintEx(system_qfont, 0x17c0, 0xaf0, 0x10, "Curr Spcl: %s", NuSpecialGetName(&special));
     }
-    NuQFntPrintEx(system_qfont, 0x17c0, 0xb90, 0x10, edanim_nearest_param_id == -1 ? "Params: No" : "Params: Yes");
-    if (edanim_nearest_param_id != -1) {
+    if (edanim_nearest_param_id == -1) {
+        NuQFntPrintEx(system_qfont, 0x17c0, 0xb90, 0x10, "Params: No");
+    } else {
+        NuQFntPrintEx(system_qfont, 0x17c0, 0xb90, 0x10, "Params: Yes");
         auto &param = AnimParams[edanim_nearest_param_id];
         if (edanim_particle_mode != 0) {
             NuQFntPrintEx(system_qfont, 0x1810, 0xc30, 0x10, "Particles: %d (Max %d)", param.effect_count, 8);

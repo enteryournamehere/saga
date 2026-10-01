@@ -1454,14 +1454,13 @@ void InitPlayerAI(GameObject_s *object) {
     object->ai.character_type_mask_low = 0;
     object->ai.character_type_mask_high = 0;
     if (FreePlay && !(object->apiobj.field_0x1f4 & 0x400)) {
-        object->ai.character_type_mask_low = ~u32(0);
-        object->ai.character_type_mask_high = ~u32(0);
+        object->ai.character_type_mask = _0xffffffffffffffff;
     } else if (SpecialRouteCharacterTypeIDFn) {
         u8 *row = *reinterpret_cast<u8 **>(b + 0xcac);
         char *name = row ? *reinterpret_cast<char **>(row + 4) : object->apiobj.character_data->file;
         u8 type = SpecialRouteCharacterTypeIDFn(name);
         if (type != 0xff) {
-            u64 mask = type <= 63 ? u64(1) << type : ~u64(0);
+            u64 mask = type <= 63 ? u64(1) << type : _0xffffffffffffffff;
             object->ai.character_type_mask_low = static_cast<u32>(mask);
             object->ai.character_type_mask_high = static_cast<u32>(mask >> 32);
         }

@@ -7230,3 +7230,113 @@ convention attribute or nonfinite-to-integer conversion is introduced.
 Linked matching reaches **67.428894%**, **+0.300819 percentage points** from main,
 with **6,278** exact functions. Target/native builds and all five repository
 checks pass for the combined batches 227–231 checkpoint.
+
+### Additional closed gates after batch 231
+
+`NuSoundVoice::Play` already preserves both state queries, live initial-buffer
+limits, source/flag reloads, temporary weak-pointer lifetime and hardware service
+order. Full reference/raw review finds no missing closure at **20.258883%**
+linked matching. Keep existing weak-pointer null guards; do not repeat helper
+duplication, vtable reinterpretation or instruction-layout trials.
+
+`eduicbRenderProp` has real margin/value-anchor, edit-material, measurement-query
+and host-safe property-flag discrepancies. One combined unchanged-options trial
+falls **15.641960% to 0%** in the original-side object gate and loses **587.26
+original-weighted bytes** net across its owner. It remains incomplete and reserved,
+not integrated or fixture-verified. No partial matching-only variant was retained.
+
+`NuSound3Update` has real forward-list service-order and stereo-start/retirement
+discrepancies. One unchanged-options trial falls **16.419268% to 12.177748%**;
+all other comparable runtime bodies remain unchanged. The request-table copy
+direction was already correct, not a repair. Safe null-sample cleanup and early
+unlink remain; no shared weak-pointer/list rewrite or fixture run follows the
+negative gate. The evidence patch is reserved, not a completed restoration.
+
+`Action_SetUseOneAtOnce` has caller-specific substring/default-target/myself
+reload and live world-AI lookup differences from its shared parser. A bounded
+local restoration retaining null-entry/owner guards falls **13.621429% to
+9.321428%**, with a **15.23-byte net original-weighted loss** across the owner.
+It remains reserved without fixtures or integration, not a faithful-completion
+claim. Do not retry it as parser inlining or arbitrary source-shape inflation.
+
+`NuGetVertexDeclaration` is closed after complete raw and 561-line reference
+review: cache bounds, packed precedence, all thirteen attributes, float/half
+cases, signed offsets and strides already agree. Its **36.791046%** linked
+score and size gap do not justify copying retail's fixed branch fanout. No
+source trial or fixture was needed.
+
+## Batch 232: force-push selection
+
+`FindForcePushTarget` excludes the Emperor restriction when the area is null,
+rejects unordered distance/direction comparisons and gives animation 0x2b
+priority over slot five. Existing style selection and service ownership remain.
+Linked matching improves **14.659259% to 17.069630%**; the other eleven owner
+functions remain byte-identical in the isolated gate. Frozen actual-body host
+sanitizer and NDK i386 fixtures pass **8,969 cases / 187,093 checks**; the prior
+body fails 564 independent assertions. Real distance and random helpers are
+used; gameplay services are mocks. Fixtures cover valid contexts/animation
+matrices, area/player/hostility filters, finite/nonfinite comparisons, nearest
+ties and activation order. Diagnostic context storage accommodates signed-byte
+indices; no full combat/physics validation is claimed.
+
+Linked matching reaches **67.430430%**, **+0.302355 percentage points** from main,
+still **6,278** exact functions.
+
+## Batch 233: thermal-detonator shadow and camera update
+
+`PartUpdate_ThermalDetonator` restores the missing inactive shadow/reflection,
+layer/material flags and camera-socket damping. Its beep uses the countdown
+at field 0x100, not the elapsed field at 0xf4. The camera gate uses socket
+byte one, not the unrelated mode field. Linked matching improves **12.520661%
+to 67.256195%**; the neighboring throw score remains unchanged. Keep the null-
+part guard, add null environment guards and exclude retail's unsafe surface -1
+array access. Shadow heights retain their original service-capture timing.
+Frozen actual-body host sanitizer and i386 SSE fixtures pass **27,207 cases**,
+including countdown/elapsed independence, all flag bytes, surface/layer bounds,
+captured/live shadow fields and X-before-Z damping through the actual SeekValF
+helper. Two independent prior-body assertions fail. Diagnostic service mutation
+does not claim pure ShadowInfo/EShadowInfo perform those mutations in production;
+no real terrain/render/device validation is claimed.
+
+Linked matching reaches **67.437130%**, **+0.309055 percentage points** from main,
+still **6,278** exact functions.
+
+## Batch 234: backdrop opacity closure
+
+`BackDrop_Alpha` restores title/credits multiplication and status-stage/menu
+fade assignment, replacing unrelated colour-black/wait conditions. It observes
+menu state after GetMenuID, returns zero for unordered fade time and preserves
+negative-time extrapolation rather than clamping. Existing null-alpha safety
+and new null-level/stage guards remain. Linked matching improves **19.094118%
+to 39.670590%**; small colour/draw collateral changes are counted in the net
+gain. Frozen actual-body host sanitizer and i386 SSE fixtures pass **10,280
+cases**; the previous body fails an independent opacity assertion. Canonical
+32-bit layout assertions are enabled in the i386 fixture; no full UI rendering
+test is claimed.
+
+Combined linked matching reaches **67.438620%**, **+0.310545 percentage points**
+from main, with **6,278** exact functions. Target/native builds and all five
+repository checks pass. Checkpoint `4821c894` has all eleven GitHub checks
+successful on that exact head; these newer local changes await the next push.
+
+The backdrop i386 fixture uses host GCC 16.2.1 with 32-bit SSE arithmetic;
+the production matching build and isolated whole-TU gate use unchanged NDK
+r8e GCC 4.7. Do not describe that diagnostic fixture as an NDK runtime test.
+
+Further complete reference/raw audits close `eduicbProcessTextPick`,
+`Attracto_MoveCode` and `ObjHitObj` without trials: their supported state/service
+closure is already present. Text-picker deletion/insertion size differences
+come mainly from retail vectorized loops versus current safe copying; invalid
+cursor/null states do not justify removing guards. Attractor deposit/suction,
+shard selection/ray/collection/rumble and reticle paths are present. Object-hit
+flicker/shield unordered comparisons, wrapped damage, debris indices and
+AI/arcade/kill service paths were reviewed. Historical documentation calling
+ObjHitObj a placeholder is stale. None is claimed runtime-validated by these
+evidence-only audits; no shape-only trial or fixture run follows.
+
+`TightRope_MoveCode` and its emitted move-update/attach helpers are also
+closed after full reference and raw review. Airborne saved-rope reloads,
+landing gates, animation 0x8f timing, explicit jumps, movement clamping and
+attachment slope/offset behavior are already present. The repeated literal
+label for negative/positive one was disambiguated by raw addresses. No
+candidate, compilation trial or runtime-validation claim follows this audit.

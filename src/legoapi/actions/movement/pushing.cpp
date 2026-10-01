@@ -325,7 +325,8 @@ void FindForcePushTarget(GameObject_s *object, i32 activate, i32 target_filter) 
             }
 
             const bool candidate_is_player = candidate->apiobj.field_0x27c != -1;
-            if (!(WORLD->area == EMPERORFIGHT_ADATA && ((candidate->field_0xefb & 8) != 0 || candidate_is_player))) {
+            if (!(WORLD->area != NULL && WORLD->area == EMPERORFIGHT_ADATA &&
+                  ((candidate->field_0xefb & 8) != 0 || candidate_is_player))) {
                 if (candidate->id == id_BODYGUARD) {
                     continue;
                 }
@@ -363,8 +364,8 @@ void FindForcePushTarget(GameObject_s *object, i32 activate, i32 target_filter) 
                 if (candidate->id == id_ATST) {
                     distance *= 1.0f / 3.0f;
                 }
-                if (distance >= best_distance ||
-                    delta.x * object->facing_direction.x + delta.z * object->facing_direction.z >= 0.0f) {
+                if (!(distance < best_distance) ||
+                    !(delta.x * object->facing_direction.x + delta.z * object->facing_direction.z < 0.0f)) {
                     continue;
                 }
 
@@ -436,7 +437,9 @@ void FindForcePushTarget(GameObject_s *object, i32 activate, i32 target_filter) 
                 best->context_animation = 0x53;
                 best->action_movement_state = 3;
             } else {
-                best->context_animation = best->apiobj.character_model->model_data_b[5] != NULL ? 5 : 0x2b;
+                best->context_animation = best->apiobj.character_model->model_data_b[0x2b] != NULL
+                                              ? 0x2b
+                                              : (best->apiobj.character_model->model_data_b[5] != NULL ? 5 : 0x2b);
                 best->action_movement_state = 0;
                 if (object->apiobj.player_controlled && Cheat_IsOn(0x13)) {
                     best->action_movement_state = 4;

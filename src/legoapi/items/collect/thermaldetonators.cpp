@@ -343,6 +343,9 @@ void ThermalDetonator_ThrowMom(GameObject_s *object, nuvec_s *velocity) {
 }
 
 void PartImpact_ThermalDetonator(PART_s *part) {
+    if (part == NULL) {
+        return;
+    }
     if ((part->render_flags & 0x80) != 0 || part->field_209 == 0x1c) {
         KillPart(part, 0);
         return;
@@ -397,6 +400,9 @@ void PartImpact_ThermalDetonator(PART_s *part) {
 }
 
 void PartUpdate_ThermalDetonator(PART_s *part) {
+    if (part == NULL) {
+        return;
+    }
     if ((part->active & 2) != 0 && (part->render_flags & 0x40) == 0) {
         if (part->field_100 > 0.0f && part->field_100 < 1.0f) {
             PlaySfx(const_cast<char *>("ThermalDet_Beep"), &part->position);
@@ -416,7 +422,7 @@ void PartUpdate_ThermalDetonator(PART_s *part) {
     }
     if (part->position.y > height) {
         i32 surface = ShadowInfo();
-        if (surface >= -1 && surface <= 16 && (TerSurface[surface].flags & 2) != 0) {
+        if (static_cast<u32>(surface) <= 16 && (TerSurface[surface].flags & 2) != 0) {
             part->reflection_height = height;
             part->reflection_flags |= 2;
         }
@@ -433,7 +439,8 @@ void PartUpdate_ThermalDetonator(PART_s *part) {
         ((TerLayer[layer].flags & 1) != 0 || (layer & ~8) == 1)) {
         part->render_flags |= 0x80;
     }
-    if (WORLD->current_level == DEATHSTARRESCUEA_LDATA && GameCam->sock_position.location.sock == 2) {
+    if (WORLD != NULL && GameCam != NULL && WORLD->current_level == DEATHSTARRESCUEA_LDATA &&
+        GameCam->sock_position.location.sock == 2) {
         part->velocity.x = SeekValF(part->velocity.x, 0.0f, 3.0f);
         part->velocity.z = SeekValF(part->velocity.z, 0.0f, 3.0f);
     }

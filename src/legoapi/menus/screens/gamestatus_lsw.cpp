@@ -1416,7 +1416,7 @@ void Status_DrawPromptMenu(STATUSPACKET_s *packet, i32 selected, float alpha) {
         y += 0.075f;
     }
     for (i32 i = 0; i < count; ++i) {
-        u32 red, green, blue;
+        i32 red, green, blue;
         if (selected != 0 && status_prompt == i && TestForController()) {
             if (menu_pulsate > 0.0f) {
                 const f32 inverse = 1.0f - menu_pulsate;

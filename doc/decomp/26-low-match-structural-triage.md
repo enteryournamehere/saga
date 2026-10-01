@@ -7852,3 +7852,253 @@ fixtures; no production Player mutation is invented. `DeactivatedCode`'s
 proposed unordered predicate change was withdrawn before editing or compilation:
 the complete raw branch truth table confirms the existing predicate already
 has the relevant behavior. This is an audit retraction, not a compiled gate.
+
+## Batch 254: torpedo bonus and machine target branch closure
+
+`TorpedoCode` restores the bonus target fallback, cheat/count branch ownership,
+live bonus-mode bolt selection and null-result timer decay. Existing count,
+world, area and target guards remain; preceding torpedo fixes are preserved.
+Linked matching improves **37.076088% to 39.493477%**; the isolated full-owner
+gate improves **36.750000% to 39.145653%**, gaining **49.543704 weighted bytes**
+without changing neighboring scored bodies. Actual-body host sanitizer and
+production-NDK i386 fixtures each pass **31,110 cases**, with real target/vector/
+angle helpers and recorded machine/audio/HUD services. Three independent
+baseline bonus/timer/machine assertions fail. Valid bounded counts, finite
+geometry and allocated service state remain prerequisites. Count trimming is
+not exercised: retail's adjacent-array access is not reproduced or reinterpreted
+as permission for out-of-bounds indexing. Target/native builds and all five
+checks pass. Global matching reaches **67.503040%**, **+0.374965 points**.
+
+## Batch 255: colour picker marker coordinates and ordering
+
+`eduicbRenderColourPick` restores truncation-toward-zero width division and the
+ordinary descending white-then-black marker loops, applying offsets before
+coordinate truncation. Existing hue/value helper ABI, guards, HSV conversion
+and out-of-range handling remain unchanged. Linked matching improves
+**35.849270% to 36.794167%**; the isolated gate improves **35.774715% to
+36.717990%**, gaining **25.855168 weighted bytes**. Every other original-backed
+owner score and all 31 exact functions are retained.
+
+Actual-body host sanitizer and host i386 SSE fixtures each pass **231 cases**:
+224 width/saturation/hue combinations, a no-draw case and six independently
+suppressed marker diagnostics. Gradient/swatch/marker geometry and draw order
+are recorded; renderer services are not GPU validation. Selected finite
+coordinates keep the existing colour shifts defined. The baseline fails the
+independent coordinate/order assertion. Target/native builds and all five
+checks pass. Global matching reaches **67.503590%**, **+0.375515 points**.
+
+## Batch 256: attack opponent effects, parsing and live geometry
+
+`Action_AttackOpponent` restores the captured owner game-object source, local
+substring offsets, opponent AI admission, owner effect ordering, 1.5 protection
+threshold and one-at-once opponent source. It retains existing entry/pad guards
+and adds safe nested object guards. Ordered/unordered hold and attack branches
+follow verified raw operand order and destinations. Nonpositive or unordered
+attack range sets movement suppression before ACTION; positive range rejects
+context 0x5a and recomputes live packet-owner distance after movement services.
+Shared parser/opponent helpers and ABI/options remain unchanged.
+
+Linked matching improves **33.168640% to 63.325443%**. The unchanged-action
+isolated gate improves **32.902367% to 63.000000%**; only this function changes
+among 415 normalized owner units. Actual-body host sanitizer and host i386 SSE
+fixtures each pass **481 cases**, plus a separate diagnostic capture/reload
+probe on both. Real string/math/one-at-once/group-null movement bodies are
+included. The float-parameter leaf records selected strings and uses strtof;
+formation services are outside the tested domain. The mutation wrapper exists
+only in the separate diagnostic and does not claim production movement mutates
+positions. Baseline suppression and independent live-distance assertions fail.
+Target/native builds and all five checks pass. Global matching reaches
+**67.513040%**, **+0.384965 points**, with **6,278** exact functions.
+
+## Batch 257: wall collision local hit accumulator type
+
+`HitWallSpline` restores a local float zero/one accumulator, matching retail's
+MOVSS success stores and CVTTSS2SI return. The public i32 signature, geometry,
+query publication, guards and compile action are unchanged. Both possible
+values convert exactly. Linked matching reaches **31.915709%**; the isolated
+full-owner gate improves **31.070880% to 31.829502%**, gaining **19.731758
+weighted bytes**. All other original-backed owner scores and four exact
+functions remain unchanged.
+
+Actual-body host O2 sanitizer and production-action NDK i386 fixtures each
+pass **12,446 cases**, with 670 hits, 11,776 misses and 318 penetrating hits.
+Every query byte, material and global hit output matches the untouched baseline;
+independent segment, penetration/time-clamp and coarse-miss expectations pass.
+Real vector normalization/magnitude/square-root bodies use system libm.
+Finite bounded multi-segment geometry is diagnostic coverage, not terrain-engine
+integration. Target/native builds and all five checks pass. Global matching
+reaches **67.513460%**, **+0.385385 points**, retaining **6,278** exact functions.
+
+## Further reserved gates after batch 253
+
+`NuDisplayListSwapBuffersEndFrame`'s defined visibility-bit clear repairs a
+valid bit-zero shift-by-32 expression but loses **281.662433 weighted bytes**:
+isolated **26.707693% to 10.575824%**. All 22 neighboring scores and text-symbol
+surface remain unchanged. `edgraCalculatePage`'s two verified distribution
+constants are neutral at **36.174114%**: 27 literal-reference bodies change,
+but every original-backed score and exact count is retained. Neither receives
+fixtures, integration or further shape variants.
+
+`edgraLoadPage`'s rejected-record slot reuse correction loses **19.227744
+weighted bytes**, **48.506447% to 47.637200%**, with neighboring scores/exacts
+preserved. It affects placement and last-clump tracking, not demonstrated
+premature capacity exhaustion: file count is capped to initial free slots.
+`Pulses_Configure`'s joint line/token outer condition loses **765.308599 weighted
+bytes**, **48.254010% to 0%**, with all six neighboring bodies unchanged.
+Tokenless comma-only or empty-quoted input is the verified parser distinction;
+ordinary blank/comment lines are skipped by the real parser. Both trials stop
+without fixtures, variants or integration.
+
+`LedgeTerrain_MoveCode`'s proposed unordered timeout correction was retracted
+before any source edit or compile trial: verified UCOMISS operand order and
+the JB continuation already match the current predicate. This is an audit
+closure, not a losing compiled gate.
+
+## Batch 258: turret cooldown local branch/store reconstruction
+
+`GizTurrets_Update` mirrors retail's local subtraction, ordered-negative
+branch and mutually exclusive field stores. Downstream field reloads remain;
+no gameplay change or missing-service closure is claimed. Linked matching
+improves **4.347758% to 5.375295%**; the unchanged-action full-owner gate
+improves **4.162864% to 5.190401%**, gaining **57.316031 weighted bytes**.
+All other function bodies, exacts and public symbol/type surface are unchanged.
+Host sanitizer, host i386 SSE and production-action NDK i386 diagnostics each
+pass **100,000 full-body cases**, including 12,500 independent raw-clamp cases
+(2,084 quiet NaNs) and 450 firing scenarios. The parent independently reruns
+host sanitizer and NDK i386. All 24 modeled boundary services are exercised.
+Matrix/seek/intercept/audio/bolt/special services are deterministic stubs, not
+real engine validation; only cooldown predicates receive exceptional floats.
+Opaque target-kind-1 layout is unchanged and untested. Target/native builds
+and all five checks pass. Global matching reaches **67.514660%**,
+**+0.386585 points**, retaining **6,278** exact functions.
+
+## Batch 259: pickup challenge/mission value-selection source form
+
+`AddPickups` uses one ordinary equivalent ternary for the existing challenge/
+mission coin gate. Short-circuit mission invocation, guards, helpers, types,
+ownership and options remain unchanged. This is not a gameplay repair.
+Linked matching improves **38.539032% to 39.005577%**; the isolated full-owner
+gate improves **38.241634% to 38.708180%**, gaining **10.651245 weighted bytes**.
+The other nine text symbols retain identical bodies. The compiler still emits
+a branch in the mission block: the measured gain is downstream register/
+scheduling codegen, not a claimed restored CMOVE instruction.
+
+Actual-body host address/undefined/float-cast sanitizers and NDK i386 each pass
+**401,501 checks** covering challenge/mission short-circuit, arcade/network,
+panel/parts/consolidation, finite touch geometry, heart recipients, vehicle,
+torpedo and powerup routes. An independent scalar coin decomposition oracle
+uses division rather than the greedy loop. Math vector bodies are real;
+mission/render/audio/parts and MakePartVector are explicit diagnostic boundaries
+without invented world/player publication. Valid allocated level/world state,
+bounded counts and finite conversions remain prerequisites. Target/native
+builds and all five checks pass. Global matching reaches **67.514900%**,
+**+0.386825 points**, retaining **6,278** exact functions.
+
+## Further reserved gates after batch 257
+
+`NuGCutRigidCalcMtx`'s three float rotation temporaries postpone conversion
+until all curve evaluations finish, as verified in raw. Its one gate loses
+**15.592617 weighted bytes**, **34.199314% to 32.776630%**, preserving all 47
+neighboring scores and 19 exact functions. `ANI_Ani3ExtractAllNodeCurves`'s
+signed mask-byte comparison against the full curve index loses **38.195086
+weighted bytes**, **31.381704% to 28.340694%**, with all ten neighboring scores
+and text surface unchanged. The packed-bit type-10 memcpy is already correct;
+no misleading numeric conversion is attempted. Neither trial gets fixtures,
+integration or further source variants.
+
+`pathEditorCreateData`'s canonical-width field counters and retail nonempty-
+path special-route helper guard lose **235.460688 weighted bytes**,
+**23.950617% to 18.265907%**, with all neighboring scores unchanged and no exact
+loss. The participants-times-sizeof-path allocation is confirmed in retail
+and deliberately retained. The combined negative proposal remains frozen;
+no split follow-up gate, fixture or integration is performed.
+
+## Batch 260: prompt-menu signed colour conversion
+
+`Status_DrawPromptMenu` restores the retail signed RGB conversion without
+changing its canonical byte-valued text arguments. This is a source-type
+reconstruction, not a new mask or gameplay repair. Linked matching improves
+**33.905940% to 44.371290%**; the unchanged-action whole-owner gate gains
+**197.755108 weighted bytes**, including its small nonexact helper change.
+No exact function is lost. Frozen actual-body host sanitizer and host i386 SSE
+diagnostics each pass **20,000 cases**, comparing events, menu/packet/state and
+palette bytes against the prior body and an independent oracle. Finite phase
+and conversion bounds are enforced; injected menu/controller/palette changes
+are diagnostic seams, not claims about production mutations. Target/native
+builds and all five checks pass. Global matching reaches **67.519080%**.
+
+## Batch 261: cylinder intersection arithmetic association
+
+`CheckCylinder` restores the two raw-backed floating-point associations for
+forward edge parameter and normal Z, preserving all types, guards and helpers.
+Linked matching improves **21.537415% to 24.899660%**; the unchanged-action
+whole-owner gate gains **91.822938 weighted bytes**, with all other scores and
+four exact functions retained. Actual-body host sanitizer and production-NDK
+i386 diagnostics each pass **30,003 cases**: 1,957 forward hits, 2,040 overlaps,
+26,006 misses and 1,134 corrected finite normals. Real vector/trigonometric
+bodies run; an independent forward oracle and bytewise query comparison cover
+unchanged fields. The prior body fails a finite normal-bit witness on both
+ABIs. Rare changed-admission ties and full gameplay are not claimed covered.
+Target/native builds and all five checks pass; global matching **67.521020%**.
+
+## Batch 262: full-width area resets
+
+`NewArea` resets both canonical full-width saved-minikit counters and all four
+arcade player/AI kill counters rather than only their low bytes or first field.
+Only six assignments change; no layout, helper or ABI changes. Linked matching
+reaches **51.088080%**; isolated matching improves **46.466320% to 50.414510%**,
+gaining **33.243760 weighted bytes**, with all 22 other owner bodies unchanged.
+Canonical full-body host i386 SSE and a host64 sanitizer six-store block
+diagnostic each pass **4,352 cases**, including all byte counts and area IDs
+-1, 0, 1 and 71. The unchanged full body is not host64-safe due to preexisting
+fixed-width pointer assumptions. Both old-body controls fail reset comparison.
+The fixture's initial unsigned-health oracle was corrected to the canonical
+signed health field before the final passing run; production code was not
+changed for that fixture error. Target/native builds and all five checks pass;
+global matching **67.521730%**, retaining **6,278** exact functions.
+
+## Batch 263: live stun animation and facing arithmetic
+
+`StunGameObject` reloads the model/table and selected animation after context
+services, returns from the live animation, and restores the retail final facing
+expression `-(object - attacker)`, including signed-zero argument bits.
+Linked matching improves **26.314960% to 33.641730%**; the unchanged-action
+whole-owner gain is **80.615253 weighted bytes**, including three small nonexact
+neighbor changes. No exact function is lost. Root independently reruns host
+address/undefined sanitizers and host i386 SSE: **40,344 cases** each, plus
+separate diagnostic callback/model/live-return probes. Actual ClearContext,
+AnimSpeed and trigonometric bodies run. ResetContexts uses an explicit pointer/
+order boundary probe instead of unsafe fabricated host-overlay writes.
+Injected model and duration mutations are diagnostics, not asserted production
+behavior. Finite angle lookup bounds remain enforced. Target/native builds and
+all five checks pass. Global matching reaches **67.523445%**, **+0.395370 points**
+from cycle main, retaining **6,278** exact functions.
+
+## Additional closed reserves after batch 263
+
+`oneAtOnce_MaintainArray`'s retail per-slot hysteresis and repeated shortened
+prefix sorting loses **40.145957 weighted bytes**, **39.349650% to 36.045456%**.
+The first pass includes the null sentinel; an incumbent shifted right may get
+the 0.75 bias again. Counted/initialized prior storage guards remain. All other
+13 owner bodies are unchanged. `NuTexAnimEnvProc`'s two-callsite unsigned-word
+condition helper trial is byte-identical across the complete objects and
+neutral at **45.732178%**. Negative caller conditions still select default;
+there is no public ABI change or missing interpreter behavior claim.
+
+`SpecialMiniKits_Draw`'s stable item cursor and live world count with a null
+guard loses **36.548784 weighted bytes**, **11.284553% to 7.524390%**; all other
+owner bodies remain unchanged. `NuLgtArcLaserDraw`'s raw-backed 16-bit exponent
+field form loses **172.749626 weighted bytes**, **39.847070% to 36.195630%**,
+preserving 47 neighboring scores and 19 exacts. Its unusual prior-vertex +50
+left-bound comparison is verified retail behavior and retained.
+`GizForces_Reset`'s missing-previous/animation-set zero-height fallback loses
+**42.088763 weighted bytes**, **33.002754% to 30.110193%**, with all other 50
+text bodies unchanged. Valid-but-empty animation lists retain -2e9. None of
+these nonpositive gates receives fixtures, integration or further variants.
+
+`edanimDoInput`'s initially positive partial is **withdrawn**, not integrated:
+actual-body fixtures expose an additional fresh-selection cycling omission.
+The complete retail mode-transition, live-pad and fresh-selection guard unit
+loses **74.087909 weighted bytes**, **28.468966% to 25.141378%**, preserving
+all 74 exacts. No passing-fixture claim is made for either version; no further
+shape trial is run after the complete correction's negative gate.

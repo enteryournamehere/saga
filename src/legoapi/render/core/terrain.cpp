@@ -1337,9 +1337,9 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
         hit_distance = height_offset - negative_closest_height;
     }
     if (hit_distance >= 0.0f && hit_distance <= query->movement_length) {
-        const f32 edge_parameter = (hit_distance - query->transformed_vertices[first_vertex].z) * edge_direction.z -
-                                   query->transformed_vertices[first_vertex].x * edge_direction.x -
-                                   query->transformed_vertices[first_vertex].y * edge_direction.y;
+        const f32 edge_parameter = (-query->transformed_vertices[first_vertex].y * edge_direction.y -
+                                    query->transformed_vertices[first_vertex].x * edge_direction.x) +
+                                   (hit_distance - query->transformed_vertices[first_vertex].z) * edge_direction.z;
         if (edge_parameter > 0.0f && edge_parameter <= edge_length) {
             f32 hit_time = 0.0f;
             if (hit_distance != 0.0f && query->movement_length != 0.0f) {
@@ -1357,7 +1357,7 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
             query->movement_normal.y =
                 -(query->transformed_vertices[first_vertex].y + edge_direction.y * edge_parameter);
             query->movement_normal.z =
-                hit_distance - query->transformed_vertices[first_vertex].z - edge_direction.z * edge_parameter;
+                hit_distance - (edge_parameter * edge_direction.z + query->transformed_vertices[first_vertex].z);
             *vertex_mask &= remaining_vertex_mask;
             return 1;
         }
@@ -3707,7 +3707,7 @@ void ScanTerrIDRemovePlat(i32 platform_index) {
     } while (remaining != 0);
 }
 i32 HitWallSpline() {
-    i32 hit = 0;
+    f32 hit = 0.0f;
     if (WallSplCount == 0)
         return hit;
     for (i32 i = 0; i < WallSplCount; i += 2) {
@@ -3749,7 +3749,7 @@ i32 HitWallSpline() {
                 TerrWallInfo = 1;
                 TerrWallTab[0] = WallSplList[i].material[0];
                 TerrWallTab[1] = WallSplList[i].material[1];
-                hit = 1;
+                hit = 1.0f;
             }
         }
         const f32 dx = a.x - px;
@@ -3811,7 +3811,7 @@ i32 HitWallSpline() {
         TerrWallInfo = 1;
         TerrWallTab[0] = WallSplList[i].material[0];
         TerrWallTab[1] = WallSplList[i].material[1];
-        hit = 1;
+        hit = 1.0f;
     }
     TerI->unclamped_hit_time = TerI->hit_time;
     if (TerI->hit_time < 0.0f)

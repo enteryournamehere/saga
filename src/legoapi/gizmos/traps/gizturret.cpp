@@ -139,9 +139,13 @@ static void GizTurrets_Update(void *context, void *system_ptr, float frame_time)
             } else
                 reference = primary_base;
         }
-        turret->fire_cooldown -= frame_time;
-        if (turret->fire_cooldown < 0.0f)
+        f32 fire_cooldown = turret->fire_cooldown - frame_time;
+        if (fire_cooldown < 0.0f) {
             turret->fire_cooldown = 0.0f;
+            fire_cooldown = 0.0f;
+        } else {
+            turret->fire_cooldown = fire_cooldown;
+        }
         i32 desired_pitch = 0, desired_yaw = base_yaw;
         i32 should_fire = 0;
         GameObject_s *autoaim_target = NULL;

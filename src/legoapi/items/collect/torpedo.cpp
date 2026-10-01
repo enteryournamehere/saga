@@ -260,9 +260,9 @@ void TorpedoCode(GameObject_s *object, i32 fire, f32 fire_cooldown) {
     if (object->torpedo_fire_cooldown > 0.0f)
         object->torpedo_fire_cooldown -= FRAMETIME;
 
-    const i32 bolt_type =
-        WORLD != NULL && WORLD->area != NULL && (WORLD->area->flags & AREAFLAG_BONUS_AREA) != 0 ? 16 : 15;
-    if (Bolt_Find(bolt_type, NULL, object) != NULL)
+    if ((WORLD != NULL && WORLD->area != NULL && (WORLD->area->flags & AREAFLAG_BONUS_AREA) != 0 &&
+         Bolt_Find(16, NULL, object) != NULL) ||
+        Bolt_Find(15, NULL, object) != NULL)
         packet->field_0x1 |= 2;
     else
         packet->field_0x1 &= ~2U;
@@ -296,15 +296,14 @@ void TorpedoCode(GameObject_s *object, i32 fire, f32 fire_cooldown) {
             packet->field_03 = 0;
     } else {
         if (Cheat_IsOn(42) != 0 && static_cast<i8>(object->apiobj.flags_low) < 0 &&
-            object->torpedo_fire_cooldown <= 0.0f && object->apiobj.field_0x287 == 0 && (packet->field_0x1 & 2) == 0 &&
-            packet->count < maximum) {
-            packet->pickup_positions[packet->count] = object->apiobj.position;
-            ++packet->count;
-            packet->field_08 = 0.0f;
-            packet->field_03 = 0;
-        }
-
-        if (packet->count < maximum) {
+            object->torpedo_fire_cooldown <= 0.0f && object->apiobj.field_0x287 == 0 && (packet->field_0x1 & 2) == 0) {
+            if (packet->count < maximum) {
+                packet->pickup_positions[packet->count] = object->apiobj.position;
+                ++packet->count;
+                packet->field_08 = 0.0f;
+                packet->field_03 = 0;
+            }
+        } else if (packet->count < maximum) {
             f32 distance;
             GIZTORPMACHINE *machine = GizTorpMachine_FindNearest(WORLD, &object->apiobj.collision_position, &distance);
             if (machine != NULL && (machine->flags & GIZTORPMACHINE_FLAG_ACTIVE) != 0 && distance < TORPEDOGRABRANGE2) {
@@ -325,17 +324,18 @@ void TorpedoCode(GameObject_s *object, i32 fire, f32 fire_cooldown) {
     if (packet->count == 0)
         return;
 
-    BOLTTYPE_s *type = BoltType_FindByID(bolt_type, WORLD);
+    BOLTTYPE_s *type = BoltType_FindByID(
+        WORLD != NULL && WORLD->area != NULL && (WORLD->area->flags & AREAFLAG_BONUS_AREA) != 0 ? 16 : 15, WORLD);
     u8 target_type = packet->target_type;
     if ((packet->field_0x1 & 2) == 0 || packet->target == NULL) {
         const f32 range = type->field_14 * type->field_10;
         void *target = FindNearestTorpTarget(WORLD, &object->apiobj.position, range * range, &target_type);
-        if (target == packet->target) {
-            object->torpedo_target_timer += FRAMETIME;
-            if (object->torpedo_target_timer > 0.25f)
-                object->torpedo_target_timer = 0.25f;
-        } else if (target != NULL) {
-            if (object->torpedo_target_timer <= 0.0f || packet->target == NULL) {
+        if (target != NULL) {
+            if (target == packet->target) {
+                object->torpedo_target_timer += FRAMETIME;
+                if (object->torpedo_target_timer > 0.25f)
+                    object->torpedo_target_timer = 0.25f;
+            } else if (object->torpedo_target_timer <= 0.0f || packet->target == NULL) {
                 packet->target = target;
                 packet->target_type = target_type;
                 object->torpedo_target_timer = 0.0f;
@@ -344,7 +344,7 @@ void TorpedoCode(GameObject_s *object, i32 fire, f32 fire_cooldown) {
                 object->torpedo_target_timer = timer < 0.0f ? 0.0f : timer;
             }
         } else if ((packet->field_0x1 & 6) == 0) {
-            if (object->torpedo_target_timer > 0.0f && packet->target != NULL) {
+            if (object->torpedo_target_timer > 0.0f) {
                 const f32 timer = object->torpedo_target_timer - 2.0f * FRAMETIME;
                 object->torpedo_target_timer = timer < 0.0f ? 0.0f : timer;
             } else {

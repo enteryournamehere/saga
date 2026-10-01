@@ -6004,7 +6004,7 @@ extern "C" {
             NuRndrLine2di(x << 4, value_y, (x + width - 1) << 4, value_y, 0x80ffffff, uimtls[0]);
             NuRndrLine2di(hue_x, y << 3, hue_x, ((y + main_height) << 3) - 8, 0x80ffffff, uimtls[0]);
         }
-        i32 bar_height = (width + 7) >> 3;
+        i32 bar_height = width / 8;
         f32 full_red, full_green, full_blue;
         eduiHSVToRGB(picker->hue, 1.0f, picker->value, full_red, full_green, full_blue);
         i32 grey_byte = static_cast<i32>(picker->value * 255.0f);
@@ -6016,14 +6016,16 @@ extern "C" {
         if (!edui_donotdraw)
             NuRndrGradRect2di(x << 4, saturation_y << 3, width << 4, bar_height << 3, saturation_colours,
                               uimtls[ui_bgmtl]);
-        i32 marker_x = static_cast<i32>(x + picker->saturation * (width - 2));
         if (!edui_donotdraw) {
             i32 marker_mid = saturation_y + (bar_height >> 1);
-            for (i32 offset = -1; offset <= 1; ++offset) {
-                NuRndrLine2di((marker_x + offset) << 4, saturation_y << 3, (marker_x + offset) << 4,
-                              (marker_mid << 3) - 8, 0x80ffffff, uimtls[0]);
-                NuRndrLine2di((marker_x + offset) << 4, marker_mid << 3, (marker_x + offset) << 4,
-                              ((saturation_y + bar_height) << 3) - 8, 0x80000000, uimtls[0]);
+            for (i32 offset = 1; offset >= -1 && !edui_donotdraw; --offset) {
+                i32 marker_x = static_cast<i32>(static_cast<f32>(x + offset) + picker->saturation * (width - 2)) << 4;
+                NuRndrLine2di(marker_x, saturation_y << 3, marker_x, (marker_mid << 3) - 8, 0x80ffffff, uimtls[0]);
+            }
+            for (i32 offset = 1; offset >= -1 && !edui_donotdraw; --offset) {
+                i32 marker_x = static_cast<i32>(static_cast<f32>(x + offset) + picker->saturation * (width - 2)) << 4;
+                NuRndrLine2di(marker_x, marker_mid << 3, marker_x, ((saturation_y + bar_height) << 3) - 8, 0x80000000,
+                              uimtls[0]);
             }
         }
         f32 red, green, blue;

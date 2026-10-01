@@ -38,19 +38,10 @@ i32 g_fileSize;
 extern i32 g_loadingCharacterInHub;
 extern "C" const i16 *_toupper_tab_;
 
-// Host ports can intercept compressed uploads; the Android target calls GL directly.
-#ifdef HOST_BUILD
-extern "C" __attribute__((weak)) void NuIOS_UploadCompressedTexture(GLenum target, GLint level, GLenum internal_format,
-                                                                    GLsizei width, GLsizei height, GLint border,
-                                                                    GLsizei image_size, const void *data) {
+SAGA_HOST_HOOK void NuIOS_UploadCompressedTexture(GLenum target, GLint level, GLenum internal_format, GLsizei width,
+                                                  GLsizei height, GLint border, GLsizei image_size, const void *data) {
     glCompressedTexImage2D(target, level, internal_format, width, height, border, image_size, data);
 }
-#else
-static inline void NuIOS_UploadCompressedTexture(GLenum target, GLint level, GLenum internal_format, GLsizei width,
-                                                 GLsizei height, GLint border, GLsizei image_size, const void *data) {
-    glCompressedTexImage2D(target, level, internal_format, width, height, border, image_size, data);
-}
-#endif
 
 __attribute__((weak)) bool NuIOS_TextureFormatSupported(i32 format) {
     return g_renderDevice.enabled_extensions[format];

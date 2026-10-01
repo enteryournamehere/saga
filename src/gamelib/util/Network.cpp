@@ -640,17 +640,15 @@ void NetworkObjectManager::ContinuityBreak(i32 id, float) {
         return;
     }
     object->flags |= 2;
-    if (object->owner->local == 0) {
-        return;
+    if (object->owner->local != 0) {
+        NetMessage message;
+        i16 object_id = object->id;
+        i32 class_id = theRegistry.GetClassId(object->object_class);
+        message.Write8(12);
+        message.Write16(object_id);
+        message.Write16(class_id);
+        theNetwork.ReliableBroadcast(message, 3);
     }
-
-    NetMessage message;
-    i16 object_id = object->id;
-    i32 class_id = theRegistry.GetClassId(object->object_class);
-    message.Write8(12);
-    message.Write16(object_id);
-    message.Write16(class_id);
-    theNetwork.ReliableBroadcast(message, 3);
 }
 
 NetworkObject *NetworkObjectManager::FindNetworkObject(void *object) {

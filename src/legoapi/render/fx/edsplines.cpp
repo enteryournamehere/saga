@@ -457,40 +457,40 @@ void GetNearestSplinePos(NUVEC *origin, SPLINEPOS_s *result, NUGSPLINE *spline, 
     if (result == NULL)
         return;
     memset(result, 0, sizeof(*result));
-    if (spline == NULL || origin == NULL || spline->length <= 1)
-        return;
-    result->spline = spline;
-    result->looping = (i8)looping;
-    i32 point_count = spline->length;
-    i32 logical_count = result->looping != 0 ? point_count + 1 : point_count;
-    i32 index = first_point;
-    if (index < 0)
-        index = 0;
-    else if (index >= logical_count)
-        return;
-    i32 end = point_count;
-    if (last_point >= 0 && last_point < end)
-        end = last_point;
-    NUVEC *point = (NUVEC *)((u8 *)spline->pts + index * (i16)spline->pt_size);
-    f32 nearest = 1000000000.0f;
-    NUVEC offset;
-    do {
-        f32 distance = NuVecDistSqr(origin, point, &offset);
-        if (distance < nearest) {
-            nearest = distance;
-            result->segment = index;
-        }
-        point = (NUVEC *)((u8 *)point + (i16)result->spline->pt_size);
-        index++;
-    } while (index < end);
-    spline = result->spline;
-    i32 stride = (i16)spline->pt_size;
-    NUVEC *current = (NUVEC *)((u8 *)spline->pts + result->segment * stride);
-    NUVEC *next = (NUVEC *)((u8 *)spline->pts + ((result->segment + 1) % spline->length) * stride);
-    result->segment_distance = 0.0f;
-    result->segment_length = NuVecDist(next, current, &offset);
-    result->position = *current;
-    result->along = (result->segment_distance / result->segment_length + result->segment) / (logical_count - 1);
+    if (!(spline == NULL || origin == NULL || spline->length <= 1)) {
+        result->spline = spline;
+        result->looping = (i8)looping;
+        i32 point_count = spline->length;
+        i32 logical_count = result->looping != 0 ? point_count + 1 : point_count;
+        i32 index = first_point;
+        if (index < 0)
+            index = 0;
+        else if (index >= logical_count)
+            return;
+        i32 end = point_count;
+        if (last_point >= 0 && last_point < end)
+            end = last_point;
+        NUVEC *point = (NUVEC *)((u8 *)spline->pts + index * (i16)spline->pt_size);
+        f32 nearest = 1000000000.0f;
+        NUVEC offset;
+        do {
+            f32 distance = NuVecDistSqr(origin, point, &offset);
+            if (distance < nearest) {
+                nearest = distance;
+                result->segment = index;
+            }
+            point = (NUVEC *)((u8 *)point + (i16)result->spline->pt_size);
+            index++;
+        } while (index < end);
+        spline = result->spline;
+        i32 stride = (i16)spline->pt_size;
+        NUVEC *current = (NUVEC *)((u8 *)spline->pts + result->segment * stride);
+        NUVEC *next = (NUVEC *)((u8 *)spline->pts + ((result->segment + 1) % spline->length) * stride);
+        result->segment_distance = 0.0f;
+        result->segment_length = NuVecDist(next, current, &offset);
+        result->position = *current;
+        result->along = (result->segment_distance / result->segment_length + result->segment) / (logical_count - 1);
+    }
 }
 
 void CalcSplinePointFromDist(flightspline_s *spline, _vuv_s *result, float distance) {

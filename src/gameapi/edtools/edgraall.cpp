@@ -356,24 +356,24 @@ static void edgracbClumpDistMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     edgraAttachMenu(parent, edgra_clumpdist_menu);
 }
 static void edgracbClumpFadeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
-    if (edgra_nearest == -1 || !GrassClumps[edgra_nearest].element_count)
-        return;
-    edgra_clumpfade_menu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, edgracbCancelClumpFadeMenu, "Clump Fading");
-    if (!edgra_clumpfade_menu)
-        return;
-    eduiMenuAddItem(edgra_clumpfade_menu,
-                    eduiItemSliderCreate(0, edblack, 0, edgracbSetClumpFadeIn, 0.0f, edgra_superscale * 2.0f,
-                                         GrassClumps[edgra_nearest].near_distance, "Start of Fade"));
-    fadeinitem = static_cast<edui_slider_s *>(edui_last_item);
-    eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
-    eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
-    eduiMenuAddItem(edgra_clumpfade_menu,
-                    eduiItemSliderCreate(0, edblack, 0, edgracbSetClumpFadeOut, 0.0f, edgra_superscale * 2.0f,
-                                         GrassClumps[edgra_nearest].far_distance, "End of Fade"));
-    fadeoutitem = static_cast<edui_slider_s *>(edui_last_item);
-    eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
-    eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
-    edgraAttachMenu(parent, edgra_clumpfade_menu);
+    if (!(edgra_nearest == -1 || !GrassClumps[edgra_nearest].element_count)) {
+        edgra_clumpfade_menu = eduiMenuCreate(70, 70, 180, 250, ed_fnt, edgracbCancelClumpFadeMenu, "Clump Fading");
+        if (!edgra_clumpfade_menu)
+            return;
+        eduiMenuAddItem(edgra_clumpfade_menu,
+                        eduiItemSliderCreate(0, edblack, 0, edgracbSetClumpFadeIn, 0.0f, edgra_superscale * 2.0f,
+                                             GrassClumps[edgra_nearest].near_distance, "Start of Fade"));
+        fadeinitem = static_cast<edui_slider_s *>(edui_last_item);
+        eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
+        eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
+        eduiMenuAddItem(edgra_clumpfade_menu,
+                        eduiItemSliderCreate(0, edblack, 0, edgracbSetClumpFadeOut, 0.0f, edgra_superscale * 2.0f,
+                                             GrassClumps[edgra_nearest].far_distance, "End of Fade"));
+        fadeoutitem = static_cast<edui_slider_s *>(edui_last_item);
+        eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
+        eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
+        edgraAttachMenu(parent, edgra_clumpfade_menu);
+    }
 }
 static void edgracbClumpModeMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     edgra_clumpmode_menu = eduiMenuCreate(70, 70, 200, 250, ed_fnt, edgracbCancelClumpModeMenu, "Clump Mode");

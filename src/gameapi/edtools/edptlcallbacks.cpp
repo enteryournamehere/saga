@@ -1604,39 +1604,42 @@ static void cbPtlVarEmitMenu(eduimenu_s *parent, eduiitem_s *, u32) {
     const debinftype *effect = debtab[debkeydata[edpp_ptls[edpp_nearest].instance_id].effect_index];
     const u32 colours[4] = {0x80000000, 0x80ff0000, 0x80808080, 0x80404040};
     ptlvaremitmenu = eduiMenuCreate(70, 70, 180, 300, ed_fnt, cbPtlCancelVarEmitMenu, "Emitter Variation");
-    if (ptlvaremitmenu == NULL)
-        return;
-
-    const u8 generator = effect->generator_type;
-    if ((generator & 0xf7) == 0 || generator == 9 || generator == 10) {
-        eduiMenuAddItem(ptlvaremitmenu, eduiItemSliderCreate(0, colours, 0, cbPtlChangeX, 0.0f, 5.0f * edptl_superscale,
-                                                             effect->field_04c, "Rand Emit X"));
-        eduiMenuAddItem(ptlvaremitmenu, eduiItemSliderCreate(0, colours, 0, cbPtlChangeY, 0.0f, 5.0f * edptl_superscale,
-                                                             effect->field_050, "Rand Emit Y"));
-        eduiMenuAddItem(ptlvaremitmenu, eduiItemSliderCreate(0, colours, 0, cbPtlChangeZ, 0.0f, 5.0f * edptl_superscale,
-                                                             effect->field_054, "Rand Emit Z"));
-    } else if (generator == 6 || generator == 7 || generator == 11 || generator == 12) {
-        char *magnitude_label = generator == 7 ? const_cast<char *>("Rand Mag") : const_cast<char *>("Rand Mag X");
-        eduiMenuAddItem(ptlvaremitmenu, eduiItemSliderCreate(0, colours, 0, cbPtlChangeX, 0.0f, 5.0f * edptl_superscale,
-                                                             effect->field_04c, magnitude_label));
-        eduiMenuAddItem(
-            ptlvaremitmenu,
-            eduiItemSliderCreate(0, colours, 0, cbPtlChangeY, generator == 7 ? -90.0f : 0.0f, 180.0f,
-                                 effect->field_050 * (360.0f / 65536.0f),
-                                 generator == 7 ? const_cast<char *>("Step Rot Y") : const_cast<char *>("Rand Rot Y")));
-        eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
-        eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
-        eduiMenuAddItem(
-            ptlvaremitmenu,
-            eduiItemSliderCreate(0, colours, 0, cbPtlChangeZ, generator == 7 ? -90.0f : 0.0f,
-                                 generator == 11 ? 90.0f : 180.0f, effect->field_054 * (360.0f / 65536.0f),
-                                 generator == 7 ? const_cast<char *>("Step Rot Z") : const_cast<char *>("Rand Rot Z")));
-        eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
-        eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
+    if (ptlvaremitmenu != NULL) {
+        const u8 generator = effect->generator_type;
+        if ((generator & 0xf7) == 0 || generator == 9 || generator == 10) {
+            eduiMenuAddItem(ptlvaremitmenu,
+                            eduiItemSliderCreate(0, colours, 0, cbPtlChangeX, 0.0f, 5.0f * edptl_superscale,
+                                                 effect->field_04c, "Rand Emit X"));
+            eduiMenuAddItem(ptlvaremitmenu,
+                            eduiItemSliderCreate(0, colours, 0, cbPtlChangeY, 0.0f, 5.0f * edptl_superscale,
+                                                 effect->field_050, "Rand Emit Y"));
+            eduiMenuAddItem(ptlvaremitmenu,
+                            eduiItemSliderCreate(0, colours, 0, cbPtlChangeZ, 0.0f, 5.0f * edptl_superscale,
+                                                 effect->field_054, "Rand Emit Z"));
+        } else if (generator == 6 || generator == 7 || generator == 11 || generator == 12) {
+            char *magnitude_label = generator == 7 ? const_cast<char *>("Rand Mag") : const_cast<char *>("Rand Mag X");
+            eduiMenuAddItem(ptlvaremitmenu,
+                            eduiItemSliderCreate(0, colours, 0, cbPtlChangeX, 0.0f, 5.0f * edptl_superscale,
+                                                 effect->field_04c, magnitude_label));
+            eduiMenuAddItem(ptlvaremitmenu,
+                            eduiItemSliderCreate(0, colours, 0, cbPtlChangeY, generator == 7 ? -90.0f : 0.0f, 180.0f,
+                                                 effect->field_050 * (360.0f / 65536.0f),
+                                                 generator == 7 ? const_cast<char *>("Step Rot Y")
+                                                                : const_cast<char *>("Rand Rot Y")));
+            eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
+            eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
+            eduiMenuAddItem(ptlvaremitmenu,
+                            eduiItemSliderCreate(
+                                0, colours, 0, cbPtlChangeZ, generator == 7 ? -90.0f : 0.0f,
+                                generator == 11 ? 90.0f : 180.0f, effect->field_054 * (360.0f / 65536.0f),
+                                generator == 7 ? const_cast<char *>("Step Rot Z") : const_cast<char *>("Rand Rot Z")));
+            eduiItemSliderSetFmt(static_cast<edui_slider_s *>(edui_last_item), "(%1.01f)");
+            eduiItemSliderSetGranularity(static_cast<edui_slider_s *>(edui_last_item), 0.1f);
+        }
+        eduiMenuAttach(parent, ptlvaremitmenu);
+        ptlvaremitmenu->x = parent->x + 10;
+        ptlvaremitmenu->y = parent->y + 40;
     }
-    eduiMenuAttach(parent, ptlvaremitmenu);
-    ptlvaremitmenu->x = parent->x + 10;
-    ptlvaremitmenu->y = parent->y + 40;
 }
 
 static void cbChangeETimeMenu(eduimenu_s *parent, eduiitem_s *, u32) {

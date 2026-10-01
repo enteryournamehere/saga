@@ -7096,3 +7096,137 @@ The final combined checkpoint, including ScriptState's safety guard, reaches
 **67.402695%**, **+0.274620 percentage points** from main, with **6,278** exact
 functions. Target/native builds and all five repository checks pass. The cycle
 continues below **69.128075%**; a green checkpoint does not authorize early merge.
+
+## Batch 227: particle-editor callback boundaries
+
+`edppDrawCursor` restores first-marker endpoint capture before second-endpoint
+rotations, live nearest-particle selection across coordinate/font and sphere
+services, warning-count reload after color selection, and independent copy-mode
+checks between type, clipboard and highlight drawing. Its existing lambdas,
+effect-owner snapshot and guards remain; no fixed geometry fanout is expanded.
+The linked function improves **23.548721% to 34.694542%**. In the isolated
+whole-owner gate it gains approximately **834** original-weighted matching bytes,
+with no neighboring score changes or loss of the 74 exact owner functions.
+Canonical actual-body host sanitizer/i386 SSE fixtures pass 104 scenarios,
+including six independent prior-body failures, stable readout/mode combinations
+and signed particle-count rounding. Math/font/render/helper services are mocked
+with identity rotations: these tests prove sequencing, not that production math
+services mutate editor globals or that interactive editor visuals are validated.
+Valid service-selected particle indices and existing buffer contracts remain.
+
+Linked matching reaches **67.420290%**, **+0.292215 percentage points** from main,
+with **6,278** exact functions. The target build passes; final native/check and
+GitHub validation belong to the next combined checkpoint.
+
+### Closed bounded audits: avoid repeating source-shape trials
+
+- `ANI_SimpleAni3PlayerV4Joint_Quat3` and `Quat3W`: complete supported-format,
+  cursor, quaternion-W/sign and scale/min decoding already present. Raw quarter-3
+  instructions scale the tangent before multiplying the delta, exactly as the
+  current helpers do. A decompiler-derived reassociation suspicion was rejected
+  before trial. NaN-to-cursor and negative joint ranges are outside valid input;
+  do not introduce unrolling, forced inlining or alignment tricks to chase the
+  remaining register/stack differences.
+- `ZipUp_MoveCode`: full state/service closure already present. Its one raw-backed
+  threshold distinction (`0.01f` versus `0.1f * 0.1f`) is matching-neutral in
+  the bounded gate, **19.677511%** before/after, with all 27 neighbors unchanged;
+  it is reserved without runtime fixtures. Retail's inline inverse-trig
+  polynomial is not a missing service or permission to expand helper ownership.
+- `SuperCarry_MoveCode`: complete states zero through seven and all 36 services
+  reviewed; apparent jump-setup fallthrough and retained blowup owner are retail
+  behavior. No substantive missing closure or source trial found.
+- `NuMemoryPool::ReleaseUnreferencedPages_OLD`: the earlier rejection/self-link
+  safety finding still applies. The 508-byte retail versus nine-byte stub gap
+  does not justify repeating that already-deferred unsafe restoration.
+- `CutScene_DrawCharacter`: the earlier complete callback/slot/shadow/locator
+  closure trial remains **0%** (6,340 to 6,489 current bytes versus 6,588 retail),
+  despite its recorded 20,000-case host/i386 behavior probes. The exact local
+  entry is **0x498db0**. That unresolved private-ABI/codegen boundary is reserved;
+  neither a fresh export nor another callback-only trial is justified without
+  new evidence. The source patch remains unintegrated, not claimed complete.
+
+## Batch 228: minikit-detector projection and flags
+
+`GameMsg_Draw_MiniKitDetector` restores signed screen-edge snapping after
+behind-camera negation, green/blue only for zero behind-camera state, and
+model-opacity flag **0x10000** instead of bit one. The existing symbol declaration,
+visibility and source owner are unchanged. Its linked match improves
+**13.968085% to 32.393616%**; neighboring original scores remain unchanged in
+the isolated owner gate. Exact production-body host sanitizer/i386 SSE fixtures
+pass 20,000 independent projection/message/trace cases, including 14,069
+prior-body differences, finite clipping ties, unsigned camera-range thresholds,
+all relevant flag/behind states, model/character/text branches and callback
+reloads. Services are mocked; canonical real helper implementations were
+inspected but no full rendering test is claimed. Valid signed-nonnegative model
+indices, pointers, positive camera range and bounded arrow text are required.
+
+Linked matching reaches **67.425590%**, **+0.297515 percentage points** from main,
+still **6,278** exact functions. Pushed checkpoint `4800416c` has all eleven
+GitHub checks successful on that exact head; the newer local unit continues
+below the required **69.128075%** merge threshold.
+
+## Batch 229: streaming-audio error and context publication
+
+`NuSoundStreamingSample::Open` closes an empty first stream before its single
+buffer-context publication and routes empty-data loader result four through the
+same original error translation as ordinary open failures. Sample error is two,
+not four. Its linked match improves **9.898255% to 15.947675%**; neighboring
+`ReCue` improves slightly (**61.496773% to 61.851612%**), while all other owner
+bodies remain unchanged in the isolated gate. Canonical headers, 64-bit size
+tests, buffer/descriptor ownership, allocation cleanup and existing context
+initialization are unchanged; GCC naturally adds its switch-value table.
+Exact production-body host sanitizer and unchanged NDK i386 fixtures pass all
+first-buffer flag bytes, high/low u64 sizes, mapped errors, preloaded data,
+second-fill count changes, close-time buffer replacement, allocation failures,
+null headers and early exits. The original `CloseStream` wrapper dispatches
+virtual `Close`; the diagnostic loader observes the previously published context.
+The old body fails that observation. Services are mocked and allocation success
+means valid storage; no device playback, real files or concurrent streamer
+validation is claimed.
+
+Linked matching reaches **67.427530%**, **+0.299455 percentage points** from main,
+still **6,278** exact functions. The integrated target/native builds and all
+five repository checks pass.
+
+`MechHintUIButton::Process` is also closed after full reference/raw review: its
+hint transition, captured pulse state, slide interpolation, visibility and
+two separate menu queries are already present. Its fresh unchanged owner
+baseline is **4.391167%**; no source-shape trial or runtime fixture is justified
+by that low score alone.
+
+## Batch 230: deferred music restoration
+
+`SoundUpdate` permits deferred restoration when its updated active-state counter
+reaches 25–64, while retaining preseek admission only above 64 and the live
+counter check after preseek. Its linked match improves **4.042553% to
+7.868085%**; all other 87 owner units remain unchanged in the isolated gate.
+This is observable with the production `RestoreGameMusic` helper, which requests
+deferred resume below 25, and `MusicPreSeek`, which resets the frame counter.
+Frozen actual SoundUpdate and both actual helper bodies pass 5,115 cases on
+host sanitizers and i386 SSE. Audio services record calls without mutating Music;
+the old body fails the independent real-helper frame-24-to-25 resume assertion.
+Active, waiting, transition and linked states, disabled audio, boundaries and
+safe nonfinite comparisons are covered. Valid track indices/pointers and
+representable volume conversions remain required; no device playback test.
+
+Linked matching reaches **67.428320%**, **+0.300245 percentage points** from main,
+still **6,278** exact functions. A fresh main fetch confirms the baseline remains
+`2a57d7b7`; no upstream rebase is needed at this checkpoint.
+
+## Batch 231: ordered dodge comparisons
+
+`DodgeCode` preserves the original unordered outcomes at entry-speed admission,
+active-timer expiration and side-direction selection. Only three comparisons
+change; ABI, services, finite behavior and safety guards remain unchanged.
+Its linked match improves **1.987124% to 4.287554%**. The other 180 owner
+functions remain byte-identical in the isolated gate, including prior turn,
+shooting and lightsabre repairs. Exact production-body host sanitizer fixtures
+pass **4,840 cases / 35,063 checks**, and the unchanged NDK i386 fixture passes.
+The untouched body fails 1,715 unordered-path assertions but passes the complete
+finite-only oracle. Rotation uses the actual helper and real trig initialization;
+gameplay services are bounded stand-ins, not full game integration. No calling-
+convention attribute or nonfinite-to-integer conversion is introduced.
+
+Linked matching reaches **67.428894%**, **+0.300819 percentage points** from main,
+with **6,278** exact functions. Target/native builds and all five repository
+checks pass for the combined batches 227–231 checkpoint.

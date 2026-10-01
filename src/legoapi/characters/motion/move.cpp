@@ -10367,7 +10367,7 @@ static void DodgeCode(GameObject_s *object, i32 action_pressed, i32 jump_pressed
             return;
         }
         object->context_animation_timer -= FRAMETIME;
-        if (object->context_animation_timer > 0.0f) {
+        if (!(object->context_animation_timer <= 0.0f)) {
             return;
         }
 
@@ -10403,7 +10403,7 @@ static void DodgeCode(GameObject_s *object, i32 action_pressed, i32 jump_pressed
     }
 
     GAMECHARACTERDATA *data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-    if ((data->walk_speed + data->movement_speed) * 0.5f < object->pad_gamepad->input_magnitude) {
+    if (!((data->walk_speed + data->movement_speed) * 0.5f >= object->pad_gamepad->input_magnitude)) {
         return;
     }
 
@@ -10423,7 +10423,7 @@ static void DodgeCode(GameObject_s *object, i32 action_pressed, i32 jump_pressed
     } else {
         const f32 side = (object->apiobj.collision_position.x - bolt->position.x) * dodge_direction.x +
                          (object->apiobj.collision_position.z - bolt->position.z) * dodge_direction.z;
-        animation = side >= 0.0f ? 0x26 : 0x4f;
+        animation = side < 0.0f ? 0x4f : 0x26;
     }
     object->context_animation = animation;
     object->field_0xe12 = animation;

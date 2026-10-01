@@ -979,14 +979,15 @@ void edppDrawCursor() {
     draw_axis({0.0f, 0.0f, 0.5f});
     auto draw_mark = [&](NUVEC start, NUVEC end) {
         rotate(start);
-        rotate(end);
         line[0].position.x = edpp_cam_pos.x + start.x;
         line[0].position.y = edpp_cam_pos.y + start.y;
         line[0].position.z = edpp_cam_pos.z + start.z;
+        line[0].colour = 0xff00ff00;
+        rotate(end);
         line[1].position.x = edpp_cam_pos.x + end.x;
         line[1].position.y = edpp_cam_pos.y + end.y;
         line[1].position.z = edpp_cam_pos.z + end.z;
-        line[0].colour = line[1].colour = 0xff00ff00;
+        line[1].colour = 0xff00ff00;
         NuRndrLine3d(line, edpp_mtl, NULL);
     };
     draw_mark({0.55f, 0.05f, 0.0f}, {0.6f, -0.05f, 0.0f});
@@ -1090,10 +1091,12 @@ void edppDrawCursor() {
             NuQFntPrintEx(system_qfont, 0x1720, 0xa50, 0x10, "Highlight: %s", debtab[key.effect_index]->name);
             NuQFntPrintEx(system_qfont, 0x1720, 0xaf0, 0x10, "XYZ: %0.2f %0.2f %0.2f", key.position.x, key.position.y,
                           key.position.z);
-            NuQFntPrintEx(system_qfont, 0x1720, 0xb90, 0x10, "RotZ: %d", particle.rotation_z);
-            NuQFntPrintEx(system_qfont, 0x1720, 0xc30, 0x10, "RotY: %d", particle.rotation_y);
-            NuQFntPrintEx(system_qfont, 0x1720, 0xcd0, 0x10, "EmitRotZ: %d", particle.emitter_rotation_z);
-            NuQFntPrintEx(system_qfont, 0x1720, 0xd70, 0x10, "EmitRotY: %d", particle.emitter_rotation_y);
+            NuQFntPrintEx(system_qfont, 0x1720, 0xb90, 0x10, "RotZ: %d", edpp_ptls[edpp_nearest].rotation_z);
+            NuQFntPrintEx(system_qfont, 0x1720, 0xc30, 0x10, "RotY: %d", edpp_ptls[edpp_nearest].rotation_y);
+            NuQFntPrintEx(system_qfont, 0x1720, 0xcd0, 0x10, "EmitRotZ: %d",
+                          edpp_ptls[edpp_nearest].emitter_rotation_z);
+            NuQFntPrintEx(system_qfont, 0x1720, 0xd70, 0x10, "EmitRotY: %d",
+                          edpp_ptls[edpp_nearest].emitter_rotation_y);
         }
     } else if (edpp_readout == 0) {
         if (edpp_copy_mode == 0) {
@@ -1107,40 +1110,49 @@ void edppDrawCursor() {
                 NuQFntPrintEx(system_qfont, 0x1720, 0xaf0, 0x10, "Current Type: <none>");
             else
                 NuQFntPrintEx(system_qfont, 0x1720, 0xaf0, 0x10, "Current Type: %s", debtab[edpp_create_type]->name);
+        }
+        if (edpp_copy_mode == 0) {
             if (edptl_clipboard_entry == -1)
                 NuQFntPrintEx(system_qfont, 0x1720, 0xb90, 0x10, "Clipboard: <none>");
             else
                 NuQFntPrintEx(system_qfont, 0x1720, 0xb90, 0x10, "Clipboard: %s", debtab[edptl_clipboard_entry]->name);
+        } else {
+            if (edpp_copy_source_count == 0)
+                NuQFntPrintEx(system_qfont, 0x1720, 0xb90, 0x10, "Clipboard: <none>");
+            else
+                NuQFntPrintEx(system_qfont, 0x1720, 0xb90, 0x10, "Clipboard: %d items", edpp_copy_source_count);
+        }
+        if (edpp_copy_mode == 0) {
             if (edpp_nearest == -1) {
                 NuQFntPrintEx(system_qfont, 0x1720, 0xc30, 0x10, "Highlight: <none>");
             } else {
                 edpp_particle_s &particle = edpp_ptls[edpp_nearest];
                 debkeydatatype_s &key = debkeydata[particle.instance_id];
                 debinftype *effect = debtab[key.effect_index];
+                i32 instance_id = particle.instance_id;
                 if (effect->generator_type == 0) {
                     edbitsDrawCube(edpp_cam_pos.x, edpp_cam_pos.y, edpp_cam_pos.z, effect->field_058, effect->field_05c,
                                    effect->field_060, edpp_emitrotz, edpp_emitroty, edpp_emitrotx, rotation_z,
                                    rotation_y, 0xff0000ff, edpp_mtl);
-                    edppDrawSpheres(effect, particle.instance_id);
+                    edppDrawSpheres(effect, edpp_ptls[edpp_nearest].instance_id);
+                    instance_id = edpp_ptls[edpp_nearest].instance_id;
                 }
-                edppDrawTorus(effect, particle.instance_id);
+                edppDrawTorus(effect, instance_id);
                 NuQFntSet(system_qfont);
                 NuQFntPrintEx(system_qfont, 0x1720, 0xc30, 0x10, "Highlight: %s", effect->name);
                 NuQFntPrintEx(system_qfont, 0x1720, 0xcd0, 0x10, "Particles:");
                 const i32 group = effect->particle_type == 7 ? 12 : 32;
                 const i32 limit = effect->particle_type == 7 ? 384 : 1024;
-                const i32 count = effect->max_particles;
-                if (count > limit)
+                i32 count = effect->max_particles;
+                if (count > limit) {
                     NuQFntSetColour(system_qfont, 0x80000080);
+                    count = effect->max_particles;
+                }
                 const i32 rounded = ((count - 1) / group + 1) * group;
                 NuQFntPrintEx(system_qfont, 0x1cc0, 0xcd0, 0x10, "%d (%d)", count, rounded);
                 NuQFntSetColour(system_qfont, 0x80000000);
             }
         } else {
-            if (edpp_copy_source_count == 0)
-                NuQFntPrintEx(system_qfont, 0x1720, 0xb90, 0x10, "Clipboard: <none>");
-            else
-                NuQFntPrintEx(system_qfont, 0x1720, 0xb90, 0x10, "Clipboard: %d items", edpp_copy_source_count);
             if (edpp_copy_enclosed > 8)
                 NuQFntSetColour(system_qfont, 0x80000080);
             NuQFntPrintEx(system_qfont, 0x1720, 0xc30, 0x10, "Enclosed: %d", edpp_copy_enclosed);

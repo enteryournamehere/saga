@@ -81,37 +81,37 @@ void Pulses_Update(PULSESYS_s *pulse_sys) {
     NuVecRotateY(&hit_direction, &hit_direction, 0x4000);
 
     for (i32 i = 0; i < pulse_sys->pulse_count; ++i) {
-        PULSE_s *pulse = &pulse_sys->pulses[i];
-        if (pulse->gizmo != NULL && GizmoGetVisibility(world->gizmo_sys, pulse->gizmo) == 0) {
-            pulse->disabled = 1;
-            NuSpecialSetVisibility(&pulse->special, 0);
+        if (pulse_sys->pulses[i].gizmo != NULL &&
+            GizmoGetVisibility(world->gizmo_sys, pulse_sys->pulses[i].gizmo) == 0) {
+            pulse_sys->pulses[i].disabled = 1;
+            NuSpecialSetVisibility(&pulse_sys->pulses[i].special, 0);
         }
-        if (pulse->disabled != 0) {
+        if (pulse_sys->pulses[i].disabled != 0) {
             continue;
         }
 
-        NUVEC *pulse_position = NuSpecialGetDrawPos(&pulse->special);
-        pulse->timer -= FRAMETIME;
-        if (pulse->timer <= 0.0f && netclient == 0) {
-            if (pulse->active != 0) {
-                pulse->active = 0;
-                pulse->timer = pulse->off_time;
+        NUVEC *pulse_position = NuSpecialGetDrawPos(&pulse_sys->pulses[i].special);
+        pulse_sys->pulses[i].timer -= FRAMETIME;
+        if (pulse_sys->pulses[i].timer <= 0.0f && netclient == 0) {
+            if (pulse_sys->pulses[i].active != 0) {
+                pulse_sys->pulses[i].active = 0;
+                pulse_sys->pulses[i].timer = pulse_sys->pulses[i].off_time;
                 GameAudio_PlaySfxById(pulse_sys->sfx_turn_off, pulse_position, 0, 0);
             } else {
-                pulse->active = 1;
-                pulse->timer = pulse->on_time;
+                pulse_sys->pulses[i].active = 1;
+                pulse_sys->pulses[i].timer = pulse_sys->pulses[i].on_time;
                 GameAudio_PlaySfxById(pulse_sys->sfx_turn_on, pulse_position, 0, 0);
             }
 
-            NuSpecialSetVisibility(&pulse->special, pulse->active);
-            if (pulse->active != 0) {
+            NuSpecialSetVisibility(&pulse_sys->pulses[i].special, pulse_sys->pulses[i].active);
+            if (pulse_sys->pulses[i].active != 0) {
                 GameAudio_PlaySfxById(pulse_sys->sfx_on_loop, pulse_position, 0, 0);
             } else {
                 GameAudio_PlaySfxById(pulse_sys->sfx_off_loop, pulse_position, 0, 0);
             }
         }
 
-        if (pulse->active == 0) {
+        if (pulse_sys->pulses[i].active == 0) {
             continue;
         }
 

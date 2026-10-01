@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.44303,
+    "fuzzy_match_percent": 68.51513,
     "total_code": "4722419",
     "matched_code": "526195",
     "matched_code_percent": 11.1424885,
@@ -21986,7 +21986,7 @@
           "address": 4255968,
           "offset": 3366000,
           "size": 2043,
-          "match_percent": 49.403587
+          "match_percent": 53.34529
         }
       ]
     },
@@ -28788,7 +28788,7 @@
           "address": 3575824,
           "offset": 2685856,
           "size": 6945,
-          "match_percent": 58.979523
+          "match_percent": 82.87235
         },
         {
           "name": "_Z21edppStartSingleEffecti",
@@ -46598,7 +46598,7 @@
           "address": 3820144,
           "offset": 2930176,
           "size": 1329,
-          "match_percent": 0.0
+          "match_percent": 43.44408
         },
         {
           "name": "do_mouse_flymode_camera",
@@ -46654,7 +46654,7 @@
           "address": 5075296,
           "offset": 4185328,
           "size": 1691,
-          "match_percent": 32.169918
+          "match_percent": 35.8078
         },
         {
           "name": "_Z16GameCam_NewShakeP12GAMECAMERA_sfff",
@@ -51670,7 +51670,7 @@
           "address": 1778832,
           "offset": 888864,
           "size": 1273,
-          "match_percent": 49.220078
+          "match_percent": 57.68726
         },
         {
           "name": "_Z27instNuGCutSceneResetCamLockP17instNUGCUTSCENE_s",
@@ -56203,7 +56203,7 @@
           "address": 5014848,
           "offset": 4124880,
           "size": 711,
-          "match_percent": 27.011765
+          "match_percent": 73.805885
         },
         {
           "name": "_ZL20GizSpinner_AddGizmosP10GIZMOSYS_siPvS1_",
@@ -56251,7 +56251,7 @@
           "address": 5020848,
           "offset": 4130880,
           "size": 802,
-          "match_percent": 99.22
+          "match_percent": 99.545
         },
         {
           "name": "_Z28GizSpinner_FindBySpecialNamePvPc",
@@ -58130,7 +58130,7 @@
           "address": 1901104,
           "offset": 1011136,
           "size": 2379,
-          "match_percent": 66.34156
+          "match_percent": 74.954735
         },
         {
           "name": "_ZN7LEVER_s22GetMechObjectInterfaceEv",
@@ -62245,7 +62245,7 @@
           "address": 4717760,
           "offset": 3827792,
           "size": 826,
-          "match_percent": 49.426968
+          "match_percent": 50.617977
         }
       ]
     },
@@ -68575,7 +68575,7 @@
           "address": 4775376,
           "offset": 3885408,
           "size": 1071,
-          "match_percent": 38.706486
+          "match_percent": 40.440273
         },
         {
           "name": "_Z14Text_InitTableP9TEXTENTRYii",
@@ -71206,7 +71206,7 @@
           "address": 2381584,
           "offset": 1491616,
           "size": 4613,
-          "match_percent": 76.09007
+          "match_percent": 76.40257
         },
         {
           "name": "_Z17GetShopCamLookPosP7nuvec_s",
@@ -71523,7 +71523,7 @@
           "address": 4758912,
           "offset": 3868944,
           "size": 1360,
-          "match_percent": 48.10942
+          "match_percent": 65.61094
         },
         {
           "name": "_Z9charToIntPKc",
@@ -78241,7 +78241,7 @@
           "address": 3686368,
           "offset": 2796400,
           "size": 2558,
-          "match_percent": 56.406933
+          "match_percent": 59.211678
         },
         {
           "name": "TerrainIntensityInfo",
@@ -78417,7 +78417,7 @@
           "address": 3694496,
           "offset": 2804528,
           "size": 2403,
-          "match_percent": 17.223969
+          "match_percent": 17.273085
         },
         {
           "name": "NewRayCastGetTOFI",
@@ -92199,7 +92199,7 @@
           "address": 3010896,
           "offset": 2120928,
           "size": 3068,
-          "match_percent": 35.265896
+          "match_percent": 36.054913
         },
         {
           "name": "NuPortalVisibility",

@@ -4072,19 +4072,24 @@ i32 PlatformChecks(i32 count, nuvec_s *movement) {
         return count;
     TerrainQuery_s *query = static_cast<TerrainQuery_s *>(NuScratchAlloc32(sizeof(TerrainQuery_s)));
     TerI = query;
-    i16 *input = static_cast<i16 *>(old_query->scan_list);
-    i16 *output = reinterpret_cast<i16 *>(query->scan_list_storage);
-    while (input[0] > 0) {
-        i32 shape_count = input[0];
-        *output++ = *input++;
-        *output++ = *input++;
+    u8 *input = static_cast<u8 *>(old_query->scan_list);
+    u8 *output = query->scan_list_storage;
+    while (*reinterpret_cast<i16 *>(input) > 0) {
+        i16 *input_header = reinterpret_cast<i16 *>(input);
+        i16 *output_header = reinterpret_cast<i16 *>(output);
+        i32 shape_count = input_header[0];
+        output_header[0] = input_header[0];
+        output_header[1] = input_header[1];
+        TERRAIN_SHAPE **input_shapes = reinterpret_cast<TERRAIN_SHAPE **>(input) + 1;
+        TERRAIN_SHAPE **output_shapes = reinterpret_cast<TERRAIN_SHAPE **>(output) + 1;
         for (i32 i = 0; i < shape_count; ++i) {
-            *output++ = *input++;
-            *output++ = *input++;
+            *output_shapes++ = *input_shapes++;
         }
+        input = reinterpret_cast<u8 *>(input_shapes);
+        output = reinterpret_cast<u8 *>(output_shapes);
     }
-    output[0] = 0;
-    output[1] = 0;
+    reinterpret_cast<i16 *>(output)[0] = 0;
+    reinterpret_cast<i16 *>(output)[1] = 0;
     query->collision_radius = old_query->collision_radius;
     query->object_scale = old_query->object_scale;
     query->inverse_object_scale_sq = old_query->inverse_object_scale_sq;

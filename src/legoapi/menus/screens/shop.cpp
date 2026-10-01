@@ -620,12 +620,12 @@ void InitShop(WORLDINFO_s *world) {
     TopShelf[2].type = 2;
     NuStrCpy(TopShelf[2].name, "Extra");
     NuStrCpy(TopShelf[2].special_name, "tool_box");
-    NuSpecialFind(world->current_gscn, &TopShelf[2].special, "tool_box", 1);
+    NuSpecialFind(WORLD->current_gscn, &TopShelf[2].special, "tool_box", 1);
 
     TopShelf[3].type = 3;
     NuStrCpy(TopShelf[3].name, "Code");
     NuStrCpy(TopShelf[3].special_name, "shop_question");
-    NuSpecialFind(world->current_gscn, &TopShelf[3].special, "shop_question", 1);
+    NuSpecialFind(WORLD->current_gscn, &TopShelf[3].special, "shop_question", 1);
 
     TopShelf[4].type = 4;
     NuStrCpy(TopShelf[4].name, "Gold Bricks");
@@ -637,7 +637,9 @@ void InitShop(WORLDINFO_s *world) {
     NuStrCpy(TopShelf[5].special_name, "FMV");
     NuSpecialFind(world->current_gscn, &TopShelf[5].special, "fmv", 1);
 
+    charcheatix = 0;
     memset(codelist, 0, sizeof(codelist));
+    extracheatix = 0;
     SHOPCHARCOUNT = 0;
     i32 code_count = 0;
     for (i32 i = 0; i < ShopCollection.count_y && i < 100; ++i) {
@@ -710,11 +712,8 @@ void InitShop(WORLDINFO_s *world) {
     }
 
     shopcamspline = NuSplineFind(WORLD->current_gscn, const_cast<char *>("shop_cam"));
-    if (shopcamspline == NULL) {
-        return;
-    }
-    shopcampos = shopcamspline->pts;
-    shopcamlookat = shopcamspline->pts + 1;
+    shopcampos = shopcamspline != NULL ? shopcamspline->pts : NULL;
+    shopcamlookat = shopcamspline != NULL ? shopcamspline->pts + 1 : NULL;
     LoadShelfSplines();
 
     if (SHOPCHARCOUNT > 0) {

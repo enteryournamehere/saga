@@ -334,14 +334,15 @@ static void GizSpinner_Draw(void *world_ptr, void *, float) {
         }
 
         ResetShadowMapRendering();
-        if ((spinner->state_flags & GIZSPINNER_STATE_SHADOW_PLATFORM) == 0 || !special_exists ||
-            NuSpecialGetVisibilityFn(&spinner->special) == 0) {
+        if ((spinner->state_flags & GIZSPINNER_STATE_SHADOW_PLATFORM) == 0 ||
+            NuSpecialExistsFn(&spinner->special) == 0 || NuSpecialGetVisibilityFn(&spinner->special) == 0) {
             continue;
         }
 
         NUMTX reflection_matrix;
-        if (MatrixReflectionVU0_AXISY(&spinner->matrix, spinner->ground_height, world->current_level->unknown_0cc,
-                                      &reflection_matrix) == 0) {
+        WORLDINFO *reflection_world = WORLD != NULL && WORLD->current_level != NULL ? WORLD : world;
+        if (MatrixReflectionVU0_AXISY(&spinner->matrix, spinner->ground_height,
+                                      reflection_world->current_level->unknown_0cc, &reflection_matrix) == 0) {
             continue;
         }
         NuRndrStartReflectionRender(0);

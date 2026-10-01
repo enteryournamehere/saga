@@ -8492,3 +8492,154 @@ from the rebased checkpoint. Root reruns current-header full ASan/UBSan and
 host i386 SSE fixtures: **290 cases / 9,986 checks** each. Actual math/attribute/
 average-position helpers execute; manipulator/registry services are bounded
 diagnostic seams. No complete editor or nonfinite-input equivalence is claimed.
+
+## Batches 285–293: post-main contract improvements
+
+Keep the refreshed **68.002460%** main baseline and **70.002460%** cycle
+threshold. These linked measurements are sequential, not additive isolated
+percentages. Root independently reviews each full original/body, relevant raw
+instructions, canonical helpers and fixtures before applying narrow patches.
+Compiler options, existing ABI attributes, source ownership and scoring remain
+unchanged. Target/native builds and all five repository checks pass per unit.
+
+- **285, `InitShop`:** retain original live scene reads, pre-service selection
+  resets and missing-camera cleanup. Whole-owner gain **13.567571 weighted
+  bytes**; linked **68.443330%**. Root host sanitizer, host and host i386
+  diagnostics each pass **10,000 cases**. Actual `LoadShelfSplines` executes;
+  allocation, shelf and camera services are bounded. Full shop gameplay and
+  existing unsupported shelf-storage paths are not claimed.
+- **286, `EdPP::SaveEffects`:** reload effect/type data at original service
+  boundaries and publish the completed writer limit after refreshing the
+  record count. Whole-owner gain **1,659.357460 weighted bytes**; target
+  **57.866894% → 81.759730%**; linked **68.478470%**. Root current-header
+  sanitizer and production-action NDK i386 diagnostics pass **100,000 schema
+  cases** each; baseline i386 also passes. Real field writers execute. Valid
+  finite schema bounds and mocked file services do not establish full
+  filesystem or cross-platform wire-format equivalence.
+- **287, portal recursion:** copy the complete canonical frustum while keeping
+  the original plane alias and required arena footprint, then replace its room
+  identifier. Whole-owner gain **23.985348 weighted bytes**; linked
+  **68.478990%**. Root sanitizer and NDK i386 diagnostics pass **13,320
+  cases** each. Bounded graph/arena tests establish copy and alias lifetime,
+  not complete portal geometry or rendering.
+- **288, `DoInput`:** restore required-pad pause dispatch, captured player/pad
+  use, normal START source, state-change publication and ordered timer gates.
+  Preserve upstream autosave unordered-input policy. Whole-owner gain
+  **234.920443 weighted bytes**; linked **68.484024%**. Root sanitizer and
+  host i386 SSE diagnostics pass **70,656 cases** each. Actual no-pad/cutscene
+  predicates execute; pause/resume/restore are bounded service recorders.
+- **289, `IncomingBolt`:** compute rounded travel distance before squaring,
+  rather than four left-associated multiplications. Whole-owner gain
+  **9.837743 weighted bytes**; linked **68.484245%**. Root sanitizer and host
+  i386 SSE diagnostics pass **12,063 cases** each, with **34** old/new
+  divergences validated against their respective arithmetic oracles. Real
+  geometry helpers execute; finite boundary witnesses detect the omission.
+- **290, `Levers_Draw`:** reload the ready pulse phase independently and retain
+  the incomplete status special when disabled. Whole-owner gain **202.459799
+  weighted bytes**; linked **68.488580%**. Root sanitizer and NDK i386 each
+  pass **9,538,100 checks / 645,120 sweep calls**, plus seven direct guard/
+  multi-draw calls. Actual math, tint, nearest-player and animation helpers
+  execute; rendering/debris are bounded services. Nonfinite phase casts and
+  unavailable animation data remain outside the fixture contract.
+- **291, `PlatformChecks`:** traverse the canonical pointer-sized scan header
+  and shape entries, preserving signed-positive groups and zero terminators.
+  This fixes the wider-host copier while retaining the Android representation.
+  Whole-owner gain **72.692343 weighted bytes**; linked **68.490110%**.
+  Root sanitizer passes **5,512 cases / 7,948,331 checks**; NDK i386 passes
+  **6,024 / 10,300,659**. Actual target body executes; diagnostic terrain
+  services stop at the no-hit branch. Full terrain physics is not claimed.
+- **292, `pathEditor_Render`:** restore original public zero-BSS
+  `EdGetCnxFlagNames` callback, first matching connection's flags/footer,
+  quoted route label and original live-path read boundaries with null guards.
+  Canonical editor ownership is deliberate, not original file-symbol proof.
+  Whole-owner gain **79.841931 weighted bytes**; linked **68.491820%**.
+  Root freshly compiled sanitizer and host i386 SSE each pass **1,736 cases /
+  5,251 checks**; actual `NuStrLen` executes. Font publication probes are
+  diagnostic, not assertions that production font services mutate editor
+  state. Callback defaults null and has no discovered internal writer;
+  shipped activation and arbitrary external format strings are not covered.
+- **293, `GameCam_UpdateLookRot`:** restrict digital input to left-stick source
+  two and restore pitch/yaw seek steps as doubled rounded products of
+  **1820/2730 × FRAMETIME**. Whole-owner gain **61.752090 weighted bytes**;
+  linked **68.493120%**. Root freshly compiled sanitizer and host i386 SSE
+  each pass **145,160 cases**, including **130,824** independently validated
+  old-body divergences. Actual seek helpers execute without state mutation;
+  callback pad-replacement probes are explicitly diagnostic.
+
+All **6,292** linked exacts remain; mapped exact-set comparison from batch 284
+through batch 293 loses none. GitHub's eleven checks all succeeded on pushed
+checkpoint **eb4c525f**; these newer units still require their own pushed-head
+CI and do not inherit that result.
+
+## Additional complete reserves after batch 293
+
+- `DrawTopShelf`: restore first-model idle pulse scale and second-model Y
+  association together. One unchanged-action whole-owner gate is **neutral**,
+  including all 27 original-backed scores and identical emitted symbol set.
+  Preserve the ordinary correctness discrepancy as a reserve; no fixtures,
+  variants or integration. Its unchanged private helper is **1,328 bytes**.
+- `DrawParaphernalia` config-read timing: one complete raw-backed state-read
+  restoration costs **299.161038 weighted bytes**, **39.253960% → 36.789295%**.
+  All 13 isolated exacts remain. Checked real services do not prove config
+  replacement; no production-mutation claim, fixtures, retries or integration.
+
+## Batches 295–298: grid, text, mouse camera and spinner contracts
+
+- **295, `CutScenePlayer_DrawGrid`** (original `0x1b2490`, 1,273 bytes): restore
+  the once-called available-player snapshot and original **128 × opacity**,
+  signed truncation followed by byte selection. Whole-owner gain **106.558413
+  weighted bytes**; target **48.833977% → 57.204630%**; linked **68.495415%**.
+  Root freshly compiled sanitizer and unchanged-action NDK i386 each pass
+  **100,000 finite cases plus two diagnostic renderer owner-switch probes**.
+  Actual completion predicates execute; availability/bounds/render/text are
+  typed recorders. Valid pointers/divisors and nonnegative first rendered area
+  are required; no NaN opacity cast or backend fidelity claim. The pure
+  available-player query itself does not mutate state.
+- **296, `Text_LoadAndFixUpStrings`** (original `0x48ddd0`, 1,071 bytes):
+  restore the distinct legacy-byte, UTF-8 and UTF-16 encoding/ID/filter/empty
+  token contracts, including the original `xbox` platform filter. Generic
+  parser helpers already dispatch wide input; merely missing wide wrappers
+  was not a separate behavioral gap. Whole-owner gain **16.558442 weighted
+  bytes**; target **38.365190% → 39.911263%**; linked **68.495804%**. Root
+  freshly compiles the complete actual parser/string translation units with
+  both exact loader bodies: sanitizer and host i386 SSE each pass **13,064
+  cases per body**, **4,754** independently validated differing cases.
+  Only file I/O is mocked. Coverage includes encoding, packed-wide false
+  filters, ID bounds, empty strings, duplicate IDs, parser exhaustion and
+  canaries; malformed/oversized buffers, surrogate pairing and endian repair
+  remain outside this unit. Root disables LSan for its sandbox runs; the
+  contributing agent separately passes leak-enabled diagnostics.
+- **297, `do_maya_mouse_camera`** (original `0x3a4a70`, 1,329 bytes): retain
+  smoothed angle history, multiply drag zoom by `distance_speed`, and restore
+  both original MINSS source-selection clamps. Whole-owner gain **574.093047
+  weighted bytes**; target **0% → 43.197370%**; linked **68.508026%**. Root
+  freshly compiled sanitizer and host i386 SSE each pass **65,873 cases**,
+  **8,332** old-body divergences. Actual angle lookup/table, trigonometry,
+  square root, rotation and vector helpers execute. Angle/int conversions
+  stay finite; nonfinite distance clamps are tested separately. Android's
+  actual keyboard/mouse producers return zero: nonzero input tests are
+  dormant editor diagnostics, not live Android input/gameplay validation.
+- **298, `GizSpinner_Draw`** (original `0x4c8540`, 711 bytes): restore the
+  second special-existence query and use active `WORLD`'s level reflection
+  override. Preserve contextual fallback only when global world/level is
+  absent, explicitly safety policy outside the original valid-world domain.
+  Whole-owner gain **333.430634 weighted bytes**, including a small positive
+  `InitTerrain` collateral change; target **26.541176% → 73.070590%**;
+  linked **68.515130%**. Root freshly compiled sanitizer and production-action
+  NDK i386 each pass **2,379,435 checks / 108,676 calls**. Actual pure special
+  queries and reflection math execute; renderer/shadow services are typed
+  recorders. Preserve original shadow-enable-before-skip and unreflected-arm
+  behavior; no invented helper mutation or complete renderer claim.
+
+Target/native builds and all five repository checks pass after each unit.
+Linked **6,292** exact functions remain, with no mapped exact loss from batch
+284 through batch 298. Current main gain is **0.512670 percentage points**,
+not the requested two points; the merge threshold stays **70.002460%**.
+
+`Players_Init` story-roster index correction (`0xfe280`) is a separate
+**unintegrated positive correctness reserve**: original compares the second
+four-byte model record, not the third. One unchanged-action whole-owner gate
+gains only **0.047479 weighted byte**, with all 62 neighbors unchanged. Stop
+before large runtime fixture investment for usage efficiency; no integration,
+runtime equivalence or negative-gate claim. `Player_ToggleCharacter`'s complete
+bounded raw/source census found no substantive new omission; no trial.

@@ -665,30 +665,63 @@ void Text_LoadAndFixUpStrings(unsigned char *filename, unsigned char **buffer, c
     unsigned char *out = *buffer;
     NUFPAR *parser = NuFParCreate(reinterpret_cast<char *>(filename));
     if (parser != nullptr) {
-        while (NuFParGetLine(parser) != 0) {
-            i32 index = NuFParGetInt(parser);
-            if (index <= 0 || index >= count)
-                continue;
-            if (NuFParGetWord(parser) <= 0)
-                continue;
-
-            char *word = parser->word_buf;
-            if (NuStrICmp(word, "360") == 0 || NuStrICmp(word, "gc") == 0 || NuStrICmp(word, "ps2") == 0 ||
-                NuStrICmp(word, "ps3") == 0 || NuStrICmp(word, "psp") == 0 || NuStrICmp(word, "pc") == 0 ||
-                NuStrICmp(word, "wii") == 0 || NuStrICmp(word, "playstation") == 0)
-                continue;
-
-            table[index] = reinterpret_cast<char *>(out);
-            if (parser->is_utf16 != 0) {
-                u16 *wide = reinterpret_cast<u16 *>(word);
+        if (parser->is_utf16 != 0) {
+            while (NuFParGetLineW(parser) != 0) {
+                i32 index = NuFParGetInt(parser);
+                if (index <= 0 || index >= count)
+                    continue;
+                NuFParGetWordW(parser);
+                u16 *wide = reinterpret_cast<u16 *>(parser->word_buf);
                 i32 length = NuStrLenW(wide);
+                if (length <= 0)
+                    continue;
+                table[index] = reinterpret_cast<char *>(out);
                 for (i32 i = 0; i < length; i++)
                     out = NuUTF8CharFromUnicode(out, wide[i]);
                 *out++ = 0;
-            } else {
+            }
+        } else if (parser->is_utf8 != 0) {
+            while (NuFParGetLine(parser) != 0) {
+                NuFParGetWord(parser);
+                if (parser->word_buf[0] == 0)
+                    continue;
+                i32 index = NuAToI(parser->word_buf);
+                if (index <= 0 || index >= count)
+                    continue;
+                NuFParGetWord(parser);
+                char *word = parser->word_buf;
+                if (NuStrICmp(word, "360") == 0 || NuStrICmp(word, "gc") == 0 || NuStrICmp(word, "ps2") == 0 ||
+                    NuStrICmp(word, "ps3") == 0 || NuStrICmp(word, "psp") == 0 || NuStrICmp(word, "pc") == 0 ||
+                    NuStrICmp(word, "wii") == 0 || NuStrICmp(word, "xbox") == 0)
+                    continue;
                 i32 length = NuStrLen(word);
+                table[index] = reinterpret_cast<char *>(out);
                 NuStrCpy(reinterpret_cast<char *>(out), word);
                 out += length + 1;
+            }
+        } else {
+            while (NuFParGetLine(parser) != 0) {
+                i32 index = NuFParGetInt(parser);
+                if (index <= 0 || index >= count)
+                    continue;
+                NuFParGetWord(parser);
+                char *word = parser->word_buf;
+                if (NuStrICmp(word, "360") == 0 || NuStrICmp(word, "gc") == 0 || NuStrICmp(word, "ps2") == 0 ||
+                    NuStrICmp(word, "ps3") == 0 || NuStrICmp(word, "psp") == 0 || NuStrICmp(word, "pc") == 0 ||
+                    NuStrICmp(word, "wii") == 0 || NuStrICmp(word, "xbox") == 0)
+                    continue;
+                i32 length = NuStrLen(word);
+                if (length <= 0)
+                    continue;
+                table[index] = reinterpret_cast<char *>(out);
+                for (i32 i = 0; i < length; ++i) {
+                    const u8 character = static_cast<u8>(word[i]);
+                    if (character >= 0x80)
+                        out = NuUTF8CharFromUnicode(out, character);
+                    else
+                        *out++ = character;
+                }
+                *out++ = 0;
             }
         }
         NuFParDestroy(parser);

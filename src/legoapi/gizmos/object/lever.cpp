@@ -289,7 +289,8 @@ static void Levers_Draw(void *world_ptr, void *, float) {
     const u16 target_spin_angle = static_cast<u16>(NuFmod(GameTimer.time_elapsed, 5.0f) / 5.0f * 65536.0f);
     const f32 pulse_phase = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f) * 2.0f * 65536.0f;
     const f32 target_pulse = NuTrigTable[(static_cast<i32>(pulse_phase) >> 1) & 0x7fff] * 0.2f + 0.8f;
-    const f32 ready_alpha = NuTrigTable[(static_cast<i32>(pulse_phase) >> 1) & 0x7fff] * 0.15f + 0.85f;
+    const f32 ready_phase = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f) * 2.0f * 65536.0f;
+    const f32 ready_alpha = NuTrigTable[(static_cast<i32>(ready_phase) >> 1) & 0x7fff] * 0.15f + 0.85f;
 
     EnableShadowMapRendering(0);
 
@@ -367,8 +368,9 @@ static void Levers_Draw(void *world_ptr, void *, float) {
             NuSpecialDrawAt(&world->lev_objs[LEVER_SPECIAL_BASE].special, &lever.transform);
         }
 
-        const i32 status_special = lever.pull_progress < 1.0f ? LEVER_SPECIAL_INCOMPLETE : LEVER_SPECIAL_COMPLETE;
+        i32 status_special = LEVER_SPECIAL_INCOMPLETE;
         if ((lever.flags & LEVER_FLAG_ENABLED) != 0) {
+            status_special = lever.pull_progress < 1.0f ? LEVER_SPECIAL_INCOMPLETE : LEVER_SPECIAL_COMPLETE;
             bool draw_target = false;
             if ((lever.flags & LEVER_FLAG_HIDE_TARGET_INDICATOR) == 0 && lever.target_offset.y != 2000000.0f) {
                 draw_target = world->lev_objs[LEVER_SPECIAL_TARGET].active != 0;

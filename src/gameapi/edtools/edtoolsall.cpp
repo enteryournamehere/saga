@@ -1480,30 +1480,31 @@ i32 edppSaveEffects(char *filename, char page) {
     EdFileWriteInt(0x29);
     EdFileWriteInt(effect_count);
 
-    for (i32 index = 1; index < EDPP_MAX_TYPES; ++index) {
+    i32 writer_limit = EDPP_MAX_TYPES;
+    for (i32 index = 1; index < writer_limit; ++index) {
         if (debtab[index] == NULL)
             continue;
-        debinftype *effect = &effecttypes[index];
         if (category != 2 &&
-            !(category == 1 && effect->category == 1 && static_cast<i8>(effect->page) == edbits_particle_level_page) &&
-            !(category != 1 && effect->category == category))
+            !(category == 1 && effecttypes[index].category == 1 &&
+              static_cast<i8>(effecttypes[index].page) == edbits_particle_level_page) &&
+            !(category != 1 && effecttypes[index].category == category))
             continue;
 
-        u8 *bytes = reinterpret_cast<u8 *>(effect);
-#define WRITE_FLOAT_AT(offset) EdFileWriteFloat(*reinterpret_cast<f32 *>(bytes + (offset)))
-        EdFileWrite(effect->name, 16);
-        EdFileWriteShort(effect->frequency);
-        EdFileWriteShort(effect->max_particles);
+#define WRITE_FLOAT_AT(offset)                                                                                         \
+    EdFileWriteFloat(*reinterpret_cast<f32 *>(reinterpret_cast<u8 *>(&effecttypes[index]) + (offset)))
+        EdFileWrite(effecttypes[index].name, 16);
+        EdFileWriteShort(effecttypes[index].frequency);
+        EdFileWriteShort(effecttypes[index].max_particles);
         WRITE_FLOAT_AT(0x18);
         WRITE_FLOAT_AT(0x1c);
         WRITE_FLOAT_AT(0x20);
         WRITE_FLOAT_AT(0x24);
         WRITE_FLOAT_AT(0x28);
-        EdFileWriteChar(effect->generator_type);
-        EdFileWriteChar(effect->momentum_adjustment_type);
-        EdFileWriteChar(effect->cutscene_only);
-        EdFileWriteChar(effect->particle_type);
-        EdFileWriteChar(effect->camera_facing);
+        EdFileWriteChar(effecttypes[index].generator_type);
+        EdFileWriteChar(effecttypes[index].momentum_adjustment_type);
+        EdFileWriteChar(effecttypes[index].cutscene_only);
+        EdFileWriteChar(effecttypes[index].particle_type);
+        EdFileWriteChar(effecttypes[index].camera_facing);
         WRITE_FLOAT_AT(0x30);
         WRITE_FLOAT_AT(0x34);
         WRITE_FLOAT_AT(0x38);
@@ -1511,9 +1512,9 @@ i32 edppSaveEffects(char *filename, char page) {
         WRITE_FLOAT_AT(0x40);
         WRITE_FLOAT_AT(0x44);
         WRITE_FLOAT_AT(0x48);
-        EdFileWriteNuVec(reinterpret_cast<NUVEC *>(bytes + 0x4c));
-        EdFileWriteNuVec(reinterpret_cast<NUVEC *>(bytes + 0x58));
-        EdFileWriteNuVec(reinterpret_cast<NUVEC *>(bytes + 0x64));
+        EdFileWriteNuVec(reinterpret_cast<NUVEC *>(reinterpret_cast<u8 *>(&effecttypes[index]) + 0x4c));
+        EdFileWriteNuVec(reinterpret_cast<NUVEC *>(reinterpret_cast<u8 *>(&effecttypes[index]) + 0x58));
+        EdFileWriteNuVec(reinterpret_cast<NUVEC *>(reinterpret_cast<u8 *>(&effecttypes[index]) + 0x64));
         WRITE_FLOAT_AT(0x70);
         WRITE_FLOAT_AT(0x74);
         WRITE_FLOAT_AT(0x78);
@@ -1528,20 +1529,20 @@ i32 edppSaveEffects(char *filename, char page) {
         WRITE_FLOAT_AT(0x9c);
         WRITE_FLOAT_AT(0xa0);
         WRITE_FLOAT_AT(0xa4);
-        EdFileWriteShort(effect->field_0a8);
-        EdFileWriteChar(effect->field_0aa);
-        EdFileWriteChar(effect->field_0ab);
+        EdFileWriteShort(effecttypes[index].field_0a8);
+        EdFileWriteChar(effecttypes[index].field_0aa);
+        EdFileWriteChar(effecttypes[index].field_0ab);
         WRITE_FLOAT_AT(0xac);
         WRITE_FLOAT_AT(0xb0);
         WRITE_FLOAT_AT(0xb4);
         WRITE_FLOAT_AT(0xb8);
         WRITE_FLOAT_AT(0xbc);
 #define WRITE_COLOUR_KEY(key)                                                                                          \
-    EdFileWriteFloat(effect->colour_keys[key].time);                                                                   \
-    EdFileWriteUnsignedChar(effect->colour_keys[key].red);                                                             \
-    EdFileWriteUnsignedChar(effect->colour_keys[key].green);                                                           \
-    EdFileWriteUnsignedChar(effect->colour_keys[key].blue);                                                            \
-    EdFileWriteUnsignedChar(effect->colour_keys[key].alpha)
+    EdFileWriteFloat(effecttypes[index].colour_keys[key].time);                                                        \
+    EdFileWriteUnsignedChar(effecttypes[index].colour_keys[key].red);                                                  \
+    EdFileWriteUnsignedChar(effecttypes[index].colour_keys[key].green);                                                \
+    EdFileWriteUnsignedChar(effecttypes[index].colour_keys[key].blue);                                                 \
+    EdFileWriteUnsignedChar(effecttypes[index].colour_keys[key].alpha)
         WRITE_COLOUR_KEY(0);
         WRITE_COLOUR_KEY(1);
         WRITE_COLOUR_KEY(2);
@@ -1673,12 +1674,12 @@ i32 edppSaveEffects(char *filename, char page) {
         WRITE_FLOAT_AT(0x2e4);
         WRITE_FLOAT_AT(0x2e8);
         WRITE_FLOAT_AT(0x2ec);
-        EdFileWriteChar(effect->process_spheres);
-        EdFileWriteChar(effect->time_group);
-        EdFileWriteChar(effect->field_2f2);
-        EdFileWriteChar(effect->use_explicit_clip_box);
-        EdFileWriteNuVec(&effect->repeat_box);
-        EdFileWriteFloat(effect->thinning);
+        EdFileWriteChar(effecttypes[index].process_spheres);
+        EdFileWriteChar(effecttypes[index].time_group);
+        EdFileWriteChar(effecttypes[index].field_2f2);
+        EdFileWriteChar(effecttypes[index].use_explicit_clip_box);
+        EdFileWriteNuVec(&effecttypes[index].repeat_box);
+        EdFileWriteFloat(effecttypes[index].thinning);
         WRITE_FLOAT_AT(0x304);
         WRITE_FLOAT_AT(0x308);
         WRITE_FLOAT_AT(0x30c);
@@ -1732,34 +1733,35 @@ i32 edppSaveEffects(char *filename, char page) {
         WRITE_FLOAT_AT(0x3cc);
 #undef WRITE_FLOAT_AT
 
-        i32 sound_count = (effect->sound_data[0] != -1) + (effect->sound_data[3] != -1) +
-                          (effect->sound_data[6] != -1) + (effect->sound_data[9] != -1);
+        i32 sound_count = (effecttypes[index].sound_data[0] != -1) + (effecttypes[index].sound_data[3] != -1) +
+                          (effecttypes[index].sound_data[6] != -1) + (effecttypes[index].sound_data[9] != -1);
         EdFileWriteInt(sound_count);
-        if (effect->sound_data[0] != -1) {
-            EdFileWrite(const_cast<char *>(g_soundInfo[effect->sound_data[0]].sfx_name), 16);
-            EdFileWriteInt(effect->sound_data[1]);
-            EdFileWriteInt(effect->sound_data[2]);
+        if (effecttypes[index].sound_data[0] != -1) {
+            EdFileWrite(const_cast<char *>(g_soundInfo[effecttypes[index].sound_data[0]].sfx_name), 16);
+            EdFileWriteInt(effecttypes[index].sound_data[1]);
+            EdFileWriteInt(effecttypes[index].sound_data[2]);
         }
-        if (effect->sound_data[3] != -1) {
-            EdFileWrite(const_cast<char *>(g_soundInfo[effect->sound_data[3]].sfx_name), 16);
-            EdFileWriteInt(effect->sound_data[4]);
-            EdFileWriteInt(effect->sound_data[5]);
+        if (effecttypes[index].sound_data[3] != -1) {
+            EdFileWrite(const_cast<char *>(g_soundInfo[effecttypes[index].sound_data[3]].sfx_name), 16);
+            EdFileWriteInt(effecttypes[index].sound_data[4]);
+            EdFileWriteInt(effecttypes[index].sound_data[5]);
         }
-        if (effect->sound_data[6] != -1) {
-            EdFileWrite(const_cast<char *>(g_soundInfo[effect->sound_data[6]].sfx_name), 16);
-            EdFileWriteInt(effect->sound_data[7]);
-            EdFileWriteInt(effect->sound_data[8]);
+        if (effecttypes[index].sound_data[6] != -1) {
+            EdFileWrite(const_cast<char *>(g_soundInfo[effecttypes[index].sound_data[6]].sfx_name), 16);
+            EdFileWriteInt(effecttypes[index].sound_data[7]);
+            EdFileWriteInt(effecttypes[index].sound_data[8]);
         }
-        if (effect->sound_data[9] != -1) {
-            EdFileWrite(const_cast<char *>(g_soundInfo[effect->sound_data[9]].sfx_name), 16);
-            EdFileWriteInt(effect->sound_data[10]);
-            EdFileWriteInt(effect->sound_data[11]);
+        if (effecttypes[index].sound_data[9] != -1) {
+            EdFileWrite(const_cast<char *>(g_soundInfo[effecttypes[index].sound_data[9]].sfx_name), 16);
+            EdFileWriteInt(effecttypes[index].sound_data[10]);
+            EdFileWriteInt(effecttypes[index].sound_data[11]);
         }
-        EdFileWriteChar(effect->trail_count);
-        EdFileWriteFloat(effect->trail_time);
-        EdFileWriteChar(effect->radial_segments);
-        EdFileWriteFloat(effect->radial_floor);
-        EdFileWriteFloat(effect->scale_in_time);
+        EdFileWriteChar(effecttypes[index].trail_count);
+        EdFileWriteFloat(effecttypes[index].trail_time);
+        EdFileWriteChar(effecttypes[index].radial_segments);
+        EdFileWriteFloat(effecttypes[index].radial_floor);
+        EdFileWriteFloat(effecttypes[index].scale_in_time);
+        writer_limit = EDPP_MAX_TYPES;
     }
 
     if (page == 1 || page == 2) {

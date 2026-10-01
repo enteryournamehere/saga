@@ -189,47 +189,68 @@ static struct {
 // ===========================================================================
 
 static __used__ void PodRaceSnipersUpdate(void) {
+    static i32 player_ix;
     i32 bolttype = (WORLD->current_level == PODSPRINTA_LDATA) ? 0x29 : 0x28;
+    BOLTTYPE_s *type = BoltType_FindByID(bolttype, WORLD);
     i32 n = PodRace_nsnipers;
     if (n <= 0 || max_nsnipers <= 0)
         return;
     for (i32 i = 0; i < n && i < max_nsnipers; i++) {
         SNIPER_s *s = &PodRace_snipers[i];
-        GameObject_s *target = NULL;
-        GameObject_s *p0 = Player[0];
-        if (p0 != NULL && (p0->apiobj.field_0x1f8 & 0x1001) == 0x1001) {
-            target = p0;
-        } else {
-            GameObject_s *p1 = Player[1];
-            if (p1 != NULL && (p1->apiobj.field_0x1f8 & 0x1001) == 0x1001)
-                target = p1;
-        }
-        if (target != NULL) {
-            float dx = target->apiobj.pos_x - s->pos.x;
-            float dy = target->apiobj.pos_z - s->pos.z;
-            float dist2 = dx * dx + dy * dy;
-            if (dist2 > PodRace_sniper_start_fire_radius * PodRace_sniper_start_fire_radius) {
-                if (dist2 <= PodRace_sniper_fire_radius * PodRace_sniper_fire_radius) {
-                    s->state = PodRace_sniper_fire_range_time;
-                } else {
-                    s->fire_timer += FRAMETIME;
-                    if (s->fire_timer >= PodRace_sniper_fire_time) {
-                        s->fire_timer = 0.0f;
-                        if (s->state > 0.0f) {
-                            // fire
-                            float height = target->apiobj.pos_y - s->pos.y;
-                            temp_yrot = NuAtan2D(dx, -dy);
-                            temp_xrot = NuAtan2D(-height, dx);
-                            NUMTX mtx;
-                            NuMtxSetRotationX(&mtx, (u16)temp_xrot);
-                            NuMtxRotateY(&mtx, (u16)temp_yrot);
-                            Bolt_Add(NULL, &s->pos, &mtx, bolttype, 0);
-                        }
-                    }
+        bool in_range = false;
+        for (i32 j = 0; j < 2; ++j) {
+            GameObject_s *target = Player[j];
+            if (target != NULL && (target->apiobj.field_0x1f8 & 0x1001) == 0x1001) {
+                float dx = target->apiobj.collision_position.x - s->pos.x;
+                float dz = target->apiobj.collision_position.z - s->pos.z;
+                float dist2 = dx * dx + dz * dz;
+                if (dist2 < PodRace_sniper_start_fire_radius * PodRace_sniper_start_fire_radius) {
+                    in_range = true;
+                    if (dist2 < PodRace_sniper_fire_radius * PodRace_sniper_fire_radius)
+                        s->state = PodRace_sniper_fire_range_time;
                 }
             }
-        } else {
-            s->fire_timer += FRAMETIME;
+        }
+        s->fire_timer += FRAMETIME;
+        if (in_range) {
+            if (s->fire_timer >= PodRace_sniper_fire_time) {
+                s->fire_timer = 0.0f;
+                NUVEC aim;
+                if (s->state > 0.0f) {
+                    GameObject_s *target = player2;
+                    if (target == NULL) {
+                        player_ix = 0;
+                    } else {
+                        player_ix = player_ix == 0;
+                    }
+                    if (player_ix == 0)
+                        target = player;
+                    if (target == NULL || type == NULL)
+                        continue;
+                    CalculateInterceptVector(&s->prev, &target->apiobj.collision_position, &target->apiobj.velocity,
+                                             type->field_10, &aim, NULL);
+                    NuVecAdd(&aim, &aim, &s->prev);
+                    s->state -= FRAMETIME;
+                    if (s->state < 0.0f)
+                        s->state = 0.0f;
+                } else {
+                    aim.x = 0.0f;
+                    aim.y = 0.0f;
+                    aim.z = NuRandFloat() * PodRace_sniper_fire_radius;
+                    NuVecRotateY(&aim, &aim, NuRandInt());
+                    NuVecAdd(&aim, &aim, &s->pos);
+                }
+                NUVEC direction;
+                float distance = NuVecDist(&aim, &s->prev, &direction);
+                temp_yrot = NuAtan2D(direction.x, direction.z);
+                temp_xrot = NuAtan2D(-direction.y, distance);
+                // Retail uses an aligned matrix local in its realigned stack frame.
+                NUMTX_ALIGNED16 mtx;
+                NuMtxSetRotationX(&mtx, (u16)temp_xrot);
+                NuMtxRotateY(&mtx, (u16)temp_yrot);
+                Bolt_Add(NULL, &s->prev, &mtx, bolttype, 0);
+            }
+            n = PodRace_nsnipers;
         }
     }
 }
@@ -1877,16 +1898,18 @@ speed_section:
     }
     // Object pool loop: ease each active pod vehicle's boulder offset.
     i32 count = HIGHGAMEOBJECT;
-    for (GameObject_s *obj = (GameObject_s *)Obj; count > 0; count--, obj = (GameObject_s *)((u8 *)obj + 0x10e4)) {
+    for (GameObject_s *obj = Obj; count > 0; count--, ++obj) {
         if ((obj->apiobj.field_0x1f8 & 0x1001) == 0x1001 && (u8)obj->apiobj.field_0x27c == 0xff) {
             float seek_src = 0.0f;
             if (ps->boulders != NULL && WORLD->ai_sys != NULL && ps->ai_state > 1) {
-                i32 slot = (u8)((size_t)ps->boulders * 0xeeeeeeef);
+                i32 slot = static_cast<AIAREA_s *>(ps->boulders) - WORLD->ai_sys->areas;
                 u32 bit = 1u << (slot & 0x1f);
-                if (((*(u32 *)((u8 *)obj + 0x2ac) & bit) | (*(u32 *)((u8 *)obj + 0x2a8) & bit)) != 0)
+                // Retail sign-extends the low mask: bit 31 enables every high-word bit.
+                u32 high_mask = static_cast<i32>(bit) >> 31;
+                if (((obj->apiobj.ai_area_mask_high & high_mask) | (obj->apiobj.ai_area_mask_low & bit)) != 0)
                     seek_src = boulder_offset_y;
             }
-            *(float *)((u8 *)obj + 0xe94) = SeekValF(*(float *)((u8 *)obj + 0xe94), seek_src, boulder_offset_y_seek);
+            obj->movement_spline_offset.y = SeekValF(obj->movement_spline_offset.y, seek_src, boulder_offset_y_seek);
         }
     }
 }

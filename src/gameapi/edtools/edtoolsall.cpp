@@ -4826,23 +4826,21 @@ i32 EdManipulator::SelectRotator(EdInputContext &input, VuVec &center, VuVec &pl
                 }
             }
         }
-        if (input.GetPress(3) != 0.0f) {
-            *selected_axis = axis;
-            *angle_delta = 0;
-            if (axis == 0) {
-                *selected_plane = plane;
-                *start_angle = *last_angle = 0;
-                return 0;
-            }
+        i32 angle = 0;
+        if (axis != 0) {
             plane = VuVec(axis == 1 ? 1.0f : 0.0f, axis == 2 ? 1.0f : 0.0f, axis == 3 ? 1.0f : 0.0f,
                           axis == 1   ? -center.x
                           : axis == 2 ? -center.y
                                       : -center.z);
-            *selected_plane = plane;
             f32 x = chosen.x - center.x;
             f32 y = chosen.y - center.y;
             f32 z = chosen.z - center.z;
-            i32 angle = axis == 1 ? NuAtan2DA(y, z) : axis == 2 ? NuAtan2DA(x, -z) : NuAtan2DA(x, y);
+            angle = axis == 1 ? NuAtan2DA(y, z) : axis == 2 ? NuAtan2DA(x, -z) : NuAtan2DA(x, y);
+        }
+        if (input.GetPress(3) != 0.0f) {
+            *selected_axis = axis;
+            *angle_delta = 0;
+            *selected_plane = plane;
             *start_angle = *last_angle = angle;
             return axis;
         }

@@ -6632,3 +6632,176 @@ audits, not invitations to inflate source. Zero-gain cutscene/font/collision
 correctness proposals are held separately. New compiler attributes, ABI
 shortcuts, ownership changes and scoring changes are not used. All mocked-service
 fixtures are diagnostics, not full Android gameplay validation.
+
+## Batches 190–199: state, spawn, pipeline and loader closures
+
+The first commit `27dbd17b` on PR #121 reaches **67.216774%** and passes all
+eleven GitHub checks. Subsequent integrated changes reach **67.254760%**,
+**+0.126685 percentage points** from this cycle's main baseline, with **6,276**
+exact functions. The next merge threshold remains **69.128075%**.
+
+`Action_Kill` restores embedded parameter parsing, null-opponent selection
+preservation and stable object walkers across kill callbacks
+(**26.319360% to 28.767466%**). Actual-body host sanitizer/i386 fixtures each
+pass 773 cases. Its original larger body contains loop-unswitched copies;
+those are not recreated merely to inflate source. `Action_SetSide` restores
+owner IN_USE/objptr selection, byte-narrowed type sentinel and callback-before-
+capacity ordering, substring parameters, positive-range/NaN dispatch and
+null-anchor zero distance. It retains the original `NuVecSub` callback and
+XYZ arithmetic association, and clears alert state without clearing the firing
+target (**31.597803% to 46.384617%**). Both actual-body fixtures pass 134 cases.
+Its full-TU audit includes four small collateral regressions; the weighted
+gain remains positive. Existing helper ownership is unchanged.
+
+`Players_InitPositions` corrects bonus second-player Z indices and the original
+`mission_door`/`door_to_network` literals (**35.538% to 35.792%**). Preserve the
+retail first-player-X subtraction rather than repairing that quirk. All 67
+actual-body probes pass both ABIs. `ResetPlayer` restores forced next-sock
+setup, gunship and Coruscant spawn paths, co-op signed segment offsets, the
+specialized vector-rotation call, hover-sentinel reuse and vehicle narrow-sock/
+speed/velocity initialization (**41.498% to 57.270%**). Actual-body fixtures
+using unchanged vector math pass 3,522 cases on host sanitizers/i386. Signed
+player slots, missing sock systems, callbacks and incomplete sockets are covered;
+these mocked-service tests are not complete gameplay integration.
+
+`EdManipulator::SelectRotator` computes hover plane/angle before the second
+press query (**24.817772% to 25.822289%**). The exact production body passes
+i386 fixtures. Host sanitizer probes are explicitly a fixed-32-bit state-view
+simulation inside allocated opaque storage, not native 64-bit ABI proof.
+The class's pre-existing hardcoded-offset representation is not broadly rewritten
+to accommodate the fixture. `pathEditor_Process` restores two original local
+nearest-node scans (**28.173334% to 31.663225%**); both ABI fixtures pass runtime/
+current/all-path selection, height/NaN gates and callback ownership. One genuine
+unrestricted helper call remains, retaining the retail generic helper symbol.
+Three-scan symbol-loss and fixed-connection expansion regressions were rejected.
+
+`Customiser_LoadAll` permits non-null empty category names and reloads category
+fields after string/scene callbacks (**44.834% to 47.186%**). Both actual-body
+fixtures pass 10,000 cases against an independent allocation/resource model.
+Paths/counts/arena capacities are bounded; callback replacement cannot leave
+null/dangling categories. Tiny neighboring register-allocation regressions are
+included in the net gain. Nine explicit allocation blocks explain much of its
+remaining size deficit; no manual expansion was introduced.
+
+`NuPostEffectRender` queries all five attachments and resolves multisampling
+before publishing proxies; filter globals remain live across `isEnabled`
+callbacks, while attachment uses the original entry colour snapshot
+(**28.369% to 57.276%**). Canonical virtual-mock actual-body host sanitizer/i386
+fixtures independently distinguish publication, filter-selection and colour-
+snapshot corrections. Render/reset, disabled filters, duplicate depth attachment
+queries, padding and shader cleanup are also covered.
+
+Recover `ScanTerrainPlatform`'s separate translating/rotating traversals,
+scratch-backed transforms, source/material filtering and three/four-vertex normal
+reconstruction (**12.600619% to 17.897833%**). Raw SSE proves all unordered motion
+axes select non-positive bounds; the decompiler's ordered `<=0` interpretation
+was rejected. Restore grouped squared-distance sums before radius addition;
+the old association fails a bitwise service-argument probe. Actual-body fixtures
+pass 4,096 cases plus four full-capacity modes on fully sanitized host/i386.
+Unlike the previous embedded-stream fixture, this header uses pointer-sized
+slots and needs no host alignment exclusion. The reconstruction-only static
+`TerrainScanPlatformGroup` naturally specializes after losing this caller; it
+has no retail counterpart. Retail public definitions remain intact. Collateral
+`ScanTerrain` and `NewScanHandelFull` regressions are counted in the positive
+whole-TU result; an exploratory forward-declaration replacement error in a
+temporary copy was caught by the symbol audit and discarded before integration.
+
+`GizSpinner_Load` restores unconditional name reads, legacy special fallback and
+frame reads, first-primary absolute duration, version-3 state/type preservation,
+live animation-set lookups and valid old-point eligibility. Bounds add the arm
+minimum correctly and retain common extent initialization with the original
+half-extent constant (**23.218950% to 28.259924%**). Actual-body host sanitizer/
+i386 fixtures pass versions 1–9, missing resources, negative/zero durations,
+bounded frame conversion, set replacement and callback order. Nonfinite
+float-to-integer frame conversion is outside the valid fixture contract.
+
+Bounded complete-body audits of `cbPtlColMenu`, `DrawRopeSingle`,
+`DrawBuildUpBar`, `Door_FindByIndex`, `Doors_Configure` and `DookuC_Update`
+found no missing substantive closure. Original fixed-call fanout, embedded
+matrix math or duplicated paths explain their size deficits. No source inflation,
+forced inlining, compiler-option or ownership changes are used to chase those
+shapes. The cycle continues; merge requires all checks on its eventual final head.
+
+## Batches 200–206: race, parser, cast, reset and store closures
+
+The integrated target report reaches **67.301920%**, **+0.173845 percentage
+points** from PR #121's **67.128075%** main baseline, still **6,276** exact
+functions. The merge threshold remains **69.128075%**; isolated function gains
+are not aggregate percentage-point gains.
+
+`PodRaceSnipersUpdate` restores both-player strict range selection, the cached
+bolt type, unconditional timer progress, alternating target/intercept selection,
+random fallback and full-distance yaw/pitch (**36.549618% to 55.358780%**).
+Preserve the retail range-origin/bolt-position distinction and local player
+index. Actual-body sanitizer/i386 fixtures pass; interception and random-angle
+services are instrumented deterministic mocks, not full physics validation.
+The aligned matrix uses the existing canonical aligned type, not a new ABI
+or code-generation attribute.
+
+`CutScenes_Load` restores its parser closure (**25.069021% to 29.020866%**):
+override callback, lowercase name handling, signed character-count division,
+typed flags, level bypass and failure rollback. Raw allocation proves `CUTINFO`
+is **0x194**, not 0x198: remove the unused trailing field and its sole
+configuration write, retaining all established offsets. The final pointer-table
+cursor advances by count-squared pointer slots, as the original multiply proves.
+Actual `Configure`/`Load` bodies pass 20,000 bounded allocation/parser cases on
+host sanitizers/i386. `CutScene_Configure`'s small score regression is counted.
+The separate configured-list placeholder remains deferred: its full trial
+regressed. No claim of complete configured-list or malformed-count support.
+
+`NewCast` recovers separate first/second plane paths, quad edge tests, zero-normal
+fallback, ordinary negative-roof sign and extended blocker behavior, cast-index
+publication and the full result epilogue (**10.449809% to 18.155020%**).
+Actual-body fixtures compare outputs and `InsideLineF` traces in 8,192 cases on
+fully sanitized host/i386. Existing reconstruction-only shadow-triangle helper
+specialization naturally disappears; there is no retail symbol to preserve for
+that helper. Public/retail-private definitions and compiler options stay intact.
+
+`PreResetCode` replaces seven zero constant placeholders with verified retail
+values and corrects the context-not-ten flag gate (**65.965% to 80.296%**).
+Use canonical members instead of fixed target offsets, naming the existing
+0xdb8 float through a padding-preserving union and target offset assertion.
+Existing aligned vector scratch matches raw stack alignment. Actual-body
+fixtures with production RNG/vector/trig math pass 4,128 cases on host
+sanitizers/i386, including complete object/RNG state, ledge and action boundaries.
+Do not reinterpret the valid trig-table threshold indices as angle mistakes.
+
+`Action_CnxController` excludes `on_frames` from creation parsing, explicitly
+resets OPEN state for CLOSED options and restores target/animation/output
+substring precedence (**53.785862% to 68.727650%**). Both ABI fixtures pass
+350 actual-body cases; only this function changes among 416 normalized TU
+functions. Frame float-to-integer behavior and existing fallback guards remain.
+
+`MenuDrawStore` restores nested panels, alpha snapshots, 0.15 bundle spacing,
+green owned overlays, selected-character touch records, signed low-word title
+indices, retained widths, description-box dimensions and localized savings
+layout (**32.906% to 52.667%**). Both ABI and host sanitizer actual-body fixtures
+pass 10,000 callback/layout cases plus 1,000 valid low-word title-index cases.
+Successful SDK responses must initialize price; valid nonempty text/output-box
+services and bounded strings are required, as in the original. Retail ordered
+price comparisons and repeated-addition geometry are retained. Neighbor scores
+are unchanged; full Android purchase/render integration is not claimed.
+
+`PodSprintA_Update`'s focused boulder unit corrects typed area-base subtraction,
+retail sign-extended high-word mask and canonical object traversal/member access
+(**46.530910% to 48.216362%**). Host sanitizer/i386 actual-body probes cover all
+32 indices, especially bit-31's all-high-bits quirk. Adjacent scores are unchanged.
+This is deliberately partial: offline lap/countdown/audio/GO closures remain
+documented defects whose bounded trials regressed, not completed gameplay paths.
+
+Further bounded negative audits reserve the complete dynamic-material correction
+(two individually positive parts regress when combined), bomb-generator spawn
+script/callback correction and panel-arm sign corrections. Do not replay their
+layout variants or present neutral/regressing correctness units as matching
+gains. Full-body audits first distinguish missing semantics from compiler fanout,
+embedded helpers and register allocation before investing in fixtures.
+
+Batch 207 restores `NuGCutSceneSysRender`'s single entry eligibility/direction
+decision, independently sampled stage frames, stable character/locator owners
+and live callback/array/count/parent-transform reads (**27.685184% to
+48.211113%**). Existing null asset-system guards are retained; the higher-scoring
+unguarded experiment is not integrated. Frozen guarded actual-body fixtures pass
+20,000 cases on host sanitizers and the unchanged NDK i386 compilation, including
+null asset systems and callback mutations. Tiny collateral cutscene-TU score
+changes are included. The linked report reaches **67.306340%**, **+0.178265
+percentage points** from main, still **6,276** exact functions.

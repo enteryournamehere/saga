@@ -2765,7 +2765,25 @@ eduimenu_s *pathEditor_Process(nupad_s *pad) {
                 edcamSetPos(&aieditor->runtime_path->nodes[path->runtime_nearest].position);
                 path = aieditor->current_path;
             }
-            EDAIPATHNODE_s *node = pathEditor_GetNearestNode(path, 0);
+            EDAIPATHNODE_s *node = NULL;
+            if (path != NULL) {
+                f32 nearest_distance = FLT_MAX;
+                for (EDAIPATHNODE_s *candidate = reinterpret_cast<EDAIPATHNODE_s *>(NuLinkedListGetHead(&path->nodes));
+                     candidate != NULL; candidate = reinterpret_cast<EDAIPATHNODE_s *>(
+                                            NuLinkedListGetNext(&path->nodes, &candidate->link))) {
+                    NUVEC delta;
+                    const f32 distance = NuVecXZDistSqr(&aieditor->cursor_position, &candidate->position, &delta);
+                    if (distance < nearest_distance) {
+                        const f32 height = aieditor->cursor_position.y - candidate->position.y;
+                        const f32 upper = NuFmax(0.2f, candidate->height_max);
+                        const f32 lower = NuFmin(-0.2f, candidate->height_min);
+                        if (height <= upper && height >= lower) {
+                            node = candidate;
+                            nearest_distance = distance;
+                        }
+                    }
+                }
+            }
             path->current_node = node;
             if (aieditor->current_path->current_node)
                 edcamSetPos(&aieditor->current_path->current_node->position);
@@ -2918,7 +2936,26 @@ eduimenu_s *pathEditor_Process(nupad_s *pad) {
             }
         } else {
             path = aieditor->current_path;
-            path->current_node = pathEditor_GetNearestNode(path, 0);
+            EDAIPATHNODE_s *nearest_node = NULL;
+            if (path != NULL) {
+                f32 nearest_distance = FLT_MAX;
+                for (EDAIPATHNODE_s *candidate = reinterpret_cast<EDAIPATHNODE_s *>(NuLinkedListGetHead(&path->nodes));
+                     candidate != NULL; candidate = reinterpret_cast<EDAIPATHNODE_s *>(
+                                            NuLinkedListGetNext(&path->nodes, &candidate->link))) {
+                    NUVEC delta;
+                    const f32 distance = NuVecXZDistSqr(&aieditor->cursor_position, &candidate->position, &delta);
+                    if (distance < nearest_distance) {
+                        const f32 height = aieditor->cursor_position.y - candidate->position.y;
+                        const f32 upper = NuFmax(0.2f, candidate->height_max);
+                        const f32 lower = NuFmin(-0.2f, candidate->height_min);
+                        if (height <= upper && height >= lower) {
+                            nearest_node = candidate;
+                            nearest_distance = distance;
+                        }
+                    }
+                }
+            }
+            path->current_node = nearest_node;
             EDAIPATHNODE_s *node = aieditor->current_path->current_node;
             if (node) {
                 if (edpath_addoffset.x != 0 || edpath_addoffset.y != 0 || edpath_addoffset.z != 0) {

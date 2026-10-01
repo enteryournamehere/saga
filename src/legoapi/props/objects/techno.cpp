@@ -614,9 +614,9 @@ void Techno_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
             object->character_context = -1;
             object->tag_flags |= 1;
             object->apiobj.movement_facing_angle += 0x8000;
-            Technos_MoveTarget(techno, NULL);
+            Technos_MoveTarget(static_cast<TECHNO *>(object->field_0x788), NULL);
         } else {
-            Technos_MoveTarget(techno, object);
+            Technos_MoveTarget(static_cast<TECHNO *>(object->field_0x788), object);
         }
     } else {
         if ((object->apiobj.player_controlled || object->use_action == 2) && object->suit != NULL &&
@@ -627,7 +627,7 @@ void Techno_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
                 return;
             }
 
-            f32 range = object->apiobj.field_0x1dc + 2000000.0f;
+            f32 range = object->apiobj.field_0x1dc + 0.25f;
             f32 hint_range = range * 2.5f;
             if (hint_range * hint_range > distance) {
                 techno->flags |= TECHNO_FLAG_USED_THIS_FRAME;

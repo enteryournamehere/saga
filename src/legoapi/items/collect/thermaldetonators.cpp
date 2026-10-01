@@ -368,28 +368,31 @@ void PartImpact_ThermalDetonator(PART_s *part) {
     } else {
         GameShadow(NULL, &part->position, 5.0f, -1);
         u32 shadow = ShadowInfo();
-        if (shadow < 32 && (TerSurface[shadow].flags & 0x1000) != 0) {
-            PlaySfx(const_cast<char *>("imp_thermalDet_attach"), &part->position);
-            stuck = 2;
-        } else {
-            f32 water = EShadY;
-            if (water != 2000000.0f && (EShadowInfo() & ~8) == 1 && water > part->position.y) {
-                PlaySfx(const_cast<char *>("FS_WaterJump"), &part->position);
-                stuck = 1;
+        if (shadow < 32) {
+            if ((TerSurface[shadow].flags & 0x1000) != 0) {
+                PlaySfx(const_cast<char *>("imp_thermalDet_attach"), &part->position);
+                stuck = 2;
+            } else {
+                f32 water = EShadY;
+                if (water != 2000000.0f && (EShadowInfo() & ~8) == 1 && water > part->position.y) {
+                    PlaySfx(const_cast<char *>("FS_WaterJump"), &part->position);
+                    stuck = 1;
+                }
             }
         }
     }
     if (stuck != 0) {
+        void (*stop_callback)(PART_s *) = part->stop_callback;
         part->active |= 2;
-        if (part->stop_callback != NULL) {
-            part->stop_callback(part);
+        if (stop_callback != NULL) {
+            stop_callback(part);
         }
     }
     if (stuck != 2 && brickimpactwait <= 0.0f) {
         PartImpact_Brick(part);
         PlaySfx(const_cast<char *>("ThermalDet_Bnce"), &part->position);
     }
-    if ((part->active & 3) == 1) {
+    if ((part->active & 3) == 1 && WORLD != NULL) {
         NUVEC trail = {
             part->impact_position.x - part->impact_normal.x * part->radius,
             part->impact_position.y - part->impact_normal.y * part->radius,

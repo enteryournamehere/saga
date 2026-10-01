@@ -5405,12 +5405,11 @@ extern "C" {
         u8 increase = pad->analog_r1;
         if (decrease)
             goto decrease_time;
-        if (increase)
-            goto increase_time;
         decrease = left2;
         if (decrease)
             goto decrease_time;
-        increase = right2;
+        if (!increase)
+            increase = right2;
         if (!increase)
             return 0;
     increase_time:
@@ -6186,15 +6185,24 @@ extern "C" {
             eduiFntPrintEx(edui_font, (width + x * 2) << 3, (y << 3) + baseline, 64, item->text);
 
         i32 half_height = height >> 1;
-        for (edui_gradient_node_s *stage = gradient->first_stage; stage && stage->next; stage = stage->next) {
-            i32 colours[4] = {static_cast<i32>(stage->colour), static_cast<i32>(stage->next->colour),
-                              static_cast<i32>(stage->colour), static_cast<i32>(stage->next->colour)};
+        edui_gradient_node_s *stage = gradient->first_stage;
+        if (!stage)
+            return height;
+        f32 stage_time = stage->time;
+        u32 stage_colour = stage->colour;
+        edui_gradient_node_s *next = stage->next;
+        while (next) {
+            i32 colours[4] = {static_cast<i32>(stage_colour), static_cast<i32>(next->colour),
+                              static_cast<i32>(stage_colour), static_cast<i32>(next->colour)};
             if (!edui_donotdraw) {
-                i32 left = static_cast<i32>((width << 4) * stage->time);
-                i32 right = static_cast<i32>((width << 4) * stage->next->time);
+                i32 left = static_cast<i32>((width << 4) * stage_time);
+                i32 right = static_cast<i32>((width << 4) * next->time);
                 NuRndrGradRect2di((x << 4) + left, (y + half_height) << 3, right - left, half_height << 3, colours,
                                   uimtls[ui_bgmtl]);
             }
+            stage_time = next->time;
+            stage_colour = next->colour;
+            next = next->next;
         }
         for (edui_gradient_node_s *stage = gradient->first_stage; stage; stage = stage->next) {
             i32 marker_x = (x + static_cast<i32>(width * stage->time) - 2) << 4;

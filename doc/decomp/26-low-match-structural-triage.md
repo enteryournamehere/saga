@@ -7340,3 +7340,122 @@ landing gates, animation 0x8f timing, explicit jumps, movement clamping and
 attachment slope/offset behavior are already present. The repeated literal
 label for negative/positive one was disambiguated by raw addresses. No
 candidate, compilation trial or runtime-validation claim follows this audit.
+
+### Bounded follow-up gates after batch 234
+
+Do not repeat `Grabber_Update`, `MoveGameCamera` or
+`DisplayListLinkDynamicMtls` trials without new evidence: their complete
+current owners match previously examined baselines. The grabber's rejected
+dispatch/source-shape variants and original-owner merge remain closed. A
+dynamic-material reload/publication restoration previously lost **8.41
+original-weighted bytes** and remains reserved. Camera raw `UCOMISS`/`JB`
+branches seek on unordered values; the suggested negated-less-than blend
+guards would incorrectly snap instead. No giant camera reaudit, fresh
+compilation or runtime-validation claim follows that bounded triage.
+
+`DebrisProcessControlChunks` has a real pre-lock head snapshot difference.
+One combined exact-options clock-predicate/snapshot restoration loses
+**627.47 original-weighted bytes** across its owner, with all five exact
+functions preserved; it is reserved without fixtures or integration. Clock
+selection differs only outside valid indices zero/one for the existing
+two-element stack. The actual lock can sleep while occupied; concurrency is
+not runtime-validated. Raw expiry admission already rejects unordered values,
+despite Ghidra's misleading less-than exit expression. Keep the current
+ordered comparison; do not retry fixed key-slot/glass-reset fanout or NaN
+admission variants. Other collision/publication differences remain unaudited,
+not a claim of exhaustive faithful completion.
+
+`PunchCode`'s missing common gizmo-behind check already has a reserved
+original-backed correction, **9.093% to 9.084%** in its earlier isolated gate.
+The current body matches that audited baseline. Do not repeat this tiny
+negative trial or describe the untested reserve as completed behavior.
+
+`NewScanHandelSubset` is closed after its complete reference and disputed raw
+geometry review. Vertex storage starts after six bounds floats: the proposed
+x/z-offset discrepancy was a false lead, withdrawn before any trial. Four-axis
+walks, translating bounds and rotating squared reach already agree for the
+supported geometry contract. Legacy rejected-group cursors/wall-pointer streams
+are not permission to break the current safe owned-handle producer/consumer
+format. No source trial, score gain or runtime fixture follows this audit.
+
+## Batch 235: guarded portal selection and techno range
+
+`NuPortalWhichRoom` restores pre-insertion candidate-room snapshots, ordered
+final plane acceptance and unsigned single-room returns. Inner plane traversal
+still continues on unordered distance; portal-side NaN still selects the back
+room. A new guard ignores later unused candidate writes, preventing the old
+two-slot array overflow after a third match. Linked matching improves
+**11.131579% to 35.426315%**; all other 244 scorable owner functions remain
+unchanged in the isolated gate. Frozen actual-body host sanitizer and host
+i386 SSE fixtures pass **20,031 cases**. Removing only the guard independently
+fails on the fourth accepted room. Multiple selected indices must remain below
+32768; large unsigned single-room returns use fully allocated room records.
+Long accepted streams verify safe selected-pair behavior, not equivalence to
+retail scratch-space corruption.
+
+`Techno_MoveCode` uses the raw-verified radius increment **0.25**, replacing
+the incorrect **2,000,000**, and reloads its typed control object before target
+movement. Its linked score decreases **30.221520% to 28.455696%**; that small
+correctness loss is included inside this net-positive combined unit, not hidden
+or called an individual matching gain. Actual MoveCode, nearest/readiness/
+movement helpers and GameCam_Blend pass **1,622,293 finite cases** on host
+sanitizers and an unchanged NDK GCC 4.7 i386 body linked with the host runtime.
+The independent raw-bit range oracle covers both strict boundaries and distant
+rejection. Camera blending does not mutate the object's control pointer; no
+invented callback capability or real gameplay validation is claimed.
+
+Combined linked matching reaches **67.441830%**, **+0.313755 percentage points**
+from main, with **6,278** exact functions. Target/native builds and all five
+repository checks pass.
+
+## Batch 236: mission and shop spline overrides
+
+`LevelSplines_InitForLevel` restores per-eligible-entry bounty/shop start
+selection, two stable cutscene-player availability queries, return-door
+suppression, alternate minimum length and start-camera clearing. Overrides
+also run when the normal named spline is absent. Keep the null-scene skip and
+bound newly indexed start/camera slots. Linked matching improves **33.412060%
+to 44.663315%**, with no isolated owner collateral changes. Frozen actual-body
+host sanitizer and host i386 SSE fixtures pass **38 cases**; old bounty/shop
+assertions fail independently. Availability's actual helper is a pure global
+pointer return; no fabricated first-nonnull/second-null sequence is tested.
+Valid area indices and allocation storage remain loader preconditions.
+
+Linked matching reaches **67.443650%**, **+0.315575 percentage points** from main.
+
+## Batch 237: thermal-detonator impact closure
+
+`PartImpact_ThermalDetonator` restores special-platform/material attachment,
+shadow/water classification, sound-before-active/captured-stop ordering and
+brick-impact throttling. Captured extra-shadow height must be ordered above
+the live position to splash; unordered brick-wait rejects bounce. Preserve
+null-part/material bounds and add a null-WORLD trail guard. Linked matching
+improves **34.380283% to 52.014084%**; small throw/mom/water-splash collateral
+gains are counted. Frozen actual-body host sanitizer and host i386 SSE fixtures
+pass **68,379 cases**, including actual Brick, Stop_Flickerer and math helpers.
+The old attachment assertion fails independently. Diagnostic service mutations
+only probe capture/reload timing; they do not claim shipped pure shadow helpers
+perform those mutations. No real terrain/audio/gameplay validation is claimed.
+
+Linked matching reaches **67.446130%**, **+0.318055 percentage points** from main.
+
+## Batch 238: gradient-picker control and endpoint capture
+
+`eduicbProcessGradPick` gives either left trigger priority over the right
+triggers; `eduicbRenderGradPick` retains the endpoint across the render service
+and then reloads that endpoint's time/colour/link. Both target scores remain
+**0%**. The whole-TU gain is only **0.63272 original-weighted bytes** in
+neighboring number rendering; there is no claim of an individual picker score
+gain. Frozen actual-body host sanitizer/float-cast-overflow and host i386 SSE
+fixtures pass **20,000 process plus 20,000 render cases** each, with 1,190/526
+independent old-body divergences. Geometry/conversions are finite and bounded;
+nodes remain live/acyclic. Render-service mutation is diagnostic, not a claim
+that production rendering edits picker nodes. Config callbacks' registered
+identities are checked, not invoked through generated entries.
+
+The combined checkpoint reaches **67.446144%**, **+0.318069 percentage points**
+from main, with **6,278** exact functions. Target/native builds and all five
+repository checks pass. Original ownership, ABI, compiler options and scoring
+are unchanged. Except for the explicitly NDK-compiled techno body, the new
+i386 runtime fixtures use host GCC/SSE; production builds and isolated gates
+still use unchanged NDK r8e GCC 4.7. A fresh main fetch remains `2a57d7b7`.

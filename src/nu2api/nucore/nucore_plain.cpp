@@ -4430,13 +4430,19 @@ extern "C" {
                 ++plane;
                 --plane_count;
             }
-            if (plane_distance > 0.0f) {
+            if (!(plane_distance <= 0.0f)) {
                 continue;
             }
 
+            // Later matches do not change the selected pair; avoid overflowing the candidate slots.
+            if (candidate_count >= 3) {
+                continue;
+            }
+
+            // Retail snapshots the old candidate rooms before inserting this room.
+            NUROOM &first = scene->rooms[candidates[0]];
+            NUROOM &second = scene->rooms[candidates[1]];
             if (candidate_count == 2) {
-                NUROOM &first = scene->rooms[candidates[0]];
-                NUROOM &second = scene->rooms[candidates[1]];
                 if (first.priority < second.priority) {
                     candidates[0] = static_cast<i16>(room_index);
                 } else {
@@ -4451,8 +4457,6 @@ extern "C" {
                 continue;
             }
 
-            NUROOM &first = scene->rooms[candidates[0]];
-            NUROOM &second = scene->rooms[candidates[1]];
             if ((first.flags & NUROOM_FLAG_OVERLAPPING) != 0 || (second.flags & NUROOM_FLAG_OVERLAPPING) != 0) {
                 continue;
             }
@@ -4460,7 +4464,7 @@ extern "C" {
         }
 
         if (candidate_count == 1) {
-            return candidates[0];
+            return static_cast<u16>(candidates[0]);
         }
         if (candidate_count == 0) {
             return -1;

@@ -6,6 +6,7 @@
 #include "nu2api/nu3d/nuqfnt.h"
 
 #include <stdio.h>
+#include "nu2api/nucore/nuvuvec.hpp"
 
 void NetSmallStats::Draw(float x, float y, float width, float height, NetSmallStats::eInfo) const {
     width *= 0.5f;

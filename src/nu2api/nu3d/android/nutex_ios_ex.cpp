@@ -17,6 +17,7 @@
 #include "nu2api/nucore/nuthread.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nuplatform/nuplatform.h"
+#include "nu2api/nucore/nuvuvec.hpp"
 
 i32 g_currentTexUnit = -1;
 i32 g_loadDefaultTexture;

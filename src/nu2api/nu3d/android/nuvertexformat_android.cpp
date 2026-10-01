@@ -4,6 +4,7 @@
 #include "nu2api/nu3d/android/nuvertexformat_android.h"
 
 #include "nu2api/nu3d/numtl.h"
+#include "nu2api/nucore/nuvuvec.hpp"
 
 // g_vertexFormatPool: original static bss 0x11b90a0 (_ZL18g_vertexFormatPool),
 // 256 entries of 0x140 bytes each.

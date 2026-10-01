@@ -570,7 +570,7 @@ void StartEndOfJump(GameObject_s *object);
 void AlertSurroundingCreatures(GameObject_s *object, NUVEC *position);
 extern "C" i32 ParticlesPerSecond(f32 rate, f32 elapsed);
 
-__attribute__((optimize("O2", "no-omit-frame-pointer"))) void PushCode(GameObject_s *object, i32 allow_push) {
+void PushCode(GameObject_s *object, i32 allow_push) {
     if (VehicleArea != 0 || object->apiobj.field_0x27c == -1) {
         return;
     }

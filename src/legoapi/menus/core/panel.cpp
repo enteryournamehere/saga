@@ -585,11 +585,11 @@ void DrawBuildUpBar(float x, float y, i32 amount, i32 maximum, float scale, floa
     const f32 progress = static_cast<f32>(amount * 10) / maximum;
     const i32 full = progress;
     const f32 fraction = NuFmod(progress, 1.0f);
-    const f32 phase = GlobalTimer.time_elapsed_mod_seconds * 10.0f;
+    const i32 phase = static_cast<i32>(GlobalTimer.time_elapsed_mod_seconds * 10.0f);
     const f32 size = scale * 0.085f * width;
     const f32 step = width * 0.02975f * NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff];
     f32 px = x - step * 9.0f * 0.5f;
-    i32 shimmer = 0xb3 - static_cast<i32>(phase);
+    i32 shimmer = 0xb3 - phase;
     for (i32 i = 0; i < 10; ++i) {
         i32 object;
         if (amount == maximum) {
@@ -602,7 +602,7 @@ void DrawBuildUpBar(float x, float y, i32 amount, i32 maximum, float scale, floa
             object = fraction * 9.0f + 169.0f;
         else
             object = 0xa9;
-        const f32 depth[10] = {1.009f, 1.008f, 1.007f, 1.006f, 1.005f, 1.004f, 1.003f, 1.002f, 1.001f, 1.0f};
+        static const f32 depth[10] = {1.009f, 1.008f, 1.007f, 1.006f, 1.005f, 1.004f, 1.003f, 1.002f, 1.001f, 1.0f};
         DrawPanel3DObject(px, y, depth[i], size, size, size, 0, 0, 0,
                           reinterpret_cast<nuhspecial_s *>(&WORLD->lev_objs[object]), 0, alpha);
         px += step;

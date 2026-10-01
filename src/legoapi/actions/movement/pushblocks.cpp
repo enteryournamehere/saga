@@ -164,8 +164,7 @@ void ResetSinglePushBlock(WORLDINFO_s *, pushblock_s *block, i32) {
     }
 }
 
-__attribute__((optimize("O2"))) pushblock_s *NearestFacingPushBlock(WORLDINFO_s *world, GameObject_s *object,
-                                                                    float range) {
+pushblock_s *NearestFacingPushBlock(WORLDINFO_s *world, GameObject_s *object, float range) {
     pushblock_s *nearest = NULL;
     if (world == NULL)
         return nearest;
@@ -360,7 +359,7 @@ __attribute__((optimize("O2"))) pushblock_s *NearestFacingPushBlock(WORLDINFO_s 
     }
     return nearest;
 }
-__attribute__((optimize("O2"))) void GizmoPushBlockInitAndReset(WORLDINFO_s *world, void *progress) {
+void GizmoPushBlockInitAndReset(WORLDINFO_s *world, void *progress) {
     world->push_block_position_count = 0;
     runoutofpostabspace = 0;
     pushposincrease = 0;

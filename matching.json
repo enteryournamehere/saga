@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 67.128075,
+    "fuzzy_match_percent": 67.25042,
     "total_code": "4722419",
-    "matched_code": "523729",
-    "matched_code_percent": 11.09027,
+    "matched_code": "525273",
+    "matched_code_percent": 11.122965,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6276,
-    "matched_functions_percent": 46.63051,
+    "matched_functions": 6284,
+    "matched_functions_percent": 46.68995,
     "total_units": 1
   },
   "text": {
@@ -18090,7 +18090,7 @@
           "address": 915680,
           "offset": 25712,
           "size": 93,
-          "match_percent": 29.411764
+          "match_percent": 99.35294
         }
       ]
     },
@@ -19030,7 +19030,7 @@
           "address": 4014608,
           "offset": 3124640,
           "size": 156,
-          "match_percent": 78.40476
+          "match_percent": 88.64286
         },
         {
           "name": "_ZL14CreateAntinodeP7nuvec_s",
@@ -19078,7 +19078,7 @@
           "address": 4026784,
           "offset": 3136816,
           "size": 269,
-          "match_percent": 99.945946
+          "match_percent": 100.0
         },
         {
           "name": "_ZL33antinodeEditor_GetNearestAntinodei",
@@ -19094,7 +19094,7 @@
           "address": 4039520,
           "offset": 3149552,
           "size": 3155,
-          "match_percent": 41.23857
+          "match_percent": 40.55
         },
         {
           "name": "_ZL27antinodeEditor_cbSelectTypeP10eduimenu_sP10eduiitem_sj",
@@ -19246,7 +19246,7 @@
           "address": 4224160,
           "offset": 3334192,
           "size": 672,
-          "match_percent": 86.30857
+          "match_percent": 99.211426
         },
         {
           "name": "aieditor_cbSave",
@@ -19262,7 +19262,7 @@
           "address": 4229424,
           "offset": 3339456,
           "size": 269,
-          "match_percent": 86.69014
+          "match_percent": 96.54929
         },
         {
           "name": "aieditor_Reset",
@@ -19278,7 +19278,7 @@
           "address": 4260688,
           "offset": 3370720,
           "size": 1202,
-          "match_percent": 92.514854
+          "match_percent": 95.81848
         }
       ]
     },
@@ -22009,7 +22009,7 @@
           "address": 4246272,
           "offset": 3356304,
           "size": 318,
-          "match_percent": 99.59341
+          "match_percent": 99.64835
         },
         {
           "name": "_Z21creatureEditor_Renderiiff",
@@ -22017,7 +22017,7 @@
           "address": 4246592,
           "offset": 3356624,
           "size": 1947,
-          "match_percent": 77.28859
+          "match_percent": 79.845634
         },
         {
           "name": "_Z21antinodeEditor_Renderiiff",
@@ -38058,7 +38058,7 @@
           "address": 916032,
           "offset": 26064,
           "size": 93,
-          "match_percent": 0.0
+          "match_percent": 99.35294
         },
         {
           "name": "_ZN10TouchHacks20GetLoseStudsDieValueEv",
@@ -38154,7 +38154,7 @@
           "address": 4503600,
           "offset": 3613632,
           "size": 698,
-          "match_percent": 62.368057
+          "match_percent": 66.958336
         },
         {
           "name": "_ZN10TouchHacks33CheckForAboutToRunIntoKillTerrainER12GameObject_sf",
@@ -38186,7 +38186,7 @@
           "address": 4505312,
           "offset": 3615344,
           "size": 287,
-          "match_percent": 45.48052
+          "match_percent": 45.506493
         },
         {
           "name": "_ZN10TouchHacks26CalculateJumpVelToHitPointER12GameObject_sRK5VuVec",
@@ -38202,7 +38202,7 @@
           "address": 4505744,
           "offset": 3615776,
           "size": 390,
-          "match_percent": 58.604168
+          "match_percent": 58.635418
         },
         {
           "name": "_ZN10TouchHacks14CanJumpToPointER12GameObject_sRK5VuVec",
@@ -38210,7 +38210,7 @@
           "address": 4506144,
           "offset": 3616176,
           "size": 238,
-          "match_percent": 42.157894
+          "match_percent": 46.94737
         },
         {
           "name": "_ZN10TouchHacks8CanLungeER12GameObject_s",
@@ -38346,7 +38346,7 @@
           "address": 4509168,
           "offset": 3619200,
           "size": 508,
-          "match_percent": 55.04032
+          "match_percent": 60.741936
         },
         {
           "name": "_ZN10TouchHacks9TintStackC1Ev",
@@ -39043,7 +39043,7 @@
           "address": 979024,
           "offset": 89056,
           "size": 119,
-          "match_percent": 87.77778
+          "match_percent": 100.0
         },
         {
           "name": "Java_com_tt_tech_TTActivity_nativeCacheJNIVars",
@@ -39749,7 +39749,7 @@
           "address": 921040,
           "offset": 31072,
           "size": 93,
-          "match_percent": 0.0
+          "match_percent": 99.35294
         },
         {
           "name": "_Z15AddStreakPointsP7nuvec_sfjPPviS1_",
@@ -39757,7 +39757,7 @@
           "address": 4865920,
           "offset": 3975952,
           "size": 1399,
-          "match_percent": 39.728024
+          "match_percent": 42.434067
         },
         {
           "name": "_Z13UpdateStreaksf",
@@ -39773,7 +39773,7 @@
           "address": 4867696,
           "offset": 3977728,
           "size": 891,
-          "match_percent": 50.396477
+          "match_percent": 58.083702
         },
         {
           "name": "_Z12ResetStreaksv",
@@ -40286,7 +40286,7 @@
           "address": 922672,
           "offset": 32704,
           "size": 93,
-          "match_percent": 0.0
+          "match_percent": 99.35294
         },
         {
           "name": "_Z19ShoveObjectSysResetv",
@@ -40302,7 +40302,7 @@
           "address": 5008528,
           "offset": 4118560,
           "size": 171,
-          "match_percent": 72.22727
+          "match_percent": 67.545456
         },
         {
           "name": "_Z26ShoveSystemCheckGameObjectP12GameObject_s",
@@ -40310,7 +40310,7 @@
           "address": 5008704,
           "offset": 4118736,
           "size": 831,
-          "match_percent": 0.0
+          "match_percent": 90.87766
         }
       ]
     },
@@ -40499,7 +40499,7 @@
           "address": 925760,
           "offset": 35792,
           "size": 93,
-          "match_percent": 0.0
+          "match_percent": 99.35294
         },
         {
           "name": "_ZL22ClimbObject_FindNormalP13CLIMBOBJECT_s",
@@ -40563,7 +40563,7 @@
           "address": 5188688,
           "offset": 4298720,
           "size": 363,
-          "match_percent": 75.171715
+          "match_percent": 93.78788
         },
         {
           "name": "_Z15FindClimbObjectP16CLIMBOBJECTSYS_sP11AIPATHCNX_s",
@@ -40760,7 +40760,7 @@
           "address": 926048,
           "offset": 36080,
           "size": 93,
-          "match_percent": 0.0
+          "match_percent": 99.35294
         },
         {
           "name": "_Z14NewBlockActionP12GameObject_s",
@@ -40768,7 +40768,7 @@
           "address": 5193568,
           "offset": 4303600,
           "size": 230,
-          "match_percent": 31.233767
+          "match_percent": 52.844154
         },
         {
           "name": "_Z14KnockPushBlockP11pushblock_sP7nuvec_s",
@@ -40776,7 +40776,7 @@
           "address": 5204640,
           "offset": 4314672,
           "size": 139,
-          "match_percent": 77.70588
+          "match_percent": 99.97059
         },
         {
           "name": "_Z20ResetSinglePushBlockP11WORLDINFO_sP11pushblock_si",
@@ -40784,7 +40784,7 @@
           "address": 5205232,
           "offset": 4315264,
           "size": 309,
-          "match_percent": 7.929577
+          "match_percent": 87.92958
         },
         {
           "name": "_Z22NearestFacingPushBlockP11WORLDINFO_sP12GameObject_sf",
@@ -40792,7 +40792,7 @@
           "address": 5206544,
           "offset": 4316576,
           "size": 1474,
-          "match_percent": 59.03416
+          "match_percent": 58.242237
         },
         {
           "name": "_Z9PushBlockP12GameObject_s",
@@ -40800,7 +40800,7 @@
           "address": 5208032,
           "offset": 4318064,
           "size": 134,
-          "match_percent": 68.84375
+          "match_percent": 100.0
         },
         {
           "name": "_Z26ResetSinglePushBlockHeightP11WORLDINFO_sP11pushblock_si",
@@ -40808,7 +40808,7 @@
           "address": 5208816,
           "offset": 4318848,
           "size": 167,
-          "match_percent": 63.11628
+          "match_percent": 99.95349
         },
         {
           "name": "_Z26GizmoPushBlockInitAndResetP11WORLDINFO_sPv",
@@ -40816,7 +40816,7 @@
           "address": 5210704,
           "offset": 4320736,
           "size": 2169,
-          "match_percent": 50.58411
+          "match_percent": 52.86682
         },
         {
           "name": "_Z17OtherBlockInRangeP11WORLDINFO_sP11pushblock_sP7nuvec_si",
@@ -40824,7 +40824,7 @@
           "address": 5212880,
           "offset": 4322912,
           "size": 452,
-          "match_percent": 45.033333
+          "match_percent": 95.35
         },
         {
           "name": "_Z16PushSeekCompleteP11pushblock_si",
@@ -40832,7 +40832,7 @@
           "address": 5213520,
           "offset": 4323552,
           "size": 159,
-          "match_percent": 55.707317
+          "match_percent": 89.85366
         },
         {
           "name": "_Z16NearestPushBlockP11WORLDINFO_sP7nuvec_sf",
@@ -40840,7 +40840,7 @@
           "address": 5219520,
           "offset": 4329552,
           "size": 451,
-          "match_percent": 40.117645
+          "match_percent": 64.62745
         },
         {
           "name": "_Z30GizPushBlock_EndFrameCompletedP11pushblock_si",
@@ -40848,7 +40848,7 @@
           "address": 5220608,
           "offset": 4330640,
           "size": 58,
-          "match_percent": 100.0
+          "match_percent": 46.666668
         }
       ]
     },
@@ -40950,7 +40950,7 @@
           "address": 1556080,
           "offset": 666112,
           "size": 237,
-          "match_percent": 19.550724
+          "match_percent": 100.0
         },
         {
           "name": "AISysLoad",
@@ -40958,7 +40958,7 @@
           "address": 4106224,
           "offset": 3216256,
           "size": 86,
-          "match_percent": 65.0
+          "match_percent": 100.0
         },
         {
           "name": "_Z20CreateClimbObjectSysP9variptr_uS0_i",
@@ -40966,7 +40966,7 @@
           "address": 5188544,
           "offset": 4298576,
           "size": 140,
-          "match_percent": 12.974359
+          "match_percent": 100.0
         },
         {
           "name": "_Z24AIPathCnxHelperSysCreateP9variptr_uS0_i",
@@ -40974,7 +40974,7 @@
           "address": 5244000,
           "offset": 4354032,
           "size": 140,
-          "match_percent": 20.804878
+          "match_percent": 100.0
         }
       ]
     },
@@ -41626,7 +41626,7 @@
           "address": 926432,
           "offset": 36464,
           "size": 93,
-          "match_percent": 29.411764
+          "match_percent": 99.35294
         }
       ]
     },
@@ -41934,7 +41934,7 @@
           "address": 921520,
           "offset": 31552,
           "size": 93,
-          "match_percent": 0.0
+          "match_percent": 99.35294
         },
         {
           "name": "_Z27AISysDrawAntinode_RectangleP12AIANTINODE_sj",
@@ -41974,7 +41974,7 @@
           "address": 4220976,
           "offset": 3331008,
           "size": 796,
-          "match_percent": 58.08108
+          "match_percent": 44.124325
         },
         {
           "name": "antinodeEditorSaveData",
@@ -42022,7 +42022,7 @@
           "address": 4905712,
           "offset": 4015744,
           "size": 295,
-          "match_percent": 74.712326
+          "match_percent": 68.41096
         },
         {
           "name": "_Z36GameAntinode_UpdateAntiNodeUsingDataP17GAMEANTINODESYS_sP14GAMEANTINODE_sP7nuvec_stP18GAMEANTINODEDATA_sfi",
@@ -42046,7 +42046,7 @@
           "address": 4906928,
           "offset": 4016960,
           "size": 1191,
-          "match_percent": 33.605263
+          "match_percent": 42.611843
         }
       ]
     },
@@ -42061,7 +42061,7 @@
           "address": 900576,
           "offset": 10608,
           "size": 93,
-          "match_percent": 0.0
+          "match_percent": 99.35294
         },
         {
           "name": "_ZL31Hub_MakeListCharactersAvailablePs",
@@ -42069,7 +42069,7 @@
           "address": 2352144,
           "offset": 1462176,
           "size": 1029,
-          "match_percent": 32.381626
+          "match_percent": 87.61484
         },
         {
           "name": "_ZL19Hub_GoneThroughDoorP11WORLDINFO_s.isra.0",
@@ -42077,7 +42077,7 @@
           "address": 2353184,
           "offset": 1463216,
           "size": 2790,
-          "match_percent": 42.490566
+          "match_percent": 42.27673
         },
         {
           "name": "_Z14LSW_Hub_InitAIP11WORLDINFO_s",
@@ -42085,7 +42085,7 @@
           "address": 2355984,
           "offset": 1466016,
           "size": 1291,
-          "match_percent": 37.248226
+          "match_percent": 95.78014
         },
         {
           "name": "_Z15LSW_Hub_ResetAIP11WORLDINFO_s",
@@ -42117,7 +42117,7 @@
           "address": 2357520,
           "offset": 1467552,
           "size": 251,
-          "match_percent": 25.702703
+          "match_percent": 29.18919
         },
         {
           "name": "_Z16LSW_Hub_UpdateAIP11WORLDINFO_s",
@@ -42148,7 +42148,7 @@
           "address": 2357968,
           "offset": 1468000,
           "size": 340,
-          "match_percent": 20.518867
+          "match_percent": 100.0
         }
       ]
     },
@@ -45793,7 +45793,7 @@
           "address": 924768,
           "offset": 34800,
           "size": 93,
-          "match_percent": 0.0
+          "match_percent": 99.35294
         },
         {
           "name": "_Z22FindPlayerAndSetWeaponii",
@@ -45889,7 +45889,7 @@
           "address": 5191168,
           "offset": 4301200,
           "size": 1059,
-          "match_percent": 68.30043
+          "match_percent": 68.53648
         },
         {
           "name": "_Z12WeaponInCodeP12GameObject_s",
@@ -46732,7 +46732,7 @@
           "address": 920272,
           "offset": 30304,
           "size": 93,
-          "match_percent": 0.0
+          "match_percent": 99.35294
         },
         {
           "name": "_Z14CharPivot_InitP9CHARPIVOT",
@@ -50081,7 +50081,7 @@
           "address": 894064,
           "offset": 4096,
           "size": 93,
-          "match_percent": 0.0
+          "match_percent": 99.35294
         },
         {
           "name": "_Z9EndOfDemoi",
@@ -54562,7 +54562,7 @@
           "address": 2275024,
           "offset": 1385056,
           "size": 7117,
-          "match_percent": 25.823318
+          "match_percent": 26.343348
         },
         {
           "name": "_Z12Grabber_DrawP11WORLDINFO_s",
@@ -54570,7 +54570,7 @@
           "address": 2282144,
           "offset": 1392176,
           "size": 2207,
-          "match_percent": 85.16514
+          "match_percent": 85.01835
         },
         {
           "name": "_Z21Grabber_StoreProgressP11WORLDINFO_sP16LEVEL_PROGRESS_s",
@@ -56797,7 +56797,7 @@
           "address": 4978160,
           "offset": 4088192,
           "size": 961,
-          "match_percent": 77.14222
+          "match_percent": 77.48889
         },
         {
           "name": "_ZL33GizmoPickups_AllocateProgressDataP9variptr_uS0_",
@@ -56813,7 +56813,7 @@
           "address": 4979200,
           "offset": 4089232,
           "size": 493,
-          "match_percent": 55.37226
+          "match_percent": 54.824818
         },
         {
           "name": "_ZL22GizmoPickups_AddGizmosP10GIZMOSYS_siPvS1_",
@@ -56837,7 +56837,7 @@
           "address": 4982816,
           "offset": 4092848,
           "size": 283,
-          "match_percent": 27.61111
+          "match_percent": 55.61111
         },
         {
           "name": "_ZL26GizmoPickups_StoreProgressPvS_S_",
@@ -56861,7 +56861,7 @@
           "address": 4983808,
           "offset": 4093840,
           "size": 214,
-          "match_percent": 99.96296
+          "match_percent": 97.27778
         },
         {
           "name": "_ZL17GizmoPickups_LoadPvS_",
@@ -56869,7 +56869,7 @@
           "address": 4984160,
           "offset": 4094192,
           "size": 762,
-          "match_percent": 25.87755
+          "match_percent": 35.637756
         },
         {
           "name": "_ZL31GizmoPickups_ReserveBufferSpacePv",
@@ -56901,7 +56901,7 @@
           "address": 4985824,
           "offset": 4095856,
           "size": 145,
-          "match_percent": 89.98113
+          "match_percent": 40.320755
         },
         {
           "name": "_Z22GizmoPickup_FindByNameP11WORLDINFO_sPc",
@@ -56957,7 +56957,7 @@
           "address": 4988928,
           "offset": 4098960,
           "size": 1047,
-          "match_percent": 46.75
+          "match_percent": 47.003788
         },
         {
           "name": "_Z21SpecialMiniKits_ResetP11WORLDINFO_s",
@@ -56965,7 +56965,7 @@
           "address": 4989984,
           "offset": 4100016,
           "size": 169,
-          "match_percent": 98.51923
+          "match_percent": 96.01923
         },
         {
           "name": "_Z20SpecialMiniKits_DrawP11WORLDINFO_s",
@@ -56973,7 +56973,7 @@
           "address": 4990160,
           "offset": 4100192,
           "size": 972,
-          "match_percent": 11.609756
+          "match_percent": 11.544716
         }
       ]
     },
@@ -63190,7 +63190,7 @@
           "address": 1841056,
           "offset": 951088,
           "size": 2052,
-          "match_percent": 46.24878
+          "match_percent": 54.38049
         },
         {
           "name": "_Z25ThermalDetonator_ThrowMomP12GameObject_sP7nuvec_s",
@@ -67640,7 +67640,7 @@
           "address": 924960,
           "offset": 34992,
           "size": 219,
-          "match_percent": 7.934782
+          "match_percent": 22.76087
         },
         {
           "name": "_Z16Dodge_UpdateHintP6HINT_s",
@@ -71488,7 +71488,7 @@
           "address": 3805152,
           "offset": 2915184,
           "size": 131,
-          "match_percent": 65.675674
+          "match_percent": 74.189186
         },
         {
           "name": "tpentOnEnter",
@@ -71496,7 +71496,7 @@
           "address": 3805296,
           "offset": 2915328,
           "size": 119,
-          "match_percent": 62.65625
+          "match_percent": 77.5
         }
       ]
     },
@@ -73632,7 +73632,7 @@
           "address": 897600,
           "offset": 7632,
           "size": 93,
-          "match_percent": 99.35294
+          "match_percent": 0.0
         },
         {
           "name": "_ZL17ZipUp_ActivateRevP7GIZMO_sii",
@@ -73736,7 +73736,7 @@
           "address": 1906496,
           "offset": 1016528,
           "size": 201,
-          "match_percent": 74.77358
+          "match_percent": 67.49056
         },
         {
           "name": "_ZL16ZipUps_AddGizmosP10GIZMOSYS_siPvS1_",
@@ -73744,7 +73744,7 @@
           "address": 1906704,
           "offset": 1016736,
           "size": 134,
-          "match_percent": 89.90476
+          "match_percent": 89.54762
         },
         {
           "name": "_Z12ZipUps_ResetPvS_S_",
@@ -73752,7 +73752,7 @@
           "address": 1906848,
           "offset": 1016880,
           "size": 633,
-          "match_percent": 75.32903
+          "match_percent": 75.52258
         },
         {
           "name": "_ZL11ZipUps_LoadPvS_",
@@ -73760,7 +73760,7 @@
           "address": 1907488,
           "offset": 1017520,
           "size": 564,
-          "match_percent": 60.954838
+          "match_percent": 61.051613
         },
         {
           "name": "_ZL20ZipUps_StoreProgressPvS_S_",
@@ -73784,7 +73784,7 @@
           "address": 1909984,
           "offset": 1020016,
           "size": 612,
-          "match_percent": 55.188313
+          "match_percent": 41.81818
         },
         {
           "name": "_Z14ZipUp_MoveCodeP12GameObject_si",
@@ -73792,7 +73792,7 @@
           "address": 1910608,
           "offset": 1020640,
           "size": 4982,
-          "match_percent": 19.959808
+          "match_percent": 26.269857
         },
         {
           "name": "_Z17ZipUps_UpdateHintP6HINT_s",
@@ -73800,7 +73800,7 @@
           "address": 1915600,
           "offset": 1025632,
           "size": 196,
-          "match_percent": 76.28125
+          "match_percent": 77.6875
         },
         {
           "name": "_Z20ZipUps_RegisterGizmoi",
@@ -73824,7 +73824,7 @@
           "address": 1916480,
           "offset": 1026512,
           "size": 2765,
-          "match_percent": 36.388187
+          "match_percent": 36.35654
         },
         {
           "name": "_Z16ZipUps_DrawLinesv",
@@ -73832,7 +73832,7 @@
           "address": 1919248,
           "offset": 1029280,
           "size": 546,
-          "match_percent": 29.733871
+          "match_percent": 87.21774
         }
       ]
     },
@@ -81366,7 +81366,7 @@
           "address": 919504,
           "offset": 29536,
           "size": 93,
-          "match_percent": 0.0
+          "match_percent": 99.35294
         },
         {
           "name": "_Z16Faders_ConfigureP11WORLDINFO_sPc",
@@ -81374,7 +81374,7 @@
           "address": 4773584,
           "offset": 3883616,
           "size": 539,
-          "match_percent": 82.333336
+          "match_percent": 82.05556
         },
         {
           "name": "_Z12Faders_ResetP11WORLDINFO_s",
@@ -81405,7 +81405,7 @@
           "address": 921232,
           "offset": 31264,
           "size": 93,
-          "match_percent": 0.0
+          "match_percent": 99.35294
         },
         {
           "name": "_Z9SetLightsP11nucolour3_sP7nuvec_sS0_S2_S0_S2_S2_",
@@ -81437,7 +81437,7 @@
           "address": 4876144,
           "offset": 3986176,
           "size": 495,
-          "match_percent": 96.736435
+          "match_percent": 96.82171
         },
         {
           "name": "_Z11ResetLightsP7nuvec_sP9rtldata_sPv",
@@ -81477,7 +81477,7 @@
           "address": 4877472,
           "offset": 3987504,
           "size": 201,
-          "match_percent": 95.0
+          "match_percent": 94.71698
         },
         {
           "name": "_Z20FreeGameObjectLightsv",
@@ -81485,7 +81485,7 @@
           "address": 4877680,
           "offset": 3987712,
           "size": 137,
-          "match_percent": 77.093025
+          "match_percent": 100.0
         },
         {
           "name": "_Z15LightGameObjectP12GameObject_sPv",
@@ -81501,7 +81501,7 @@
           "address": 4880048,
           "offset": 3990080,
           "size": 1996,
-          "match_percent": 68.338234
+          "match_percent": 68.254906
         },
         {
           "name": "_Z16SetSpotLightModev",
@@ -86745,7 +86745,7 @@
           "address": 4662256,
           "offset": 3772288,
           "size": 1305,
-          "match_percent": 54.962265
+          "match_percent": 56.11006
         },
         {
           "name": "_Z27LevelStreaming_DoorOverrideP11WORLDINFO_sP11LEVELDATA_sfPf",
@@ -87420,7 +87420,7 @@
           "address": 896448,
           "offset": 6480,
           "size": 93,
-          "match_percent": 0.0
+          "match_percent": 99.35294
         },
         {
           "name": "_ZL12LoadPermDataP12bgprocinfo_s",
@@ -87831,7 +87831,7 @@
           "address": 904080,
           "offset": 14112,
           "size": 93,
-          "match_percent": 0.0
+          "match_percent": 99.35294
         },
         {
           "name": "_Z16_NuCheckGLErrorsPKc",
@@ -88721,7 +88721,7 @@
           "address": 902784,
           "offset": 12816,
           "size": 154,
-          "match_percent": 32.03846
+          "match_percent": 64.96154
         },
         {
           "name": "_Z13NuMtlCreatePSP7numtl_si",
@@ -91412,7 +91412,7 @@
           "address": 3083312,
           "offset": 2193344,
           "size": 864,
-          "match_percent": 86.81225
+          "match_percent": 88.88571
         },
         {
           "name": "_ZN14NuDynamicLight9RenderSetC2Ev",
@@ -91420,7 +91420,7 @@
           "address": 3083312,
           "offset": 2193344,
           "size": 864,
-          "match_percent": 86.81225
+          "match_percent": 88.88571
         },
         {
           "name": "_ZN14NuDynamicLightC1Ev",
@@ -94799,7 +94799,7 @@
           "address": 2576704,
           "offset": 1686736,
           "size": 27,
-          "match_percent": 99.833336
+          "match_percent": 97.833336
         },
         {
           "name": "NuPhoneOSMessagePost",
@@ -94807,7 +94807,7 @@
           "address": 2576736,
           "offset": 1686768,
           "size": 659,
-          "match_percent": 33.480263
+          "match_percent": 8.342105
         },
         {
           "name": "NuPhoneOSMessagePump",
@@ -94815,7 +94815,7 @@
           "address": 2577408,
           "offset": 1687440,
           "size": 440,
-          "match_percent": 10.278261
+          "match_percent": 59.15652
         },
         {
           "name": "_ZN13NuThreadQueueI16NuPhoneOSMessageLj128EED1Ev",
@@ -95858,7 +95858,7 @@
           "address": 1012640,
           "offset": 122672,
           "size": 868,
-          "match_percent": 59.405174
+          "match_percent": 60.28879
         },
         {
           "name": "_ZN12NuMemoryPoolD1Ev",
@@ -112124,7 +112124,7 @@
           "address": 908112,
           "offset": 18144,
           "size": 721,
-          "match_percent": 51.271427
+          "match_percent": 23.242857
         },
         {
           "name": "_Z24NuSound3SampleLoadThreadPv",
@@ -112132,7 +112132,7 @@
           "address": 3205168,
           "offset": 2315200,
           "size": 621,
-          "match_percent": 49.965115
+          "match_percent": 52.970932
         },
         {
           "name": "_Z17PS2VolumeToScalari",
@@ -112188,7 +112188,7 @@
           "address": 3215024,
           "offset": 2325056,
           "size": 94,
-          "match_percent": 99.34286
+          "match_percent": 88.314285
         },
         {
           "name": "NuSound3FindOldestVoice",
@@ -112220,7 +112220,7 @@
           "address": 3215488,
           "offset": 2325520,
           "size": 465,
-          "match_percent": 46.653847
+          "match_percent": 35.16923
         },
         {
           "name": "NuSound3Play3dLoopSfx",
@@ -112348,7 +112348,7 @@
           "address": 3222336,
           "offset": 2332368,
           "size": 583,
-          "match_percent": 65.347824
+          "match_percent": 62.795033
         },
         {
           "name": "NuSound3Update",
@@ -112356,7 +112356,7 @@
           "address": 3228928,
           "offset": 2338960,
           "size": 2933,
-          "match_percent": 16.90095
+          "match_percent": 33.074627
         },
         {
           "name": "_ZN14NuSoundWeakPtrI12NuSoundVoiceE5ClearEv",
@@ -116288,7 +116288,7 @@
           "address": 911792,
           "offset": 21824,
           "size": 313,
-          "match_percent": 12.363636
+          "match_percent": 41.745453
         },
         {
           "name": "_ZNK13NuSoundSample8IsLockedEv",
@@ -116670,7 +116670,7 @@
           "address": 3296208,
           "offset": 2406240,
           "size": 1479,
-          "match_percent": 9.898255
+          "match_percent": 9.892442
         },
         {
           "name": "_ZN22NuSoundStreamingSample5CloseEv",
@@ -116686,7 +116686,7 @@
           "address": 3298080,
           "offset": 2408112,
           "size": 567,
-          "match_percent": 61.496773
+          "match_percent": 61.65161
         },
         {
           "name": "_ZN15NuSoundStreamerC1Ev",
@@ -116726,7 +116726,7 @@
           "address": 3299520,
           "offset": 2409552,
           "size": 2539,
-          "match_percent": 48.53846
+          "match_percent": 53.564102
         },
         {
           "name": "_ZN15NuSoundStreamer11RequestFillEP22NuSoundStreamingSampleP13NuSoundBufferb14NuSoundWeakPtrI21NuSoundBufferCallbackE",
@@ -116734,7 +116734,7 @@
           "address": 3302064,
           "offset": 2412096,
           "size": 1115,
-          "match_percent": 58.676365
+          "match_percent": 58.77091
         },
         {
           "name": "_ZN22NuSoundStreamingSample13RequestBufferEb14NuSoundWeakPtrI21NuSoundBufferCallbackE",
@@ -116742,7 +116742,7 @@
           "address": 3303184,
           "offset": 2413216,
           "size": 459,
-          "match_percent": 24.942623
+          "match_percent": 5.770492
         },
         {
           "name": "_ZN15NuSoundStreamer14ShutdownThreadEv",
@@ -118761,7 +118761,7 @@
       "address": 914112,
       "offset": 24144,
       "size": 93,
-      "match_percent": 0.0,
+      "match_percent": 99.35294,
       "candidate_units": [
         "editor/edtoolsall.cpp.o",
         "gameapi/edtools/edtoolsall.cpp.o"
@@ -118950,11 +118950,8 @@
       "size": 373,
       "match_percent": 87.2,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -118990,11 +118987,8 @@
       "size": 76,
       "match_percent": 53.041668,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -119030,11 +119024,8 @@
       "size": 76,
       "match_percent": 53.041668,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -119086,11 +119077,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -119162,11 +119150,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -119218,11 +119203,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -119274,11 +119256,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -119330,11 +119309,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -119386,11 +119362,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -119442,11 +119415,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -119708,11 +119678,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -119764,11 +119731,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -119820,11 +119784,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -119925,11 +119886,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -119993,11 +119951,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -120150,11 +120105,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -120258,11 +120210,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -120366,11 +120315,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -120422,11 +120368,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -120478,11 +120421,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -120534,11 +120474,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -120616,11 +120553,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -120672,11 +120606,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -120740,11 +120671,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -120796,11 +120724,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -120865,11 +120790,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -120921,11 +120843,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -120997,11 +120916,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -121053,11 +120969,8 @@
       "size": 373,
       "match_percent": 99.7,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -121107,13 +121020,10 @@
       "address": 3178119,
       "offset": 2288151,
       "size": 373,
-      "match_percent": 99.7,
+      "match_percent": 0.0,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -121163,13 +121073,10 @@
       "address": 3181127,
       "offset": 2291159,
       "size": 373,
-      "match_percent": 99.7,
+      "match_percent": 0.0,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -121282,13 +121189,10 @@
       "address": 3238787,
       "offset": 2348819,
       "size": 373,
-      "match_percent": 99.7,
+      "match_percent": 0.0,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -121340,11 +121244,8 @@
       "size": 373,
       "match_percent": 0.0,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -121396,11 +121297,8 @@
       "size": 373,
       "match_percent": 0.0,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -121799,11 +121697,8 @@
       "size": 373,
       "match_percent": 0.0,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -121903,11 +121798,8 @@
       "size": 373,
       "match_percent": 0.0,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -122006,11 +121898,8 @@
       "size": 373,
       "match_percent": 0.0,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -122672,11 +122561,8 @@
       "size": 373,
       "match_percent": 0.0,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",
@@ -122728,11 +122614,8 @@
       "size": 373,
       "match_percent": 0.0,
       "candidate_units": [
-        "MechInputTouch/MechObjectInterface.cpp.o",
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/ai/core/ai_sys.cpp.o",
-        "legoapi/ai/core/legoai.cpp.o",
         "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
         "legoapi/items/objects/things.cpp.o",

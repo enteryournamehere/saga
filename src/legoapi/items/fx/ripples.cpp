@@ -252,7 +252,7 @@ void AddSurfaceRipples(GameObject_s *object) {
             return;
         }
         if (static_cast<u8>(object->field_0x6b0 - 12) > 1) {
-            if (object->sabre_contact_sfx_timer > 0.0f)
+            if (!(object->sabre_contact_sfx_timer <= 0.0f))
                 object->sabre_contact_sfx_timer -= FRAMETIME;
             return;
         }

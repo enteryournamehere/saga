@@ -322,7 +322,7 @@ __attribute__((force_align_arg_pointer)) void SetCreatureLights(APIOBJECT_s *obj
             red = blue;
         else
             red *= 0.0f;
-    } else if (owner->interaction_arrow_blend > 0.0f) {
+    } else if (!(owner->interaction_arrow_blend <= 0.0f)) {
         const f32 phase = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f) * 2.0f;
         const f32 scale = owner->interaction_arrow_blend * 0.5f * NU_SIN_LUT(static_cast<i32>(phase * 65536.0f)) + 1.0f;
         red = green = blue = scale;

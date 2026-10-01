@@ -357,7 +357,8 @@ void SuperCarry_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
                 NUVEC delta;
                 f32 distance = NuVecDistSqr(&blowup->mid_position, &object->apiobj.collision_position, &delta);
                 f32 radius = object->apiobj.field_0x1dc + blowup->target_scale + 0.2f;
-                if (distance < best && distance < radius * radius && delta.x * forward.x + delta.z * forward.z > 0.0f) {
+                if (distance < best && distance < radius * radius &&
+                    delta.x * forward.x + delta.z * !(forward.z <= 0.0f)) {
                     nearest = blowup;
                     best = distance;
                 }
@@ -492,7 +493,7 @@ void SuperCarry_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
                             object->context_flags &= static_cast<u8>(~0x40);
                             f32 duration = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 1);
                             object->context_animation_timer = duration;
-                            if (duration <= 0.0f)
+                            if (!(duration > 0.0f))
                                 object->context_animation_timer = 0.5f;
                             return;
                         }

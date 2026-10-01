@@ -94,7 +94,7 @@ void LoopCode(GameObject_s *object, i32 jump_pressed, i32, GAMEPAD_s *pad, i32 a
         return;
     }
 
-    if (object->apiobj.character_data->game_character->field_0x88 <= 0.0f || object->character_context != -1) {
+    if (!(object->apiobj.character_data->game_character->field_0x88 > 0.0f) || object->character_context != -1) {
         return;
     }
 
@@ -106,7 +106,7 @@ void LoopCode(GameObject_s *object, i32 jump_pressed, i32, GAMEPAD_s *pad, i32 a
         goto start_loop;
     }
 
-    if (object->delayed_turn_timer > 0.0f) {
+    if (!(object->delayed_turn_timer <= 0.0f)) {
         return;
     }
 

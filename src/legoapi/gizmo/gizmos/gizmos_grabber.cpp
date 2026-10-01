@@ -226,7 +226,7 @@ void Grabber_Update(WORLDINFO_s *world) {
         if (next.z >= 11.84f) {
             next.z = 11.84f;
             g->target_velocity.z = g->velocity.z = 0.0f;
-        } else if (next.z < 10.125f) {
+        } else if (!(next.z >= 10.125f)) {
             next.z = 10.125f;
             g->target_velocity.z = g->velocity.z = 0.0f;
         }

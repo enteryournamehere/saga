@@ -131,7 +131,7 @@ void SlowWeaponIn(GameObject_s *object) {
         if (action != -1 && object->apiobj.character_model->model_data_b[action] != NULL) {
             const f32 end = NuAnimEndFrame(object->apiobj.character_model->model_data_b[action]);
             f32 start = AnimListFrame(object->apiobj.character_model, action, 0);
-            if (start < 1.0f)
+            if (!(start >= 1.0f))
                 start = 1.0f;
             if (start >= 1.0f && start < end) {
                 const f32 finish = AnimListFrame(object->apiobj.character_model, action, 1);

@@ -464,7 +464,7 @@ void edbriDoInput(nupad_s *pad) {
         edbri_width -= pad->analog_left_pad_left / 5000.0f;
         if (edbri_width < 0.1f)
             edbri_width = 0.1f;
-        if (edbri_width > 5.0f)
+        if (!(edbri_width <= 5.0f))
             edbri_width = 5.0f;
     }
 }

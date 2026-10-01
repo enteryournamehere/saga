@@ -483,7 +483,7 @@ static void HatMachine_Draw(void *world_ptr, void *, float) {
         if (animated_instance_animation != NULL) {
             if (machine->animation_state > 0) {
                 machine->animation_time += FRAMETIME;
-                if (machine->animation_state <= 3 && machine->animation_time >= 3.0f) {
+                if (machine->animation_state <= 3 && !(machine->animation_time < 3.0f)) {
                     machine->animation_state = 4;
                     machine->state_elapsed = 0.0f;
                     machine->state_duration = 2.0f;
@@ -747,7 +747,7 @@ void HatMachine_MoveCode(WORLDINFO_s *world, GameObject_s *object, i32 special_p
             AlertSurroundingCreatures(object, &object->apiobj.collision_position);
             object->context_animation_timer = AnimDuration(object->id, object->context_animation, 0.0f, 0.0f, 1);
             machine->animation_duration = object->context_animation_timer;
-            if (object->context_animation_timer <= 0.0f) {
+            if (!(object->context_animation_timer > 0.0f)) {
                 object->context_animation_timer = 2.0f;
             }
             object->field_0xdb0 = 0.0f;

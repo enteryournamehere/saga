@@ -2134,9 +2134,8 @@ extern "C" {
 
     i32 ANI_SimpleAni3PlayerV4Joint_EulerQuat(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, i32 joint_count,
                                               i32 first_joint);
-    void ANI_SimpleAni3PlayerV4Joint_Blend_EulerQuat(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer,
-                                                     f32 blend, i32 joint_count, i32 first_joint,
-                                                     NUVEC *root_translation);
+    i32 ANI_SimpleAni3PlayerV4Joint_Blend_EulerQuat(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, f32 blend,
+                                                    i32 joint_count, i32 first_joint, NUVEC *root_translation);
 
     void ANI_FixUpAddrs(ani3_animheader_s *anim, isize delta, i32) {
         if (anim->magic != 0x414e4934) {

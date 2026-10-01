@@ -526,7 +526,7 @@ void InitStatusScreen(WORLDINFO_s *world) {
                     reinterpret_cast<u8 *>(Game_MissionSave)[0x50 + mission] = 1;
                 AddToCompletionPoints(POINTS_PER_MISSION);
                 gold = AddGoldBrickMessage(&p, tMISSIONCOMPLETE);
-                sprintf(event, "bounty_mission_%i_complete", mission + 1);
+                sprintf(event, "bounty_mission_%i_complete", static_cast<i8>(MissionSys->mission->count) + 1);
                 NuIOS_RecordFlurryEvent(event);
             }
             u64 reward = static_cast<i64>(static_cast<i32>(static_cast<u16>(p.mission->time) - p.elapsed_time) * 150);

@@ -6562,3 +6562,73 @@ points** from main baseline `05429366`, with **6,276** exact functions. Ownershi
 compiler options and scoring remain unchanged. Merge requires all GitHub checks
 to pass on the final PR head, not merely a previous passing commit. All fixtures
 remain diagnostics with mocked services, not Android gameplay validation.
+
+## Batches 180–189: new cycle, prioritize missing closures
+
+PR #120 was squash-merged as `2a57d7b7` after all eleven final-head checks
+passed. The new main baseline is **67.128075%** with **6,276** exact functions;
+the next two-point target is **69.128075%**.
+
+`AddVariableShotPARTEffect` restores ordered scheduling and rate selection,
+plus the rotation snapshot after three random calls (**0% to 66.685%**).
+Raw SSE, not the decompiler's reversed expression, proves that an unordered
+requested rate is retained while either signed zero selects the default.
+Both actual-body fixtures and a separate rate-predicate probe pass on host
+sanitizers/i386. Inputs that would convert nonfinite emission times to integer
+are outside the fixture's valid contract.
+
+Restore `GenericBlend`/`EulerBlend`'s original integer return ABI, helper-result
+propagation, packed-key signed division and key-count upper clamp. Header and
+Euler forward declaration agree; callers still discard the result. Isolated
+scores improve **39.416% to 40.221%** and **35.093% to 35.498%**. Both ABI
+fixtures pass 100,000 generic and 20,000 Euler cases. Unaffected declaration-only
+consumer sections are byte-identical; NaN-to-integer inputs remain excluded.
+
+`DrawSubItems` restores extras' unlocked/locked rendering branches and live
+item identifiers (**25.937% to 26.225%**, 10,000 actual-body cases per ABI).
+`InitMiniSnowTroopers` restores sentinel/terrain fallback, team reloads,
+stored byte-count loops, deferred formation indexing, the original first-trooper
+rotation quirk and random scaling (**27.176304% to 28.148096%**). Actual-body
+host/sanitizer/i386 fixtures cover both formation widths, callback mutation,
+zero-length padded spline storage and random endpoints.
+
+`GameCreatureOpponentSelection` restores the ordered expired-alert comparison
+(**47.002860% to 47.095783%**, 70 cases per ABI). `InitStatusScreen` reloads the
+mission event count after completion/reward callbacks (**19.774% to 19.925%**,
+10,000 full-body cases per ABI). `Hub_Update` restores episode-door and build-it
+reloads (**15.389605% to 17.036242%**); its fixtures exercise the affected actual
+loops, not the whole hub function. `GizBuildIts_LateUpdate` reuses the original
+completion/finishing position scratch while retaining a separate orbit scratch
+(**21.998537% to 24.315058%**); actual-body fixtures pass both ABIs.
+
+Recover `TerrainPlatformEmbeddedScan`'s four scale/rotation traversal closures,
+three/four-vertex transforms, source-versus-rebuilt normals and shared cross
+operands (**0% to 25.995962%**). Actual-body fixtures pass 2,048 cases and three
+exits on i386 and host sanitizers. Host alignment sanitizing is specifically
+excluded: the existing four-byte stream header precedes eight-byte host pointers;
+the production i386 stream is naturally aligned. Geometry, stream capacity,
+sentinels and required callback replacements obey the reference contract.
+
+Recover `SmartTextEx`'s eight-line fixed-buffer layout, explicit newlines,
+adaptive break helpers, uncapped zero line limit, horizontal squeeze,
+measurement/box-only behavior, signed box alpha, live font selection and global
+state restoration (**17.631% to 33.673%**). Preserve existing break-helper
+ownership and C++ linkage. Both actual-body fixtures pass 10,000 valid randomized
+cases plus targeted callback/box/layout probes against a separate layout oracle.
+Nine generated reference-invalid negative-copy-span cases were excluded before
+candidate execution. Decoded/encoded lengths are bounded to 511 and layout to
+eight lines; malformed input and nonfinite integer conversions are not claimed
+safe. Box reserved/Z fields and early-out global state remain untouched.
+
+`DrawAlphaImage` restores `(1 + coordinate) - 1` rounding, paired direction-Y
+snapshot, pre-begin strip row and original integer color packing
+(**27.794% to 30.209%**). Actual-body host sanitizer/i386 fixtures pass finite
+sampling, aspect mutation, recursive begin, half-UV and state-restoration probes.
+
+For size-deficit triage, count compiler `.part`/`.isra`/constant-propagated bodies
+before assuming missing code: `Text3DEx`'s 301-byte entry also has a 2,725-byte
+partition. Complete low-score movement, curve, AI and menu bodies are bounded
+audits, not invitations to inflate source. Zero-gain cutscene/font/collision
+correctness proposals are held separately. New compiler attributes, ABI
+shortcuts, ownership changes and scoring changes are not used. All mocked-service
+fixtures are diagnostics, not full Android gameplay validation.

@@ -778,7 +778,7 @@ void Hub_Update(WORLDINFO_s *world) {
                 door->runtime_flags |= 8;
             } else if (static_cast<u8>(episode.force_open) != 0 ||
                        Episode_CountOpenAreas(episode.episode, -1, Game_AreaSave) != 0) {
-                door->runtime_flags &= static_cast<u8>(~8);
+                static_cast<GIZOBSTACLE_s *>(episode.door->object)->runtime_flags &= static_cast<u8>(~8);
             }
         }
         if (missions_available != 0) {
@@ -792,7 +792,9 @@ void Hub_Update(WORLDINFO_s *world) {
             if (gizmo == NULL) {
                 continue;
             }
-            if (GizmoGetOutput(world->gizmo_sys, gizmo, 0, 0) == 0) {
+            const i32 output = GizmoGetOutput(world->gizmo_sys, gizmo, 0, 0);
+            gizmo = HubAreaInfo[i].bonus_gizmo;
+            if (output == 0) {
                 GIZBUILDIT_s *buildit = static_cast<GIZBUILDIT_s *>(gizmo->object);
                 if (gold_bricks < buildit->anim_object_count) {
                     GizmoSetVisibility(world->gizmo_sys, gizmo, 0, 0);
@@ -808,6 +810,7 @@ void Hub_Update(WORLDINFO_s *world) {
                     GizmoActivate(world->gizmo_sys, gizmo, 1, 0);
                 }
             }
+            gizmo = HubAreaInfo[i].bonus_gizmo;
             if (GizmoGetOutput(world->gizmo_sys, gizmo, 0, 0) != 0) {
                 const u32 bit = 1U << (buildit_index & 31);
                 if ((Game.field_0x7c26[2] & bit) == 0) {
@@ -1002,7 +1005,7 @@ void Hub_Update(WORLDINFO_s *world) {
             GIZMO *gizmo = HubAreaInfo[i].bonus_gizmo;
             if (gizmo != NULL && GizmoGetOutput(world->gizmo_sys, gizmo, 0, 0) == 0 && Player[0] != NULL &&
                 static_cast<i8>(Player[0]->apiobj.flags_low) < 0 && Player[0]->field_0x7a5 != 0x2d) {
-                GIZBUILDIT_s *buildit = static_cast<GIZBUILDIT_s *>(gizmo->object);
+                GIZBUILDIT_s *buildit = static_cast<GIZBUILDIT_s *>(HubAreaInfo[i].bonus_gizmo->object);
                 if ((buildit->availability_flags & GIZBUILDIT_AVAILABILITY_INTERACTING) != 0 ||
                     (nearest_buildit != NULL && nearest_buildit == buildit)) {
                     selected_buildit = i;

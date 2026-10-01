@@ -1737,29 +1737,46 @@ void DrawSubItems() {
                 break;
             }
             case 2: {
-                if (item->unlocked == 1) {
-                    u16 spin = static_cast<i32>(NuFmod(GameTimer.time_elapsed, 4.0f) * 0.25f * 65536.0f);
+                u16 spin = rotation;
+                if (items[shelf_ids[slot]].unlocked == 1) {
                     if (pickedbing > 0.0f && slot == 3)
-                        spin += rotation;
-                    angle += spin;
-                }
-                DrawItem(&toolblank, &position, scale, 1.0f, ypush, 0, angle, 0);
-                u16 id = item->item_id;
-                i8 area = static_cast<i8>(Cheat[id].area);
-                nuhspecial_s *special = &item->special;
-                if (!(Game.extra_purchased_bits[id >> 5] >> (id & 31) & 1) && id > 7 && area != -1 &&
-                    !Game.area_save[area].red_brick_collected)
-                    special = &extrasils[item_id];
-                if (NuSpecialExistsFn(special) != 0) {
-                    NUMTX_ALIGNED16 matrix;
-                    NUANGVEC angles = {0, angle, 0};
-                    NuMtxSetRotateXYZVU0(&matrix, &angles);
-                    NUVEC size;
-                    size.x = size.y = size.z = scale;
-                    NuMtxScaleVU0(&matrix, &size);
-                    *reinterpret_cast<NUVEC *>(&matrix.m30) = position;
-                    matrix.m31 += ypush;
-                    NuSpecialDrawAt(special, &matrix);
+                        spin += static_cast<i32>(NuFmod(GameTimer.time_elapsed, 4.0f) * 0.25f * 65536.0f);
+                    else
+                        spin = static_cast<i32>(NuFmod(GameTimer.time_elapsed, 4.0f) * 0.25f * 65536.0f);
+                    const u16 angle = shelfang + (item->unlocked == 1 ? spin : 0);
+                    DrawItem(&toolblank, &position, scale, 1.0f, ypush, 0, angle, 0);
+                    shopitem_s *current_item = &items[shelf_ids[slot]];
+                    if (current_item != NULL && NuSpecialExistsFn(&current_item->special) != 0) {
+                        NUMTX_ALIGNED16 matrix;
+                        NUANGVEC angles = {0, angle, 0};
+                        NuMtxSetRotateXYZVU0(&matrix, &angles);
+                        NUVEC size = {scale, scale, scale};
+                        NuMtxScaleVU0(&matrix, &size);
+                        *reinterpret_cast<NUVEC *>(&matrix.m30) = position;
+                        matrix.m31 += ypush;
+                        NuSpecialDrawAt(&current_item->special, &matrix);
+                    }
+                } else {
+                    const u16 angle = shelfang + (item->unlocked == 1 ? spin : 0);
+                    DrawItem(&toolblank, &position, scale, 1.0f, ypush, 0, angle, 0);
+                    const i32 current_id = shelf_ids[slot];
+                    shopitem_s *current_item = &items[current_id];
+                    const u16 id = current_item->item_id;
+                    if (!(Game.extra_purchased_bits[id >> 5] >> (id & 31) & 1) && id > 7 &&
+                        static_cast<i8>(Cheat[id].area) != -1 &&
+                        !Game.area_save[static_cast<i8>(Cheat[id].area)].red_brick_collected) {
+                        if (NuSpecialExistsFn(&extrasils[current_id]) != 0)
+                            DrawItem(&extrasils[shelf_ids[slot]], &position, scale, 1.0f, ypush, 0, angle, 0);
+                    } else if (NuSpecialExistsFn(&current_item->special) != 0) {
+                        NUMTX_ALIGNED16 matrix;
+                        NUANGVEC angles = {0, angle, 0};
+                        NuMtxSetRotateXYZVU0(&matrix, &angles);
+                        NUVEC size = {scale, scale, scale};
+                        NuMtxScaleVU0(&matrix, &size);
+                        *reinterpret_cast<NUVEC *>(&matrix.m30) = position;
+                        matrix.m31 += ypush;
+                        NuSpecialDrawAt(&current_item->special, &matrix);
+                    }
                 }
                 break;
             }

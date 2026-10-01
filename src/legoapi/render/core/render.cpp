@@ -1587,20 +1587,23 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
     ++NuPrimCSPos;
     NuPrimSetCoordinateSystem(NUPRIM_SCALEMODE_NORMALISED);
     for (row = 0; row < rows - 1; ++row) {
+        const i32 strip_row = row;
         NuPrim2DBegin(1, 7, material);
+        const f32 direction_x = (1.0f + x0) - 1.0f;
         f32 y0 = y_start;
         for (col = 0; col < cols; ++col) {
             NUVEC direction;
-            direction.x = x0;
-            direction.y = -y0 * camera.aspect;
+            const f32 direction_y = ((1.0f + y0) - 1.0f) * -camera.aspect;
+            direction.x = direction_x;
+            direction.y = direction_y;
             direction.z = adjacent;
             NuVecNorm(&direction, &direction);
             NuVecMtxTransform(&direction, &direction, &camera.mtx);
             NuVecNorm(&direction, &direction);
 
-            u8 alpha;
-            if (row > 0) {
-                alpha = cacheValues[col];
+            u32 colour;
+            if (strip_row > 0) {
+                colour = (static_cast<u32>(cacheValues[col]) << 24) | 0x808080;
             } else {
                 f32 brightness = direction.y * 0.5f + 0.5f;
                 if (brightness <= near_angle)
@@ -1625,15 +1628,16 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
                              parameters->direction_near_scale);
                     }
                 }
-                alpha = static_cast<u8>(MIN(255.0f, MAX(0.0f, brightness)));
+                i32 alpha = static_cast<i32>(MIN(255.0f, MAX(0.0f, brightness)));
+                colour = (static_cast<u32>(alpha) << 24) | 0x808080;
             }
-            NuRndrPrimSetColour((static_cast<u32>(alpha) << 24) | 0x808080);
+            NuRndrPrimSetColour(colour);
             NuRndrPrimUV(static_cast<f32>(row) * inv_row + pixelOffsetX,
                          (static_cast<f32>(col) * inv_col + pixelOffsetY) * 0.9f);
             NuPrim2DAddXYZ(x0, y0, 0.0f);
 
-            direction.x = x1;
-            direction.y = -y0 * camera.aspect;
+            direction.x = (1.0f + x1) - 1.0f;
+            direction.y = direction_y;
             direction.z = adjacent;
             NuVecNorm(&direction, &direction);
             NuVecMtxTransform(&direction, &direction, &camera.mtx);
@@ -1660,7 +1664,7 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
                                             parameters->direction_near_scale);
                 }
             }
-            alpha = static_cast<u8>(MIN(255.0f, MAX(0.0f, brightness)));
+            i32 alpha = static_cast<i32>(MIN(255.0f, MAX(0.0f, brightness)));
             cacheValues[col] = alpha;
             NuRndrPrimSetColour((static_cast<u32>(alpha) << 24) | 0x808080);
             NuRndrPrimUV(static_cast<f32>(row + 1) * inv_row + pixelOffsetX,

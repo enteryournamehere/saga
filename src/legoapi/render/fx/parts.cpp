@@ -1689,7 +1689,7 @@ extern "C" {
             return;
         }
 
-        const f32 effective_rate = rate < 0.0f ? type->emission_rate : rate;
+        const f32 effective_rate = rate <= 0.0f ? type->emission_rate : rate;
         if (orientation == NULL) {
             orientation = &numtx_identity;
         }
@@ -1708,7 +1708,7 @@ extern "C" {
                 emission_time = static_cast<i32>(partglobaltime / interval) * interval + interval;
             }
         }
-        if (end_time < emission_time) {
+        if (!(emission_time <= end_time)) {
             return;
         }
 
@@ -1754,11 +1754,6 @@ extern "C" {
             }
 
             params.field_a4 = type->lifetime + NuRandFloatSeeded(&partseed) * type->lifetime_random;
-            for (i32 axis = 0; axis < 3; ++axis) {
-                params.field_a8[axis] = type->rotation[axis];
-                params.field_a8[axis + 3] = type->rotation_random[axis];
-            }
-
             NUMTX_ALIGNED16 matrix;
             NuMtxSetIdentity(&matrix);
             const f32 rotation_x = static_cast<f32>(type->rotation[0]);
@@ -1770,6 +1765,10 @@ extern "C" {
             const f32 rotation_z = static_cast<f32>(type->rotation[2]);
             const f32 random_z = NuRandFloatSeeded(&partseed);
             const f32 range_z = static_cast<f32>(type->rotation_random[2]);
+            for (i32 axis = 0; axis < 3; ++axis) {
+                params.field_a8[axis] = type->rotation[axis];
+                params.field_a8[axis + 3] = type->rotation_random[axis];
+            }
             NuMtxRotateX(&matrix,
                          static_cast<i16>(static_cast<i32>((random_x + random_x) * range_x + rotation_x - range_x)));
             NuMtxRotateY(&matrix,

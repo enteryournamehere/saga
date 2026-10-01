@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 67.99534,
+    "fuzzy_match_percent": 67.994736,
     "total_code": "4722419",
-    "matched_code": "525992",
-    "matched_code_percent": 11.13819,
+    "matched_code": "526137",
+    "matched_code_percent": 11.141261,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6289,
-    "matched_functions_percent": 46.727097,
+    "matched_functions": 6290,
+    "matched_functions_percent": 46.734528,
     "total_units": 1
   },
   "text": {
@@ -39591,7 +39591,7 @@
           "address": 1378672,
           "offset": 488704,
           "size": 378,
-          "match_percent": 69.84536
+          "match_percent": 70.16495
         },
         {
           "name": "_Z11ObjOpponentP12GameObject_sffiii",
@@ -39679,7 +39679,7 @@
           "address": 2345792,
           "offset": 1455824,
           "size": 3125,
-          "match_percent": 71.9021
+          "match_percent": 72.16224
         },
         {
           "name": "_Z19SpeederChaseA_PanelP11WORLDINFO_s",
@@ -56855,7 +56855,7 @@
           "address": 4978160,
           "offset": 4088192,
           "size": 961,
-          "match_percent": 77.48889
+          "match_percent": 77.14222
         },
         {
           "name": "_ZL33GizmoPickups_AllocateProgressDataP9variptr_uS0_",
@@ -56871,7 +56871,7 @@
           "address": 4979200,
           "offset": 4089232,
           "size": 493,
-          "match_percent": 54.824818
+          "match_percent": 55.37226
         },
         {
           "name": "_ZL22GizmoPickups_AddGizmosP10GIZMOSYS_siPvS1_",
@@ -56895,7 +56895,7 @@
           "address": 4982816,
           "offset": 4092848,
           "size": 283,
-          "match_percent": 55.61111
+          "match_percent": 27.61111
         },
         {
           "name": "_ZL26GizmoPickups_StoreProgressPvS_S_",
@@ -56919,7 +56919,7 @@
           "address": 4983808,
           "offset": 4093840,
           "size": 214,
-          "match_percent": 97.27778
+          "match_percent": 99.96296
         },
         {
           "name": "_ZL17GizmoPickups_LoadPvS_",
@@ -56927,7 +56927,7 @@
           "address": 4984160,
           "offset": 4094192,
           "size": 762,
-          "match_percent": 37.42857
+          "match_percent": 25.87755
         },
         {
           "name": "_ZL31GizmoPickups_ReserveBufferSpacePv",
@@ -56959,7 +56959,7 @@
           "address": 4985824,
           "offset": 4095856,
           "size": 145,
-          "match_percent": 69.471695
+          "match_percent": 100.0
         },
         {
           "name": "_Z22GizmoPickup_FindByNameP11WORLDINFO_sPc",
@@ -57015,7 +57015,7 @@
           "address": 4988928,
           "offset": 4098960,
           "size": 1047,
-          "match_percent": 47.003788
+          "match_percent": 46.75
         },
         {
           "name": "_Z21SpecialMiniKits_ResetP11WORLDINFO_s",
@@ -57023,7 +57023,7 @@
           "address": 4989984,
           "offset": 4100016,
           "size": 169,
-          "match_percent": 96.01923
+          "match_percent": 98.51923
         },
         {
           "name": "_Z20SpecialMiniKits_DrawP11WORLDINFO_s",
@@ -57031,7 +57031,7 @@
           "address": 4990160,
           "offset": 4100192,
           "size": 972,
-          "match_percent": 11.544716
+          "match_percent": 11.609756
         }
       ]
     },
@@ -59133,7 +59133,7 @@
           "address": 5139168,
           "offset": 4249200,
           "size": 536,
-          "match_percent": 38.82308
+          "match_percent": 39.253845
         },
         {
           "name": "_Z9ObjInTubeP12GameObject_s",
@@ -73850,7 +73850,7 @@
           "address": 1910608,
           "offset": 1020640,
           "size": 4982,
-          "match_percent": 20.265072
+          "match_percent": 21.768421
         },
         {
           "name": "_Z17ZipUps_UpdateHintP6HINT_s",

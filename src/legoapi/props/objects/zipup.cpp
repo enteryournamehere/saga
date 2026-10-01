@@ -555,7 +555,7 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
         NUVEC *hook = &zipup->hook_origin;
         NUVEC *destination = object->field_0x7a3 == 0 ? &zipup->upper_position : &zipup->lower_position;
         if ((zipup->flags & 1) == 0) {
-            if (NuVecDistSqr(&api.position, hook, NULL) < 0.01f || !(object->context_animation_timer < 5.0f)) {
+            if (NuVecDistSqr(&api.position, hook, NULL) < 0.01f || object->context_animation_timer >= 5.0f) {
                 StartJump(object, 6);
                 PlaySfx("GrapDetach", &api.collision_position);
                 if ((api.flags_low & 0x80) != 0)
@@ -586,7 +586,7 @@ void ZipUp_MoveCode(GameObject_s *object, i32 special_pressed) {
             PlaySfx("GrapWindLp", &api.collision_position);
             return;
         }
-        if (!(object->context_animation_timer < 1.5f)) {
+        if (object->context_animation_timer >= 1.5f) {
             object->context_animation_timer = 0.0f;
             object->character_context = -1;
             zipup->occupant = NULL;

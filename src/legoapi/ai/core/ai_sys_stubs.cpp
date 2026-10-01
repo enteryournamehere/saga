@@ -625,8 +625,8 @@ static char *AISysLoadString(AISYS *system, i32 length) {
 }
 
 static void AISysLoadPathRoutes(AISYS *system, AIPATH *path, i32 version) {
+    path->route_matrix = static_cast<u8 **>(AISysLoadAlloc(system, path->node_count * sizeof(u8 *)));
     if (path->node_count != 0) {
-        path->route_matrix = static_cast<u8 **>(AISysLoadAlloc(system, path->node_count * sizeof(u8 *)));
         for (i32 i = 0; i < path->node_count; ++i) {
             path->route_matrix[i] = static_cast<u8 *>(AISysLoadAlloc(system, path->node_count));
             EdFileRead(path->route_matrix[i], path->node_count);
@@ -641,8 +641,9 @@ static void AISysLoadPathRoutes(AISYS *system, AIPATH *path, i32 version) {
         for (i32 i = 0; i < path->route_count; ++i) {
             AIPATHROUTE *route = &path->routes[i];
             i32 name_length = EdFileReadChar();
-            route->name = AISysLoadString(system, name_length);
             if (name_length != 0) {
+                route->name = static_cast<char *>(AISysLoadAlloc(system, name_length));
+                EdFileRead(route->name, name_length);
                 route->route_count = static_cast<u8>(EdFileReadChar());
                 route->exit_node_count = static_cast<u8>(EdFileReadChar());
                 EdFileReadChar();
@@ -774,8 +775,6 @@ static AIPATHSYS *AISysLoadPaths(AISYS *system, i32 version, NUGSCN *scene) {
                 EdFileReadChar();
                 node->runtime_flags = static_cast<u8>(EdFileReadChar()) & ~6u;
                 node->path_flags = EdFileReadShort();
-                node->distance_cache_nodes[0] = 0xff;
-                node->distance_cache_nodes[1] = 0xff;
                 node->special_route_index = static_cast<u8>(EdFileReadChar());
                 if (version < 19)
                     node->special_route_index = 0xff;
@@ -807,6 +806,8 @@ static AIPATHSYS *AISysLoadPaths(AISYS *system, i32 version, NUGSCN *scene) {
                     node->route_membership_mask = EdFileReadShort();
                     node->route_boundary_mask = EdFileReadShort();
                 }
+                node->distance_cache_nodes[0] = 0xff;
+                node->distance_cache_nodes[1] = 0xff;
             }
             AIPathCalcExtents(path);
         }
@@ -3104,7 +3105,8 @@ extern "C" {
                 NUVEC forward = {0.0f, 0.0f, 1.0f};
                 NUVEC rotated;
                 NuVecMtxRotate(&rotated, &forward, draw_matrix);
-                antinode->flags = NuAngAdd(NuAtan2D(rotated.x, rotated.z), antinode->rotation_offset);
+                antinode->flags = NuAtan2D(rotated.x, rotated.z);
+                antinode->flags = NuAngAdd(antinode->flags, antinode->rotation_offset);
             }
         }
 

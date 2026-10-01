@@ -5035,7 +5035,9 @@ static void LightSabreComboCode(GameObject_s *object, i32 action_pressed, i32 ac
                 }
                 object->sabre_flags |= 2;
                 if ((object->context_flags & 0x40) == 0 &&
-                    (((object->context_flags & 8) != 0 && frames[0] == 0.0f) || (object->context_flags & 2) != 0)) {
+                    (((object->context_flags & 8) != 0 &&
+                      AnimListFrame(object->apiobj.character_model, object->context_animation, 0) == 0.0f) ||
+                     (object->context_flags & 2) != 0)) {
                     ComboHitFrame(object, object->combo_branch == 6 ? 3 : 1);
                 }
                 if (object->character_context == CHARACTER_CONTEXT_NONE && action_held != 0 &&
@@ -5069,9 +5071,11 @@ static void LightSabreComboCode(GameObject_s *object, i32 action_pressed, i32 ac
         }
         bool can_queue = false;
         if (time != NULL) {
-            const f32 frame = AnimListFrame(object->apiobj.character_model, object->context_animation, 1);
-            if (frame > 0.0f && *time >= frame)
-                object->context_flags |= 0x10;
+            if ((object->context_flags & 0x10) == 0) {
+                const f32 frame = AnimListFrame(object->apiobj.character_model, object->context_animation, 1);
+                if (frame > 0.0f && *time >= frame)
+                    object->context_flags |= 0x10;
+            }
             can_queue = AnimDuration(object->id, object->context_animation, *time, 0.0f, 0) < 0.1f;
             if (can_queue)
                 object->field_0xe22 |= 8;

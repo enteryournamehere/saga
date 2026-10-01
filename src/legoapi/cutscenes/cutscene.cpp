@@ -1305,27 +1305,32 @@ extern "C" {
             }
         }
 
-        if (cutscene->character_system != NULL && cutscene->character_system->character_count != 0) {
-            instance->character_instance = reinterpret_cast<instNUGCUTCHARSYS_s *>(ALIGN(buf->addr, 0x10));
-            buf->void_ptr = instance->character_instance + 1;
-            buf->addr = ALIGN(buf->addr, 0x10);
-            instance->character_instance->characters = reinterpret_cast<instNUGCUTCHAR_s *>(buf->void_ptr);
-            buf->void_ptr = instance->character_instance->characters + cutscene->character_system->character_count;
-            memset(instance->character_instance->characters, 0,
-                   cutscene->character_system->character_count * sizeof(instNUGCUTCHAR_s));
-            for (u32 i = 0; i < cutscene->character_system->character_count; ++i) {
-                NUGCUTCHAR_s *character = &cutscene->character_system->characters[i];
-                instNUGCUTCHAR_s *inst_character = &instance->character_instance->characters[i];
-                inst_character->field_16 = 0xff;
-                inst_character->field_15 = 0xff;
-                if ((character->flags & 2) != 0) {
-                    if (NuCutSceneCharacterCreateData != NULL) {
-                        NuCutSceneCharacterCreateData(character, inst_character, buf);
+        NUGCUTCHARSYS_s *character_system = cutscene->character_system;
+        if (character_system != NULL) {
+            instNUGCUTCHARSYS_s *character_instance = NULL;
+            if (character_system->character_count != 0) {
+                character_instance = reinterpret_cast<instNUGCUTCHARSYS_s *>(ALIGN(buf->addr, 0x10));
+                buf->void_ptr = character_instance + 1;
+                character_instance->characters = NULL;
+                buf->addr = ALIGN(buf->addr, 0x10);
+                character_instance->characters = reinterpret_cast<instNUGCUTCHAR_s *>(buf->void_ptr);
+                buf->void_ptr = character_instance->characters + character_system->character_count;
+                memset(character_instance->characters, 0, character_system->character_count * sizeof(instNUGCUTCHAR_s));
+                for (i32 i = 0; i < character_system->character_count; ++i) {
+                    NUGCUTCHAR_s *character = &character_system->characters[i];
+                    instNUGCUTCHAR_s *inst_character = &character_instance->characters[i];
+                    inst_character->field_16 = 0xff;
+                    inst_character->field_15 = 0xff;
+                    if ((character->flags & 2) != 0) {
+                        if (NuCutSceneCharacterCreateData != NULL) {
+                            NuCutSceneCharacterCreateData(character, inst_character, buf);
+                        }
+                    } else {
+                        inst_character->character_model = character->character_model;
                     }
-                } else {
-                    inst_character->character_model = character->character_model;
                 }
             }
+            instance->character_instance = character_instance;
         }
 
         if (cutscene->locator_system != NULL && cutscene->locator_system->locator_count != 0) {
@@ -1377,7 +1382,7 @@ extern "C" {
             memset(instance->trigger_instance->event_states, 0, state_size);
         }
 
-        NUVEC *bounds = static_cast<NUVEC *>(cutscene->bounds);
+        NUVEC *bounds = static_cast<NUVEC *>(instance->cutscene->bounds);
         if (bounds == NULL) {
             instance->transformed_bounds_center.x = 0.0f;
             instance->transformed_bounds_center.y = 0.0f;

@@ -6805,3 +6805,155 @@ unguarded experiment is not integrated. Frozen guarded actual-body fixtures pass
 null asset systems and callback mutations. Tiny collateral cutscene-TU score
 changes are included. The linked report reaches **67.306340%**, **+0.178265
 percentage points** from main, still **6,276** exact functions.
+
+## Batches 208–215: menu transitions, events and persistent handles
+
+Checkpoint `444e0481` is pushed on PR #121 at **67.306340%**, with all eleven
+GitHub checks passing on that exact head. Subsequent linked changes reach
+**67.346100%**, **+0.218025 percentage points** from main, still **6,276** exact
+functions. The cycle target remains **69.128075%**, not yet reached.
+
+`AISysProcess` restores an intermediate antinode-angle store before `NuAngAdd`
+(**36.441120% to 37.379440%**). Both ABI actual-body fixtures pass 108 cases.
+The boundary is observable to diagnostic interposition; retail `NuAngAdd` is
+pure, so this does not establish a retail gameplay failure. This unit is partial:
+group-pass ordering and locator ownership repairs regressed together and remain
+reserved. Fixed-sixteen group fanout is not recreated merely for compiler shape.
+
+`pathEditorDrawPath` computes equal-radius perpendiculars directly instead of
+calling the rotation service (**24.203686% to 24.437439%**). Existing null/index
+and positive-distance angle-math safeguards remain. The larger trial removing
+the distance guard is superseded: coincident unequal radii lead to original
+nonfinite float-to-integer behavior, not a reason to drop a validity safeguard.
+Canonical-layout actual-body sanitizer/i386 probes cover equal/unequal radii,
+solid paths, routes, shared nodes, deduplication and invalid-index rejection.
+
+`UpdateMenu` restores full input masks, opposing-held suppression, touch/pre-
+repeat output snapshots, transition-before-navigation gating, captured bounds,
+row-clamp exclusions, directional priority and column-change timer reset
+(**16.249% to 42.147%**). Both ABI and host sanitizer full-body fixtures pass
+10,000 cases plus 1,000 persistent eight-frame sequences; all neighboring scores
+are unchanged. Menu indices, ordered bounds and float/integer conversions must
+stay valid. Four original private fast-direction locks have only reads/clears
+and no observed nonzero setter/address escape; their zero-state behavior is the
+documented scope. Do not invent setters or volatility to retain those branches.
+
+`LoadAreaCharacters` resets touch-prompt eligibility each frame and starts icon
+animation on the frame after readiness, without forcing crawl mode to stage two
+(**35.406136% to 35.993496%**). Eight full actual-body loading-loop scenarios pass
+host sanitizers/i386 with canonical service objects. Preserve the original two
+music ticks on sound-enabled frames. Wider second-icon timing corrections
+regressed and remain separate; full loader correctness is not claimed. Host
+i386 probes use focused canonical assertions, not an unrelated Android pthread
+layout override. `Area_Configure` is closure-complete for valid mission counts;
+retain its eight-character capacity guard.
+
+`LightSabreComboCode` skips a latched event-one query and freshly queries event
+zero at completion (**24.074492% to 35.329570%**). The combined positive unit is
+retained even though a partial guard-only trial scores higher. Actual full-body
+fixtures exercise the changed queue/completion paths in 1,792 cases on host
+sanitizers and the unchanged NDK i386 build; unchanged starter/draw/block paths
+are not covered by those focused probes. All other 180 defined functions are
+unchanged. Separate Punch/Jedi corrections regress and are reserved.
+
+`Pulses_Update` restores live pulse-slot reloads after services, once-per-pulse
+direction setup and a radius snapshot across both players (**25.871622% to
+31.520270%**). Actual-body host sanitizer/i386 probes cover array replacement,
+cached player ownership, lifecycle, velocity, rumble and live count changes.
+Raw branches reject unordered flicker/radius inputs but permit unordered spawn
+protection and mode-zero halfspaces; do not apply uniform NaN-policy cleanup.
+Preserve the original in-place initial direction rotation quirk.
+
+`NewScanHandelFull` now explicitly requests unscaled persistent-handle geometry
+from the existing reconstruction-only platform helper (**9.887054% to
+11.846221%**); ordinary query scans request the existing scaled mode.
+`ScanTerrain` also improves (**23.714680% to 24.445364%**), and the other 123
+terrain function scores are unchanged. There are no retention-only calls.
+Actual-body host sanitizer/i386 fixtures pass 8,192 streams plus boundary/wall
+probes. Unit scale, origin Y=16,777,216 and transformed Y=1 previously rounded
+to zero; direct handle copying correctly retains one. The safe owned wall-copy
+tail is preserved, and no skin-allocation origin-mutation claim is made.
+
+`LSW_Hub_InitAI` stops at the first incomplete counter pair and creates Area
+before ServingCustomer; `Hub_MakeListCharactersAvailable` snapshots the signed
+character ID before the pack query (**36.893616% to 38.216312%**, **32.081272%
+to 35.611310%**). Both ABI actual-body fixtures pass 601 cases. A small UpdateAI
+register-allocation regression is included in the net gain. Original fixed
+counter/pack expansion is not manually reproduced.
+
+Reserved full portal-debug and Huffman-tree restorations currently reduce the
+weighted matching result under unchanged compilation. Retail lacks STT_FILE
+and debug provenance: combined-core constructor adjacency versus remote refpack
+placement supports a translation-unit provenance audit but does not prove a
+specific original included file or authorize optimization/ownership shortcuts.
+The cycle continues; its final merge still requires the target and green checks.
+
+## Batch 216: debris scheduling closure
+
+`DebrisProcessGeneration` restores unconditional emission-epoch publication after
+each attempted generation, persistent pause state across attempts, and late
+cut-on/render-group reloads after service callbacks (**47.442280% to
+48.262367%**). Existing allocation and attempt bounds remain; canonical named
+fields require no layout change. All other original-backed TU scores are
+unchanged. Exact-body host sanitizer/i386 fixtures pass seven scenarios,
+including inactive/no-chunk scheduling, finite pause cancellation, generator
+epoch overwrite and callback-driven reactivation gates. Services are mocked;
+the reload tests establish the reference contract, not that every current
+production callback mutates those fields. Linked matching reaches **67.346690%**,
+**+0.218615 percentage points** from main, still **6,276** exact functions.
+
+## Batches 217–219: loader ownership and query cache closure
+
+`AISysLoadEx` always allocates the zero-node route pointer array, allocates
+serialized route names at their exact length (node names still need length+1),
+and finalizes distance-cache sentinels after node parsing and special lookup
+(**26.411840% to 36.168600%**). All neighboring scores remain unchanged.
+Canonical actual-body host sanitizer/i386 fixtures pass 729 cases across
+versions 1–20, paths, routes, allocator requests, callback state and load tails.
+The fixture records requested sizes using host-width pointers; it is not a
+64-bit execution of the target allocator's 32-bit cursor contract. Other
+creature/area/locator helpers execute empty-record paths, not exhaustive records.
+
+`instNuGCutSceneCreate` caches the character asset subsystem across callbacks,
+keeps its arrays/count live, publishes the constructed subsystem after the
+walker, and reads bounds through the live instance asset owner (**21.022058%
+to 23.117647%**). Both ABI actual-body fixtures pass 20,000 cases, including
+unchanged production NDK i386 compilation. Original-valid arena capacities and
+counts remain required. Pointer-bearing locator format eight is covered on
+i386 and explicitly excluded on the host: its pre-existing raw payload offsets
+are not 64-bit safe. Thread/create services are mocked; no gameplay claim.
+
+`NewScan` fills its persistent static cache independently of material mask,
+restores integer argument roles without changing their types or public ABI,
+walks the complete reserved platform cell and adds platform motion to world
+bounds before subtracting origin (**18.939339% to 21.600183%**). The direct
+original-backed cache walk replaces a reconstruction-only generic helper call;
+fixed sixteen-entry cache lookup fanout is not manually expanded. Two small
+ray-cast improvements and a TerrainPlatformEmbedded regression are included in
+the positive whole-TU result. Host sanitizer/i386 full actual-body fixtures pass
+8,197 calls with independent failing regressions for all four repaired behaviors,
+including changing masks, stale active platforms and finite large-origin math.
+
+`LoadPerm` rechecks language count after the language service (**40.552258% to
+40.612904%**). Both ABI and host sanitizer fixtures pass eight setup/cleanup
+scenarios. Their stop boundary precedes unrelated legal rendering conversion;
+this is not complete loading-loop validation. The verified long-frame clamp
+and signed legal-alpha corrections regress and remain reserved.
+
+`PushCode` restores collision-center pointers, spinner/obstacle admission,
+updated-timer gates, wall-jump flag/override/duration, obstacle steering and
+sampled state, expiry camera blend and mutually exclusive landing/grunt audio.
+It remains **0%**, with all eleven neighbors unchanged and no linked regression.
+This unit is a behavior repair, not a claimed fuzzy gain. Canonical host
+sanitizer and unchanged GCC 4.7 i386 actual-body fixtures pass 2,816 cases and
+20,589 assertions, using real vector/RNG dependencies. All changed branches are
+covered; unchanged lunge, jump-exit and failure-cooldown paths are not. Existing
+compiler attributes are unchanged. The removed action-sentinel gates did not
+guard an array access and incorrectly rejected original scripted allow_push=0
+entry; the candidate fixture covers that absent-animation contract.
+
+Linked matching reaches **67.363785%**, **+0.235710 percentage points** from main,
+still **6,276** exact functions. Reserved ordinary `RenderFileSel3` restoration
+does not naturally emit the retail private clone, and both Timed5 trials
+regress; no naming/attribute/optimization shortcut is accepted. The cycle still
+requires **69.128075%** and all final-head GitHub checks before merging.

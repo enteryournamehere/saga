@@ -311,7 +311,13 @@ static void pathEditorDrawPath(EDAIPATH_s *path, i32 path_index) {
             vertices[1].colour = edge_colour;
             for (i32 side_index = 0; side_index < 2; ++side_index) {
                 NUVEC side;
-                NuVecRotateY(&side, &direction, side_index == 0 ? angle : -angle);
+                if (node->radius == other->radius) {
+                    side.x = side_index == 0 ? direction.z : -direction.z;
+                    side.y = direction.y;
+                    side.z = side_index == 0 ? -direction.x : direction.x;
+                } else {
+                    NuVecRotateY(&side, &direction, side_index == 0 ? angle : -angle);
+                }
                 vertices[0].position = node->position;
                 vertices[1].position = other->position;
                 vertices[0].position.x += node->radius * side.x;

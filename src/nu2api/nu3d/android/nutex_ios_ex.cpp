@@ -38,11 +38,19 @@ i32 g_fileSize;
 extern i32 g_loadingCharacterInHub;
 extern "C" const i16 *_toupper_tab_;
 
+// Host ports can intercept compressed uploads; the Android target calls GL directly.
+#ifdef HOST_BUILD
 extern "C" __attribute__((weak)) void NuIOS_UploadCompressedTexture(GLenum target, GLint level, GLenum internal_format,
                                                                     GLsizei width, GLsizei height, GLint border,
                                                                     GLsizei image_size, const void *data) {
     glCompressedTexImage2D(target, level, internal_format, width, height, border, image_size, data);
 }
+#else
+static inline void NuIOS_UploadCompressedTexture(GLenum target, GLint level, GLenum internal_format, GLsizei width,
+                                                 GLsizei height, GLint border, GLsizei image_size, const void *data) {
+    glCompressedTexImage2D(target, level, internal_format, width, height, border, image_size, data);
+}
+#endif
 
 __attribute__((weak)) bool NuIOS_TextureFormatSupported(i32 format) {
     return g_renderDevice.enabled_extensions[format];
@@ -862,11 +870,11 @@ i32 GetMipOffset(i32 width, i32 height, NUTEXFORMAT format, i32 depth, bool isCu
 
 void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, bool isCubemap, i32 mips,
                      NUTEXFORMAT format, u32 &glFormat, u32 &glInternalFormat, u32 glType, bool isCompressed) {
-    u32 faceTarget = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
     const i32 lastSlice = isCubemap ? 5 : 0;
     const i32 faceCount = isCubemap ? 6 : 1;
 
-    for (i32 loopCounter = 0; loopCounter < faceCount; ++loopCounter, ++faceTarget) {
+    for (i32 faceTarget = GL_TEXTURE_CUBE_MAP_POSITIVE_X; faceTarget - GL_TEXTURE_CUBE_MAP_POSITIVE_X < faceCount;
+         ++faceTarget) {
         if (mips != 0) {
             u32 texTarget = GL_TEXTURE_2D;
             if (isCubemap) {
@@ -878,15 +886,10 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
 
             for (i32 mip = 0; mip != mips; ++mip) {
                 mipWidth = width >> mip;
-                if (mipWidth < 1) {
-                    mipWidth = 1;
-                }
+                mipWidth = mipWidth > 0 ? mipWidth : 1;
 
                 i32 mipHeight = height >> mip;
-                hLimit = 1;
-                if (mipHeight > 0) {
-                    hLimit = mipHeight;
-                }
+                hLimit = mipHeight > 0 ? mipHeight : 1;
 
                 i32 currentOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, mip,
                                                  faceTarget - GL_TEXTURE_CUBE_MAP_POSITIVE_X);
@@ -898,14 +901,14 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                     i32 sizeOffset;
                     i32 targetSlice;
 
-                    if (mips - 1 == mip) {
-                        nextOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, -1, -1);
-                        sizeOffset = mips - 1;
-                        targetSlice = lastSlice;
-                    } else {
+                    if (mips - 1 != mip) {
                         nextOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, mip + 1, 0);
                         sizeOffset = mip;
                         targetSlice = 0;
+                    } else {
+                        nextOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, -1, -1);
+                        sizeOffset = mips - 1;
+                        targetSlice = lastSlice;
                     }
 
                     sizeOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, sizeOffset, targetSlice);
@@ -918,11 +921,11 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-                        if (g_loadDefaultTexture == 0) {
+                        if (g_loadDefaultTexture != 0) {
+                            loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_CUBE_MAP, faceTarget);
+                        } else {
                             NuIOS_UploadCompressedTexture(faceTarget, mip, glInternalFormat, mipWidth, hLimit, 0,
                                                           mipSize, mipData);
-                        } else {
-                            loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_CUBE_MAP, faceTarget);
                         }
                         EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                              0x566);
@@ -935,11 +938,11 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-                        if (g_loadDefaultTexture == 0) {
+                        if (g_loadDefaultTexture != 0) {
+                            loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_2D, GL_TEXTURE_2D);
+                        } else {
                             NuIOS_UploadCompressedTexture(GL_TEXTURE_2D, mip, glInternalFormat, mipWidth, hLimit, 0,
                                                           mipSize, mipData);
-                        } else {
-                            loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_2D, GL_TEXTURE_2D);
                         }
                         EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                              0x589);

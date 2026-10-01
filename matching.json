@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 67.55855,
+    "fuzzy_match_percent": 67.56885,
     "total_code": "4722419",
     "matched_code": "525442",
     "matched_code_percent": 11.126544,
@@ -90955,7 +90955,7 @@
           "address": 2750192,
           "offset": 1860224,
           "size": 1536,
-          "match_percent": 19.506023
+          "match_percent": 24.759037
         },
         {
           "name": "_Z30NuIOS_CreateGLTexFromMemoryDDSPvPiS0_",
@@ -110624,7 +110624,7 @@
           "address": 927744,
           "offset": 37776,
           "size": 93,
-          "match_percent": 99.35294
+          "match_percent": 29.411764
         },
         {
           "name": "NuTrigInit",
@@ -110632,7 +110632,7 @@
           "address": 2682487,
           "offset": 1792519,
           "size": 110,
-          "match_percent": 42.566666
+          "match_percent": 99.96667
         }
       ]
     },
@@ -116824,7 +116824,7 @@
           "address": 3296208,
           "offset": 2406240,
           "size": 1479,
-          "match_percent": 9.892442
+          "match_percent": 12.238372
         },
         {
           "name": "_ZN22NuSoundStreamingSample5CloseEv",
@@ -116880,7 +116880,7 @@
           "address": 3299520,
           "offset": 2409552,
           "size": 2539,
-          "match_percent": 53.564102
+          "match_percent": 53.588142
         },
         {
           "name": "_ZN15NuSoundStreamer11RequestFillEP22NuSoundStreamingSampleP13NuSoundBufferb14NuSoundWeakPtrI21NuSoundBufferCallbackE",
@@ -119131,7 +119131,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -119169,7 +119170,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -119207,7 +119209,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -119261,7 +119264,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -119335,7 +119339,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -119389,7 +119394,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -119443,7 +119449,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -119497,7 +119504,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -119551,7 +119559,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -119605,7 +119614,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -119869,7 +119879,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -119923,7 +119934,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -119977,7 +119989,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -120080,7 +120093,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -120146,7 +120160,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -120301,7 +120316,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -120407,7 +120423,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -120513,7 +120530,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -120567,7 +120585,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -120621,7 +120640,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -120675,7 +120695,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -120755,7 +120776,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -120809,7 +120831,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -120875,7 +120898,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -120929,7 +120953,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -120996,7 +121021,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -121050,7 +121076,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -121124,7 +121151,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -121178,7 +121206,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -121232,7 +121261,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -121257,7 +121287,7 @@
       "address": 3181127,
       "offset": 2291159,
       "size": 373,
-      "match_percent": 0.0,
+      "match_percent": 99.7,
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
@@ -121286,7 +121316,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -121403,7 +121434,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -121457,7 +121489,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -121511,7 +121544,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -121912,7 +121946,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -122014,7 +122049,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -122115,7 +122151,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -122779,7 +122816,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {
@@ -122833,7 +122871,8 @@
         "nu2api/nucore/android/nutime_android.c.o",
         "nu2api/nucore/nustring_c.cpp.o",
         "nu2api/numath/nufloat_android.c.o",
-        "nu2api/numath/numaths.c.o"
+        "nu2api/numath/numaths.c.o",
+        "nu2api/numath/nutrig_gen.cpp.o"
       ]
     },
     {

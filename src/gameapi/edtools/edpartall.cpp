@@ -1967,11 +1967,32 @@ static void edpartFileSaveEffectsLevel(eduimenu_s *parent, eduiitem_s *, u32) {
     bool backed_up = edbits_override_backups || EdFileBackup(path, backup);
     bool saved = edpartSaveEffects(path, 1) != 0;
     if (!saved) {
-        edpartSaveMessage(parent, "Save Failed", false);
+        u32 colours[4] = {0x800000c0u, 0x80ff0000, 0x80808080, 0x80404040};
+        edpart_message_menu = eduiMenuCreate(70, 70, 300, 250, ed_fnt, edpartCancelMessageMenu, "Message");
+        if (edpart_message_menu != NULL) {
+            eduiMenuAddItem(edpart_message_menu, eduiItemSelCreate(1, colours, 0, 0, NULL, "Save Failed"));
+            eduiMenuAttach(parent, edpart_message_menu);
+            edpart_message_menu->x = parent->x + 10;
+            edpart_message_menu->y = parent->y + 40;
+        }
     } else if (!backed_up) {
-        edpartSaveMessage(parent, "Saved OK - Backup Failed", false);
+        u32 colours[4] = {0x800000c0u, 0x80ff0000, 0x80808080, 0x80404040};
+        edpart_message_menu = eduiMenuCreate(70, 70, 300, 250, ed_fnt, edpartCancelMessageMenu, "Message");
+        if (edpart_message_menu != NULL) {
+            eduiMenuAddItem(edpart_message_menu, eduiItemSelCreate(1, colours, 0, 0, NULL, "Saved OK - Backup Failed"));
+            eduiMenuAttach(parent, edpart_message_menu);
+            edpart_message_menu->x = parent->x + 10;
+            edpart_message_menu->y = parent->y + 40;
+        }
     } else {
-        edpartSaveMessage(parent, "Saved OK", true);
+        u32 colours[4] = {0x8000c000u, 0x80ff0000, 0x80808080, 0x80404040};
+        edpart_message_menu = eduiMenuCreate(70, 70, 300, 250, ed_fnt, edpartCancelMessageMenu, "Message");
+        if (edpart_message_menu != NULL) {
+            eduiMenuAddItem(edpart_message_menu, eduiItemSelCreate(1, colours, 0, 0, NULL, "Saved OK"));
+            eduiMenuAttach(parent, edpart_message_menu);
+            edpart_message_menu->x = parent->x + 10;
+            edpart_message_menu->y = parent->y + 40;
+        }
     }
 }
 
@@ -2093,11 +2114,32 @@ static void edpartFileSaveEffectsGeneral(eduimenu_s *parent, eduiitem_s *, u32) 
     bool backed_up = edbits_override_backups || EdFileBackup(path, backup);
     bool saved = edpartSaveEffects(path, 0) != 0;
     if (!saved) {
-        edpartSaveMessage(parent, "Save Failed", false);
+        u32 colours[4] = {0x800000c0u, 0x80ff0000, 0x80808080, 0x80404040};
+        edpart_message_menu = eduiMenuCreate(70, 70, 300, 250, ed_fnt, edpartCancelMessageMenu, "Message");
+        if (edpart_message_menu != NULL) {
+            eduiMenuAddItem(edpart_message_menu, eduiItemSelCreate(1, colours, 0, 0, NULL, "Save Failed"));
+            eduiMenuAttach(parent, edpart_message_menu);
+            edpart_message_menu->x = parent->x + 10;
+            edpart_message_menu->y = parent->y + 40;
+        }
     } else if (!backed_up) {
-        edpartSaveMessage(parent, "Saved OK - Backup Failed", false);
+        u32 colours[4] = {0x800000c0u, 0x80ff0000, 0x80808080, 0x80404040};
+        edpart_message_menu = eduiMenuCreate(70, 70, 300, 250, ed_fnt, edpartCancelMessageMenu, "Message");
+        if (edpart_message_menu != NULL) {
+            eduiMenuAddItem(edpart_message_menu, eduiItemSelCreate(1, colours, 0, 0, NULL, "Saved OK - Backup Failed"));
+            eduiMenuAttach(parent, edpart_message_menu);
+            edpart_message_menu->x = parent->x + 10;
+            edpart_message_menu->y = parent->y + 40;
+        }
     } else {
-        edpartSaveMessage(parent, "Saved OK", true);
+        u32 colours[4] = {0x8000c000u, 0x80ff0000, 0x80808080, 0x80404040};
+        edpart_message_menu = eduiMenuCreate(70, 70, 300, 250, ed_fnt, edpartCancelMessageMenu, "Message");
+        if (edpart_message_menu != NULL) {
+            eduiMenuAddItem(edpart_message_menu, eduiItemSelCreate(1, colours, 0, 0, NULL, "Saved OK"));
+            eduiMenuAttach(parent, edpart_message_menu);
+            edpart_message_menu->x = parent->x + 10;
+            edpart_message_menu->y = parent->y + 40;
+        }
     }
 }
 

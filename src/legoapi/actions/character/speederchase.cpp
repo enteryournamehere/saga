@@ -267,14 +267,14 @@ f32 GetVehicleSpeedMul(GameObject_s *object, f32 speed) {
     f32 effective;
     if (object->character_context == 0x36 || object->character_context == 0x2a || object->character_context == 0x3a)
         effective = ((GAMECHARACTERDATA_s *)object->apiobj.character_data->field11_0x24)->run_speed;
-    else if (object->apiobj.player_controlled && WORLD->current_level == DEATHSTARBATTLED_LDATA &&
+    else if ((object->apiobj.flags_low & 0x80) != 0 && WORLD->current_level == DEATHSTARBATTLED_LDATA &&
              ObjInNarrowSock(object, WORLD->sock_sys, WORLD->level_idx)) {
         GAMECHARACTERDATA_s *data = (GAMECHARACTERDATA_s *)object->apiobj.character_data->field11_0x24;
         f32 fraction = (speed - data->field_0x10) / (data->run_speed - data->field_0x10);
         if (fraction < 0.0f)
             fraction = 0.0f;
         effective = (0.5f + fraction * 0.5f) * data->run_speed;
-    } else if (object->apiobj.player_controlled && (!IDLESPEEDINNARROWSOCKSONLY || object->in_narrow_socket) &&
+    } else if ((object->apiobj.flags_low & 0x80) != 0 && (!IDLESPEEDINNARROWSOCKSONLY || object->in_narrow_socket) &&
                (object->field_0xf03 & 2) == 0) {
         f32 idle = ((GAMECHARACTERDATA_s *)object->apiobj.character_data->field11_0x24)->field_0x10;
         effective = idle > speed ? idle : speed;
@@ -676,7 +676,8 @@ void SpeederChaseA_Update(WORLDINFO_s *world) {
     players_going_forward = 1;
     for (i32 i = 0; i < 2; ++i) {
         GameObject_s *object = Player[i];
-        if (object != NULL && object->apiobj.player_controlled && (object->apiobj.field_0x1f4 & 0x40000) == 0 &&
+        if (object != NULL && static_cast<i8>(object->apiobj.flags_low) < 0 &&
+            (object->apiobj.field_0x1f4 & 0x40000) == 0 &&
             (GoingForwardsAlongNarrowSock(object) == 0 || object->field_0x7a5 == 0x2a)) {
             players_going_forward = 0;
         }

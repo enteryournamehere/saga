@@ -509,7 +509,7 @@ void CalcSplinePointFromDist(flightspline_s *spline, _vuv_s *result, float dista
     CalcSplinePoint(spline, result, distance);
 }
 
-static LEVELSPLINE *LevSplList;
+LEVELSPLINE *LevSplList;
 static i32 levspl_i_start = -1;
 static i32 levspl_i_startcam = -1;
 

@@ -124,7 +124,7 @@ void DoInput(WORLDINFO_s *world) {
         }
 
         GameObject_s *player = Player[player_index];
-        if (player == NULL || static_cast<i8>(player->apiobj.field_0x1f8) >= 0 ||
+        if (player == NULL || !player->apiobj.player_controlled ||
             (LEGOCONTEXT_DROPIN != -1 && static_cast<i8>(player->field_0x7a5) == LEGOCONTEXT_DROPIN) ||
             (GamePad[player_index].buttons_pressed & GAMEPAD_START) == 0) {
             continue;

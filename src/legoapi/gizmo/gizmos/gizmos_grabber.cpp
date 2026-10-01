@@ -179,7 +179,7 @@ void Grabber_Update(WORLDINFO_s *world) {
             FindGameObject(id_GRABR2CONTROL, 0, 0, 1, 0);
     } else
         pad = control->pad_gamepad;
-    if (control != NULL && control->field_0xcc0 != NULL && (control->apiobj.object_flags & 0x80)) {
+    if (control != NULL && control->field_0xcc0 != NULL && (control->apiobj.player_controlled)) {
         if (pad->input_magnitude > 0.0f) {
             if (Grab_grabber->move_xy) {
                 g->target_velocity.y = pad->input_direction_x * g->speed;
@@ -401,7 +401,7 @@ void Grabber_Update(WORLDINFO_s *world) {
             break;
         }
         case 2:
-            if (!moved && g->victim && (g->victim->apiobj.object_flags & 0x80)) {
+            if (!moved && g->victim && (g->victim->apiobj.player_controlled)) {
                 g->stuck_timer += FRAMETIME;
                 if (g->stuck_timer >= 3.0f)
                     goto opening;

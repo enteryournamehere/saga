@@ -57,7 +57,7 @@ void ThermalDetonator_Throw(GameObject_s *object) {
         return;
     }
 
-    if (static_cast<i8>(object->apiobj.field_0x1f8) < 0) {
+    if (object->apiobj.player_controlled) {
         Hint_SetComplete(0x2b8);
         Hint_SetComplete(0x283);
         Hint_SetComplete(0x61d);

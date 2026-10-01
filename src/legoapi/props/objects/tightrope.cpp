@@ -496,7 +496,7 @@ i32 TightRope_SnapTo(GameObject_s *object, NUVEC *position) {
 }
 
 static inline void TightRope_Jump(GameObject_s *object) {
-    if ((object->apiobj.object_flags & 0x80) != 0) {
+    if (object->apiobj.player_controlled) {
         object->apiobj.velocity.y = 2.0f;
         object->context_animation = 6;
         object->context_animation_timer = 0.0f;
@@ -524,7 +524,7 @@ void TightRope_MoveCode(GameObject_s *object, i32 jump_pressed) {
                 return;
             }
         }
-        if ((object->apiobj.object_flags & 0x80) == 0 && (object->field_0xf01 & 0x40) == 0) {
+        if (!object->apiobj.player_controlled && (object->field_0xf01 & 0x40) == 0) {
             return;
         }
         TightRope_Attach(object, WORLD);

@@ -550,30 +550,29 @@ static i32 Pushblocks_BoltHitPlat(void *world_ptr, void *push_blocks_ptr, BOLT *
                 continue;
             }
             const i32 platform = FindPlatInst(NuSpecialGetInstanceix(&push_block->special));
-            if (platform == -1 || platform != bolt->hit_platform) {
-                continue;
-            }
-            if (bolt->owner != NULL) {
-                NUVEC direction;
-                NuVecSub(&direction, &bolt->owner->apiobj.collision_position, push_block->position);
-                if (direction.x == direction.z) {
-                    if (direction.x < 0.0f) {
-                        direction.x = -QRAND_FLOAT();
-                        direction.z = -QRAND_FLOAT();
-                    } else {
-                        direction.x = QRAND_FLOAT();
-                        direction.z = QRAND_FLOAT();
+            if (!(platform == -1 || platform != bolt->hit_platform)) {
+                if (bolt->owner != NULL) {
+                    NUVEC direction;
+                    NuVecSub(&direction, &bolt->owner->apiobj.collision_position, push_block->position);
+                    if (direction.x == direction.z) {
+                        if (direction.x < 0.0f) {
+                            direction.x = -QRAND_FLOAT();
+                            direction.z = -QRAND_FLOAT();
+                        } else {
+                            direction.x = QRAND_FLOAT();
+                            direction.z = QRAND_FLOAT();
+                        }
                     }
+                    if (NuFabs(direction.x) > NuFabs(direction.z)) {
+                        direction.z = 0.0f;
+                    } else {
+                        direction.x = 0.0f;
+                    }
+                    NuVecNorm(&direction, &direction);
+                    KnockPushBlock(push_block, &direction);
                 }
-                if (NuFabs(direction.x) > NuFabs(direction.z)) {
-                    direction.z = 0.0f;
-                } else {
-                    direction.x = 0.0f;
-                }
-                NuVecNorm(&direction, &direction);
-                KnockPushBlock(push_block, &direction);
+                return 1;
             }
-            return 1;
         }
     }
     return 0;

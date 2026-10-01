@@ -195,89 +195,88 @@ void Pulses_Configure(WORLDINFO_s *world, char *config) {
     pulse_sys.radial_hit_direction = 1;
 
     while (NuFParGetLine(parser) != 0) {
-        if (NuFParGetWord(parser) == 0 || NuStrICmp(parser->word_buf, "pulses_start") != 0) {
-            continue;
-        }
+        if (!(NuFParGetWord(parser) == 0 || NuStrICmp(parser->word_buf, "pulses_start") != 0)) {
+            while (NuFParGetLine(parser) != 0) {
+                memset(pulse, 0, sizeof(*pulse));
+                if (NuFParGetWord(parser) == 0) {
+                    continue;
+                }
 
-        while (NuFParGetLine(parser) != 0) {
-            memset(pulse, 0, sizeof(*pulse));
-            if (NuFParGetWord(parser) == 0) {
-                continue;
-            }
+                if (NuStrICmp(parser->word_buf, "pulses_end") == 0) {
+                    break;
+                }
 
-            if (NuStrICmp(parser->word_buf, "pulses_end") == 0) {
-                break;
-            }
-
-            if (NuStrICmp(parser->word_buf, "sfx_onloop") == 0) {
-                if (NuFParGetWord(parser) != 0) {
-                    pulse_sys.sfx_on_loop = static_cast<i16>(GetSfxId(parser->word_buf));
-                }
-            } else if (NuStrICmp(parser->word_buf, "sfx_offloop") == 0) {
-                if (NuFParGetWord(parser) != 0) {
-                    pulse_sys.sfx_off_loop = static_cast<i16>(GetSfxId(parser->word_buf));
-                }
-            } else if (NuStrICmp(parser->word_buf, "sfx_turnon") == 0) {
-                if (NuFParGetWord(parser) != 0) {
-                    pulse_sys.sfx_turn_on = static_cast<i16>(GetSfxId(parser->word_buf));
-                }
-            } else if (NuStrICmp(parser->word_buf, "sfx_turnoff") == 0) {
-                if (NuFParGetWord(parser) != 0) {
-                    pulse_sys.sfx_turn_off = static_cast<i16>(GetSfxId(parser->word_buf));
-                }
-            } else if (NuStrICmp(parser->word_buf, "sfx_hitplayer") == 0) {
-                if (NuFParGetWord(parser) != 0) {
-                    pulse_sys.sfx_hit_player = static_cast<i16>(GetSfxId(parser->word_buf));
-                }
-            } else if (NuStrICmp(parser->word_buf, "collide_radius") == 0) {
-                pulse_sys.collide_radius = NuFParGetFloat(parser);
-            } else if (NuStrICmp(parser->word_buf, "hit_direction_line") == 0) {
-                pulse_sys.hit_direction_line = NuFParGetFloat(parser);
-                pulse_sys.hit_direction_radius_origin = NuFParGetFloat(parser);
-                pulse_sys.radial_hit_direction = 0;
-            } else if (NuStrICmp(parser->word_buf, "hit_direction_radius_origin") == 0) {
-                pulse_sys.hit_direction_line = NuFParGetFloat(parser);
-                pulse_sys.hit_direction_radius_origin = NuFParGetFloat(parser);
-                pulse_sys.radial_hit_direction = 1;
-            } else if (NuStrICmp(parser->word_buf, "debris_hitplayer") == 0) {
-                if (NuFParGetWord(parser) != 0) {
-                    pulse_sys.debris_hit_player = static_cast<i16>(FindGameDebris(world->debris_sys, parser->word_buf));
-                }
-            } else if (NuStrICmp(parser->word_buf, "pulse") == 0 && NuFParGetWord(parser) != 0 &&
-                       NuSpecialFind(world->current_gscn, &pulse->special, parser->word_buf, 1) != 0) {
-                while (NuFParGetWord(parser) != 0) {
-                    if (NuStrICmp(parser->word_buf, "gizmo") == 0) {
-                        if (NuFParGetWord(parser) != 0 && NuStrLen(parser->word_buf) < sizeof(pulse->gizmo_name)) {
-                            NuStrCpy(pulse->gizmo_name, parser->word_buf);
+                if (NuStrICmp(parser->word_buf, "sfx_onloop") == 0) {
+                    if (NuFParGetWord(parser) != 0) {
+                        pulse_sys.sfx_on_loop = static_cast<i16>(GetSfxId(parser->word_buf));
+                    }
+                } else if (NuStrICmp(parser->word_buf, "sfx_offloop") == 0) {
+                    if (NuFParGetWord(parser) != 0) {
+                        pulse_sys.sfx_off_loop = static_cast<i16>(GetSfxId(parser->word_buf));
+                    }
+                } else if (NuStrICmp(parser->word_buf, "sfx_turnon") == 0) {
+                    if (NuFParGetWord(parser) != 0) {
+                        pulse_sys.sfx_turn_on = static_cast<i16>(GetSfxId(parser->word_buf));
+                    }
+                } else if (NuStrICmp(parser->word_buf, "sfx_turnoff") == 0) {
+                    if (NuFParGetWord(parser) != 0) {
+                        pulse_sys.sfx_turn_off = static_cast<i16>(GetSfxId(parser->word_buf));
+                    }
+                } else if (NuStrICmp(parser->word_buf, "sfx_hitplayer") == 0) {
+                    if (NuFParGetWord(parser) != 0) {
+                        pulse_sys.sfx_hit_player = static_cast<i16>(GetSfxId(parser->word_buf));
+                    }
+                } else if (NuStrICmp(parser->word_buf, "collide_radius") == 0) {
+                    pulse_sys.collide_radius = NuFParGetFloat(parser);
+                } else if (NuStrICmp(parser->word_buf, "hit_direction_line") == 0) {
+                    pulse_sys.hit_direction_line = NuFParGetFloat(parser);
+                    pulse_sys.hit_direction_radius_origin = NuFParGetFloat(parser);
+                    pulse_sys.radial_hit_direction = 0;
+                } else if (NuStrICmp(parser->word_buf, "hit_direction_radius_origin") == 0) {
+                    pulse_sys.hit_direction_line = NuFParGetFloat(parser);
+                    pulse_sys.hit_direction_radius_origin = NuFParGetFloat(parser);
+                    pulse_sys.radial_hit_direction = 1;
+                } else if (NuStrICmp(parser->word_buf, "debris_hitplayer") == 0) {
+                    if (NuFParGetWord(parser) != 0) {
+                        pulse_sys.debris_hit_player =
+                            static_cast<i16>(FindGameDebris(world->debris_sys, parser->word_buf));
+                    }
+                } else if (NuStrICmp(parser->word_buf, "pulse") == 0 && NuFParGetWord(parser) != 0 &&
+                           NuSpecialFind(world->current_gscn, &pulse->special, parser->word_buf, 1) != 0) {
+                    while (NuFParGetWord(parser) != 0) {
+                        if (NuStrICmp(parser->word_buf, "gizmo") == 0) {
+                            if (NuFParGetWord(parser) != 0 && NuStrLen(parser->word_buf) < sizeof(pulse->gizmo_name)) {
+                                NuStrCpy(pulse->gizmo_name, parser->word_buf);
+                            }
+                        } else if (NuStrICmp(parser->word_buf, "on_time") == 0) {
+                            pulse->on_time = NuFParGetFloat(parser);
+                        } else if (NuStrICmp(parser->word_buf, "off_time") == 0) {
+                            pulse->off_time = NuFParGetFloat(parser);
+                        } else if (NuStrICmp(parser->word_buf, "start_wait") == 0) {
+                            pulse->start_wait = NuFParGetFloat(parser);
                         }
-                    } else if (NuStrICmp(parser->word_buf, "on_time") == 0) {
-                        pulse->on_time = NuFParGetFloat(parser);
-                    } else if (NuStrICmp(parser->word_buf, "off_time") == 0) {
-                        pulse->off_time = NuFParGetFloat(parser);
-                    } else if (NuStrICmp(parser->word_buf, "start_wait") == 0) {
-                        pulse->start_wait = NuFParGetFloat(parser);
                     }
-                }
 
-                if (NuSpecialExistsFn(&pulse->special) != 0) {
-                    if (pulse->on_time < 0.1f) {
-                        pulse->on_time = 0.1f;
+                    if (NuSpecialExistsFn(&pulse->special) != 0) {
+                        if (pulse->on_time < 0.1f) {
+                            pulse->on_time = 0.1f;
+                        }
+                        if (pulse->off_time < 0.1f) {
+                            pulse->off_time = 0.1f;
+                        }
+                        if (pulse->start_wait < 0.0f) {
+                            pulse->start_wait = 0.0f;
+                        }
+                        if (pulse_sys.collide_radius < 0.1f) {
+                            pulse_sys.collide_radius = 0.1f;
+                        }
+                        ++pulse_sys.pulse_count;
+                        ++pulse;
                     }
-                    if (pulse->off_time < 0.1f) {
-                        pulse->off_time = 0.1f;
-                    }
-                    if (pulse->start_wait < 0.0f) {
-                        pulse->start_wait = 0.0f;
-                    }
-                    if (pulse_sys.collide_radius < 0.1f) {
-                        pulse_sys.collide_radius = 0.1f;
-                    }
-                    ++pulse_sys.pulse_count;
-                    ++pulse;
                 }
             }
+            break;
         }
-        break;
     }
 
     NuFParDestroy(parser);

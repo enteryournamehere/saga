@@ -12,6 +12,9 @@
 #include "legoapi/actions/combat/hits.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/menus/core/gamehint.h"
+#include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/render/core/terrain.h"
+#include "legoapi/render/light/surfaces.h"
 #include "legoapi/render/fx.h"
 #include "legoapi/render/fx/parts.h"
 #include "legoapi/world/world.h"
@@ -46,6 +49,7 @@ void PartKill_ThermalDetonator(PART_s *part, i32 reason);
 i32 PartDraw_ThermalDetonator(PART_s *part);
 i32 GameRayCast(NUVEC *position, NUVEC *movement, f32 radius, i32 mask);
 extern i32 TERRAINMASK_NONWEAPON;
+extern f32 brickimpactwait;
 
 void ThermalDetonator_Throw(GameObject_s *object) {
     ADDPART_s params = Default_ADDPART;
@@ -338,15 +342,49 @@ void ThermalDetonator_ThrowMom(GameObject_s *object, nuvec_s *velocity) {
 }
 
 void PartImpact_ThermalDetonator(PART_s *part) {
-    if (part == NULL) {
-        return;
-    }
     if ((part->render_flags & 0x80) != 0 || part->field_209 == 0x1c) {
         KillPart(part, 0);
         return;
     }
-    PartImpact_Brick(part);
-    PlaySfx(const_cast<char *>("ThermalDet_Bnce"), &part->position);
+
+    WORLDINFO *world = WorldInfo_CurrentlyActive();
+    bool on_blowup = false;
+    if (world != NULL && world->current_level == JEDI_B_LDATA && LevBlowUp[0] != NULL) {
+        i32 platform = LevBlowUp[0]->platform_id;
+        if (platform == static_cast<i32>(part->field_200)) {
+            on_blowup = platform != -1;
+        }
+    }
+
+    i32 stuck = 0;
+    i8 surface = static_cast<i8>(part->field_209);
+    if (surface >= 0 && surface < 32 && ((TerSurface[surface].flags & 0x1000) != 0 || on_blowup)) {
+        PlaySfx(const_cast<char *>("imp_thermalDet_attach"), &part->position);
+        stuck = 2;
+    } else {
+        GameShadow(NULL, &part->position, 5.0f, -1);
+        u32 shadow = ShadowInfo();
+        if (shadow < 32 && (TerSurface[shadow].flags & 0x1000) != 0) {
+            PlaySfx(const_cast<char *>("imp_thermalDet_attach"), &part->position);
+            stuck = 2;
+        } else {
+            f32 water = EShadY;
+            if (water != 2000000.0f && (EShadowInfo() & ~8) == 1 && water > part->position.y) {
+                PlaySfx(const_cast<char *>("FS_WaterJump"), &part->position);
+                stuck = 1;
+            }
+        }
+    }
+    if (stuck != 0) {
+        part->active |= 2;
+        if (part->stop_callback != NULL) {
+            part->stop_callback(part);
+        }
+    }
+    if (stuck != 2 && brickimpactwait <= 0.0f) {
+        PartImpact_Brick(part);
+        PlaySfx(const_cast<char *>("ThermalDet_Bnce"), &part->position);
+    }
     if ((part->active & 3) == 1) {
         NUVEC trail = {
             part->impact_position.x - part->impact_normal.x * part->radius,
@@ -358,12 +396,45 @@ void PartImpact_ThermalDetonator(PART_s *part) {
 }
 
 void PartUpdate_ThermalDetonator(PART_s *part) {
-    if (part == NULL) {
+    if ((part->active & 2) != 0 && (part->render_flags & 0x40) == 0) {
+        if (part->field_100 > 0.0f && part->field_100 < 1.0f) {
+            PlaySfx(const_cast<char *>("ThermalDet_Beep"), &part->position);
+            part->render_flags |= 0x40;
+            return;
+        }
+    }
+    if ((part->active & 2) != 0) {
         return;
     }
-    if ((part->active & 2) != 0 && part->elapsed > 0.0f && part->elapsed < 1.0f && (part->render_flags & 0x40) == 0) {
-        PlaySfx(const_cast<char *>("ThermalDet_Beep"), &part->position);
-        part->render_flags |= 0x40;
+
+    part->reflection_flags &= ~2;
+    NewTerrPlatformsOff();
+    f32 height = GameShadow(NULL, &part->position, 5.0f, -1);
+    if (height == 2000000.0f) {
+        return;
+    }
+    if (part->position.y > height) {
+        i32 surface = ShadowInfo();
+        if (surface >= -1 && surface <= 16 && (TerSurface[surface].flags & 2) != 0) {
+            part->reflection_height = height;
+            part->reflection_flags |= 2;
+        }
+    }
+    f32 water = EShadY;
+    if (water == 2000000.0f) {
+        return;
+    }
+    i32 layer = EShadowInfo();
+    if (static_cast<u32>(layer) > 16) {
+        return;
+    }
+    if ((part->render_flags & 0x80) == 0 && water > part->position.y + part->radius &&
+        ((TerLayer[layer].flags & 1) != 0 || (layer & ~8) == 1)) {
+        part->render_flags |= 0x80;
+    }
+    if (WORLD->current_level == DEATHSTARRESCUEA_LDATA && GameCam->sock_position.location.sock == 2) {
+        part->velocity.x = SeekValF(part->velocity.x, 0.0f, 3.0f);
+        part->velocity.z = SeekValF(part->velocity.z, 0.0f, 3.0f);
     }
 }
 

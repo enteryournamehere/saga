@@ -8,6 +8,9 @@
 #include "legoapi/render/fx/spline_position.h"
 #include "legoapi/menus/screens/shop.h"
 #include "legoapi/world/world.h"
+#include "legoapi/cutscenes/cutscenes.h"
+#include "legoapi/world/mission.h"
+#include "legoapi/world/area.h"
 #include "legoapi/world/levels/podrace.h"
 #include "legoapi/world/levels/levels.h"
 #include "nu2api/nu3d/nuspline.h"
@@ -506,7 +509,7 @@ void CalcSplinePointFromDist(flightspline_s *spline, _vuv_s *result, float dista
     CalcSplinePoint(spline, result, distance);
 }
 
-static LEVELSPLINE *LevSplList;
+LEVELSPLINE *LevSplList;
 static i32 levspl_i_start = -1;
 static i32 levspl_i_startcam = -1;
 
@@ -597,21 +600,41 @@ void LevelSplines_InitForLevel(WORLDINFO_s *world) {
             continue;
         }
 
-        NUGSCN *scene = entry->scene != NULL ? *entry->scene : world->current_gscn;
-        if (scene == NULL) {
-            continue;
+        NUGSCN *scene = *(entry->scene != NULL ? entry->scene : &world->current_gscn);
+        if (scene != NULL) {
+            NUGSPLINE *spline = NuSplineFind(scene, const_cast<char *>(entry->name));
+            world->portal_places[i] = reinterpret_cast<PORTALPOS *>(spline);
+            if (spline != NULL) {
+                const i32 point_count = spline->length;
+                if ((entry->min_points != 0 && point_count < entry->min_points) ||
+                    (entry->max_points != 0 && entry->min_points <= entry->max_points &&
+                     point_count > entry->max_points)) {
+                    world->portal_places[i] = NULL;
+                }
+            }
         }
 
-        NUGSPLINE *spline = NuSplineFind(scene, const_cast<char *>(entry->name));
-        world->portal_places[i] = reinterpret_cast<PORTALPOS *>(spline);
-        if (spline == NULL) {
-            continue;
-        }
-
-        const i32 point_count = spline->length;
-        if ((entry->min_points != 0 && point_count < entry->min_points) ||
-            (entry->max_points != 0 && entry->min_points <= entry->max_points && point_count > entry->max_points)) {
-            world->portal_places[i] = NULL;
+        if (levspl_i_start != -1) {
+            char name[64];
+            name[0] = '\0';
+            if (Mission_Active(NULL) != NULL) {
+                NuStrCpy(name, "bounty_start");
+            } else if (world->level_sub_id != -1 && (ADataList[world->level_sub_id].flags & 0x40) != 0 &&
+                       hub_from_cutsceneplayer != 0) {
+                NuStrCpy(name, "shop_start");
+                if (CutScenePlayer_Available() != NULL && static_cast<i16 *>(CutScenePlayer_Available())[5] != -1) {
+                    name[0] = '\0';
+                }
+            }
+            if (name[0] != '\0') {
+                NUGSPLINE *start = NuSplineFind(scene, name);
+                if (start != NULL && start->length > 1) {
+                    world->portal_places[levspl_i_start] = reinterpret_cast<PORTALPOS *>(start);
+                    if (levspl_i_startcam != -1) {
+                        world->portal_places[levspl_i_startcam] = NULL;
+                    }
+                }
+            }
         }
     }
 }

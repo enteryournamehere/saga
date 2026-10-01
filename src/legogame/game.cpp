@@ -661,7 +661,7 @@ static i32 CheckMusicOther() {
     return 0;
 }
 
-static GAMEAUDIO GameAudio_LSW = {
+GAMEAUDIO GameAudio_LSW = {
     GameAudio_OverrideFootStep_LSW,
     GameAudio_CheckReverb_LSW,
     {

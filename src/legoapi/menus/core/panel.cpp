@@ -310,7 +310,7 @@ static void DrawHitPoints(GameObject_s *object, float x, float y, float scale, f
         current_hp = static_cast<i8>(object->current_hp);
     }
 
-    if (PLAYERHITPOINTS_2HEARTSIN1 != 0 && static_cast<i8>(object->apiobj.flags_low) < 0) {
+    if (PLAYERHITPOINTS_2HEARTSIN1 != 0 && object->apiobj.player_controlled) {
         hitpoints = (hitpoints + 1) / 2;
         current_hp = (current_hp + 1) / 2;
     }
@@ -350,8 +350,8 @@ static void DrawHitPoints(GameObject_s *object, float x, float y, float scale, f
         float z = 1.001f;
         if (i < current_hp) {
             draw_alpha = 1.0f;
-            if (PLAYERHITPOINTS_2HEARTSIN1 != 0 && static_cast<i8>(object->apiobj.flags_low) < 0 &&
-                i == current_hp - 1 && static_cast<i8>(object->current_hp) < (i + 1) * 2) {
+            if (PLAYERHITPOINTS_2HEARTSIN1 != 0 && object->apiobj.player_controlled && i == current_hp - 1 &&
+                static_cast<i8>(object->current_hp) < (i + 1) * 2) {
                 draw_alpha = 0.75f;
             }
 
@@ -912,7 +912,7 @@ void DrawPanel() {
         f32 pulse = 0.25f * NU_SIN_LUT(static_cast<i32>(GlobalTimer.time_elapsed_mod_seconds * 65536.0f));
         {
             const i32 i = 0;
-            if (Player[i] != NULL && static_cast<i8>(Player[i]->apiobj.flags_low) < 0 && NoPad(i, 1) &&
+            if (Player[i] != NULL && Player[i]->apiobj.player_controlled && NoPad(i, 1) &&
                 (WORLD->current_level == NULL || !(WORLD->current_level->flags & 0xe0)) &&
                 !MenuInCriticalMemoryCard()) {
                 removed_controller = GamePad[i].pad->port;
@@ -924,7 +924,7 @@ void DrawPanel() {
         }
         {
             const i32 i = 1;
-            if (Player[i] != NULL && static_cast<i8>(Player[i]->apiobj.flags_low) < 0 && NoPad(i, 1) &&
+            if (Player[i] != NULL && Player[i]->apiobj.player_controlled && NoPad(i, 1) &&
                 (WORLD->current_level == NULL || !(WORLD->current_level->flags & 0xe0)) &&
                 !MenuInCriticalMemoryCard()) {
                 removed_controller = GamePad[i].pad->port;
@@ -966,9 +966,9 @@ void DrawPanel() {
                     if (!paused || pause_i_pad == 0) {
                         icon_x = -ICONX;
                         base_alpha = 1.0f;
-                        if (static_cast<i8>(object->apiobj.flags_low) >= 0)
+                        if (!object->apiobj.player_controlled)
                             dropin_alpha = DROPINALPHA;
-                    } else if (static_cast<i8>(object->apiobj.flags_low) < 0) {
+                    } else if (object->apiobj.player_controlled) {
                         base_alpha = 0.5f;
                         icon_x = -ICONX;
                     } else {
@@ -995,7 +995,7 @@ void DrawPanel() {
                         DrawCharIcon(id, icon_x, status_y, 0.0f, icon_size, 0xa6, alpha, alpha, visible, NULL);
                     }
                     f32 name_x = -(ICONX + 0.075f);
-                    if (static_cast<i8>(object->apiobj.flags_low) < 0 && object->apiobj.character_data->name_id != -1) {
+                    if (object->apiobj.player_controlled && object->apiobj.character_data->name_id != -1) {
                         bool draw_name = paused != 0;
                         if (!draw_name && object->hud_icon_timer > 0.0f && object->hud_icon_timer < 2.0f)
                             draw_name = NuFmod(object->hud_icon_timer, 0.4f) < 0.2f;
@@ -1007,7 +1007,7 @@ void DrawPanel() {
                                         0, static_cast<i32>(base_alpha * 128.0f));
                         }
                     }
-                    if (!paused && FadeSys.fade == 0.0f && static_cast<i8>(object->apiobj.flags_low) < 0 &&
+                    if (!paused && FadeSys.fade == 0.0f && object->apiobj.player_controlled &&
                         MechSystems::Get()->PlayerButton().panel_state == NULL) {
                         if (ONEPLAYERPOWERUPS && object->field_0xdec > 0.0f) {
                             if (!FindGameMsgsWithID(7, 0, object->apiobj.field_0x27c, NULL) &&
@@ -1038,7 +1038,7 @@ void DrawPanel() {
                             }
                         }
                     }
-                    if (static_cast<i8>(object->apiobj.flags_low) < 0) {
+                    if (object->apiobj.player_controlled) {
                         DrawHitPoints(object, -PANEL_HITPOINTSX, status_y + (raised_hearts ? 0.0f : PANEL_HEARTY),
                                       0.195f, alpha, 2, 0.0f, 0);
                     } else if (!paused && !CUTSTOPGAME) {
@@ -1156,8 +1156,8 @@ void DrawPanel() {
                 }
                 if (BonusArea && WORLD->area != NULL && (WORLD->area->flags & 0x104) == 4) {
                     i32 *scores = Arcade ? Arcade_Points : BonusScore;
-                    i32 active2 = Player[1] != NULL && static_cast<i8>(Player[1]->apiobj.flags_low) < 0;
-                    i32 active1 = Player[0] != NULL && static_cast<i8>(Player[0]->apiobj.flags_low) < 0;
+                    i32 active2 = Player[1] != NULL && Player[1]->apiobj.player_controlled;
+                    i32 active1 = Player[0] != NULL && Player[0]->apiobj.player_controlled;
                     DrawBonusScore(status_y, active1, active2, 1.0f, scores);
                 }
                 if (HUB_ADATA != NULL && WORLD->area == HUB_ADATA && goldbricktime > 0.0f) {
@@ -1168,7 +1168,7 @@ void DrawPanel() {
             }
             i32 hide_target = 0;
             GameObject_s *boss = drawbosshitpoints;
-            if (boss != NULL && boss->apiobj.field_0x287 == 0 && static_cast<i8>(boss->apiobj.flags_low) >= 0) {
+            if (boss != NULL && boss->apiobj.field_0x287 == 0 && !boss->apiobj.player_controlled) {
                 if (FadeSys.fade == 0.0f) {
                     DrawCharIcon(boss->id, 0.0f, BOSSICONY, 0.0f, 0.16f, 0xa7, statstime, statstime, 1, NULL);
                     DrawHitPoints(boss, 0.0f, 0.47f, 0.2f, statstime, 0, 0.0f, 0);
@@ -1275,7 +1275,7 @@ void DrawPanel() {
     if (WORLD->current_level->draw_status_fn == NULL && !(WORLD->current_level->flags & LEVEL_GAMEPLAY))
         goto draw_panel_menu;
     for (i32 i = 0; i < 8; ++i) {
-        if (Player[i] != NULL && static_cast<i8>(Player[i]->apiobj.flags_low) < 0 && ShowPlayerCoordinate) {
+        if (Player[i] != NULL && Player[i]->apiobj.player_controlled && ShowPlayerCoordinate) {
             sprintf(text, "X:%.2f Y:%.2f Z:%.2f", Player[i]->apiobj.position.x, Player[i]->apiobj.position.y,
                     Player[i]->apiobj.position.z);
             Text3DEx(text, coordinate_positions[i].x, coordinate_positions[i].y, 1.0f, 0.4f, 0.5f, 0.5f, 0, 255, 191, 0,

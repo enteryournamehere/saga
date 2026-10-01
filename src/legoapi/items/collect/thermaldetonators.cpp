@@ -192,7 +192,7 @@ void PartKill_ThermalDetonator(PART_s *part, i32) {
     }
 
     u16 flags = 0x200;
-    if (part->owner != NULL && static_cast<i8>(part->owner->apiobj.flags_low) < 0 && Cheat_IsOn(0x17) != 0) {
+    if (part->owner != NULL && part->owner->apiobj.player_controlled && Cheat_IsOn(0x17) != 0) {
         flags = 0x1200;
     }
 

@@ -135,7 +135,7 @@ void AddPickups(i32 coins, i32 hearts, i32 torpedoes, i32 powerups, nuvec_s *pos
             if (player2 != NULL)
                 player_id = qrand() / 32768;
             else
-                player_id = Player[0] != NULL && (Player[0]->apiobj.flags_low & 0x80) != 0 ? 0 : 1;
+                player_id = Player[0] != NULL && Player[0]->apiobj.player_controlled ? 0 : 1;
         }
     } else if (world->area != NULL && (world->area->flags & 0x100) != 0) {
         player_id = qrand() / 32768;
@@ -217,8 +217,8 @@ void AddPickups(i32 coins, i32 hearts, i32 torpedoes, i32 powerups, nuvec_s *pos
     }
     if (hearts > 0) {
         bool both_players = false;
-        if (VehicleArea != 0 && Player[0] != NULL && (Player[0]->apiobj.flags_low & 0x80) != 0 && Player[1] != NULL &&
-            (Player[1]->apiobj.flags_low & 0x80) != 0) {
+        if (VehicleArea != 0 && Player[0] != NULL && Player[0]->apiobj.player_controlled && Player[1] != NULL &&
+            Player[1]->apiobj.player_controlled) {
             both_players = true;
             hearts = 2;
         }
@@ -243,9 +243,9 @@ void AddPickups(i32 coins, i32 hearts, i32 torpedoes, i32 powerups, nuvec_s *pos
             else if (recipient == NULL) {
                 GameObject_s *eligible[2];
                 i32 count = 0;
-                if (Player[0] != NULL && (Player[0]->apiobj.flags_low & 0x80) != 0)
+                if (Player[0] != NULL && Player[0]->apiobj.player_controlled)
                     eligible[count++] = Player[0];
-                if (Player[1] != NULL && (Player[1]->apiobj.flags_low & 0x80) != 0)
+                if (Player[1] != NULL && Player[1]->apiobj.player_controlled)
                     eligible[count++] = Player[1];
                 if (count != 0)
                     recipient = eligible[count == 1 ? 0 : qrand() / 32768];

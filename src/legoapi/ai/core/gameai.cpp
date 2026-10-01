@@ -140,7 +140,7 @@ void LoopCode(GameObject_s *object, i32 jump_pressed, i32, GAMEPAD_s *pad, i32 a
             object->field_0x7a3 = static_cast<u8>(roll_direction - 1);
             object->context_animation = 1;
             PlaySfx("XWing_LoopDeLoop", &object->apiobj.collision_position);
-            if (static_cast<i8>(object->apiobj.flags_low) < 0) {
+            if (object->apiobj.player_controlled) {
                 Hint_SetComplete(0x617);
             }
             return;
@@ -157,7 +157,7 @@ void LoopCode(GameObject_s *object, i32 jump_pressed, i32, GAMEPAD_s *pad, i32 a
                 return;
             }
             StartTurn(object);
-            if (static_cast<i8>(object->apiobj.flags_low) < 0) {
+            if (object->apiobj.player_controlled) {
                 Hint_SetComplete(0x617);
             }
             return;
@@ -179,7 +179,7 @@ start_loop:
     object->context_animation_timer = LOOPTIME;
     PlaySfx("XWing_LoopDeLoop", &object->apiobj.collision_position);
     Hint_SetComplete(0x287);
-    if (static_cast<i8>(object->apiobj.flags_low) < 0) {
+    if (object->apiobj.player_controlled) {
         Hint_SetComplete(0x617);
     }
 }

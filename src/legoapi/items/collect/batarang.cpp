@@ -399,7 +399,7 @@ void Batarang_MoveCode(GameObject_s *object) {
     }
     if (object->character_context != 0x4d) {
         GAMECHARACTERDATA *runtime = object->apiobj.character_data->game_character;
-        if (static_cast<i8>(object->apiobj.flags_low) >= 0 || (runtime->flags_090 & 0x20000000) == 0 ||
+        if (!object->apiobj.player_controlled || (runtime->flags_090 & 0x20000000) == 0 ||
             object->use_model_origin == 0 || (object->field_0xe24 & 8) == 0 || object->apiobj.model_draw_result == 0 ||
             object->field_0xc54 <= 0.0f || object->hold_timer < 0.25f || object->apiobj.field_0x27d == 0 ||
             ObjLandReady(object) == 0) {

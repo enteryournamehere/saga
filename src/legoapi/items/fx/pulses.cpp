@@ -117,7 +117,7 @@ void Pulses_Update(PULSESYS_s *pulse_sys) {
 
         for (i32 player_index = 0; player_index < 2; ++player_index) {
             GameObject_s *player = Player[player_index];
-            if (player == NULL || static_cast<i8>(player->apiobj.flags_low) >= 0 || player->apiobj.field_0x287 != 0 ||
+            if (player == NULL || !player->apiobj.player_controlled || player->apiobj.field_0x287 != 0 ||
                 (LEGOCONTEXT_DOOMED != -1 && player->character_context == LEGOCONTEXT_DOOMED) ||
                 player->flicker_timer > 0.0f || player->spawn_protection_timer > 0.0f ||
                 (player->field_0xefe & 0x40) != 0) {

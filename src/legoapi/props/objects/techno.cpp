@@ -459,7 +459,7 @@ NUVEC *Technos_TgtPos(TECHNO_s *techno) {
 void Technos_MoveTarget(TECHNO_s *techno, GameObject_s *object) {
     f32 speed = 0.0f;
     if (object != NULL) {
-        if (static_cast<i8>(object->apiobj.flags_low) >= 0 && object->use_action == 2) {
+        if (!object->apiobj.player_controlled && object->use_action == 2) {
             speed = 1.0f;
         } else if ((techno->enabled & 1) != 0) {
             if ((object->pad_gamepad->allocated_5a & GAMEPAD_RUNTIME_WAGGLED) != 0) {
@@ -599,7 +599,7 @@ i32 Techno_isReady(TECHNO_s *techno) {
 
 void Techno_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
     if (object->character_context != 0x51) {
-        if ((static_cast<i8>(object->apiobj.flags_low) < 0 || object->use_action == 2) && object->suit != NULL &&
+        if ((object->apiobj.player_controlled || object->use_action == 2) && object->suit != NULL &&
             (static_cast<SUIT_s *>(object->suit)->flags & 0x20) != 0) {
             f32 distance;
             TECHNO *techno = Techno_FindNearest(world, &object->apiobj.lower_position, object, &distance);
@@ -643,7 +643,7 @@ void Techno_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
 
         object->context_animation_timer += FRAMETIME;
         if ((object->pad_gamepad->buttons_pressed & GAMEPAD_TAG) != 0 ||
-            (static_cast<i8>(object->apiobj.flags_low) >= 0 && object->use_action != 2)) {
+            (!object->apiobj.player_controlled && object->use_action != 2)) {
             GameCam_Blend(GameCam, 0.5f, 0.0f, 1);
             object->character_context = -1;
             object->tag_flags |= 1;

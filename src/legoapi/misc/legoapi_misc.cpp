@@ -81,7 +81,7 @@ void ConstantRumble(GameObject_s *object, float strength, float phase) {
     strength = weight * strength;
     if (object == NULL) {
         NewRumbleAllPlayers(strength, 0.0f, 0, 0);
-    } else if ((object->apiobj.flags_low & 0x80) != 0) {
+    } else if (object->apiobj.player_controlled) {
         NewRumble(object->pad_gamepad->pad, strength, 0);
     }
 }
@@ -163,7 +163,7 @@ void CatI64ToX(char *output, i64 value) {
 }
 
 void DieRumble(GameObject_s *object) {
-    if (object != NULL && static_cast<i8>(object->apiobj.flags_low) < 0) {
+    if (object != NULL && object->apiobj.player_controlled) {
         NewRumble(object->pad_gamepad->pad, 1.0f, 0);
         NewBuzz(object->pad_gamepad->pad, 0.3f, 0);
     }

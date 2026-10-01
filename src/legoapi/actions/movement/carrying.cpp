@@ -247,7 +247,7 @@ void SuperCarry_Throw(GameObject_s *object, i32 mode) {
 i32 SuperCarry_Possible(GameObject_s *object, i32 require_grounded) {
     if (CanSuperCarryFn == NULL || CanSuperCarryFn(object) == 0)
         return 0;
-    if (static_cast<i8>(object->apiobj.flags_low) >= 0)
+    if (!object->apiobj.player_controlled)
         return 0;
     if (require_grounded != 0 && (object->apiobj.field_0x27d == 0 || ObjLandReady(object) == 0))
         return 0;
@@ -373,8 +373,8 @@ void SuperCarry_MoveCode(WORLDINFO_s *world, GameObject_s *object) {
             message.flags = 0x87;
             message.field_0x4f = 4;
             message.scale = 2.0f;
-            if (Player[0] != NULL && (Player[0]->apiobj.flags_low & 0x80) != 0 && Player[1] != NULL &&
-                (Player[1]->apiobj.flags_low & 0x80) != 0)
+            if (Player[0] != NULL && Player[0]->apiobj.player_controlled && Player[1] != NULL &&
+                Player[1]->apiobj.player_controlled)
                 message.field_0x4f = player == 0 ? 12 : 6;
             message.red = PlayerRGB[player][0];
             message.green = PlayerRGB[player][1];

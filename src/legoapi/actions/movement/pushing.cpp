@@ -217,7 +217,7 @@ void FindForcePushTarget(GameObject_s *object, i32 activate, i32 target_filter) 
     const bool continuing_push = (object->pad_gamepad->allocated_5a & 0x10) != 0;
     if (continuing_push) {
         activate = 1;
-    } else if ((object->apiobj.flags_low & 0x80) == 0) {
+    } else if (!object->apiobj.player_controlled) {
         return;
     }
     if (object->apiobj.field_0x27d == 0) {
@@ -439,7 +439,7 @@ void FindForcePushTarget(GameObject_s *object, i32 activate, i32 target_filter) 
             } else {
                 best->context_animation = best->apiobj.character_model->model_data_b[5] != NULL ? 5 : 0x2b;
                 best->action_movement_state = 0;
-                if ((object->apiobj.flags_low & 0x80) != 0 && Cheat_IsOn(0x13)) {
+                if (object->apiobj.player_controlled && Cheat_IsOn(0x13)) {
                     best->action_movement_state = 4;
                 }
             }
@@ -471,7 +471,7 @@ i32 Pushing(GameObject_s *object, u16 *normal_angle, i32 *surface, i32 *angle_di
              object->action_movement_state == 9)
         pushing_obstacle = 1;
 
-    if ((static_cast<i8>(object->apiobj.flags_low) < 0 || (object->field_0xf02 & 3) != 0) &&
+    if ((object->apiobj.player_controlled || (object->field_0xf02 & 3) != 0) &&
         (object->pad_gamepad->input_magnitude > 0.0f || pushing_obstacle != 0) && object->field_0x1084 != 0 &&
         CanClimbSurface(object, static_cast<i8>(object->field_0x6b0)) == 0 &&
         fabsf(object->contact_normal.y) < NuTrigTable[0x3c71]) {
@@ -1016,7 +1016,7 @@ pushspinner_maintain: {
             }
             goto revalidate_context;
         }
-        if (static_cast<i8>(object->apiobj.flags_low) < 0) {
+        if (object->apiobj.player_controlled) {
             u32 strength = qrand();
             f32 scaled = static_cast<f32>(strength) * 1.5259021893143654e-05f;
             scaled *= 0.3f;

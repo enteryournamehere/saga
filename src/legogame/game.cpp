@@ -321,7 +321,7 @@ static i32 FindSlamOrigin_UseCPos(GameObject_s *object) {
 static i32 LastSafePosExtra(GameObject_s *object) {
     LEVELDATA *level = WORLD->current_level;
     if ((level == TATOOINED_LDATA && object->apiobj.field_0x281 == 0x0e) ||
-        (level == DAGOBAHD_LDATA && object->apiobj.field_0x281 == 0x18 && (object->apiobj.flags_low & 0x80) != 0 &&
+        (level == DAGOBAHD_LDATA && object->apiobj.field_0x281 == 0x18 && object->apiobj.player_controlled &&
          object->apiobj.field_0x27f == 0xff) ||
         (level == DEATHSTARESCAPEC_LDATA && object->id == id_SERVICECAR))
         return 1;

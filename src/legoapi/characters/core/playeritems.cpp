@@ -442,7 +442,7 @@ void FindPlayerAndSetWeapon(i32 id, i32 weapon_out) {
                           (weapon_out & GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION);
     if (weapon_out != 0) {
         object->weapon_scale = 1.0f;
-        if (static_cast<i8>(object->apiobj.flags_low) >= 0)
+        if (!object->apiobj.player_controlled)
             object->field_0xed8 = DEFENDTIME;
     } else {
         object->weapon_scale = 0.0f;

@@ -186,8 +186,7 @@ void BigJumpCode(GameObject_s *object) {
                 GameCam_Judder(GameCam, -0.3f, 0, &object->apiobj.collision_position);
                 PlayLandSfx(object, 3, 0);
                 NewRumbleAllPlayers(0.6f, 0.0f, 0, 0);
-            } else if ((object->apiobj.flags_low & 0x80) != 0 &&
-                       (TestForController() || SuperOptions.touch_controls == 0)) {
+            } else if (object->apiobj.player_controlled && (TestForController() || SuperOptions.touch_controls == 0)) {
                 GameCam_Judder(GameCam, -0.2f, 0, &object->apiobj.collision_position);
                 PlayLandSfx(object, 3, 0);
             } else {

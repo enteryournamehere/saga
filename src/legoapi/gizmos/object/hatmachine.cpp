@@ -754,7 +754,7 @@ void HatMachine_MoveCode(WORLDINFO_s *world, GameObject_s *object, i32 special_p
             return;
         }
 
-        if (static_cast<i8>(object->apiobj.flags_low) < 0 && (object->apiobj.character_data->model_flags & 0x20) != 0 &&
+        if (object->apiobj.player_controlled && (object->apiobj.character_data->model_flags & 0x20) != 0 &&
             object->field_0xdb0 <= 0.0f) {
             PlaySfx(const_cast<char *>("TC14_VLN"), &object->apiobj.collision_position);
             object->field_0xdb0 = 0.5f;
@@ -778,7 +778,7 @@ void HatMachine_MoveCode(WORLDINFO_s *world, GameObject_s *object, i32 special_p
                 if (object->field_0x108e == 5) {
                     MakeBaddiesForgetAboutParty(1);
                 }
-                if (static_cast<i8>(object->apiobj.flags_low) < 0) {
+                if (object->apiobj.player_controlled) {
                     if (machine->current_hat == 5) {
                         Hint_SetComplete(0x627);
                     } else if (machine->current_hat == 6) {

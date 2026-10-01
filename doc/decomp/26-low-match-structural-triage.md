@@ -6957,3 +6957,142 @@ still **6,276** exact functions. Reserved ordinary `RenderFileSel3` restoration
 does not naturally emit the retail private clone, and both Timed5 trials
 regress; no naming/attribute/optimization shortcut is accepted. The cycle still
 requires **69.128075%** and all final-head GitHub checks before merging.
+
+## Batches 220–221: byte opacity, message queues and script state
+
+`AllMiniKits_LSW_Draw` restores signed float-to-i32 truncation followed by
+original low-byte opacity (**0% to 60.086807%**). The existing status-alpha helper
+can return values above one; passing an unrestricted i32 did not match the
+original mask. No other TU body changes. Exact production-body host sanitizer
+and i386 SSE fixtures pass count/opacity cases, thirteen timing thresholds and
+10,000 timing samples, including callback area replacement. The initial i386
+diagnostic used x87 arithmetic and failed a strict float assertion; rebuilding
+with the target's SSE arithmetic passes without weakening assertions or
+changing production flags. Conversions remain finite and i32-representable.
+
+`AddGameMsg` restores queue protection mask **0x1000**, rather than **0x10**,
+and constructs a temporary initialized message for its end callback when the
+queue is exhausted and incoming field_4d is nonzero (**15.094% to 30.306%**).
+Reference-ordered initialization, captured callback and zero elapsed/duration
+selection are retained; all neighboring scores are unchanged. The existing
+field_4d-zero exhausted-queue NULL guard stays: retail instead overwrites its
+current protected cursor slot, not an invalid minus-one slot. Independent
+queue/callback state-machine tests pass 10,000 cases on host sanitizer/i386 SSE,
+comparing the full queue, input bytes, cursor and callback payloads. They cover
+1,111 temporary callbacks and 1,978 total callbacks per run. Callback recipients
+must not retain the ephemeral pointer; inputs must not alias queue destinations.
+Finite nonnegative durations, valid pointers/cursor and buffers are required;
+no nonfinite policy or full Android message rendering validation is claimed.
+
+`Action_SetScriptState` restores case-insensitive substring parameter matching,
+retains the default target when no named-object service is registered, reloads
+its processor after state lookup, and walks the cached object base with a live
+object count (**9.621622% to 75.221620%**). Existing prelookup guards remain;
+a postlookup null guard safely handles callback invalidation, which retail
+assumes cannot happen. Six tiny scratch-register collateral changes include a
+NotWithParty regression in the positive linked result. Canonical actual-body
+host sanitizer/i386 fixtures pass 187 cases and four independent old-body
+regressions; lookup/parser/init services are mocked.
+
+Linked matching reaches **67.396140%**, **+0.268065 percentage points** from main,
+still **6,276** exact functions. Full Teleport/EngageOpponent/ledge/SkinPlatformSize
+audits found no substantive missing closure; no ownership/optimization/fanout
+experiment is repeated. The callback-owner cutscene Update trial and proximity
+gizmo trial are reserved after their bounded negative/neutral gates. BoxTree's
+514-byte missing closure still requires a distinct context type, original public
+signature and resolution of its documented cross-owner private-ABI boundary;
+it is not repaired with an attribute, alias or speculative caller hookup.
+
+## Batches 222–223: super-story time and retail-width lean
+
+`SuperStoryTime_LSW_Draw` restores its missing active-stage drawing body: coin
+entry/title-exit fades, live post-service best-time state, interpolation, time
+formatting and previous-record parentheses. Its public wrapper improves
+**38.181820% to 100%**; GCC independently emits a private clone. No private
+alias, register attribute or compiler option forces that split. One tiny
+TrueHero improvement and equal-score neighbor drifts are included. Canonical
+host sanitizer/i386 SSE actual-body fixtures pass 10,000 finite timer samples,
+22 threshold/record cases and guard/callback probes. Formatter/drawing/string
+services are mocked; valid finite i32-representable conversions and bounded
+formatter output remain required. The private clone is not claimed exact.
+
+`TurnCode` explicitly truncates lean floats to i32 before narrowing to i16,
+matching both original low-word stores. A valid phase yields **36,408**, outside
+i16 range; the old direct float-to-short conversion fails float-cast sanitizing.
+Host sanitizer and unchanged NDK i386 actual-body fixtures pass 1,500 cases and
+4,875 checks, including 104 wrapped lean values. The bounded oracle masks the
+low word explicitly. All 181 owner text bodies remain byte-identical, and the
+linked score is unchanged: this is a portability repair, not a fuzzy gain.
+
+Linked matching reaches **67.396600%**, **+0.268525 percentage points** from main,
+with **6,277** exact functions.
+Checkpoint `41a89dd7` has all eleven final-head GitHub checks passing; the cycle
+continues below its required **69.128075%** merge threshold.
+
+## Batches 224–225: super-story score and local AI parser contracts
+
+`SuperStoryScore_LSW_Draw` restores its missing active-stage title, interpolated
+score, previous-record parentheses and coin-total drawing. Its public wrapper
+improves **35% to 100%**, while Time remains at **100%**. GCC naturally emits
+the private score body; no clone name, attribute or compiler option forces it.
+The original high/low-word unsigned score conversion can round UINT_MAX to
+2^32 in float; an explicit endpoint guard preserves the hardware's zero result
+without an undefined float-to-u32 conversion. Post-title timer/score reloads,
+post-text previous score and total-pointer reloads, signed opacity then byte
+narrowing, and the original unordered post-callback timer branch are retained.
+Canonical actual-body host sanitizer/i386 SSE fixtures pass 20,000 samples,
+phase/full-u32 boundary cases and four callback probes, including a finite
+entry timer replaced with NaN after title drawing. Formatter and draw services
+are mocked; finite i32-representable opacity and bounded formatter output remain
+required. All other original-backed owner scores remain unchanged.
+
+`GizmoBlowupEarlyUpdate` restores override/type reloads after existence,
+midpoint, animation, blowup and debris services, and clears delayed activation
+for unordered/nonpositive animation time (**29.156977% to 30.017443%** in the
+paired isolated gate). Existing guards and cursor/live-count behavior remain.
+Focused actual-body host sanitizer and unchanged NDK i386 fixtures pass
+callback/lifecycle probes and 1,000 timer cases. Services are mocked; callback
+mutation tests establish the reference contract, not known retail gameplay
+mutations. All other original-backed owner scores remain unchanged in the
+linked before/after report. Unresolved radius ordering is not rewritten.
+
+`Action_SetPath` restores case-insensitive substring parsing, the original
+unvalidated separator after `path`, a cached path-system owner for named paths,
+and live successful path-pointer reloads (**22.500% to 46.182434%**).
+`Action_CircleLocator` restores matched-pointer offsets for embedded name,
+teleport and goalrange tokens (**29.582857% to 54.514286%**). The unusual
+teleport offset is original behavior, not reinterpreted as a new command.
+Shared `ActionParamValue`, callback priority and existing validity guards stay.
+Exact production-body host sanitizer/i386 SSE fixtures pass 356 cases, including
+embedded tokens, colon separators, service owner replacement, live arrays,
+direction flags and bit-preserving float parameters. Small neighboring
+scratch-register regressions are included in the positive whole-TU gate.
+
+The ScriptState integration review found that its prior shared helper tolerated
+NULL parameter entries, whereas `NuStrIStr` dereferences its input. A minimal
+local NULL-entry guard preserves that safety behavior despite reducing the
+paired ScriptState score **75.221620% to 68.145940%**; it still improves on the
+original **9.621622%** baseline. Both ABI actual-body fixtures pass 191 cases;
+the exact old body passes mixed-NULL probes and the unguarded intermediate
+reproduces a sanitizer failure. No other owner score changes in this guard's
+isolated gate. SetPath/CircleLocator already required non-NULL parameters before
+their parser correction; no broader helper or parameter-array policy changes.
+
+## Batch 226: coin display position and byte opacity
+
+`Coins_LSW_Draw` captures the score X position before icon/formatting services
+and explicitly narrows signed i32 opacity to its original low byte
+(**53.559376% to 55.146873%**). Every neighboring score is unchanged in the
+paired owner gate. Exact production body plus pure production math helpers
+pass 20,000 independent trace/state cases on host sanitizers and i386 SSE,
+including 4,108 prior-body capture differences on its defined conversion domain.
+Draw/formatter boundaries are mocked, with live scale/score/title reads and
+cached position/opacity tested. Finite i32-representable conversion inputs,
+positive phase-one/three durations, valid pointers and bounded formatter output
+remain required. A separate old-body sanitizer probe rejects direct conversion
+of opacity 512 to u8; no clamping or invented nonfinite conversion policy is added.
+
+The final combined checkpoint, including ScriptState's safety guard, reaches
+**67.402695%**, **+0.274620 percentage points** from main, with **6,278** exact
+functions. Target/native builds and all five repository checks pass. The cycle
+continues below **69.128075%**; a green checkpoint does not authorize early merge.

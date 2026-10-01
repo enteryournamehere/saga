@@ -536,7 +536,7 @@ void AllMiniKits_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 cur
     if (stage->field_0x12 == 0)
         return;
     const f32 alpha = getFinishedStatusAlpha(packet);
-    const i32 opacity = static_cast<i32>(alpha * 128.0f);
+    const u8 opacity = static_cast<u8>(static_cast<i32>(alpha * 128.0f));
     i32 angle = 0x2000;
     if (GameTimer.time_elapsed_mod_seconds <= 0.25f)
         angle = (static_cast<i32>(GameTimer.time_elapsed_mod_seconds * 32768.0f + 16384.0f) >> 1) & 0x7fff;

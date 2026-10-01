@@ -948,24 +948,25 @@ __used__ static i32 Action_SetPath(AISYS *sys, AISCRIPTPROCESS *processor, AIPAC
         return 1;
     }
 
+    AIPATHSYS *path_system = sys->path_sys;
     GameObject_s *object = packet != NULL && packet->owner != NULL ? packet->owner->apiobj.objptr : NULL;
     AIPATH *path = NULL;
     for (i32 index = 0; index < param_4; ++index) {
-        char *value = ActionParamValue(params[index], "character");
+        char *value = NuStrIStr(params[index], "character=");
         if (value != NULL) {
-            object = GetNamedGameObject(sys, value);
+            object = GetNamedGameObject(sys, value + 10);
             continue;
         }
-        if (NuStrICmp(params[index], "path=LevelPath") == 0) {
+        if (NuStrIStr(params[index], "path=LevelPath") != NULL) {
             path = sys->path_sys->active_path;
             continue;
         }
-        value = ActionParamValue(params[index], "path");
+        value = NuStrIStr(params[index], "path");
         if (value != NULL) {
-            for (i32 path_index = 0; path_index < sys->path_sys->path_count; ++path_index) {
-                AIPATH *candidate = sys->path_sys->paths[path_index];
-                if (candidate != NULL && NuStrICmp(candidate->name, value) == 0) {
-                    path = candidate;
+            for (i32 path_index = 0; path_index < path_system->path_count; ++path_index) {
+                AIPATH *candidate = path_system->paths[path_index];
+                if (candidate != NULL && NuStrICmp(candidate->name, value + 5) == 0) {
+                    path = path_system->paths[path_index];
                     break;
                 }
             }
@@ -4630,13 +4631,15 @@ __used__ static i32 Action_CircleLocator(AISYS *sys, AISCRIPTPROCESS *processor,
             if (AIActionParseSpeedFn != NULL && AIActionParseSpeedFn(params[index], &packet->goal_speed_mode) != 0) {
                 continue;
             }
-            char *value = ActionParamValue(params[index], "name");
+            char *value = NuStrIStr(params[index], "name=");
+            if (value == NULL) {
+                value = NuStrIStr(params[index], "teleport");
+            }
             if (value != NULL) {
-                processor->action_data_3 = AIPathFindLocator(sys, value);
-            } else if (NuStrIStr(params[index], "teleport") != NULL) {
-                processor->action_data_3 = AIPathFindLocator(sys, params[index] + NuStrLen("name="));
-            } else if ((value = ActionParamValue(params[index], "goalrange")) != NULL) {
-                packet->movement_instruction_parameter = AIParamToFloatEx(packet, processor, value);
+                processor->action_data_3 = AIPathFindLocator(sys, value + NuStrLen("name="));
+            } else if ((value = NuStrIStr(params[index], "goalrange")) != NULL) {
+                packet->movement_instruction_parameter =
+                    AIParamToFloatEx(packet, processor, value + NuStrLen("goalrange") + 1);
             } else if (NuStrICmp(params[index], "reverse") == 0) {
                 packet->field_0x1e5 ^= 2;
             } else if (NuStrICmp(params[index], "anticlockwise") == 0) {
@@ -6226,20 +6229,25 @@ __used__ static i32 Action_SetScriptState(AISYS *sys, AISCRIPTPROCESS *processor
     char *state_name = NULL;
     i32 creature_set = 0;
     for (i32 index = 0; index < param_4; ++index) {
-        char *value = ActionParamValue(params[index], "character");
-        if (value != NULL) {
-            target = GetNamedAPIObjectFn != NULL ? GetNamedAPIObjectFn(sys, value) : NULL;
+        if (params[index] == NULL) {
             continue;
         }
-        value = ActionParamValue(params[index], "set");
+        char *value = NuStrIStr(params[index], "character=");
         if (value != NULL) {
-            const i32 parsed_set = static_cast<i32>(AIParamToFloat(processor, value));
+            if (GetNamedAPIObjectFn != NULL) {
+                target = GetNamedAPIObjectFn(sys, value + 10);
+            }
+            continue;
+        }
+        value = NuStrIStr(params[index], "set=");
+        if (value != NULL) {
+            const i32 parsed_set = static_cast<i32>(AIParamToFloat(processor, value + 4));
             creature_set = static_cast<u32>(parsed_set) < 17 ? parsed_set : 0;
             continue;
         }
-        value = ActionParamValue(params[index], "state");
+        value = NuStrIStr(params[index], "state=");
         if (value != NULL) {
-            state_name = value;
+            state_name = value + 6;
         }
     }
     if (state_name == NULL) {
@@ -6258,6 +6266,10 @@ __used__ static i32 Action_SetScriptState(AISYS *sys, AISCRIPTPROCESS *processor
         if (state == NULL) {
             return;
         }
+        if (object->ai == NULL) {
+            return;
+        }
+        target_processor = reinterpret_cast<AISCRIPTPROCESS *>(object->ai);
         target_processor->active_ref_count = 0;
         AIScriptProcessorInit(sys, object->ai, target_processor, NULL, NULL, NULL, 0, target_processor->base_script,
                               state);
@@ -6267,8 +6279,8 @@ __used__ static i32 Action_SetScriptState(AISYS *sys, AISCRIPTPROCESS *processor
         set_state(target);
         return 1;
     }
-    for (i32 index = 0; index < HIGHGAMEOBJECT; ++index) {
-        GameObject_s *object = &Obj[index];
+    GameObject_s *object = Obj;
+    for (i32 index = 0; index < HIGHGAMEOBJECT; ++index, ++object) {
         if ((object->apiobj.field_0x1f8 & (APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER)) ==
                 (APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER) &&
             object->ai.creature_set == creature_set) {

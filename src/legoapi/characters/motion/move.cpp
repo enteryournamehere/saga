@@ -9409,8 +9409,8 @@ void TurnCode(GameObject_s *object, i32 mode, GAMEPAD_s *pad) {
     }
 
     if (timer >= half_duration + quarter_duration) {
-        object->secondary_lean_angle = static_cast<i16>(
-            (1.0f - (1.0f / quarter_duration) * (timer - (half_duration + quarter_duration))) * 16384.0f);
+        object->secondary_lean_angle = static_cast<i16>(static_cast<i32>(
+            (1.0f - (1.0f / quarter_duration) * (timer - (half_duration + quarter_duration))) * 16384.0f));
         return;
     }
     if (!(timer >= half_duration)) {
@@ -9420,7 +9420,7 @@ void TurnCode(GameObject_s *object, i32 mode, GAMEPAD_s *pad) {
                                         49152.0f + 16384.0f) >>
                        1) &
                       0x7fff;
-    object->secondary_lean_angle = static_cast<i16>(20024.0f * NuTrigTable[index] + 16384.0f);
+    object->secondary_lean_angle = static_cast<i16>(static_cast<i32>(20024.0f * NuTrigTable[index] + 16384.0f));
 }
 
 void FloatCode(GameObject_s *) {

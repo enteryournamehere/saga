@@ -1273,11 +1273,12 @@ void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float) {
                                 (blowup->output_flags & GIZMOBLOWUP_OUTPUT_BLOWN_UP) == 0) ||
                                (blowup->state_flags & GIZMOBLOWUP_STATE_DELAY_ACTIVE) != 0;
         if (requires_update) {
-            GIZMOBLOWUPTYPE_s *type = blowup->type;
             if ((blowup->draw_flags & 0x400000) != 0) {
                 nuhspecial_s *special = blowup->override_special;
                 if (special == NULL || !NuSpecialExistsFn(special)) {
-                    special = &type->animated_special;
+                    special = &blowup->type->animated_special;
+                } else {
+                    special = blowup->override_special;
                 }
                 blowup->transform = *NuSpecialGetInstanceMtx(special);
                 blowup->state_flags |= GIZMOBLOWUP_STATE_ACTIVE;
@@ -1286,27 +1287,27 @@ void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float) {
                 UpdateMidPos(blowup);
             }
             if (animation != NULL) {
-                const f32 end_frame =
-                    NuAnimEndFrameOld(type->animated_special.scene->instance_animation_data[animation->anim_ix]);
+                const f32 end_frame = NuAnimEndFrameOld(
+                    blowup->type->animated_special.scene->instance_animation_data[animation->anim_ix]);
                 if ((blowup->state_flags & GIZMOBLOWUP_STATE_REPEAT_ANIMATION) != 0) {
-                    if ((type->animation_runtime_flags & GIZMOBLOWUPTYPE_ANIMATION_UPDATED) == 0 &&
-                        ((type->animation_flags & GIZMOBLOWUPTYPE_ANIMATION_INCLUDES_INSTANCE_TRANSFORM) != 0 ||
+                    if ((blowup->type->animation_runtime_flags & GIZMOBLOWUPTYPE_ANIMATION_UPDATED) == 0 &&
+                        ((blowup->type->animation_flags & GIZMOBLOWUPTYPE_ANIMATION_INCLUDES_INSTANCE_TRANSFORM) != 0 ||
                          (blowup->state_flags & GIZMOBLOWUP_STATE_REPEATING) != 0)) {
-                        type->animation_base_frame += FRAMETIME * 60.0f * animation->tfactor;
+                        blowup->type->animation_base_frame += FRAMETIME * 60.0f * animation->tfactor;
                         blowup->state_flags |= GIZMOBLOWUP_STATE_ACTIVE;
-                        if (type->animation_base_frame >= end_frame) {
+                        if (blowup->type->animation_base_frame >= end_frame) {
                             if (animation->repeating != 0) {
-                                type->animation_base_frame = 1.0f;
+                                blowup->type->animation_base_frame = 1.0f;
                             } else {
                                 blowup->field_0x9f |= 1;
                             }
                         }
-                        type->animation_runtime_flags |= GIZMOBLOWUPTYPE_ANIMATION_UPDATED;
+                        blowup->type->animation_runtime_flags |= GIZMOBLOWUPTYPE_ANIMATION_UPDATED;
                     }
                     blowup->state_flags |= GIZMOBLOWUP_STATE_ACTIVE;
                     blowup->animation_time += FRAMETIME * 60.0f * animation->tfactor;
                     NUMTX matrix;
-                    EvalAnim(&type->animated_special, blowup->animation_time, &matrix, 0);
+                    EvalAnim(&blowup->type->animated_special, blowup->animation_time, &matrix, 0);
                     blowup->mid_position.x = matrix.m30 + blowup->position.x;
                     blowup->mid_position.y = matrix.m31 + blowup->position.y;
                     blowup->mid_position.z = matrix.m32 + blowup->position.z;
@@ -1314,7 +1315,7 @@ void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float) {
                         if (animation->repeating != 0) {
                             blowup->animation_time = 0.0f;
                         } else {
-                            blowup->animation_time = type->animation_start_frame;
+                            blowup->animation_time = blowup->type->animation_start_frame;
                             blowup->field_0x9f |= 1;
                         }
                     }
@@ -1333,7 +1334,7 @@ void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float) {
                     }
                 }
             } else if ((blowup->state_flags & GIZMOBLOWUP_STATE_DELAY_ACTIVE) != 0) {
-                if (blowup->animation_time <= 0.0f) {
+                if (!(blowup->animation_time > 0.0f)) {
                     blowup->state_flags &= ~GIZMOBLOWUP_STATE_DELAY_ACTIVE;
                 } else {
                     blowup->animation_time -= FRAMETIME;
@@ -1342,13 +1343,13 @@ void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float) {
             if ((blowup->field_0x9f & 1) != 0) {
                 GizmoBlowupBlowup(blowup, 1, -1, 1, NULL, 1);
             }
-            if (type->particle_types[7] != -1) {
-                AddVariableShotDebrisEffectTimed1(type->particle_types[7], &blowup->mid_position, 60, FRAMETIME, 0, 0,
-                                                  NULL);
+            if (blowup->type->particle_types[7] != -1) {
+                AddVariableShotDebrisEffectTimed1(blowup->type->particle_types[7], &blowup->mid_position, 60, FRAMETIME,
+                                                  0, 0, NULL);
             }
-            if (type->particle_types[8] != -1) {
-                AddVariableShotDebrisEffectTimed1(type->particle_types[8], &blowup->mid_position, 60, FRAMETIME, 0, 0,
-                                                  NULL);
+            if (blowup->type->particle_types[8] != -1) {
+                AddVariableShotDebrisEffectTimed1(blowup->type->particle_types[8], &blowup->mid_position, 60, FRAMETIME,
+                                                  0, 0, NULL);
             }
         } else if ((blowup->state_flags & GIZMOBLOWUP_STATE_ACTIVATED) == 0 && animation != NULL &&
                    animation->playing != 0) {

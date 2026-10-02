@@ -3491,6 +3491,8 @@ void ScanTerrIDRemovePlat(i32 platform_index) {
 }
 i32 HitWallSpline() {
     f32 hit = 0.0f;
+    NUVEC normal;
+    normal.y = 0.0f;
     if (WallSplCount == 0)
         return hit;
     for (i32 i = 0; i < WallSplCount; i += 2) {
@@ -3499,7 +3501,8 @@ i32 HitWallSpline() {
         TerrainQuery_s *query = TerI;
         if (!(64.0f > fabsf(query->position.x - a.x) && 64.0f > fabsf(query->position.z - a.z)))
             continue;
-        NUVEC normal = {b.z - a.z, 0.0f, a.x - b.x};
+        normal.x = b.z - a.z;
+        normal.z = a.x - b.x;
         NuVecNorm(&normal, &normal);
         const f32 radius = query->collision_radius;
         const f32 px = query->position.x;
@@ -3545,12 +3548,11 @@ i32 HitWallSpline() {
         NuVecNorm(&direction, &direction);
         const f32 along = direction.x * dx + direction.z * dz;
         const f32 padded_radius = radius + 0.0005f;
-        bool penetrating = false;
         f32 time = 0.0f;
-        if (along < 0.0f) {
-            if (distance_sq > padded_radius * padded_radius)
+        if (!(along >= 0.0f)) {
+            if (!(padded_radius * padded_radius >= distance_sq))
                 continue;
-            penetrating = true;
+            goto penetrating_hit;
         } else {
             const f32 side_x = a.x - (direction.x * along + px);
             const f32 side_z = a.z - (direction.z * along + pz);
@@ -3559,33 +3561,38 @@ i32 HitWallSpline() {
             if (side_x_sq + side_z_sq <= padded_radius * padded_radius) {
                 const f32 distance = along - NuFsqrt((radius * radius - side_x_sq) - side_z_sq);
                 const f32 movement_sq = mx * mx + mz * mz;
-                if (distance < -0.0005f || movement_sq < distance * distance) {
-                    if (distance_sq > padded_radius * padded_radius)
+                if (!(distance >= -0.0005f && movement_sq >= distance * distance)) {
+                    if (!(padded_radius * padded_radius >= distance_sq))
                         continue;
-                    penetrating = true;
+                    goto penetrating_hit;
                 } else {
                     const f32 length = NuFsqrt(movement_sq);
-                    if (length != 0.0f && distance != 0.0f)
-                        time = MAX(distance / length, 0.0f);
-                    if (time >= query->hit_time)
+                    if (length != 0.0f && distance != 0.0f) {
+                        time = distance / length;
+                        if (time < 0.0f)
+                            time = 0.0f;
+                    }
+                    if (!(query->hit_time > time))
                         continue;
                     normal.x = direction.x * distance + px - a.x;
                     normal.z = distance * direction.z + pz - a.z;
                     NuVecNorm(&normal, &normal);
                 }
             } else {
-                if (distance_sq > padded_radius * padded_radius)
+                if (!(padded_radius * padded_radius >= distance_sq))
                     continue;
-                penetrating = true;
+                goto penetrating_hit;
             }
         }
-        if (penetrating) {
-            normal.x = px - a.x;
-            normal.z = pz - a.z;
-            NuVecNorm(&normal, &normal);
-            time = (NuFsqrt(distance_sq) - radius) - 0.0005f;
-        }
-        query->hit_type = penetrating ? 0x11 : 1;
+        query->hit_type = 1;
+        goto resolved_hit;
+    penetrating_hit:
+        normal.x = px - a.x;
+        normal.z = pz - a.z;
+        NuVecNorm(&normal, &normal);
+        query->hit_type = 0x11;
+        time = (NuFsqrt(distance_sq) - radius) - 0.0005f;
+    resolved_hit:
         query->hit_time = time;
         query->movement_normal = normal;
         query->shape_adjusted = 4;

@@ -115,19 +115,14 @@ static void DrawCoinTotal(i32 source, i32 hide_super_story_target) {
 i32 Tag_UpdateHint(HINT_s *hint) {
     if (WORLD->area != NULL && WORLD->area == HUB_ADATA)
         return 0;
+    const i16 tc14_id = id_TC14;
     i32 tc14 = LSW_HintConditions.tc14_present;
     auto check_tc14 = [&](GameObject_s *object) {
-        if (object != NULL && (object->apiobj.field_0x1f8 & 0x1080) == 0x1080 && object->id == id_TC14)
+        if (object != NULL && (object->apiobj.field_0x1f8 & 0x1080) == 0x1080 && object->id == tc14_id)
             tc14 = 1;
     };
-    check_tc14(Player[0]);
-    check_tc14(Player[1]);
-    check_tc14(Player[2]);
-    check_tc14(Player[3]);
-    check_tc14(Player[4]);
-    check_tc14(Player[5]);
-    check_tc14(Player[6]);
-    check_tc14(Player[7]);
+    for (i32 i = 0; i < 8; ++i)
+        check_tc14(Player[i]);
     LSW_HintConditions.tc14_present = tc14;
     switch (hint->control_mode_ids[0]) {
         case 600:
@@ -157,14 +152,8 @@ i32 Tag_UpdateHint(HINT_s *hint) {
                     active += (object->apiobj.field_0x1f8 & 0x1080) == 0x1080;
                 }
             };
-            count_player(Player[0]);
-            count_player(Player[1]);
-            count_player(Player[2]);
-            count_player(Player[3]);
-            count_player(Player[4]);
-            count_player(Player[5]);
-            count_player(Player[6]);
-            count_player(Player[7]);
+            for (i32 i = 0; i < 8; ++i)
+                count_player(Player[i]);
             if (active == 2 && count == 2)
                 return 0;
             return (first != NULL && first->field_0xcc0 == NULL) || (second != NULL && second->field_0xcc0 == NULL);

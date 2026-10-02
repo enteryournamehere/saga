@@ -2517,7 +2517,7 @@ void DrawSubItemMenu2D() {
                         NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
         }
     }
-    u32 price;
+    i32 price;
     switch (items[ids[3]].type) {
         case 0:
             price = items[HintShelfIds[3]].price;

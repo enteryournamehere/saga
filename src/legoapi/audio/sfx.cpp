@@ -1272,40 +1272,53 @@ void TickTockSfx() {
 
 void AddFootSteps(GameObject_s *object) {
     ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if (packet.blending != 0 || packet.animation_index == -1) {
+    if (packet.blending != 0 || packet.animation_index == -1)
         return;
-    }
     CHARACTERMODEL_s *model = object->apiobj.character_model;
     const i32 animation = packet.animation_index;
-    if (model->model_data_b[animation] == NULL) {
+    if (model->model_data_b[animation] == NULL)
         return;
-    }
     CHARACTERANIM_s *config = static_cast<CHARACTERANIM_s *>(model->model_data_a[animation]);
-    if (config == NULL || (config->flags & CHARACTER_ANIMATION_FLAG_FOOTSTEPS) == 0 ||
-        packet.current_time == packet.previous_time) {
+    if ((config->flags & CHARACTER_ANIMATION_FLAG_FOOTSTEPS) == 0 || packet.previous_time == packet.current_time)
         return;
-    }
-
+    const i32 advancing = (packet.flags & ANIMPACKET_FLAG_LOOPED) != 0 ? packet.previous_time > packet.current_time
+                                                                       : packet.current_time > packet.previous_time;
     bool crossed = false;
-    for (i32 i = 0; i < 4; ++i) {
-        const f32 frame = config->event_frames[i];
-        if (frame < 1.0f) {
-            continue;
-        }
-        if ((packet.flags & ANIMPACKET_FLAG_LOOPED) != 0) {
-            crossed = frame > packet.previous_time || frame <= packet.current_time;
-        } else if ((packet.flags & ANIMPACKET_FLAG_PLAYING_REVERSED) != 0) {
-            crossed = frame <= packet.previous_time && frame > packet.current_time;
+    if ((config->flags & 0x10000) != 0) {
+        if (!advancing)
+            return;
+        if (!(packet.previous_time > packet.current_time)) {
+            for (i32 i = 0; i < 4; ++i) {
+                const f32 frame = config->event_frames[i];
+                if (frame >= 1.0f && packet.current_time >= frame && frame > packet.previous_time)
+                    crossed = true;
+            }
         } else {
-            crossed = frame > packet.previous_time && frame <= packet.current_time;
+            for (i32 i = 0; i < 4; ++i) {
+                const f32 frame = config->event_frames[i];
+                if (frame >= 1.0f && (packet.current_time >= frame || frame > packet.previous_time))
+                    crossed = true;
+            }
         }
-        if (crossed) {
-            break;
+    } else if (!(packet.previous_time > packet.current_time)) {
+        if (!advancing)
+            return;
+        for (i32 i = 2; i < 4; ++i) {
+            const f32 frame = config->event_frames[i];
+            if (frame >= 1.0f && packet.current_time >= frame && frame > packet.previous_time)
+                crossed = true;
+        }
+    } else {
+        if (!advancing)
+            return;
+        for (i32 i = 2; i < 4; ++i) {
+            const f32 frame = config->event_frames[i];
+            if (frame >= 1.0f && (packet.current_time >= frame || frame > packet.previous_time))
+                crossed = true;
         }
     }
-    if (crossed) {
+    if (crossed)
         PlayFootStepSfx(object);
-    }
 }
 
 void PlayGruntSfx(GameObject_s *object) {

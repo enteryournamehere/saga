@@ -1041,14 +1041,25 @@ static void GizForces_StoreProgress(void *, void *data, void *progress_ptr) {
     CLEAR_FORCE_GROUP_WORD(14);
     CLEAR_FORCE_GROUP_WORD(15);
 #undef CLEAR_FORCE_GROUP_WORD
-    u32 count = force_sys->count;
-    if (count > GIZFORCE_PROGRESS_CAPACITY) {
-        count = GIZFORCE_PROGRESS_CAPACITY;
+    // The group table and the force bit words are disjoint, so their order
+    // does not change the snapshot. The original emits the force loop after
+    // the fully unrolled group stores.
+    for (i32 group_index = 0; group_index < 8; group_index++) {
+        GIZFORCEGROUP_s *group = &force_sys->groups[group_index];
+        for (i32 member = 0; member < 8; member++) {
+            progress->group_members[group_index][member] =
+                member < group->count ? static_cast<i8>(group->forces[member] - force_sys->forces) : -1;
+        }
     }
+
     GIZFORCE_s *force = force_sys->forces;
-    for (u32 index = 0; index < count; ++index, ++force) {
-        const u32 word = index >> 5;
-        const u32 bit = 1u << (index & 31);
+    const i32 count = force_sys->count;
+    for (i32 index = 0; index < count; index++, force++) {
+        if (index >= GIZFORCE_PROGRESS_CAPACITY) {
+            break;
+        }
+        const i32 word = index >> 5;
+        const u32 bit = 1 << index;
         if ((force->progress_flags & GIZFORCE_PROGRESS_VISIBLE) == 0) {
             progress->progress_flag_1[word] &= ~bit;
         }
@@ -1071,31 +1082,6 @@ static void GizForces_StoreProgress(void *, void *data, void *progress_ptr) {
             progress->field_aa_flag_0[word] |= bit;
         }
     }
-
-#define STORE_FORCE_GROUP_MEMBER(group_index, member)                                                                  \
-    progress->group_members[group_index][member] =                                                                     \
-        force_sys->groups[group_index].count > member                                                                  \
-            ? static_cast<i8>(force_sys->groups[group_index].forces[member] - force_sys->forces)                       \
-            : -1
-#define STORE_FORCE_GROUP(group_index)                                                                                 \
-    STORE_FORCE_GROUP_MEMBER(group_index, 0);                                                                          \
-    STORE_FORCE_GROUP_MEMBER(group_index, 1);                                                                          \
-    STORE_FORCE_GROUP_MEMBER(group_index, 2);                                                                          \
-    STORE_FORCE_GROUP_MEMBER(group_index, 3);                                                                          \
-    STORE_FORCE_GROUP_MEMBER(group_index, 4);                                                                          \
-    STORE_FORCE_GROUP_MEMBER(group_index, 5);                                                                          \
-    STORE_FORCE_GROUP_MEMBER(group_index, 6);                                                                          \
-    STORE_FORCE_GROUP_MEMBER(group_index, 7)
-    STORE_FORCE_GROUP(0);
-    STORE_FORCE_GROUP(1);
-    STORE_FORCE_GROUP(2);
-    STORE_FORCE_GROUP(3);
-    STORE_FORCE_GROUP(4);
-    STORE_FORCE_GROUP(5);
-    STORE_FORCE_GROUP(6);
-    STORE_FORCE_GROUP(7);
-#undef STORE_FORCE_GROUP
-#undef STORE_FORCE_GROUP_MEMBER
 }
 
 static void GizForces_Reset(void *world_ptr, void *data, void *progress_ptr) {

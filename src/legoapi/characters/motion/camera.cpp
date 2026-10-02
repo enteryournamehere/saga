@@ -778,12 +778,13 @@ mode_selected:
     else if (camera->blend_duration > camera->blend_time &&
              (camera->previous_camera_mode == 4 || camera->previous_camera_mode == 2))
         MiniCutCam = 4;
+    LEVELDATA *seek_level = WORLD->current_level;
     NUVEC position = *PlayerStart[0].pos;
     NUVEC offset, direction, mode_scratch;
     // The per-mode camera blend duration starts afresh after transition selection.
     blend_duration = 0.5f;
-    f32 position_seek = static_cast<u32>(static_cast<u8>(WORLD->current_level->cam_pos_seek));
-    f32 angle_seek = static_cast<u32>(static_cast<u8>(WORLD->current_level->cam_angle_seek));
+    f32 position_seek = static_cast<u32>(static_cast<u8>(seek_level->cam_pos_seek));
+    f32 angle_seek = static_cast<u32>(static_cast<u8>(seek_level->cam_angle_seek));
     NUVEC target = v000;
     GAMEPAD_s *selected_pad = camera->mode == 5 ? ViewCam.gamepad : &GamePad[0];
     f32 left_y = static_cast<f32>(static_cast<i32>(selected_pad->pad->analog_left_y)) - 127.5f;

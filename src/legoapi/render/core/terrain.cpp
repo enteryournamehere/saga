@@ -3530,9 +3530,11 @@ i32 HitWallSpline() {
                 query->terrain_group_index = -1;
                 query->hit_type = start_distance > 0.0f ? 1 : 0x11;
                 query->surface = NULL;
-                query->movement_normal = normal;
-                query->hit_time = time;
                 TerrWallInfo = 1;
+                query->movement_normal.x = normal.x;
+                query->movement_normal.y = normal.y;
+                query->hit_time = time;
+                query->movement_normal.z = normal.z;
                 TerrWallTab[0] = WallSplList[i].material[0];
                 TerrWallTab[1] = WallSplList[i].material[1];
                 hit = 1.0f;
@@ -3594,7 +3596,9 @@ i32 HitWallSpline() {
         time = (NuFsqrt(distance_sq) - radius) - 0.0005f;
     resolved_hit:
         query->hit_time = time;
-        query->movement_normal = normal;
+        query->movement_normal.x = normal.x;
+        query->movement_normal.y = normal.y;
+        query->movement_normal.z = normal.z;
         query->shape_adjusted = 4;
         query->surface = NULL;
         query->terrain_group_index = -1;

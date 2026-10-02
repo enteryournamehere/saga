@@ -1617,11 +1617,14 @@ void AddLevSfx(WORLDINFO_s *world, nuvec_s *position, char *name, i32 sfx) {
         return;
     }
 
-    i32 index = 0;
-    while (index < world->level_sfx_count && world->level_sfx[index].id != sfx) {
-        ++index;
+    const i32 count = world->level_sfx_count;
+    i32 index;
+    LEVELSFXENTRY_s *entry = world->level_sfx;
+    for (index = 0; index < count; ++index, ++entry) {
+        if (entry->id == sfx)
+            break;
     }
-    if (index == world->level_sfx_count) {
+    if (index == count) {
         if (index >= 64) {
             return;
         }

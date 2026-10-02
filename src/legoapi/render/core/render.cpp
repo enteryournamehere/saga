@@ -275,7 +275,7 @@ struct VuVec;
 
 nuhspecial_s *(*GameMsg_GetExtraObjFn)(GAMEMESSAGE_s *);
 
-extern "C" bool StateAnimEvaluate2(StateAnim *state, u8 *index, char *value, f32 frame);
+extern "C" i32 StateAnimEvaluate2(StateAnim *state, u8 *index, char *value, f32 frame);
 extern "C" i32 NuRndrBeginScene(i32);
 extern "C" void NuRndrEndScene(void);
 extern "C" void NuRndrGradRect2di(i32, i32, i32, i32, i32 *, numtl_s *);
@@ -662,8 +662,8 @@ extern "C" void NuGScnUpdate(NUGSCN *gscn, f32 frame_delta) {
                         static_cast<u8>((static_cast<u32>(instance_animation->flags) & NUINSTANIM_STATE_INDEX_MASK) >>
                                         NUINSTANIM_STATE_INDEX_SHIFT);
                     char state_value;
-                    const bool state_changed = StateAnimEvaluate2(reinterpret_cast<StateAnim *>(state_animation),
-                                                                  &state_index, &state_value, frame);
+                    const i32 state_changed = StateAnimEvaluate2(reinterpret_cast<StateAnim *>(state_animation),
+                                                                 &state_index, &state_value, frame);
                     const u32 state_flags =
                         (static_cast<u32>(instance_animation->flags) & ~NUINSTANIM_STATE_INDEX_MASK) |
                         (static_cast<u32>(state_index) << NUINSTANIM_STATE_INDEX_SHIFT);

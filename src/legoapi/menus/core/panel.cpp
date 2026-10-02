@@ -722,20 +722,22 @@ void DrawMeleeTargetsRows(i16 *targets, char *, f32 *values, i32 count) {
     f32 y = 0.615f;
     row = 0;
     for (i32 i = 0; i < count; ++i) {
-        const i32 target = targets[i];
-        if (target != -1) {
-            DrawCharIcon(target, x, y, 0.0f, 0.128f, 0xa7, values[i], values[i], 1, NULL);
-            x += 0.12000000476837158203125f;
-            continue;
+        i16 target = targets[i];
+        if (target == -1) {
+            ++i;
+            if (i >= count)
+                break;
+            const i32 previous_row = row++;
+            y -= 0.14f;
+            const f32 width = row_counts[row] * 0.12000000476837158203125f * 0.5f;
+            if (((row_counts[row] - row_counts[previous_row] % 2) + row) & 1)
+                x = -width;
+            else
+                x = 0.060000002384185791015625f - width;
+            target = targets[i];
         }
-
-        const i32 previous_row = row++;
-        y -= 0.14f;
-        const f32 width = row_counts[row] * 0.12000000476837158203125f * 0.5f;
-        if (((row_counts[row] - row_counts[previous_row] % 2) + row) & 1)
-            x = -width;
-        else
-            x = 0.060000002384185791015625f - width;
+        DrawCharIcon(target, x, y, 0.0f, 0.128f, 0xa7, values[i], values[i], 1, NULL);
+        x += 0.12000000476837158203125f;
     }
 }
 
@@ -1080,8 +1082,11 @@ void DrawPanel() {
                                      191, 0, static_cast<u8>(alpha_byte));
                             COINPACKET_s *packet = object->coinpacket;
                             i32 model = static_cast<i16>(packet->lastcoin);
-                            if ((model >= 0xb7 && model <= 0xba) || (model >= 0xbf && model <= 0xc2) ||
-                                (model >= 0xc7 && model <= 0xca))
+                            if (model >= 0xb7 && model <= 0xba)
+                                model -= 4;
+                            else if (model >= 0xbf && model <= 0xc2)
+                                model -= 4;
+                            else if (model >= 0xc7 && model <= 0xca)
                                 model -= 4;
                             else if (model >= 0xd5 && model <= 0xd8)
                                 model += 4;

@@ -91,6 +91,33 @@ matching report to create one entry per source/object unit; each current object
 is compared with the complete original library. It is not an input to
 reporting, hooks, or CI.
 
+## Resolved comparison (experimental)
+
+objdiff compares the linked libraries' `GOTOFF` displacements as numbers. Each
+displacement is the distance from the GOT to a `.rodata`, `.data` or `.bss`
+item, so a function whose code is correct still scores just under 100% until
+the data layout of the whole binary matches. To see how much of the remaining
+difference is only layout, run:
+
+```bash
+bazel build --config=target //src:saga_target
+bazel run //scripts:resolved_match_report
+```
+
+The report resolves each differing PIC-relative operand in both libraries and
+accepts it when both refer to the same symbol and offset, a GOT slot for the
+same symbol, identical constant bytes, the same string, an identical
+compiler-generated table, or a jump table with the same case offsets. Branches
+compare targets by symbol, ignoring clone numbering. Everything else must be
+textually identical with the same instruction count, so the check is somewhat
+stricter than objdiff where it applies: of objdiff's exact functions only those
+calling a different compiler clone, or loading different data, fail it.
+
+It also lists near-exact functions whose resolved data differs: wrong
+constants, strings, globals and field offsets that raw displacements cannot
+distinguish from layout. This is a diagnostic; `matching.json`, the README
+progress table and CI still use objdiff's score.
+
 ## Common pitfalls
 
 1. A function can have the right behavior and still compile differently because

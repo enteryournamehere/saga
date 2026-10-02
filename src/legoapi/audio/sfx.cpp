@@ -1367,22 +1367,23 @@ void PlaySabreSfx(char *name, GameObject_s *object, nuvec_s *position, i32) {
     if (player == 0xff && WORLD->rooms_visible_ptr[object->room_id] == 0) {
         return;
     }
-    i32 player_bits = 0;
-    if (static_cast<i8>(object->apiobj.flags_high) < 0) {
-        player_bits = 1 << (player & 0x1f);
+    u32 player_bits = 0;
+    if (static_cast<i8>(object->apiobj.flags_low) < 0) {
+        player_bits = 1u << (player & 0x1f);
     }
     if (name == NULL) {
-        const i32 sfx = object->apiobj.character_data->game_character->sfx_sabre;
+        const i16 sfx = object->apiobj.character_data->game_character->sfx_sabre;
         if (sfx == -1) {
             GameAudio_PlaySfx(0x40, &object->apiobj.collision_position, 0, 1);
         } else {
             GameAudio_PlaySfxById(sfx, &object->apiobj.collision_position, player_bits, 1);
         }
     } else {
+        const i32 named_sfx = GetSfxId(name);
         if (position == NULL) {
             position = &object->apiobj.collision_position;
         }
-        GameAudio_PlaySfxById(GetSfxId(name), position, 0, 1);
+        GameAudio_PlaySfxById(named_sfx, position, 0, 1);
     }
 }
 

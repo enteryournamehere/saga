@@ -543,7 +543,8 @@ void CoinTotal_Draw(i32 total, f32 y, f32 scale, i32 remember_positions, f32 ico
 
     LEVEL_OBJECT_RUNTIME *left = &WORLD->lev_objs[cointotal_i_obj[0]];
     if (left->active != 0) {
-        const f32 x = text3d_width * -0.5f - scale * COINTOTAL_COINDX;
+        const f32 half_width = 0.5f * text3d_width;
+        const f32 x = -half_width - scale * COINTOTAL_COINDX;
         if (remember_positions != 0) {
             cointotal_x[0] = x;
         }
@@ -555,6 +556,8 @@ void CoinTotal_Draw(i32 total, f32 y, f32 scale, i32 remember_positions, f32 ico
         const f32 x = text3d_width * 0.5f + scale * COINTOTAL_COINDX;
         if (remember_positions != 0) {
             cointotal_x[1] = x;
+        } else {
+            right = &WORLD->lev_objs[0xbb];
         }
         DrawPanel3DObject(x, y, 1.0f, icon_scale, icon_scale, icon_scale, 0, 0, 0, &right->special, 0, 1.0f);
     }
@@ -1002,11 +1005,12 @@ void DrawPanel() {
                         if (!draw_name && object->hud_icon_timer > 0.0f && object->hud_icon_timer < 2.0f)
                             draw_name = NuFmod(object->hud_icon_timer, 0.4f) < 0.2f;
                         if (draw_name) {
+                            const i32 name_alpha = static_cast<i32>(base_alpha * 128.0f);
                             f32 width = Game.options_save.widescreen ? 0.7f : 0.5f;
                             f32 name_y = status_y - 0.125f;
                             char *name = GameObj_GetName(-1, object, auxiliary);
                             SmartTextEx(name, name_x, name_y, 1.0f, 0.35f, 0.35f, 0.35f, 3, 255, 255, 255, width, 2, 0,
-                                        0, static_cast<i32>(base_alpha * 128.0f));
+                                        0, name_alpha);
                         }
                     }
                     if (!paused && FadeSys.fade == 0.0f && object->apiobj.player_controlled &&

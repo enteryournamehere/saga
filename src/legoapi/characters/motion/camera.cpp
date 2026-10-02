@@ -833,11 +833,14 @@ mode_selected:
                 }
                 if (PODRACE_ADATA != NULL && WORLD->area == PODRACE_ADATA) {
                     player_focus[player_count] = Player[i]->apiobj.collision_position;
-                    NUVEC offset = {0.0f, 0.0f, 2.0f};
+                    NUVEC &pod_offset = mode_scratch;
+                    pod_offset.x = 0.0f;
+                    pod_offset.y = 0.0f;
+                    pod_offset.z = 2.0f;
                     NuVecRotateY(
-                        &offset, &offset,
+                        &pod_offset, &pod_offset,
                         static_cast<i32>(static_cast<u16>(object->apiobj.facing_angle) + getPodRoll(i) * 5461.0f));
-                    NuVecAdd(&player_focus[player_count], &player_focus[player_count], &offset);
+                    NuVecAdd(&player_focus[player_count], &player_focus[player_count], &pod_offset);
                 } else
                     PlayerCamPos(object, &player_focus[player_count], &camera->pos);
                 NUVEC *source_position = &object->apiobj.position;
@@ -1123,12 +1126,14 @@ mode_selected:
                     NUVEC forward;
                     NuVecRotateY(&forward, &v001, camera->yaw);
                     i32 total = 0;
-                    for (i32 i = 0; i < player_count; i++) {
-                        i32 roll = -RotDiff(0, player_roll[i]);
-                        if (camera_players[i] != NULL)
-                            total += static_cast<i32>(roll * (forward.x * camera_players[i]->facing_direction.x +
-                                                              forward.z * camera_players[i]->facing_direction.z));
-                    }
+                    index = 0;
+                    do {
+                        i32 roll = -RotDiff(0, player_roll[index]);
+                        if (camera_players[index] != NULL)
+                            total += static_cast<i32>(roll * (forward.x * camera_players[index]->facing_direction.x +
+                                                              forward.z * camera_players[index]->facing_direction.z));
+                        ++index;
+                    } while (index < player_count);
                     f32 scale = WORLD->current_level->cam_tilt;
                     if (player_count != 1)
                         scale *= 1.0f / player_count;

@@ -5048,6 +5048,7 @@ void GameObjectStuffAfterAnimation() {
         if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001 || object->apiobj.field_0x287 != 0 ||
             object->apiobj.field_0x288 == 0)
             continue;
+        ADDPART_s part;
         const bool drawn = object->apiobj.model_draw_result != 0;
         if (drawn || (object->field_0x1050 & 4) != 0) {
             if (object->script_fire_target != NULL && (object->script_fire_target->apiobj.field_0x1f8 & 1) == 0)
@@ -5059,8 +5060,9 @@ void GameObjectStuffAfterAnimation() {
                         &object->apiobj.collision_position, 0, 0);
                     NUMTX matrix;
                     // The original reacquires the locator after the audio callback.
-                    i32 joint = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)
-                                    ->weapon_shoot_joints[0];
+                    i32 joint = drawn ? static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)
+                                            ->weapon_shoot_joints[0]
+                                      : -1;
                     if (drawn && joint != -1 && object->apiobj.character_model->points_of_interest[joint] != NULL)
                         matrix = object->joint_matrices[joint];
                     else {
@@ -5070,7 +5072,7 @@ void GameObjectStuffAfterAnimation() {
                     NUVEC velocity = {0.0f, 2.0f * (static_cast<f32>(qrand()) * (1.0f / 65535.0f)),
                                       -(3.0f + 2.0f * (static_cast<f32>(qrand()) * (1.0f / 65535.0f)))};
                     NuVecMtxRotate(&velocity, &velocity, &matrix);
-                    ADDPART_s part = Default_ADDPART;
+                    part = Default_ADDPART;
                     part.matrix = &matrix;
                     part.velocity = &velocity;
                     part.field_28 = 90;
@@ -5207,7 +5209,7 @@ void GameObjectStuffAfterAnimation() {
             }
             NUVEC velocity = {0.0f, 0.0f, -1.0f};
             NuVecMtxRotate(&velocity, &velocity, &matrix);
-            ADDPART_s part = Default_ADDPART;
+            part = Default_ADDPART;
             part.matrix = &matrix;
             part.velocity = &velocity;
             part.field_14 = 0.1f;

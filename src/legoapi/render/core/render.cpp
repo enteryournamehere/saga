@@ -1429,52 +1429,81 @@ void DrawCross_Now(_vuv_s *, float, i32, i32) {
 }
 
 void DrawGameState(float x, float y, i32 highlight, i32 slot) {
-    if (slot < -1 || slot >= 6 || TTab == NULL)
-        return;
+    const f32 text_scale = MENUTEXTSCALE;
     char game_name[256];
     if (slot == -1) {
         NuStrCpy(game_name, TTab[tCURRENTGAME]);
     } else {
-        snprintf(game_name, sizeof(game_name), "%s %i", TTab[tGAME], slot + 1);
+        sprintf(game_name, "%s %i", TTab[tGAME], slot + 1);
     }
 
-    u8 red = MENUENTRYR;
-    u8 green = MENUENTRYG;
-    u8 blue = MENUENTRYB;
-    if (highlight != 0 && TestForController() != 0) {
-        if (menu_pulsate > 0.0f) {
-            red = static_cast<u8>(MENUFLASH0R * menu_pulsate + MENUFLASH1R * (1.0f - menu_pulsate));
-            green = static_cast<u8>(MENUFLASH0G * menu_pulsate + MENUFLASH1G * (1.0f - menu_pulsate));
-            blue = static_cast<u8>(MENUFLASH0B * menu_pulsate + MENUFLASH1B * (1.0f - menu_pulsate));
-        } else if (menu_flash != 0) {
-            red = MENUFLASH0R;
-            green = MENUFLASH0G;
-            blue = MENUFLASH0B;
+    u8 red;
+    u8 green;
+    u8 blue;
+    if (highlight != 0) {
+        if (TestForController() == 0) {
+            if (menu_pulse > 0.0f) {
+                red = static_cast<u8>(static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
+                                                       static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse)));
+                green = static_cast<u8>(static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
+                                                         static_cast<u32>(MENUNORMALG) * (1.0f - menu_pulse)));
+                blue = static_cast<u8>(static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulse +
+                                                        static_cast<u32>(MENUNORMALB) * (1.0f - menu_pulse)));
+            } else {
+                red = MENUENTRYR;
+                green = MENUENTRYG;
+                blue = MENUENTRYB;
+            }
         } else {
-            red = MENUFLASH1R;
-            green = MENUFLASH1G;
-            blue = MENUFLASH1B;
+            if (menu_pulsate > 0.0f) {
+                red = static_cast<u8>(static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulsate +
+                                                       static_cast<u32>(MENUFLASH1R) * (1.0f - menu_pulsate)));
+                green = static_cast<u8>(static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulsate +
+                                                         static_cast<u32>(MENUFLASH1G) * (1.0f - menu_pulsate)));
+                blue = static_cast<u8>(static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulsate +
+                                                        static_cast<u32>(MENUFLASH1B) * (1.0f - menu_pulsate)));
+            } else if (menu_flash != 0) {
+                red = MENUFLASH0R;
+                green = MENUFLASH0G;
+                blue = MENUFLASH0B;
+            } else {
+                red = MENUFLASH1R;
+                green = MENUFLASH1G;
+                blue = MENUFLASH1B;
+            }
         }
-    } else if (menu_pulse > 0.0f) {
-        red = static_cast<u8>(MENUFLASH0R * menu_pulse + MENUNORMALR * (1.0f - menu_pulse));
-        green = static_cast<u8>(MENUFLASH0G * menu_pulse + MENUNORMALG * (1.0f - menu_pulse));
-        blue = static_cast<u8>(MENUFLASH0B * menu_pulse + MENUNORMALB * (1.0f - menu_pulse));
+    } else {
+        if (menu_pulse > 0.0f) {
+            red = static_cast<u8>(static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
+                                                   static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse)));
+            green = static_cast<u8>(static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
+                                                     static_cast<u32>(MENUNORMALG) * (1.0f - menu_pulse)));
+            blue = static_cast<u8>(static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulse +
+                                                    static_cast<u32>(MENUNORMALB) * (1.0f - menu_pulse)));
+        } else {
+            red = MENUENTRYR;
+            green = MENUENTRYG;
+            blue = MENUENTRYB;
+        }
     }
     smarttextex_drawmessagebox = 2;
-    SmartTextEx(game_name, x, y, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 4, red, green, blue, 0.45f, 1, NULL,
-                0, MenuA);
+    SmartTextEx(game_name, x, y, 1.0f, text_scale, text_scale, text_scale, 4, red, green, blue, 0.45f, 1, NULL, 0,
+                MenuA);
 
     if (slot == -1 || saveload_slotused[slot] != 0) {
         char progress[32];
         const u32 completion = slot == -1 ? Game.completion : saveload_slotcode[slot];
         sprintf(progress, "%.1f%%", static_cast<f32>(static_cast<i32>(completion * 100)) / COMPLETIONPOINTS);
         Text_LocaliseDecimalPoint(progress);
-        Text3DEx(progress, x, y, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 1, 255, 191, 0, MenuA);
+        Text3DEx(progress, x, y, 1.0f, text_scale, text_scale, text_scale, 1, 255, 191, 0, static_cast<u8>(MenuA));
     } else {
-        char *state = TTab[saveload_freespace < SAVESIZE_ADDITIONAL ? tNOSPACE : tEMPTY];
-        const u8 state_red = saveload_freespace < SAVESIZE_ADDITIONAL ? 255 : 0;
-        SmartTextEx(state, x, y, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 1, state_red, 255 - state_red, 0,
-                    0.45f, 2, NULL, 0, MenuA);
+        if (saveload_freespace >= SAVESIZE_ADDITIONAL) {
+            SmartTextEx(TTab[tEMPTY], x, y, 1.0f, text_scale, text_scale, text_scale, 1, 0, 255, 0, 0.45f, 2, NULL, 0,
+                        MenuA);
+        } else {
+            SmartTextEx(TTab[tNOSPACE], x, y, 1.0f, text_scale, text_scale, text_scale, 1, 255, 0, 0, 0.45f, 2, NULL, 0,
+                        MenuA);
+        }
     }
 }
 

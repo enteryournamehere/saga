@@ -8643,3 +8643,142 @@ gains only **0.047479 weighted byte**, with all 62 neighbors unchanged. Stop
 before large runtime fixture investment for usage efficiency; no integration,
 runtime equivalence or negative-gate claim. `Player_ToggleCharacter`'s complete
 bounded raw/source census found no substantive new omission; no trial.
+
+### Batch 300: pod flag selectors and rounded sprint/pitch contracts
+
+`Move_POD` (original `0x1738e0`, 1,814 bytes) restores two canonical
+selectors: object word `field_0x1f4 & 0x40000` corresponds to retail byte
+`0x1f6 & 4`, and `model_flags & 0x10000000` corresponds to character byte
+`7 & 0x10`. Sprint acceleration uses `(1.4f - 1.0f)`, whose rounded float
+matches retail `0x3ecccccc`, rather than the adjacent `0.4f` literal.
+Engine pitch selects the average-speed branch only for ordered `< 1.1f`;
+equality and unordered values select the saturated branch.
+
+One frozen, unchanged-action whole-owner gate gains **25.386440 weighted
+bytes**, with all four exact owner functions and the complete symbol surface
+retained; no neighboring mapped function changes. Root reviewed the complete
+reference, literals, current body, canonical field layouts, critical raw
+instructions, actual seek/trigonometry helpers and full fixture. Fresh root
+host ASan/UBSan/float-cast-overflow and production-NDK i386 builds each pass
+**125,875 cases / 6,276,842 checks**. The original body control fails 83,516
+assertions in the agent's identical bounded fixture, including 3,156 exact
+coefficient witnesses. Real trigonometric initialization and scalar seek
+execute; gameplay/audio services are synchronous recorders, not a complete
+gameplay implementation. Post-hit publication probes are diagnostic, not
+proof that production helpers mutate the tested field. Nonfinite averages
+are limited to the changed branch without integer conversions; unchanged
+camera-facing nonfinite policy and cached vehicle/pad metadata remain outside
+this correction's equivalence claim. Existing null-area delegation remains.
+
+Target/native builds and all five repository checks pass. Linked fuzzy
+matching reaches **68.515686%**, with **6,292** exact functions and no mapped
+exact loss from batch 298. Gain against current main is **0.513226 percentage
+points**; the two-point merge threshold remains **70.002460%**.
+
+### Fresh core/runtime census: avoid repeated low-yield trials
+
+The complete `NuDynamicLight::computeClippingPlanes` (5,050 bytes) source,
+helpers, original export, raw instructions and actual corner-table literals
+already contain both clip-space tables, eight perspective transforms and all
+six output-plane publications. A bounded complete raw/source census of
+`PlaySfxByIdEx` (2,176 bytes) likewise finds its sample flags, listener/group
+admission, six playback dispatches and fade restoration already present;
+retail deliberately bypasses restoration on certain early exits. Neither
+census claims runtime validation or justifies a compilation trial.
+
+`NuMusic::Process` (original `0x313890`, 1,787 bytes) has all fader, duck,
+stream/status, gain, mix and playback-time services. One full-reference/raw-
+backed source-form correction restores the nested upper/lower gain clamp and
+zero/stop block, preserving unordered gain-to-one policy and the two-voice
+loop. Its single unchanged-action whole-owner gate loses **30.270708 weighted
+bytes**, retaining 94 neighboring scores and 12 exacts. Named symbols and the
+actual initializer remain; four unscored compiler-local labels differ.
+Freeze this complete negative unit without fixtures, retries or integration.
+Do not reopen already closed `edpartLoadSingleType` or
+`NuDisplayListAddRenderScene` based merely on code-size deficits.
+
+The current complete `MovePlayer_DIRECTIONAL` (14,602 bytes),
+`MovePlayer_VEHICLEDIRECTIONAL` (9,744 bytes) and `JumpCode` (8,829 bytes)
+bodies are byte-identical to their earlier bounded closure snapshots.
+Directional service/state inventories already cover movement modes, pivots,
+terrain, speed and velocity seeks; the proposed heading discrepancy relied on
+a hypothetical mutating getter, while the actual getter is read-only. The
+vehicle slowdown grouping was already retracted after raw producer review.
+Jump's sentinel-callback correction already had one negative gate. Do not
+repeat exports, trials or fixtures for these unchanged bodies without new
+substantive evidence; these notes are bounded prior audits, not blanket
+runtime-equivalence proofs.
+
+### Batches 301–303: debris records, finite effect positions and touch ownership
+
+- **301, `BuildDebrisVerts`** (`0x29765c`, 3,384 bytes): restore four
+  16-byte corner records, position/extent/texture-offset transform order,
+  pre-service fraction/frame snapshots and final counter publication order.
+  A local trivial `NUVEC4`/`NUVEC` union exposes an active typed XYZ view;
+  the fourth component remains untouched. The initial `VuVec` attempt was
+  rejected for introduced constructor calls, then corrected once with plain
+  storage. Authoritative whole-owner gain **240.911461 weighted bytes**,
+  **58.283997% → 65.403130%**, all four exacts and symbol surface retained;
+  linked **68.520805%**. Root fresh host sanitizers and production-NDK O0
+  candidate/baseline diagnostics each pass **242 cases / 145,253 checks**.
+  Real transform, repeat, buffer rollover and packet helpers execute; GL and
+  list-item allocation are bounded recorders. Helpers do not mutate frames.
+  Both old and new arbitrary optimized i386 diagnostics fail identically on
+  a pre-existing matrix/vector view dependency; broad optimized-native
+  equivalence is not claimed. Finite lifetime/repeat casts and bounded buffers
+  are required; NaN near-plane admission is covered without invalid casts.
+- **302, `AddAnimEffects`** (`0x3caa06`, 4,233 bytes): reject equal finite
+  interval endpoints above one; snap aggregate Y only in the genuine
+  zero-position fallback, and individual locator Y only when positions
+  already exist. Collision-min override remains unsnapped even with zero
+  locators. Preserve fallback locator storage initialization and all guards.
+  Whole-owner gain **140.779632 weighted bytes**, **75.470825% → 78.796590%**;
+  90 neighboring bodies and symbol surface unchanged; linked **68.523800%**.
+  Root freshly compiled sanitizer and production-NDK i386 fixtures each pass
+  **100,000 finite cases + seven directed cases**, including three actual
+  footprint recorder calls. Root freshly rebuilt old NDK body fails all three
+  independent timing/average/collision-min witnesses. Real vector helpers
+  execute; debris/rate/random/audio/footprint services are nonmutating
+  recorders, not production algorithms or callback-mutation proof.
+- **303, gesture tracker `ReadData`** (`0x502100`, 3,216 bytes): pass current
+  X/Y (`unknown_04`/`unknown_08`) rather than current Y/prior X, and assign the
+  weak target reference only after an admitted query. Disabled admission
+  retains the prior reference; an admitted NULL result still clears it.
+  Whole-owner gain **561.402970 weighted bytes**, **49.039180% → 66.495740%**;
+  all 29 neighboring bodies and symbol surface retained; linked **68.535706%**.
+  Root fresh host ASan/UBSan and exact production-NDK owner linked to host
+  i386 support each pass **13,376 cases + actual reference invalidation**;
+  focused candidate witnesses pass and both old NDK witnesses fail. Root
+  LeakSanitizer also passes outside ptrace. Actual constructors, touch lookup,
+  coordinate conversion and `NuMechPtr` ownership execute; menu/query services
+  are nonmutating recorders. Bound touch counts to ten and require the existing
+  valid-object reference contract. The 704 separately counted NaN countdown
+  cases preserve upstream ordered sampling policy, not general nonfinite
+  gameplay equivalence.
+
+Target/native builds and all five repository checks pass after each unit;
+**6,292** linked exact functions remain with no mapped exact loss from batch
+300. Main remains `a496c28b`; current gain is **0.533246 percentage points**.
+The required two-point threshold remains **70.002460%**. All eleven GitHub
+checks passed on checkpoint 14's exact head `e2e8997a`; a newer commit requires
+a fresh exact-head CI run.
+
+### Batch 304 reserve and additional closed inventories
+
+`PodRaceInit` (`0x1fffa0`, 1,155 bytes) has a concrete unintegrated correction:
+only spline initialization is non-client-only; mine/client reset and all ten
+area/debris/part lookups are common retail work. `sizeof(minesys)` preserves
+the canonical target reset extent while covering host-width pointers. Exact
+NDK layout assertions confirm size `0x748` and radius/area/count/part offsets.
+One complete unchanged-action gate remains **0% → 0%, net zero**, retaining
+all 77 non-target bodies. Reserve without fixtures, variants or integration.
+
+Current `GizForces_StoreProgress` and `GizObstacleUpdate_Proximity` are
+byte-identical to their already rejected closure snapshots; no repeated
+export, trial or fixture. New bounded resource censuses find no missing light
+clone fields or decoder-worker dispatch. Streamer dispatch is independently
+corroborated by the complete hub audit; weak-pointer temporaries account for
+apparent bulk. Loader helper expansion likewise gives no qualified new lead.
+These are evidence-only closures, not runtime validation. The previously
+reconstructed `MechTouchTaskPlannedGoTo::Update` remains closed absent new
+substantive evidence.

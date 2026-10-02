@@ -4138,7 +4138,7 @@ void Move_POD(GameObject_s *object) {
     }
     TakeHitCode(object);
 
-    if ((object->apiobj.flags_low & 4) != 0) {
+    if ((object->apiobj.field_0x1f4 & 0x40000) != 0) {
         object->camera_shake_strength = 0.0f;
     } else if (object->apiobj.field_0x27c != -1) {
         f32 target_speed;
@@ -4155,7 +4155,7 @@ void Move_POD(GameObject_s *object) {
                 target_speed = 1.0f + object->camera_shake_strength;
             }
         } else {
-            target_speed = 1.0f + 0.4f * object->camera_shake_strength;
+            target_speed = 1.0f + (1.4f - 1.0f) * object->camera_shake_strength;
         }
         object->current_speed_mul = SeekLinearF(object->current_speed_mul, target_speed, rate);
 
@@ -4181,7 +4181,8 @@ void Move_POD(GameObject_s *object) {
             NewRumble(pad->pad, object->current_speed_mul - 1.0f, 0);
     }
 
-    if (FreePlay != 0 && (object->apiobj.character_data->model_flags & 0x10) != 0 && (vehicle->flags_094[0] & 8) == 0) {
+    if (FreePlay != 0 && (object->apiobj.character_data->model_flags & 0x10000000) != 0 &&
+        (vehicle->flags_094[0] & 8) == 0) {
         FireCode(object, pad->buttons_pressed & GAMEPAD_ACTION, pad->buttons_held & GAMEPAD_ACTION, 0.15f, 0);
     }
     if (WORLD->area != NULL && (WORLD->area == PODRACE_ADATA || WORLD->area == PODSPRINT_ADATA))
@@ -4196,7 +4197,7 @@ void Move_POD(GameObject_s *object) {
             i32 player_index = object == Player[0] ? 0 : 1;
             if (WORLD->area == PODRACE_ADATA) {
                 f32 steering = -fabsf(NuTrigTable[pad->input_angle >> 1]) * (pad->input_magnitude - 6.0f) / 96.0f;
-                f32 speed = avg_currentspeed_mul > 1.1f ? 2.0f + steering : avg_currentspeed_mul + 1.0f + steering;
+                f32 speed = avg_currentspeed_mul < 1.1f ? avg_currentspeed_mul + 1.0f + steering : 2.0f + steering;
                 f32 pitch = speed * 0.5f;
                 f32 previous = PosSeekPitch[player_index];
                 PosSeekPitch[player_index] = previous + (pitch - previous) * FRAMETIME * 1.5f;

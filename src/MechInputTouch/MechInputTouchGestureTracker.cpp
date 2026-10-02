@@ -172,7 +172,7 @@ void MechInputTouchGestureTrackingSystem::ReadData(GameObject_s &object, NuInput
     for (i32 index = 0; index < static_cast<i32>(data.touch_count); ++index) {
         NuInputTouch const &touch = data.touch_events[index];
         f32 x, y;
-        MechInputTouchSystem::ConvertToScreenCoords(touch.unknown_08, touch.unknown_0c, x, y);
+        MechInputTouchSystem::ConvertToScreenCoords(touch.unknown_04, touch.unknown_08, x, y);
         TouchHolder *holder = GetTouch(touch);
         if (!holder->field_0x6) {
             holder->click_candidate = 0;
@@ -180,12 +180,12 @@ void MechInputTouchGestureTrackingSystem::ReadData(GameObject_s &object, NuInput
             holder->down_position.y = y;
             holder->sample_countdown = TimeSampleDelta;
             VuVec screen_position(x, y, 1.0f, 1.0f);
-            MechObjectInterface *target = NULL;
             if (player != NULL && NewMode == 0 && NewLData == NULL && GetMenuID() == -1 && Paused == 0 &&
                 TouchHacks::TouchControlsActive) {
-                target = MechInputTouchSystem::FindTargetObject(object, screen_position, 0x77f, NULL, NULL);
+                MechObjectInterface *target =
+                    MechInputTouchSystem::FindTargetObject(object, screen_position, 0x77f, NULL, NULL);
+                holder->target_object = target;
             }
-            holder->target_object = target;
             holder->oldest_click_timer = holder->release_timer;
             holder->release_timer = holder->double_click_timer;
             holder->double_click_timer = holder->click_timer;

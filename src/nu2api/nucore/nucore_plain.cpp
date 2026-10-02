@@ -1637,8 +1637,9 @@ extern "C" {
                         const u32 wrapped = static_cast<u32>(angles[axis]) & 0xffff;
                         angles[axis] =
                             wrapped >= 0x8000 ? static_cast<i32>(wrapped) - 0x10000 : static_cast<i32>(wrapped);
-                        if (joint_override.rotation_limit_start[axis] >= angles[axis] &&
-                            angles[axis] < joint_override.rotation_limit_end[axis]) {
+                        if (angles[axis] > joint_override.rotation_limit_start[axis]) {
+                            angles[axis] = joint_override.rotation_limit_start[axis];
+                        } else if (angles[axis] < joint_override.rotation_limit_end[axis]) {
                             angles[axis] = joint_override.rotation_limit_end[axis];
                         }
                     }

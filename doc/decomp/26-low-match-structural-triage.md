@@ -9374,3 +9374,153 @@ raw objdiff address/symbol exact set against checkpoint 18: **all 6,292 exact
 records remain**, including the exact thunk omitted by ELF function mapping.
 This full raw check supersedes relying only on the 6,291 mapped exact records.
 The cycle remains below its **70.002460%** merge threshold.
+
+Checkpoint 19's exact pushed head **b82bc221ed8bba3e3877af2eaa87e2a5ef245dac**
+passed all eleven GitHub checks; root independently verified their conclusions.
+
+### Batches 331–335: bounded contract gates and reserves
+
+**331, Animate_SUPERBATTLEDROID**, restores the complete original clip fallback
+and finite-state admission contract in an isolated unchanged O2 owner. Its sole
+whole-owner gate is negative: **−16.16098848 original-weighted bytes**,
+**32.496933% → 30.092024%**, retaining all nine exacts and the complete symbol,
+undefined-reference and nonfunction extent surface. The complete unit remains
+reserved; no partial variant, second compiler trial or runtime fixture follows.
+
+**332, NuAnimBuffProceduralAnimation**, restores the missing upper clamp on
+all three wrapped signed16 rotation axes, preserving the original reversed-
+limit precedence, unlimited signed32 angles and all map/translation/scale
+paths. The sole unchanged O3 whole-owner gate gains **8.6281698 weighted bytes**,
+**68.910830% → 70.273890%**, preserving forty exacts and the entire symbol/U/data
+surface. Actual object text is **601 → 633 bytes** by nm; the isolated gate's
+zero target-size metadata came from an absent report key, not emitted size.
+
+Root independently rebuilt and ran **10,000 finite random + 141 directed
+cases / 1,549,404 checks per ABI**, with host ASan/UBSan/float-cast-overflow/
+LeakSanitizer and the actual NDK O3 action. Complete actual bodies and the real
+setter/storage execute through a diagnostic function-pointer dispatch, not a
+full asset loader/evaluator or gameplay path. Canonical bounded pose/map arrays
+check every pose scalar bitwise, unchanged inputs and buffer capacities, all
+flags, limits, wrap, repeated mapped joints, skipped map255 and global fallback.
+Three safe old-body controls fail the independent upper-limit oracle on each
+ABI. A test-only Bionic stdout link dependency was removed with `fflush(NULL)`;
+historical manifests remain and both ABIs were freshly rerun afterward.
+
+**334, BlendRootFn**, corrects all three complete source/target interpolation
+argument orders in isolation. Its sole unchanged O0 owner gate is **neutral**:
+**66.500000% → 66.500000%**, 1,504 bytes on both sides, all seven exacts and
+the full surface retained. Original duplicate LOCAL helper records are paired
+by objdiff's scored record, not guessed source identity. The complete unit is
+reserved without runtime fixtures, partial variants or recompilation.
+
+**335, edrtlCalculateBurnout**, restores the raw-proven increasing-dispersion
+MAX selection; other threshold/intensity/hysteresis and nearest32 paths stay
+unchanged. The sole unchanged O0 whole-owner gate gains just **0.034391 weighted
+bytes**, **64.772110% → 64.773810%**, preserving fourteen exacts and all symbol,
+undefined and nonfunction extents. This is a tiny gain, not a broad matching fix.
+Temporary storage exhaustion stopped assembly before candidate object creation;
+root preserved logs, recoverably relocated old scratch artifacts and resumed
+only the identical frozen candidate, reusing the original baseline.
+
+Root independently rebuilt/reran **178 cases / 1,948 checks per ABI**, plus
+**152 stable old cases / 1,662 checks** and two clean old dispersion assertions.
+Actual distance/vector/sqrt helpers and canonical32 burnout records execute;
+finite radii, nearest/tie/edge selection, ordinary channel drift, instant/latch
+and local-output bounds are covered. Host leak/undefined/address/float-cast
+sanitizers pass. NDK excerpts use the actual O0 owner action with fixture-only
+section GC, not each helper's separate optimization or Android/GPU execution.
+No alias, NaN or fabricated service mutation is used as evidence.
+
+**333, LoadPerm2**, restores the entire omitted customiser/special-move/status-
+music/purchase-restoration tail and the original public i16[5] animation
+allow-list in isolation. Its sole unchanged O3 owner gate is negative:
+**−8.596875 weighted bytes**, **48.542970% → 47.886720%**, 894 → 1,311 bytes
+(original 1,310). All fifty other normalized bodies and the strict existing
+surface retain; only original tail dependencies, ten-byte data and three
+original literal values are added. Root independently verified the identical
+twelve-byte LOCAL compiler switch table despite its numeric suffix change.
+The complete unit is reserved without production integration, partial trials
+or diagnostic fixtures; a missing original contract does not guarantee a gain.
+
+The linked **332/335** integration measures **68.591390%**, retaining every
+one of checkpoint 19's **6,292 raw exact address/symbol records**. Target build
+passes; broader checkpoint verification follows with the remaining units.
+
+### Checkpoint 19 structural and fresh-frontier audit
+
+The fresh LOCAL-xref ledger has **3,285/3,287** binding/size-concordant unique
+writable-state relationships co-owned, **59.850692%** assessable coverage.
+The only qualifying split is component 513's two links from particle save
+and scene lookup to the original LOCAL sixteen-byte `nullobjectname` array.
+All three current owners use O2; their existing substitutions have identical
+name content and no proved mutating producer or missing behavior. This is
+one minimum component (five functions/two objects), not three broad fixes or
+a promised matching gain. Other ranked splits rely on GLOBAL substitutes and
+fail the strict binding criterion. The ledger explicitly precedes 332/335;
+its later stale-input rejection was retained, not bypassed by retimestamping.
+
+The broader owner-weight audit supplies no verified compiler/type/TU-wide
+fix. Motion, terrain and editor weighted deficits identify workload, not
+recoverable gain. Earlier neutral/negative ANI3 merges and scene-tail producer
+blockers remain reserved. The historical editor repeat-box ownership split
+is already resolved by textual inclusion and real menu registration; the
+translation-unit overview now warns against reopening it from stale figures.
+
+A bounded fresh menu screen closes store-restoration update, view-text draw,
+hint processing, shop selection and filename filtering without a new supported
+missing contract. Unsigned menu-flash distinctions have no negative current
+producer; BuyShop's actual return is always one. A dispatch screen likewise
+closes LevelStreamingUpdate and the cannon-name contract. Partial laser draw
+screening supplies no newly qualified body/helper/layout lead; it is not full
+retail equivalence. No source variants or fixtures follow these closed screens.
+
+### Batch 336: complete hub reset contracts
+
+`Hub_Reset` restores the original 20–51 show / 52–83 hide dispatch using
+defined modulo64 consumer bits. The two visibility tests are independent;
+the PSP hide range no longer depends on its paired show bit. Existing nullable
+special, scene, instance, display and episode-door guards remain. Real
+`Episode_CountOpenAreas` runs before the force-open fallback, retaining all
+sixteen aggregate-counter side effects even when the force flag is set.
+
+The sole unchanged O3 complete-owner gate gains **170.24539221 weighted bytes**,
+**42.273197% → 65.690720%**, 566 → 662 bytes (original 727). All fifty-one
+other normalized bodies, existing exacts and the complete symbol/U/data surface
+retain. Fourteen renumbered zero-sized LOCAL NOTYPE compiler labels were
+individually verified; only those precise pairs were excluded from name
+comparison. The gate reused the same objects after diagnostic parser repair,
+without a source variant or recompilation.
+
+Root independently rebuilt and ran **258 cases / 31,980 checks per ABI**:
+162 canonical visibility/guard cases and 96 actual-counter/force/door cases.
+Actual reset, door, count, visibility and existence bodies execute with their
+canonical tables and bounded records. Host address/undefined/leak sanitizers
+pass; NDK excerpts use the hub O3 action with a host-i386 diagnostic driver,
+not full Android gameplay or each helper's separate owner action. Both safe
+old-body controls fail only their expected assertions. The preexisting
+`CheckResetBits` producer's shifts beyond63 are explicitly excluded and
+unchanged; there is no claimed exhaustive superbonus/area-policy validation.
+
+The linked **332/335/336** result is **68.595024%**, **+0.592564 percentage
+points** from current main, retaining all **6,292 raw exact address/symbol
+records**. The cycle remains below **70.002460%**.
+
+### Fresh AI census: resolved GOT identities, no trial
+
+A three-function motion/AI screen closes `AIPathCnxControlSysUpdate`,
+`AISysGetCharacterPathPos` and `Action_SetAIOverrideControl` without a supported
+finite omission. The initial case5 hypothesis swapped END and CURRENT GOT
+entries. Root resolved both RELATIVE pointers and raw loads: 17c8b4 converts
+CURRENT, and 17c8ba tests CURRENT, agreeing with the complete Ghidra reference
+and current source. Actual route/reset helpers account for the other apparent
+missing writes. The premise is retracted; no candidate, compiler trial,
+fixture or expanded search follows this closed census.
+
+### Checkpoint 20 verification
+
+The integrated 332/335/336 checkpoint passes target, native and WASM builds,
+all five repository tests and the complete format/tidy/forward-declaration/
+symbol/report commit hook. Its fresh mapped and raw reports agree at
+**68.595024%**; the complete raw exact address/symbol set retains all **6,292**
+records from checkpoint19. No compiler options, calling conventions, public
+layout or assets changed. GitHub verification follows on the exact pushed head.

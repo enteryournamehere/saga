@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.59121,
+    "fuzzy_match_percent": 68.595024,
     "total_code": "4722419",
     "matched_code": "526195",
     "matched_code_percent": 11.1424885,
@@ -77220,7 +77220,7 @@
           "address": 3903364,
           "offset": 3013396,
           "size": 2023,
-          "match_percent": 64.789116
+          "match_percent": 64.79082
         },
         {
           "name": "edrtlCalculateBurnoutEx",
@@ -86588,7 +86588,7 @@
           "address": 1760496,
           "offset": 870528,
           "size": 727,
-          "match_percent": 42.762886
+          "match_percent": 66.360825
         },
         {
           "name": "_Z14Hub_ClearStatsv",
@@ -100202,7 +100202,7 @@
           "address": 2866240,
           "offset": 1976272,
           "size": 633,
-          "match_percent": 69.025475
+          "match_percent": 70.36306
         },
         {
           "name": "NuAnimBuffCreate",

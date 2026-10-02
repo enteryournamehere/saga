@@ -2848,7 +2848,13 @@ void Hub_Reset(WORLDINFO_s *world) {
     }
 
     for (i32 i = 20; i < 52; ++i) {
-        NuSpecialSetVisibility(&LevHSpecial[i], static_cast<i32>((LevHSpecialExists >> i) & 1));
+        if (((LevHSpecialExists >> (i & 63)) & 1) != 0) {
+            NuSpecialSetVisibility(&LevHSpecial[i], 1);
+        }
+        const i32 hidden = i + 32;
+        if (((LevHSpecialExists >> (hidden & 63)) & 1) != 0) {
+            NuSpecialSetVisibility(&LevHSpecial[hidden], 0);
+        }
     }
 
     if (NuSpecialExistsFn(&LevHSpecial[84]) != 0) {
@@ -2867,9 +2873,9 @@ void Hub_Reset(WORLDINFO_s *world) {
         if (info->door == NULL) {
             continue;
         }
-        i32 open = info->force_open;
+        i32 open = Episode_CountOpenAreas(info->episode, -1, Game_AreaSave);
         if (open == 0) {
-            open = Episode_CountOpenAreas(info->episode, -1, Game_AreaSave);
+            open = info->force_open;
         }
         Hub_SetDoorState(info->door, &info->lock_on, open);
     }

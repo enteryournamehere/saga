@@ -8782,3 +8782,128 @@ apparent bulk. Loader helper expansion likewise gives no qualified new lead.
 These are evidence-only closures, not runtime validation. The previously
 reconstructed `MechTouchTaskPlannedGoTo::Update` remains closed absent new
 substantive evidence.
+
+### Batches 305–306: canonical terrain allocation and D-pad rendering
+
+**305, `NewTerrainScaleYMask`** (`0x385fa0`, 2,403 bytes): replace the
+remaining `0x948` scratch allocation with `sizeof(TerrainQuery_s)`. The
+canonical record has four pointer fields: target size/scan offset remain
+`0x948`/`0x148`, whereas host64 requires `0x958`/`0x158`. The old host request
+undersized the record by sixteen bytes. This is deliberately a small native
+allocation correction paired with the positive D-pad unit, not a matching
+gain: unchanged-action O3 baseline/candidate **whole objects are byte-identical**
+(`cb5346a00a3cb7c967db9b1e1872331bd9bfb0935a198995dc39529cddb5df0e`).
+Root independently runs the canonical-header diagnostic under host ASan/UBSan
+and NDK i386: actual scratch allocation, scan-arena endpoints, following
+allocation and LIFO release pass on both widths. The small i386 diagnostic
+compiles actual allocator source with the terrain action's O3; it is not a
+claim about the allocator owner's production instruction shape. No terrain
+physics fixture, new query-lifetime rewrite, variant or target behavior change.
+
+**306, `VirtualControlDPad::Render`** (`0x4530c0`, 1,309 bytes): restore
+horizontal arrow spacing from `0.2f` to `0.4f` of the captured scaled radius.
+The optional embedded mover copies the controller's **button mover**, offset
+`0x94`, not its distinct lock button at `0x90`; preserve the NULL gate and
+valid-controller precondition. Restore menu-before-screen query order and
+four separate aspect reads with height calculated before each getter.
+One necessary pre-fixture raw-backed repair corrects the flattened width
+association to `aspect * (radius * scale)`; the provisional packet is not
+integrated. Final exact-owner O2 gate **0% → 83.517240%**, **1,093.240672
+weighted bytes gained**; all 29 neighboring bodies and T/W/V surface retained.
+
+Root freshly rebuilds full-owner host sanitizer and exact production-NDK
+owner/i386-support diagnostics: **28,224 finite render cases + 24 ordered-NaN
+predicate diagnostics** pass on both. LeakSanitizer passes outside ptrace.
+Both focused candidate witnesses pass; freshly recompiled old NDK owner fails
+geometry and optional-widget-source witnesses as expected. Canonical object
+sizes and optional-field offsets are asserted on i386. Actual widget and
+texture-button bodies execute with canonical reference ownership; draw,
+material and screen services are bounded nonmutating diagnostic doubles.
+The aspect helper uses real pure backing-height/width arithmetic. No GL,
+device, gameplay, callback mutation or concurrent resize validation is claimed.
+Alpha is bounded below one so the existing signed-opacity shift remains
+defined; no alpha-one/nonfinite-opacity equivalence claim. NaN sticks/timer
+only exercise ordered predicates, not conversions or geometry.
+
+Target/native builds and all five checks pass for the combined integration;
+linked matching reaches **68.559050%**, **0.556590 percentage points** over
+current main, with all **6,292** exacts retained. All eleven GitHub checks
+passed on checkpoint 15's exact head `e3994abc`; these newer local changes
+still require their own pushed-head CI verification.
+
+### Additional bounded censuses and batch 308 reserve
+
+Do not reopen unchanged quaternion players/blends and their six decoder/skip
+helpers: current bodies are byte-identical to the prior full decode audit;
+existing full blend references and raw tangent scaling disprove the proposed
+new reassociation. W-blend's local/discarded slerp result remains intentional.
+No new export, trial or fixture. World/action and UI/core censuses likewise
+screen prior closed candidates before fresh bounded raw/body checks of
+`UpdateMiniSnowTroopers`, `AIPathNodeUpdatePos`, `BlockCode`,
+`Action_ShootAtOpponent`, `NuFileDevice::FormatName`,
+`AIPathCnxControllerCreate`, `GetNextConnection`, editor grey/float/integer
+sliders and creature-editor service blocks. No substantive complete-unit
+target omission qualified there. These screens are not exhaustive equivalence
+proofs or runtime validation. Creature-editor host path-check storage remains
+an untrialed shared-type/consumer concern, not a claimed overwrite witness.
+`areaEditor_Process` is source-screened only, not raw-closed.
+
+**308, `AddStreakPoints`** (`0x4a3f80`, 1,399 bytes): two finite arithmetic
+distinctions are raw-proven: both interpolation loops use rounded reciprocal
+`1/count` times index, and the Bezier control-A coefficient groups
+`inverse * (3 * amount) * inverse`. The complete two-expression O3 unit
+regresses **38.395653 weighted bytes**, **42.200550% → 39.456043%**;
+all existing symbols/exacts remain. Reserve without partial retry or fixtures.
+The retail private Bezier helper's two unused integer parameters and natural
+constprop clone remain an unresolved source/ABI difference; do not invent
+argument values or register-passing attributes to force its code shape.
+
+### Batches 307 and 309: blowup cursor and copied render matrices
+
+**307, `GizmoBlowUp_Hit`** (`0x4bd890`, 1,469 bytes): retain the initial
+typed blowup cursor across the live-count loop, advancing by the canonical
+`0x12c` record; reload draw flags after the optional filter call. Initial
+properties remain captured for earlier gates. The actual registered speeder
+filter is a pure name test: no gameplay callback-mutation defect is claimed.
+Existing six ordered bounds checks, including upstream NaN rejection, remain.
+One complete unchanged O3-owner gate gains **20.836237 weighted bytes**,
+**38.430267% → 39.848663%**, retaining neighboring bodies, symbols and exacts.
+Root independently rebuilds and runs host sanitizer and NDK-action extracted
+body/i386 diagnostics: **10,389 checks over 1,062 Hit calls** pass on each,
+including 1,056 finite calls and six separate NaN safety cases. Actual vector,
+distance, sphere, string and pure speeder helpers execute; destruction, bolt,
+cheat and other downstream services remain bounded diagnostic doubles. The
+baseline also passes these pure-helper cases; no invented mutation witness.
+Linked matching reaches **68.559500%**, with all 6,292 exacts retained.
+
+**309, `NuRenderContextSetViewProj`** (`0x2a33e0`, 1,124 bytes): restore
+the three verified retail local static 64-byte `scale`, `translate`, and
+`proj` matrices. Translation inputs are loaded after the scale helper. The
+inverse view and view/projection product consume the copied context matrices;
+position W precedes XYZ, and view submission precedes depth remapping. Final
+perspective/frustum helpers intentionally still read the original projection
+pointer, not a frozen value. One unchanged O3-owner gate gains **167.008528
+weighted bytes**, **58.823010% → 73.681420%**; all four exacts remain. Full
+defined-symbol comparison adds only the three original BSS records, removes
+none, and retains all text definitions. No fabricated alignment or ABI change.
+
+Root independently reruns host ASan/UBSan and production-NDK-action/i386
+fixtures: **256 cases / 39,424 checks** pass on each, with actual matrix/trig
+owners and a nonmutating shader recorder. Baseline ordinary controls pass
+64 cases / 7,808 checks; full alias controls fail the copied-view-position
+witness as expected. Four whole-array pointer modes cover disjoint external
+and context-global inputs, not partial overlap or self-copy. Double-precision
+oracle comparisons are tolerance-bounded, not bitwise retail equivalence.
+No production caller is observed to pass these global aliases; this tests
+the bounded pointer contract, not a demonstrated gameplay defect. Singular,
+nonfinite, concurrent and reentrant inputs are excluded. NDK fixtures include
+the full owner with diagnostic section GC; they are not linked frozen-owner
+object or Android-device execution claims. Actual helper reconstruction
+limitations remain. Leak checking is disabled for this sanitizer harness.
+
+Combined target/native builds and all five repository checks pass. Linked
+matching reaches **68.563050%**, **0.560590 percentage points** over current
+main, with all **6,292** mapped exacts retained from checkpoint 15. The current
+cycle still requires **70.002460%** and all eleven checks on its final head
+before a squash merge. Batches 305–309 form checkpoint 16; fresh GitHub CI
+verification is required after its push.

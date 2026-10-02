@@ -71,6 +71,16 @@ the SSE conversion sequence and rounding.
 The D-pad `Render` calls the texture button render first, then four unrolled
 `RndrTexQuad` calls for bottom, left, top, and right arrows. Their angles are
 `0x8000`, `0xc000`, `0`, `0x4000`. The target has separate highlight checks
-for each arrow. A final menu ID 25 path copies the lock button's radius and
-scale to the embedded mover and renders that mover directly. Keeping the four
-arrow calls unrolled preserves the target's control flow and call order.
+for each arrow. Both horizontal offsets are `0.4f * (radius_x * scale)`,
+not `0.2f`. Each arrow captures its height as the small-screen radius times
+the live scale before reading the aspect ratio; width is aspect times that
+height. The menu query precedes the small-screen query, and each draw has a
+separate aspect-ratio read.
+
+A final menu ID 25 path copies the optional **button mover**'s radius and
+scale from controller offset `+0x94` to the embedded mover and renders it
+directly. The lock button is the distinct optional field at `+0x90`; it is
+not the source or NULL gate for this path. Keeping the four arrow calls
+unrolled preserves the target's control flow and call order. The existing
+signed arrow-opacity packing remains unchanged; sanitizer diagnostics bound
+alpha below one so the truncated opacity stays below 128.

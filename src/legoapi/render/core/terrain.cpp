@@ -6113,7 +6113,7 @@ extern "C" void NewTerrainScaleYMask(NUVEC *position, NUVEC *movement, u8 *hit_f
     CurTrackInfo = ScanTerrId(hit_flags);
     TerrOverRideScan = 0;
 
-    TerI = static_cast<TerrainQuery_s *>(NuScratchAlloc32(0x948));
+    TerI = static_cast<TerrainQuery_s *>(NuScratchAlloc32(sizeof(TerrainQuery_s)));
     TerrainQuery_s *query = TerI;
     query->object_scale = object_scale;
     query->object_scale_sq = object_scale * object_scale;

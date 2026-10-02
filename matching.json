@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.535706,
+    "fuzzy_match_percent": 68.56305,
     "total_code": "4722419",
     "matched_code": "526195",
     "matched_code_percent": 11.1424885,
@@ -50202,7 +50202,7 @@
           "address": 4534464,
           "offset": 3644496,
           "size": 1309,
-          "match_percent": 0.0
+          "match_percent": 84.24521
         },
         {
           "name": "_ZN18VirtualControlDPad7ProcessEf",
@@ -55632,7 +55632,7 @@
           "address": 4970640,
           "offset": 4080672,
           "size": 1469,
-          "match_percent": 38.65282
+          "match_percent": 40.071217
         },
         {
           "name": "_Z21GizmoBlowup_HitBlowupP12GameObject_sP13GIZMOBLOWUP_siP6BOLT_sP7nuvec_sPhji",
@@ -92749,7 +92749,7 @@
           "address": 2765792,
           "offset": 1875824,
           "size": 1124,
-          "match_percent": 58.929203
+          "match_percent": 73.831856
         },
         {
           "name": "_Z34NuRenderContextForceSamplerStatePSiPK17d3dsamplerstate_u",

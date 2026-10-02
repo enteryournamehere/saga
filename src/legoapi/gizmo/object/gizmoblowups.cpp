@@ -1987,12 +1987,12 @@ GIZMOBLOWUP_s *GizmoBlowUp_Hit(GameObject_s *object, NUVEC *points, i32 point_co
         static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->field_0x28 > 0.0f;
     GIZMOBLOWUP_s *nearest = NULL;
     f32 nearest_distance = 1000000.0f;
-    if (WORLD->gizmo_blowups == NULL) {
+    GIZMOBLOWUP_s *blowup = WORLD->gizmo_blowups;
+    if (blowup == NULL) {
         return NULL;
     }
-    for (i32 index = 0; index < WORLD->gizmo_blowup_count; ++index) {
-        GIZMOBLOWUP_s *blowup = &WORLD->gizmo_blowups[index];
-        const u32 properties = blowup->draw_flags;
+    for (i32 index = 0; index < WORLD->gizmo_blowup_count; ++index, ++blowup) {
+        u32 properties = blowup->draw_flags;
         if ((blowup->status_flags & 0x804001) != 0x804000 ||
             (exclude_flag_1 && (properties & 0x80000) && airborne_damage)) {
             continue;
@@ -2001,6 +2001,7 @@ GIZMOBLOWUP_s *GizmoBlowUp_Hit(GameObject_s *object, NUVEC *points, i32 point_co
             BlowupExFunc(blowup, hit_type)) {
             continue;
         }
+        properties = blowup->draw_flags;
         if (bolt != NULL && (blowup->platform_id != -1 || (properties & 0x8000) == 0 ||
                              ((properties & 0x80000) && (object == NULL || object->field_0xcc0 == NULL)))) {
             continue;

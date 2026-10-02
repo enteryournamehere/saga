@@ -567,6 +567,11 @@ static i32 *GizTurrets_GetBestBoltTarget(GIZMOSET *set, float *result_distance, 
                                          NUVEC *result_velocity, void *object_ptr, NUVEC *position, NUVEC *direction,
                                          float radius, float range_squared, i32 directional, i32 planar, i32 bolt_id) {
     BOLTTYPE_s *bolt_type = BoltType_FindByID(bolt_id, WORLD);
+    const u16 near_angle = TargetDeg_Near;
+    const u16 mid_angle = TargetDeg_Mid;
+    const u16 far_angle = TargetDeg_Far;
+    const f32 near_distance = TargetDist_Near2;
+    const f32 mid_distance = TargetDist_Mid2;
     if (set == NULL || bolt_type == NULL) {
         return NULL;
     }
@@ -586,7 +591,7 @@ static i32 *GizTurrets_GetBestBoltTarget(GIZMOSET *set, float *result_distance, 
     GIZMO *previous = NULL;
     NUVEC *best_position = NULL;
     NUVEC *previous_position = NULL;
-    float nearest_distance = 100000000.0f;
+    float nearest_distance = 1000000000.0f;
     GIZMO *gizmo = set->gizmos;
     for (i32 i = 0; i < set->count; ++i, ++gizmo) {
         GIZTURRET_s *turret = static_cast<GIZTURRET_s *>(gizmo->object);
@@ -617,12 +622,12 @@ static i32 *GizTurrets_GetBestBoltTarget(GIZMOSET *set, float *result_distance, 
         NuVecNorm(&delta, &delta);
         const float dot = NuVecDot(&delta, &aim);
         u16 angle;
-        if (TargetDist_Near2 > distance && directional != 0) {
-            angle = TargetDeg_Near;
-        } else if (TargetDist_Mid2 > distance) {
-            angle = TargetDeg_Mid;
+        if (near_distance > distance && directional != 0) {
+            angle = near_angle;
+        } else if (mid_distance > distance) {
+            angle = mid_angle;
         } else {
-            angle = TargetDeg_Far;
+            angle = far_angle;
         }
         if (!(dot > NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff]) || !(nearest_distance > distance)) {
             continue;

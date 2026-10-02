@@ -12099,3 +12099,84 @@ Raw report5d2bce5114a0af0b1c162dcfcd2f451d3e8c9014246a37de810ffa7084f1c0c2;
 mapped report60d4e03506505f91c65960d28e35f6d5049bc2cdbddc8cedbd103a7524a504dc.
 Exact pushed-head GitHub validation follows separately. Turret447 remains
 isolated pending specific qualification and is not included in this gain.
+
+All eleven GitHub checks are independently verified COMPLETED/SUCCESS on the
+exact checkpoint40 pushed head61c2b4af1275504caa17bce1c22ee93560ca2693.
+The below-threshold gain still does not authorize merging.
+
+### Subsequent isolated candidate qualifications
+
+The sole450 bonus-menu owner pair loses400.92598720 original-weighted bytes:
+MenuUpdateBonusMode51.631866% to36.891940%,2633 to2695 emitted bytes. All six
+exacts retain. This candidate is closed with its objects/reports preserved;
+no source variant, matching retry, runtime or production integration follows.
+Capture881f9690d4a1729097c924860a6cfdc93ee555a0ef06f60edc1befb93a1b3534.
+
+The sole447 specific representation proof passes all39 bodies/FDEs, the exact
+five startup literal roles, target-only scalar removal, seven undefined-symbol
+roles, complete storage/COMDAT/symbol tables and static incoming census.
+The two thunk absolute scores remain None; only their invariant representation
+delta is established. Known gain192.92421995 bytes remains isolated pending
+runtime verification.
+Qualification71f67e39e5e95afaa479d356599d7062abe0496dbfd449595b2ff3267d93348e.
+
+The sole448 mine owner pair gains308.08738774 original-weighted bytes:
+UpdatePodRaceMines44.072464% to64.973915%,1339 to1431 emitted bytes, with all
+nine exacts retained. Its specific proof passes all78 bodies/FDEs, exactly13
+direct CALL displacement descriptors and target-following alignment, all518
+symbols,1493 to1501 relocations, storage/COMDAT/container and incoming census.
+Five unbacked absolute scores remain None. Runtime verification and production
+integration remain pending; this gain is not counted in the linked report.
+Qualificationa20e395cbd2ec220f165b2279fc7ac8e9a5b1f6aa3b85eb3fde401c8f6825e02.
+
+The sole449 camera owner pair gains129.93183504 original-weighted bytes:
+GameCameraMakeMiniCut3 49.532770% to54.919662%,2323 to2406 emitted bytes,
+retaining all three exacts. Its specific proof passes all39 unchanged nontarget
+bodies,40 FDEs, exactly11 label roles/12 case entries, complete storage,
+symbols/COMDAT/container and static incoming census. Both distinct original
+93-byte startup rows remain ambiguous/None; no original-TU identity is inferred.
+Their actual emitted startup/thunk/storage dependencies are invariant. Runtime
+verification and production integration remain pending; no linked gain counted.
+Qualification9457ebe2f82413eb7d6aeb0331c952503532d38d639d73bd966bcb5e189f8343.
+
+The frozen447 GNU64/i386 O3 ASan/UBSan/leak diagnostic passes333 ordinary
+cases/9782 checks per executable with identical old/new same-ABI output.
+Real lazy interface allocation and registered weak-reference deletion are
+exercised. The separately admitted finite225000000 distance witness passes
+in the candidate and produces exactly four expected old output failures per
+ABI, with empty sanitizer stderr. This geometry is diagnostic, not a shipped
+asset claim; no concurrency, NDK/Bionic or full-engine equivalence is asserted.
+Result1bd347768e85a2e2a5f9929378d8cb7c9c3981393595409c9cabba3e80e0f797.
+The exact frozen447 source is integrated pending linked verification.
+
+Before any449 runtime staging, ROOT identifies the missing final blank newline
+in utilities.py versus prepare.py's exact446 lineage assertion. No runtime,
+compiler or matching retry occurred. The frozen original packet is preserved;
+an additive runtime-only metadata repair is prepared separately.
+
+The separate449 runtime r1 repairs exactly one terminal LF in the utility;
+the original packet and four fixture/helper/authority/workflow copies remain
+byte-identical. No matching compiler/report/proof retry occurred. Both exact
+GNU64/i386 O2 ASan/UBSan/leak old/new diagnostics pass20258 cases and283613
+checks per executable with identical logical digestc78831a9 and empty stderr.
+All fourteen flags, bounded duration comparisons, reset/append and valid
+type3/4/5 capacity31/32 cases are covered using actual five canonical helpers.
+Type6/7 count32, dangling borrowed pointers, nonfinite conversions and border
+width debt remain excluded. This is source/helper regression, not NDK/device,
+floating-exception timing, concurrency or whole-engine equivalence.
+Result6af568b5490e48063b4f5ac666566d392c0a6aa7a696f5bd34943356678c9124.
+The exact frozen449 source is integrated pending linked verification.
+
+### Checkpoint41 linked validation
+
+The integrated447 turret threshold snapshots/nearest-distance seed and449
+camera guarded remainder pass Android target, native and WASM builds and all
+five repository checks. One independent linked report reaches68.807740% fuzzy
+matching, +0.006880pp over checkpoint40 and +0.805280pp over current main.
+Only these two targets change score. All6293 raw exacts, original identity
+multiset,4722419-byte denominator and full source ownership summary retain.
+The +2pp threshold70.002460% is not reached; no merge is authorized.
+Raw report6e9a52bb8bc20d6e0748495d4381afebdabc37550ce7188e2b9b244bf3b2c5b4;
+mapped report0892d2264dc8005c03a3dda5d1d03b657c3ab50934e7e45630d54b6ab1dccb9e.
+Exact pushed-head GitHub validation follows separately. Mine448 remains
+isolated pending runtime verification and is not included in this gain.

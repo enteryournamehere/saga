@@ -404,9 +404,11 @@ void GameCameraMakeMiniCut3(u32 flags, float distance, i32 pitch, i32 yaw, i32 r
     if ((flags & 5) == 5 && blend_in_time > 0.0f && blend_time == 0.0f)
         blend_time = 0.01f;
     if ((flags & 0x1800) == 0x1800) {
+        const bool have_remaining_hold = hold_time > blend_time;
+        const float remaining_hold = have_remaining_hold ? hold_time - blend_time : 0.0f;
         Minicam_AddCommand(4, blend_time, 0, NULL, v000);
-        if (hold_time > blend_time)
-            Minicam_AddCommand(5, hold_time - blend_time, 0, NULL, v000);
+        if (have_remaining_hold)
+            Minicam_AddCommand(5, remaining_hold, 0, NULL, v000);
     } else if (flags & 0x800) {
         Minicam_AddCommand(4, blend_time, 0, NULL, v000);
     } else if (flags & 0x1000) {

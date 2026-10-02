@@ -66,8 +66,9 @@ template <class T, i32 Tag> class NuMechPtr {
                 NuMechPtr *previous_link = previous;
                 next_link->previous = previous_link;
                 previous_link->next = next_link;
-                if (object->managed_links == this)
-                    object->managed_links = next_link;
+                NuMechPtr *&links = object->managed_links;
+                if (links == this)
+                    links = next_link;
             }
             object = NULL;
             next = NULL;

@@ -2770,8 +2770,8 @@ extern "C" {
         NUMTX clip_matrix;
         NuCameraGetClipMtx(&clip_matrix, NULL);
         f32 aspect = (f32)PS2_REZ_W / (f32)PS2_REZ_H;
-        for (i32 i = 0; i < NuLgtLaserCnt; ++i) {
-            NULGTLASER *laser = &NuLgtLaserData[i];
+        NULGTLASER *laser = NuLgtLaserData;
+        for (i32 i = 0; i < NuLgtLaserCnt; ++i, ++laser) {
             vertices[4].x = laser->start.x;
             vertices[4].y = laser->start.y;
             vertices[4].z = laser->start.z;

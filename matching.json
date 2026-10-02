@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.64823,
+    "fuzzy_match_percent": 68.65555,
     "total_code": "4722419",
-    "matched_code": "526195",
-    "matched_code_percent": 11.1424885,
+    "matched_code": "526280",
+    "matched_code_percent": 11.144289,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6292,
-    "matched_functions_percent": 46.749386,
+    "matched_functions": 6293,
+    "matched_functions_percent": 46.756817,
     "total_units": 1
   },
   "text": {
@@ -54858,7 +54858,7 @@
           "address": 5035136,
           "offset": 4145168,
           "size": 1055,
-          "match_percent": 54.8
+          "match_percent": 68.55319
         },
         {
           "name": "_Z22GizBuildIt_AnyReactingP11WORLDINFO_s",
@@ -54890,7 +54890,7 @@
           "address": 5036352,
           "offset": 4146384,
           "size": 85,
-          "match_percent": 99.318184
+          "match_percent": 100.0
         },
         {
           "name": "_Z17GizBuildIt_FinishP12GIZBUILDIT_s",
@@ -101154,7 +101154,7 @@
           "address": 3043840,
           "offset": 2153872,
           "size": 4706,
-          "match_percent": 63.764885
+          "match_percent": 68.03027
         },
         {
           "name": "NuLightSpeedBlurScale",

@@ -9931,8 +9931,20 @@ table slots in two byte-identical dynamic-light functions, complete decoded
 branches, storage and relocation targets; all other symbols and forty known
 exacts retain. An unscored93-byte initializer leaves a conservative whole-owner
 interval **[108.44141238, 294.44141238]**, strictly positive. This is a qualified
-bound, not an exact whole-owner score. The candidate is not integrated at this
-checkpoint: its bounded source-form runtime diagnostic is still in preparation.
+bound, not an exact whole-owner score. It was not integrated in checkpoint24.
+Root subsequently runs both old/new loop-header/admission excerpts with the
+actual producer and random helper: **264 finite cases / 53,911 checks per ABI**
+pass host address/undefined/float-cast/leak sanitizers and production-NDK32
+diagnostics. All consumed headers are qualified before compilation, retaining
+the producer's O3 and random helper's O2 actions. Counts0..64, fixed56-byte
+record addresses/order, all six continue predicates, material/pause admission,
+saved seed/count stores and legal terminal one-past pointers are covered.
+Projection/length values are declared typed finite inputs; omitted geometry,
+primitive/GPU services and arbitrary callback mutation are not validated.
+The full production owner byte-equals the sole frozen candidate after integration.
+The laser-only linked verification reaches68.652470%,+0.650010 percentage points
+from main, retaining all6,292 raw exact records. Combined checkpoint verification
+and its subsequent GitHub checks remain pending.
 
 The complete obstacle nearest-distance sentinel correction has **zero known
 gain** across47 scored records and ten retained known exacts. One unscored
@@ -9958,6 +9970,109 @@ symbol and report checks. Fresh raw and mapped linked reports agree at
 **+0.008510 points** from checkpoint23. All **6,292** raw address/symbol exact
 records retain with no losses. Both formatted production owners byte-equal
 their sole frozen candidates. The known unrelated WASM destructor-signature
-warning remains non-fatal. GitHub checks for this new checkpoint are pending;
-its predecessor e215b86e has all eleven successful. The cycle remains below
+warning remains non-fatal. All eleven GitHub checks are successful on exact
+head `d54cae25f65b5dc8b2ee5db977a12d10ce9148b2`, independently verified. The cycle remains below
 70.002460% and is not eligible for merging.
+
+### Batch 373: Melee idle-branch reserve
+
+The complete idle-state branch correction for `DrawMeleeTargetsNumber` loses
+**38.614194 weighted bytes**,52.719826% → 49.362070%,998 → 1046 bytes
+(original1150), in its sole unchanged O3 pair. All25 other original-backed
+scores, two known exacts and complete symbol/U Counters retain. The initial
+gate rejects objdiff's decimal-string address/size fields; a separately frozen
+metadata-only repair accepts canonical unsigned decimal strings and verifies
+all26 finite scores against unique original raw-address/extent pairs. No
+compilation, report or original failed-output rerun occurs. The startup is
+actually scored98.235290% on both sides, not assigned a missing score of zero.
+One natural hitpoints clone and two zero-size thunks remain explicit unbacked
+null-score records. This negative mapped-owner result does not warrant further
+clone/initializer proof or a runtime fixture. The complete unit remains frozen
+without source variants or production integration.
+
+### Checkpoint 25 preparation: bounded fresh-body review
+
+The two selected world/terrain bodies, `SarlaccPitB_Update` (4,747 original
+bytes) and `TerrainImpact` (2,545 bytes), retain their full finite response,
+state and service contracts. No missing gameplay block is identified. The
+latter's repeated output-count indexing remains a possible canonical
+source-form lead under separate review, not an invented count/output alias bug.
+`AddDynamicCreature` (2,528 bytes) and `Action_SetRunSpeed` (1,363 bytes)
+likewise retain their inspected finite contracts. Apparent run-speed clear and
+seek/multiply anomalies are original behavior and are not changed. None of
+these census observations is a measured improvement or runtime proof.
+
+### Alias-inclusive uncertainty in the headline metric
+
+The whole-binary report's denominator is the sum of all13,459 function rows:
+4,722,419 original bytes. Deduplicating physical address/extent pairs gives
+4,667,302 bytes instead. Consequently, physical deduplication is useful for
+representation auditing but can understate uncertainty in the measured metric.
+An unscored D1/D2 alias pair must retain both measured weights until its delta
+is independently qualified; missing scores are not zero. Batch378 illustrates
+this: eleven physical unknown extents total383 bytes, but twenty measured alias
+rows total644 bytes. The initial known407.6943899-byte gain therefore has
+interval[−236.3056101,+1051.6943899], not a positive physical-only bound.
+A bounded proof of complete bodies, decoded transfers, canonical outgoing
+targets, storage and COMDATs subsequently establishes unchanged representation
+for all unknowns (17 functions,24 storage records and two complete thunks).
+This qualifies their zero delta without assigning any absolute missing score.
+Runtime preparation and production integration are separate pending steps.
+
+The further full-body censuses cover `EmperorFightA_Update`,
+`AISysProcessCharacter`, `NewPlayerCharacter`, `AISysCreatureInteraction2D`,
+`DrawGameObjectsProcess` and `UpdatePartEmits`. No supported large missing
+contract is identified. Their existing bitfield clear, object cursor,
+40-emitter indexing and cold service paths are retained. These are bounded
+structural observations, not exact-match or runtime-equivalence claims.
+
+### Batch379: TerrainImpact output-tail reserve
+
+Repeated canonical output-count indexing instead of a cached record reference
+gains49.00143 known weighted bytes in the sole unchanged O3 comparison;
+49.341030% → 51.266430%,2424 → 2480 bytes (original2545). All125 scored
+owner rows and the complete symbol/undefined surfaces retain. Actual original
+unscored identities include the93-byte `gameliball.cpp` initializer alias,
+339-byte natural `TerrainKillPlayer` clone (optimizer suffix differs), and
+12/15-byte report-inferred thunks. Their459-byte uncertainty leaves whole net
+[−409.99857,+508.00143]. Same-object bytes, direct edges and reciprocal local
+100% are diagnostic, not a full outgoing-dependency proof or missing scores
+of zero. The small gain remains unqualified; no production integration,
+further compiler/report variants, runtime fixture or expensive proof follows.
+
+### Batch377: BuildIt first-occupied short circuit
+
+`GizBuildIt_FindNearest` stops its existing eight-player occupancy search after
+the first match. Its sole unchanged O3 pair gains145.4961405 known weighted
+bytes, including a small retained-owner collateral improvement; the target
+rises54.536170% → 68.272340%,1077 → 1045 bytes (original1055). Complete
+symbol/U Counters and ten known exacts retain. The four unscored helper names
+cover three physical COMDAT bodies; full bytes, aliases, decoded internal
+branches, storage and absence of outgoing references independently prove
+unchanged representation, without inventing an absolute score.
+
+Exact old/new occupancy-loop excerpts using canonical GameObject/BuildIt
+records pass864 admitted cases and4,320 checks per ABI on host sanitizers
+(including leak detection) and NDK32 diagnostics. All non-null player pointers
+designate stable valid records; cases cover every first-match slot, null masks,
+configured contexts and later matches. Full nearest-search geometry/gameplay
+is explicitly outside this bounded source-form test. Both actual header
+closures are qualified before builds. A finite23-header metadata supplement
+preserves the original stopped preflights. A subsequent host-only real
+NuMemoryPS-provider include repairs isolated fixture compilation; the already
+successful NDK object is reused unchanged, with no matching variant or
+recompilation. The integrated full owner byte-equals its sole frozen candidate.
+
+### Checkpoint25 verification
+
+The two integrated units (370/377) pass target, native and WASM builds, all
+five repository tests and complete format, forward-declaration, tidy, symbol
+and generated-report checks. Fresh raw and mapped linked reports agree at
+**68.655550%**, **+0.653090 percentage points** from current main and
+**+0.007320 points** from checkpoint24. All6,292 previous raw address/symbol
+exacts retain; `GizBuildIt_TurnOff` at raw0x4cd940 becomes exact, bringing the
+total to **6,293**. Both formatted source owners byte-equal their sole frozen
+candidates. GitHub checks for this new checkpoint remain pending; the cycle
+is below70.002460% and is not eligible for merging. Platform/editor runtime
+preparations and further particle/quaternion candidate comparisons are separate
+work, not improvements included in this checkpoint.

@@ -368,8 +368,10 @@ GIZBUILDIT_s *GizBuildIt_FindNearest(WORLDINFO_s *world, GameObject_s *player, B
                 i32 occupied = 0;
                 for (i32 p = 0; p < 8; ++p) {
                     if (Player[p] != NULL && Player[p]->build_context == LEGOCONTEXT_BUILDIT &&
-                        Player[p]->field_0x788 == buildit)
+                        Player[p]->field_0x788 == buildit) {
                         occupied = 1;
+                        break;
+                    }
                 }
                 if (occupied != 0)
                     continue;

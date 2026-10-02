@@ -19,11 +19,9 @@ i32 GizRandom_GetMaxGizmos(void *world_ptr) {
 
 void GizRandom_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    GIZRANDOMSYS *random_system = world->giz_randoms;
-    for (i32 index = 0; index < random_system->count; ++index) {
-        GIZRANDOM *random = &random_system->randoms[index];
-        if (NuStrLen(random->name) != 0) {
-            AddGizmo(gizmo_sys, type_id, NULL, random);
+    for (i32 index = 0; index < world->giz_randoms->count; ++index) {
+        if (NuStrLen(world->giz_randoms->randoms[index].name) != 0) {
+            AddGizmo(gizmo_sys, type_id, NULL, &world->giz_randoms->randoms[index]);
         }
     }
 }

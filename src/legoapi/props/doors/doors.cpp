@@ -62,14 +62,12 @@ static i32 door_cutscenesnap;
 
 static void Door_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    if (world != NULL && world->doors != NULL && world->door_count > 0) {
-        i32 i = 0;
-        do {
+    if (world != NULL && world->doors != NULL) {
+        for (i32 i = 0; i < world->door_count; ++i) {
             GizmoGetUniqueName(world->gizmo_sys, const_cast<char *>("Door_"), world->doors[i].name,
                                world->doors[i].gizmo_name, sizeof(world->doors[i].gizmo_name));
             AddGizmo(gizmo_sys, type_id, NULL, &world->doors[i]);
-            ++i;
-        } while (world->door_count > i);
+        }
     }
 }
 

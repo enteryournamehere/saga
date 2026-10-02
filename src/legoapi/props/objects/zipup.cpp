@@ -51,9 +51,8 @@ static i32 ZipUps_GetMaxGizmos(void *world_ptr) {
 static void ZipUps_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
     for (i32 index = 0; index < world->zipup_count; ++index) {
-        ZIPUP *zipup = &world->zipups[index];
-        if (NuStrLen(zipup->name) != 0) {
-            AddGizmo(gizmo_sys, type_id, NULL, zipup);
+        if (NuStrLen(world->zipups[index].name) != 0) {
+            AddGizmo(gizmo_sys, type_id, NULL, &world->zipups[index]);
         }
     }
 }

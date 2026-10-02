@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.02491,
+    "fuzzy_match_percent": 68.02753,
     "total_code": "4722419",
-    "matched_code": "530334",
-    "matched_code_percent": 11.230134,
+    "matched_code": "531160",
+    "matched_code_percent": 11.247625,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6325,
-    "matched_functions_percent": 46.994576,
+    "matched_functions": 6331,
+    "matched_functions_percent": 47.039158,
     "total_units": 1
   },
   "text": {
@@ -27031,7 +27031,7 @@
           "address": 4264336,
           "offset": 3374368,
           "size": 95,
-          "match_percent": 99.6
+          "match_percent": 100.0
         },
         {
           "name": "_ZL23edpartChangeDebrisScaleP10eduimenu_sP10eduiitem_sj",
@@ -56506,7 +56506,7 @@
           "address": 5242480,
           "offset": 4352512,
           "size": 146,
-          "match_percent": 86.55102
+          "match_percent": 100.0
         },
         {
           "name": "_ZL10Plugs_LoadPvS_",
@@ -57851,7 +57851,7 @@
           "address": 2012384,
           "offset": 1122416,
           "size": 152,
-          "match_percent": 77.27451
+          "match_percent": 99.70588
         },
         {
           "name": "_ZL25HatMachines_StoreProgressPvS_S_",
@@ -59467,7 +59467,7 @@
           "address": 2302176,
           "offset": 1412208,
           "size": 126,
-          "match_percent": 75.933334
+          "match_percent": 100.0
         },
         {
           "name": "_ZL18GizBombGens_UpdatePvS_f",
@@ -60462,7 +60462,7 @@
           "address": 4944384,
           "offset": 4054416,
           "size": 138,
-          "match_percent": 83.244446
+          "match_percent": 100.0
         },
         {
           "name": "_Z15createGizRandomPviPiPc",
@@ -72633,7 +72633,7 @@
           "address": 4743296,
           "offset": 3853328,
           "size": 187,
-          "match_percent": 98.53846
+          "match_percent": 100.0
         },
         {
           "name": "_ZL11D_next_sockP8nufpar_s",
@@ -73802,7 +73802,7 @@
           "address": 1906704,
           "offset": 1016736,
           "size": 134,
-          "match_percent": 89.90476
+          "match_percent": 100.0
         },
         {
           "name": "_Z12ZipUps_ResetPvS_S_",

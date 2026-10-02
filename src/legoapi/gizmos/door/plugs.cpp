@@ -60,9 +60,8 @@ static void Plugs_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, v
     }
 
     for (i32 index = 0; index < world->plug_sys->count; ++index) {
-        PLUG &plug = world->plug_sys->plugs[index];
-        if (NuStrLen(plug.name) != 0) {
-            AddGizmo(gizmo_sys, type_id, NULL, &plug);
+        if (NuStrLen(world->plug_sys->plugs[index].name) != 0) {
+            AddGizmo(gizmo_sys, type_id, NULL, &world->plug_sys->plugs[index]);
         }
     }
 }

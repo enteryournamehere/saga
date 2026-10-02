@@ -29,13 +29,12 @@ static i32 GizBombGens_GetMaxGizmos(void *world_ptr) {
 
 static void GizBombGens_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *, void *system_ptr) {
     GIZBOMBGENSYS *system = static_cast<GIZBOMBGENSYS *>(system_ptr);
-    if (system == NULL || system->count == 0) {
+    if (system == NULL) {
         return;
     }
     for (i32 index = 0; index < system->count; ++index) {
-        GIZBOMBGEN *bomb_generator = &system->bomb_generators[index];
-        if (NuStrLen(bomb_generator->name) != 0) {
-            AddGizmo(gizmo_sys, type_id, NULL, bomb_generator);
+        if (NuStrLen(system->bomb_generators[index].name) != 0) {
+            AddGizmo(gizmo_sys, type_id, NULL, &system->bomb_generators[index]);
         }
     }
 }

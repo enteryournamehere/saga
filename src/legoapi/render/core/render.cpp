@@ -2458,72 +2458,63 @@ void DrawSubItemMenu2D() {
     char *name = items[ids[3]].name;
     i32 buyable = 0;
     i32 show_name = 0;
-    const u16 id = items[ids[3]].item_id;
-    switch (items[ids[3]].type) {
-        case 1: {
-            if (items[ids[3]].unlocked == 1)
-                show_name = 1;
-            else if (CollectIDUnlocked(id))
-                buyable = show_name = 1;
-            else {
-                f32 scale = 0.7f * ShopLockedScale;
-                SmartTextEx(TTab[tLOCKED], 0.0f, (HUB_EPISODETITLEY + HUB_EPISODESUBTITLEY) * 0.5f, 1.0f, scale, scale,
-                            scale, 0, 255, 0, 0, 1.7f, 1, NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
-            }
-            break;
+    if (items[ids[3]].type == 1) {
+        if (items[ids[3]].unlocked == 1)
+            show_name = 1;
+        else if (CollectIDUnlocked(static_cast<u16>(items[ids[3]].item_id)))
+            buyable = show_name = 1;
+        else {
+            f32 scale = 0.7f * ShopLockedScale;
+            SmartTextEx(TTab[tLOCKED], 0.0f, (HUB_EPISODETITLEY + HUB_EPISODESUBTITLEY) * 0.5f, 1.0f, scale, scale,
+                        scale, 0, 255, 0, 0, 1.7f, 1, NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
         }
-        case 0: {
-            buyable = items[ids[3]].unlocked != 1 && items[ids[3]].price != 0;
-            break;
-        }
-        case 2: {
-            NuStrCpy(subtitle, TTab[Cheat[id].text_id ? *Cheat[id].text_id : tUNKNOWN]);
-            name = subtitle;
-            i8 area = static_cast<i8>(Cheat[id].area);
-            if (items[ids[3]].unlocked == 1)
-                show_name = 1;
-            else if (id <= 7 || area == -1 || Game.area_save[area].red_brick_collected)
-                buyable = show_name = 1;
-            else {
-                sprintf(title, "%s %i", TTab[tPOWERBRICK], id - 7);
-                f32 scale = 0.6f * ShopLockedScale;
-                SmartTextEx(title, 0.0f, HUB_EPISODETITLEY, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
-                            static_cast<i32>(128.0f * ShopNameAlpha));
-                SmartTextEx(TTab[tLOCKED], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, 255, 0, 0, 1.7f, 1,
-                            NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
-            }
-            break;
-        }
-        case 4: {
-            sprintf(title, "%s %i", TTab[tGOLDBRICK], id + 1);
-            name = title;
-            if (items[ids[3]].unlocked == 1)
-                show_name = 1;
-            else if (!(static_cast<f32>(id * 3600) > Game.field30_0x7c2c))
-                buyable = show_name = 1;
-            else {
-                SmartTextEx(title, 0.0f, HUB_EPISODETITLEY, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
-                            static_cast<i32>(128.0f * ShopNameAlpha));
-                f32 scale = 0.6f * ShopLockedScale;
-                SmartTextEx(TTab[tLOCKED], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, 255, 0, 0, 1.7f, 1,
-                            NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
-            }
-            break;
-        }
-        case 5: {
-            i32 available = CutScenePlayer_CanStart(id);
-            CutScenePlayer_GetText(id, title, subtitle, available);
+    } else if (items[ids[3]].type == 0) {
+        buyable = items[ids[3]].unlocked != 1 && items[ids[3]].price != 0;
+    } else if (items[ids[3]].type == 2) {
+        const i32 id = static_cast<u16>(items[ids[3]].item_id);
+        NuStrCpy(subtitle, TTab[Cheat[id].text_id ? *Cheat[id].text_id : tUNKNOWN]);
+        name = subtitle;
+        i8 area = static_cast<i8>(Cheat[id].area);
+        if (items[ids[3]].unlocked == 1)
+            show_name = 1;
+        else if (id <= 7 || area == -1 || Game.area_save[area].red_brick_collected)
+            buyable = show_name = 1;
+        else {
+            sprintf(title, "%s %i", TTab[tPOWERBRICK], id - 7);
+            f32 scale = 0.6f * ShopLockedScale;
             SmartTextEx(title, 0.0f, HUB_EPISODETITLEY, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
                         static_cast<i32>(128.0f * ShopNameAlpha));
-            if (available && shopcutsceneplayer)
-                SmartTextEx(subtitle, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 191, 0, 1.7f, 1, NULL,
-                            0, static_cast<i32>(128.0f * ShopNameAlpha));
-            else {
-                f32 scale = 0.6f * ShopLockedScale;
-                SmartTextEx(TTab[tLOCKED], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, 255, 0, 0, 1.7f, 1,
-                            NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
-            }
-            break;
+            SmartTextEx(TTab[tLOCKED], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, 255, 0, 0, 1.7f, 1,
+                        NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
+        }
+    } else if (items[ids[3]].type == 4) {
+        const i32 id = static_cast<u16>(items[ids[3]].item_id);
+        sprintf(title, "%s %i", TTab[tGOLDBRICK], id + 1);
+        name = title;
+        if (items[ids[3]].unlocked == 1)
+            show_name = 1;
+        else if (!(static_cast<f32>(id * 3600) > Game.field30_0x7c2c))
+            buyable = show_name = 1;
+        else {
+            SmartTextEx(title, 0.0f, HUB_EPISODETITLEY, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
+                        static_cast<i32>(128.0f * ShopNameAlpha));
+            f32 scale = 0.6f * ShopLockedScale;
+            SmartTextEx(TTab[tLOCKED], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, 255, 0, 0, 1.7f, 1,
+                        NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
+        }
+    } else if (items[ids[3]].type == 5) {
+        const i32 id = static_cast<u16>(items[ids[3]].item_id);
+        i32 available = CutScenePlayer_CanStart(id);
+        CutScenePlayer_GetText(id, title, subtitle, available);
+        SmartTextEx(title, 0.0f, HUB_EPISODETITLEY, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
+                    static_cast<i32>(128.0f * ShopNameAlpha));
+        if (available && shopcutsceneplayer)
+            SmartTextEx(subtitle, 0.0f, HUB_EPISODESUBTITLEY, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 191, 0, 1.7f, 1, NULL, 0,
+                        static_cast<i32>(128.0f * ShopNameAlpha));
+        else {
+            f32 scale = 0.6f * ShopLockedScale;
+            SmartTextEx(TTab[tLOCKED], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, scale, scale, scale, 0, 255, 0, 0, 1.7f, 1,
+                        NULL, 0, static_cast<i32>(128.0f * ShopNameAlpha));
         }
     }
     u32 price;

@@ -2917,10 +2917,10 @@ void GameAIProcess() {
         LEGO_AISysCreatureInteraction2D(WORLD->ai_sys, interactive_count, interactive_objects, NULL, FRAMETIME);
     } else {
         for (i32 index = 0; index < interactive_count; ++index) {
-            f32 timer = interactive_objects[index]->ai->antinode_timer - FRAMETIME;
-            if (timer < 0.0f)
-                timer = 0.0f;
-            interactive_objects[index]->ai->antinode_timer = timer;
+            AIPACKET *packet = interactive_objects[index]->ai;
+            packet->antinode_timer -= FRAMETIME;
+            if (packet->antinode_timer < 0.0f)
+                packet->antinode_timer = 0.0f;
         }
         for (i32 first_index = 0; first_index < interactive_count - 1; ++first_index) {
             APIOBJECT *first = interactive_objects[first_index];

@@ -420,7 +420,7 @@ void UpdateStats() {
         if (DrawMiniKitTime > 0.0f)
             DrawMiniKitTime -= FRAMETIME;
         f32 target = 1.0f;
-        if (FadeSys.fade != 0.0f || CUTSTOPGAME != 0 || (Paused == 0 && NetPaused == 0 && DrawMiniKitTime <= 0.0f) ||
+        if (FadeSys.fade != 0.0f || CUTSTOPGAME != 0 || (Paused == 0 && NetPaused == 0 && !(DrawMiniKitTime > 0.0f)) ||
             screendump != 0 || GetMenuID() == PANEL_MENU_SAVE || GetMenuID() == PANEL_MENU_LOAD ||
             GetMenuID() == PANEL_MENU_EPISODE_I || GetMenuID() == PANEL_MENU_EPISODE_II ||
             GetMenuID() == PANEL_MENU_EPISODE_III || GetMenuID() == PANEL_MENU_EPISODE_IV)
@@ -442,11 +442,13 @@ void UpdateStats() {
         } else {
             if (DrawRedBrickTime > 0.0f)
                 DrawRedBrickTime -= FRAMETIME;
-            const i32 area = WORLD->level_sub_id;
-            const bool red_brick = area != -1 && Game.area_save[area].red_brick_collected != 0;
-            const bool network_red = NetPaused != 0 && (AreaGlobals.values.field_0x08 != 0 || red_brick);
             target = 1.0f;
-            if (FadeSys.fade != 0.0f || CUTSTOPGAME != 0 || (Paused == 0 && !network_red && DrawRedBrickTime <= 0.0f) ||
+            if (FadeSys.fade != 0.0f || CUTSTOPGAME != 0 ||
+                (Paused == 0 &&
+                 (NetPaused == 0 ||
+                  (AreaGlobals.values.field_0x08 == 0 &&
+                   (WORLD->level_sub_id == -1 || !Game.area_save[WORLD->level_sub_id].red_brick_collected))) &&
+                 !(DrawRedBrickTime > 0.0f)) ||
                 screendump != 0 || GetMenuID() == PANEL_MENU_SAVE || GetMenuID() == PANEL_MENU_LOAD ||
                 GetMenuID() == PANEL_MENU_EPISODE_I || GetMenuID() == PANEL_MENU_EPISODE_II ||
                 GetMenuID() == PANEL_MENU_EPISODE_III || GetMenuID() == PANEL_MENU_EPISODE_IV)
@@ -457,7 +459,7 @@ void UpdateStats() {
                 DrawBuildUpTime -= FRAMETIME;
             target = 1.0f;
             if (FadeSys.fade != 0.0f || CUTSTOPGAME != 0 ||
-                (Paused == 0 && NetPaused == 0 && DrawBuildUpTime <= 0.0f) || screendump != 0 ||
+                (Paused == 0 && NetPaused == 0 && !(DrawBuildUpTime > 0.0f)) || screendump != 0 ||
                 GetMenuID() == PANEL_MENU_SAVE || GetMenuID() == PANEL_MENU_LOAD ||
                 GetMenuID() == PANEL_MENU_EPISODE_I || GetMenuID() == PANEL_MENU_EPISODE_II ||
                 GetMenuID() == PANEL_MENU_EPISODE_III || GetMenuID() == PANEL_MENU_EPISODE_IV)
@@ -465,7 +467,7 @@ void UpdateStats() {
             builduptime = SeekLinearF(builduptime, target, FRAMETIME);
             const i32 freeplay = GAMEDEMO != 0 ? 0 : FreePlay;
             if (WORLD->area != NULL && (WORLD->area->flags & 0x4010) != 0) {
-                AREASAVE_s &save = Game.area_save[area];
+                AREASAVE_s &save = Game.area_save[WORLD->level_sub_id];
                 const bool complete = BOTHTRUEJEDIGOLDBRICKS == 0
                                           ? save.story_buildup_complete != 0 || save.freeplay_buildup_complete != 0
                                       : freeplay != 0 ? save.freeplay_buildup_complete != 0
@@ -497,7 +499,7 @@ void UpdateStats() {
     if (DrawCoinTotalTime > 0.0f)
         DrawCoinTotalTime -= FRAMETIME;
     f32 coin_target = 1.0f;
-    if (FadeSys.fade != 0.0f || CUTSTOPGAME != 0 || (Paused == 0 && NetPaused == 0 && DrawCoinTotalTime <= 0.0f) ||
+    if (FadeSys.fade != 0.0f || CUTSTOPGAME != 0 || (Paused == 0 && NetPaused == 0 && !(DrawCoinTotalTime > 0.0f)) ||
         screendump != 0 || MenuInMemoryCard() != 0 || GetMenuID() == PANEL_MENU_SAVE ||
         GetMenuID() == PANEL_MENU_LOAD || GetMenuID() == PANEL_MENU_EPISODE_I || GetMenuID() == PANEL_MENU_EPISODE_II ||
         GetMenuID() == PANEL_MENU_EPISODE_III || GetMenuID() == PANEL_MENU_EPISODE_IV)
@@ -518,12 +520,16 @@ void UpdateStats() {
     Arcade_UpdatePanel(Paused != 0 || NetPaused != 0);
     if (Paused == 0 && NetPaused == 0) {
         const f32 rotation = 16384.0f * FRAMETIME;
-        PowerUp_PanelYRot[0] = static_cast<u16>(static_cast<i32>(static_cast<f32>(PowerUp_PanelYRot[0]) + rotation));
-        PowerUp_PanelYRot[1] = static_cast<u16>(static_cast<i32>(static_cast<f32>(PowerUp_PanelYRot[1]) + rotation));
+        PowerUp_PanelYRot[0] =
+            static_cast<u16>(static_cast<i32>(static_cast<f32>(static_cast<i32>(PowerUp_PanelYRot[0])) + rotation));
+        PowerUp_PanelYRot[1] =
+            static_cast<u16>(static_cast<i32>(static_cast<f32>(static_cast<i32>(PowerUp_PanelYRot[1])) + rotation));
     }
     f32 target = Paused == 0 && Player[0] != NULL && Player[0]->timer_d5c <= 0.0f ? 1.0f : 0.0f;
     PowerUp_PanelPosMul[0] = SeekLinearF(PowerUp_PanelPosMul[0], target, FRAMETIME + FRAMETIME);
-    target = Paused == 0 && Player[1] != NULL && Player[1]->timer_d5c <= 0.0f ? 1.0f : 0.0f;
+    target = 0.0f;
+    if (Paused == 0 && Player[1] != NULL && Player[1]->timer_d5c <= 0.0f)
+        target = 1.0f;
     PowerUp_PanelPosMul[1] = SeekLinearF(PowerUp_PanelPosMul[1], target, FRAMETIME + FRAMETIME);
 }
 

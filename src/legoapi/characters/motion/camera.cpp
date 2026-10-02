@@ -779,12 +779,12 @@ mode_selected:
              (camera->previous_camera_mode == 4 || camera->previous_camera_mode == 2))
         MiniCutCam = 4;
     NUVEC position = *PlayerStart[0].pos;
-    NUVEC target = v000;
     NUVEC offset, direction, mode_scratch;
     // The per-mode camera blend duration starts afresh after transition selection.
     blend_duration = 0.5f;
     f32 position_seek = static_cast<u32>(static_cast<u8>(WORLD->current_level->cam_pos_seek));
     f32 angle_seek = static_cast<u32>(static_cast<u8>(WORLD->current_level->cam_angle_seek));
+    NUVEC target = v000;
     GAMEPAD_s *selected_pad = camera->mode == 5 ? ViewCam.gamepad : &GamePad[0];
     f32 left_y = static_cast<f32>(static_cast<i32>(selected_pad->pad->analog_left_y)) - 127.5f;
     left_y = NuFabs(left_y) < 34.0f ? 0.0f : left_y / 127.5f;
@@ -975,10 +975,10 @@ mode_selected:
                     position.y = target.y + 0.65f;
                     position.z = target.z - NU_COS_LUT(yaw) * PodCamDist;
                     if (countdown <= 0.0f) {
-                        i32 roll = player_roll[0];
+                        index = player_roll[0];
                         if (player_count == 2)
-                            roll += RotDiff((u16)roll, (u16)player_roll[1]) / player_count;
-                        yaw += (i32)(roll * 0.6f);
+                            index += RotDiff((u16)index, (u16)player_roll[1]) / player_count;
+                        yaw += (i32)(index * 0.6f);
                         target.x = position.x + NU_SIN_LUT(yaw) * PodCamDist;
                         target.z = position.z + NU_COS_LUT(yaw) * PodCamDist;
                     }

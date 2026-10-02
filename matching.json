@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.65225,
+    "fuzzy_match_percent": 68.65861,
     "total_code": "4722419",
     "matched_code": "527098",
     "matched_code_percent": 11.161611,
@@ -43183,7 +43183,7 @@
           "address": 5105936,
           "offset": 4215968,
           "size": 161,
-          "match_percent": 79.575
+          "match_percent": 99.975
         },
         {
           "name": "_Z10PlayDieSfxP12GameObject_s",
@@ -63922,7 +63922,7 @@
           "address": 1455728,
           "offset": 565760,
           "size": 8481,
-          "match_percent": 51.70048
+          "match_percent": 52.364944
         },
         {
           "name": "_ZL18LevelCharacterNameh",
@@ -75254,7 +75254,7 @@
           "address": 2989136,
           "offset": 2099168,
           "size": 1303,
-          "match_percent": 42.333332
+          "match_percent": 53.49394
         },
         {
           "name": "_Z9DrawAABoxP6_vuv_sS0_i",
@@ -75742,7 +75742,7 @@
           "address": 5578176,
           "offset": 4688208,
           "size": 975,
-          "match_percent": 44.99495
+          "match_percent": 44.691917
         }
       ]
     },
@@ -77977,7 +77977,7 @@
           "address": 3636048,
           "offset": 2746080,
           "size": 5207,
-          "match_percent": 18.953125
+          "match_percent": 18.943933
         },
         {
           "name": "_Z10NewScanRotP7nuvec_si",
@@ -78073,7 +78073,7 @@
           "address": 3665328,
           "offset": 2775360,
           "size": 8732,
-          "match_percent": 24.492273
+          "match_percent": 24.747793
         },
         {
           "name": "TerrainScanWallSpline",
@@ -78465,7 +78465,7 @@
           "address": 3697376,
           "offset": 2807408,
           "size": 495,
-          "match_percent": 87.048546
+          "match_percent": 86.902916
         },
         {
           "name": "NewRayCastScaleYMask",
@@ -78505,7 +78505,7 @@
           "address": 3700304,
           "offset": 2810336,
           "size": 487,
-          "match_percent": 86.75238
+          "match_percent": 86.89524
         },
         {
           "name": "NewTerrAxisFreedom",
@@ -78585,7 +78585,7 @@
           "address": 3710864,
           "offset": 2820896,
           "size": 4872,
-          "match_percent": 11.876629
+          "match_percent": 12.700261
         },
         {
           "name": "_Z19NewScanHandelSubsetPsP7nuvec_sS1_fi",
@@ -78657,7 +78657,7 @@
           "address": 3723024,
           "offset": 2833056,
           "size": 4392,
-          "match_percent": 12.652219
+          "match_percent": 12.77709
         },
         {
           "name": "NewRayCastPlatForm",

@@ -1198,20 +1198,31 @@ extra:
 
 void PlayHurtSfx(GameObject_s *object) {
     CHARACTERDATA *character = object->apiobj.character_data;
-    i32 sfx = character->game_character->sfx_hurt;
+    i32 sfx;
+    {
+        const i16 configured_sfx = character->game_character->sfx_hurt;
+        if (configured_sfx != -1) {
+            sfx = configured_sfx;
+            goto selected;
+        }
+    }
+    if ((character->model_flags & 0x44002010) != 0) {
+        goto extra;
+    }
+    if ((object->field_0xf01 & 8) != 0) {
+        sfx = GameAudio->sfx_ids[0x16];
+    } else {
+        sfx = GameAudio->sfx_ids[0x17];
+    }
+selected:
     if (sfx == -1) {
-        if ((character->model_flags & 0x44002010) != 0) {
-            goto extra;
-        }
-        sfx = GameAudio->sfx_ids[(object->field_0xf01 & 8) != 0 ? 0x16 : 0x17];
-        if (sfx == -1) {
-            goto extra;
-        }
+        goto extra;
     }
     GameAudio_PlaySfxById(sfx, &object->apiobj.collision_position, 0, 0);
 extra:
-    if (ExtraHurtSfxFn != NULL) {
-        ExtraHurtSfxFn(object);
+    auto extra_sfx = ExtraHurtSfxFn;
+    if (extra_sfx != NULL) {
+        extra_sfx(object);
     }
 }
 

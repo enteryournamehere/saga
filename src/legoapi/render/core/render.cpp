@@ -551,9 +551,13 @@ void SetCameraZoom(f32 zoom) {
 }
 
 extern "C" void NuGScnUpdate(NUGSCN *gscn, f32 frame_delta) {
+    NUDLDLISTSCENE *display_list = gscn->display_list;
+    NUMTX *animation_matrix = gscn->instance_animation_matrices;
     if (gscn->instance_animation_data == NULL) {
         return;
     }
+
+    nuinstanim_s *instance_animation = gscn->instance_animations;
 
     // The lookup array is reference-counted by the allocation word immediately
     // before its first entry.  A sole owner means the optional table was not
@@ -562,80 +566,76 @@ extern "C" void NuGScnUpdate(NUGSCN *gscn, f32 frame_delta) {
         gscn->animation_end_frames = NULL;
     }
 
-    if (gscn->num_instance_animations <= 0) {
+    i16 animation_count = gscn->num_instance_animations;
+    if (animation_count <= 0) {
         return;
     }
 
-    NUDISPLAYSPECIAL *display_specials = static_cast<NUDISPLAYSPECIAL *>(gscn->display_list->specials);
-    nuinstanim_s *instance_animation = gscn->instance_animations;
-    NUMTX *animation_matrix = gscn->instance_animation_matrices;
+    // A waiting animation retains the previous evaluation frame.
+    f32 frame = 0.0f;
+    i32 i = 0;
+    do {
+        if (instance_animation->anim_ix < gscn->num_instance_animation_data) {
+            NUDISPLAYSPECIAL *display_special =
+                &static_cast<NUDISPLAYSPECIAL *>(display_list->specials)[instance_animation->instance_ix];
+            const u32 display_flags = display_special->flags;
+            nuanimendlookup_s *state_animation = NULL;
+            nuanimdata_s *animation = NULL;
 
-    for (i32 i = 0; i < gscn->num_instance_animations; ++i, ++instance_animation, ++animation_matrix) {
-        if (instance_animation->anim_ix >= gscn->num_instance_animation_data) {
-            continue;
-        }
-
-        NUDISPLAYSPECIAL *display_special = &display_specials[instance_animation->instance_ix];
-        nuanimendlookup_s *state_animation = NULL;
-        nuanimdata_s *animation = NULL;
-
-        if ((instance_animation->end_frame_lookup_bits & NUINSTANIM_END_FRAME_LOOKUP_MASK) != 0 &&
-            gscn->animation_end_frames != NULL) {
-            const u16 lookup_index = instance_animation->end_frame_lookup_index;
-            state_animation = &gscn->animation_end_frames[lookup_index - 1];
-            animation = gscn->instance_animation_data[instance_animation->anim_ix];
-        } else {
-            if ((display_special->flags & NUDISPLAYSPECIAL_FLAG_VISIBLE) == 0) {
-                continue;
-            }
-            animation = gscn->instance_animation_data[instance_animation->anim_ix];
-            if (animation == NULL) {
-                continue;
-            }
-        }
-
-        f32 end_frame;
-        if (animation != NULL) {
-            end_frame = NuAnimEndFrameOld(animation);
-        } else if (state_animation != NULL) {
-            end_frame = static_cast<f32>(state_animation->end_frame);
-        } else {
-            continue;
-        }
-
-        if (end_frame == 0.0f) {
-            continue;
-        }
-
-        f32 frame;
-        u32 flags = static_cast<u32>(instance_animation->flags);
-        if ((flags & NUINSTANIM_FLAG_PLAYING) != 0) {
-            instance_animation->ltime += frame_delta * instance_animation->tfactor;
-            frame = instance_animation->ltime;
-            bool waiting_for_start = false;
-
-            if ((flags & NUINSTANIM_FLAG_WAITING) != 0) {
-                if (frame < instance_animation->tfirst) {
-                    waiting_for_start = true;
-                } else {
-                    flags &= ~NUINSTANIM_FLAG_WAITING;
-                    instance_animation->flags = static_cast<NUINSTANIM_FLAGS>(flags);
-                    instance_animation->ltime -= instance_animation->tfirst - 1.0f;
-                    frame = instance_animation->ltime;
+            if ((instance_animation->end_frame_lookup_bits & NUINSTANIM_END_FRAME_LOOKUP_MASK) != 0 &&
+                gscn->animation_end_frames != NULL) {
+                const u16 lookup_index = instance_animation->end_frame_lookup_index;
+                state_animation = &gscn->animation_end_frames[lookup_index - 1];
+                animation = gscn->instance_animation_data[instance_animation->anim_ix];
+            } else {
+                if ((display_flags & NUDISPLAYSPECIAL_FLAG_VISIBLE) == 0) {
+                    goto next_animation;
+                }
+                animation = gscn->instance_animation_data[instance_animation->anim_ix];
+                if (animation == NULL) {
+                    goto next_animation;
                 }
             }
 
-            if (!waiting_for_start) {
+            f32 end_frame;
+            if (animation != NULL) {
+                end_frame = NuAnimEndFrameOld(animation);
+            } else if (state_animation != NULL) {
+                end_frame = static_cast<f32>(static_cast<u32>(state_animation->end_frame));
+            } else {
+                goto next_animation;
+            }
+
+            if (end_frame == 0.0f) {
+                animation_count = gscn->num_instance_animations;
+                goto next_animation;
+            }
+
+            u8 flags = static_cast<u8>(instance_animation->flags);
+            if ((flags & NUINSTANIM_FLAG_PLAYING) != 0) {
+                instance_animation->ltime += frame_delta * instance_animation->tfactor;
+                if ((flags & NUINSTANIM_FLAG_WAITING) != 0) {
+                    if (!(instance_animation->ltime >= instance_animation->tfirst)) {
+                        goto evaluate_animation;
+                    }
+                    flags &= ~NUINSTANIM_FLAG_WAITING;
+                    instance_animation->waiting = 0;
+                    instance_animation->ltime -= instance_animation->tfirst - 1.0f;
+                }
+
+                frame = instance_animation->ltime;
                 const f32 interval_end = instance_animation->tinterval + end_frame;
                 if (frame >= interval_end) {
                     if ((flags & NUINSTANIM_FLAG_REPEATING) != 0) {
                         const f32 repeat_length = interval_end - 1.0f;
-                        instance_animation->ltime -=
-                            NuFloor((instance_animation->ltime - 1.0f) / repeat_length) * repeat_length;
+                        const f32 repeats = NuFloor((instance_animation->ltime - 1.0f) / repeat_length);
+                        const f32 live_repeat_length = instance_animation->tinterval + end_frame - 1.0f;
+                        instance_animation->ltime -= live_repeat_length * repeats;
                         frame = instance_animation->ltime;
+                        flags = static_cast<u8>(instance_animation->flags);
                     } else {
                         flags &= ~NUINSTANIM_FLAG_PLAYING;
-                        instance_animation->flags = static_cast<NUINSTANIM_FLAGS>(flags);
+                        instance_animation->playing = 0;
                         instance_animation->ltime = end_frame;
                         frame = end_frame;
                     }
@@ -643,7 +643,7 @@ extern "C" void NuGScnUpdate(NUGSCN *gscn, f32 frame_delta) {
                     frame = end_frame;
                 } else if (frame < 1.0f) {
                     flags &= ~NUINSTANIM_FLAG_PLAYING;
-                    instance_animation->flags = static_cast<NUINSTANIM_FLAGS>(flags);
+                    instance_animation->playing = 0;
                     instance_animation->ltime = 1.0f;
                     frame = 1.0f;
                 }
@@ -651,48 +651,59 @@ extern "C" void NuGScnUpdate(NUGSCN *gscn, f32 frame_delta) {
                 if ((flags & NUINSTANIM_FLAG_BACKWARDS) != 0) {
                     frame = end_frame + 1.0f - frame;
                 }
+            } else {
+                frame = instance_animation->ltime;
             }
-        } else {
-            frame = instance_animation->ltime;
-        }
 
-        if (frame != instance_animation->prev_eval_time) {
-            if (state_animation != NULL) {
-                u8 state_index =
-                    static_cast<u8>((static_cast<u32>(instance_animation->flags) & NUINSTANIM_STATE_INDEX_MASK) >>
-                                    NUINSTANIM_STATE_INDEX_SHIFT);
-                char state_value;
-                const bool state_changed = StateAnimEvaluate2(reinterpret_cast<StateAnim *>(state_animation),
-                                                              &state_index, &state_value, frame);
-                const u32 state_flags = (static_cast<u32>(instance_animation->flags) & ~NUINSTANIM_STATE_INDEX_MASK) |
-                                        (static_cast<u32>(state_index) << NUINSTANIM_STATE_INDEX_SHIFT);
-                instance_animation->flags = static_cast<NUINSTANIM_FLAGS>(state_flags);
+        evaluate_animation:
+            if (frame != instance_animation->prev_eval_time) {
+                if (state_animation != NULL) {
+                    u8 state_index =
+                        static_cast<u8>((static_cast<u32>(instance_animation->flags) & NUINSTANIM_STATE_INDEX_MASK) >>
+                                        NUINSTANIM_STATE_INDEX_SHIFT);
+                    char state_value;
+                    const bool state_changed = StateAnimEvaluate2(reinterpret_cast<StateAnim *>(state_animation),
+                                                                  &state_index, &state_value, frame);
+                    const u32 state_flags =
+                        (static_cast<u32>(instance_animation->flags) & ~NUINSTANIM_STATE_INDEX_MASK) |
+                        (static_cast<u32>(state_index) << NUINSTANIM_STATE_INDEX_SHIFT);
+                    instance_animation->flags = static_cast<NUINSTANIM_FLAGS>(state_flags);
 
-                if (state_changed) {
-                    if (instance_animation->instance_ix != 0xffff && state_value != 0) {
-                        display_special->flags |= NUDISPLAYSPECIAL_FLAG_VISIBLE;
-                    } else if (state_value == 0) {
+                    if (state_changed) {
                         if (instance_animation->instance_ix != 0xffff) {
-                            display_special->flags &= ~NUDISPLAYSPECIAL_FLAG_VISIBLE;
+                            display_special = &static_cast<NUDISPLAYSPECIAL *>(
+                                display_list->specials)[instance_animation->instance_ix];
+                            if (state_value != 0) {
+                                display_special->flags |= NUDISPLAYSPECIAL_FLAG_VISIBLE;
+                            } else {
+                                display_special->flags &= ~NUDISPLAYSPECIAL_FLAG_VISIBLE;
+                                animation = NULL;
+                            }
+                        } else if (state_value == 0) {
+                            animation = NULL;
                         }
-                        animation = NULL;
                     }
                 }
+
+                if (animation != NULL) {
+                    NuAnimData2CalcMatrix(animation, 0, frame, animation_matrix);
+                }
+                instance_animation->prev_eval_time = frame;
             }
 
             if (animation != NULL) {
-                NuAnimData2CalcMatrix(animation, 0, frame, animation_matrix);
+                instance_animation->mtx = *animation_matrix;
+                instance_animation->mtx.m30 += display_special->draw_mtx.m30;
+                instance_animation->mtx.m31 += display_special->draw_mtx.m31;
+                instance_animation->mtx.m32 += display_special->draw_mtx.m32;
             }
-            instance_animation->prev_eval_time = frame;
+            animation_count = gscn->num_instance_animations;
         }
-
-        if (animation != NULL) {
-            instance_animation->mtx = *animation_matrix;
-            instance_animation->mtx.m30 += display_special->draw_mtx.m30;
-            instance_animation->mtx.m31 += display_special->draw_mtx.m31;
-            instance_animation->mtx.m32 += display_special->draw_mtx.m32;
-        }
-    }
+    next_animation:
+        ++i;
+        ++instance_animation;
+        ++animation_matrix;
+    } while (i < animation_count);
 }
 
 // --- NuGScn graphics-data reader ---

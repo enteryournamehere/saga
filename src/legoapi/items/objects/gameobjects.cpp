@@ -5050,6 +5050,7 @@ void GameObjectStuffAfterAnimation() {
             continue;
         ADDPART_s part;
         NUMTX matrix;
+        NUVEC points[2];
         bool drawn = true;
         if (object->apiobj.model_draw_result == 0) {
             drawn = false;
@@ -5103,8 +5104,8 @@ void GameObjectStuffAfterAnimation() {
         }
         if (drawn && ((object->apiobj.character_data->model_flags & 8) != 0 || object->id == id_BODYGUARD ||
                       object->id == id_IMPERIALGUARD)) {
-            GAMECHARACTERDATA *data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
             const i32 effect = object->blade_index == -1 ? -1 : BladeTab[object->blade_index].hit_effect;
+            GAMECHARACTERDATA *data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
             if ((data->field275_0x116 == 3 || object->id == id_GRIEVOUS || object->id == id_COUNTDOOKU) &&
                 object->character_context == 0 && object->action_movement_state == 3)
                 object->sabre_flags |= 2;
@@ -5187,7 +5188,6 @@ void GameObjectStuffAfterAnimation() {
                 static_cast<CHARACTERANIM_s *>(object->apiobj.character_model->model_data_a[object->context_animation]);
             if (animation != NULL && static_cast<i8>(animation->locator) != -1 &&
                 ((object->context_flags & 0x40) == 0 || static_cast<i8>(object->pad_e3c[1]) != -1)) {
-                NUVEC points[2];
                 points[0] = points[1] =
                     *NUMTX_GET_ROW_VEC(&object->joint_matrices[static_cast<i8>(animation->locator)], 3);
                 points[0].y += 0.075f;
@@ -5264,7 +5264,6 @@ void GameObjectStuffAfterAnimation() {
                 i32 joint_b = blade_data->streak_joints[blade][1];
                 if (joint_b == -1 || object->apiobj.character_model->points_of_interest[joint_b] == NULL)
                     continue;
-                NUVEC points[2];
                 points[0] = *NUMTX_GET_ROW_VEC(&object->joint_matrices[joint_a], 3);
                 points[1] = *NUMTX_GET_ROW_VEC(&object->joint_matrices[joint_b], 3);
                 i32 colour = object->blade_states[blade];

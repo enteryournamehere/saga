@@ -888,8 +888,9 @@ static i32 decode_buffer_left;
 static char decode_buffer[0x40000];
 static i32 decode_buffer_pos;
 static char read_buffer[0x40000];
-static i32 read_buffer_size;
-static i32 read_buffer_decoded_size;
+// Volatile in the original: -O0 comparisons of these emit setcc/test/jcc.
+static volatile i32 read_buffer_size;
+static volatile i32 read_buffer_decoded_size;
 
 static void NuDatFileDecodeInit() {
     unpack_file_info = NULL;
@@ -1298,7 +1299,6 @@ i32 NuDatFileRead(NUFILE file, void *buf, i32 size) {
     i32 inflated_size;
     i32 total_read;
     i32 bytes_read;
-    i32 to_read;
 
     file -= 0x800;
     info = &dat_file_infos[file];
@@ -1342,9 +1342,9 @@ i32 NuDatFileRead(NUFILE file, void *buf, i32 size) {
         open_file->pos = info->pos;
     }
 
-    to_read = MIN(size, MAX(info->file_len + info->start - info->pos, 0));
-    if (to_read != 0) {
-        total_read = NuFileRead(open_file->dat_file, buf, to_read);
+    bytes_read = MIN(size, MAX(info->file_len + info->start - info->pos, 0));
+    if (bytes_read != 0) {
+        total_read = NuFileRead(open_file->dat_file, buf, bytes_read);
         if (total_read > -1) {
             info->pos += total_read;
             open_file->pos = info->pos;

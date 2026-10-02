@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.00891,
+    "fuzzy_match_percent": 68.01536,
     "total_code": "4722419",
-    "matched_code": "529037",
-    "matched_code_percent": 11.20267,
+    "matched_code": "529809",
+    "matched_code_percent": 11.219017,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6315,
-    "matched_functions_percent": 46.920277,
+    "matched_functions": 6319,
+    "matched_functions_percent": 46.949997,
     "total_units": 1
   },
   "text": {
@@ -14498,7 +14498,7 @@
           "address": 4580496,
           "offset": 3690528,
           "size": 133,
-          "match_percent": 91.22222
+          "match_percent": 94.44444
         },
         {
           "name": "_ZN17MechAutofireAddonD2Ev",
@@ -14506,7 +14506,7 @@
           "address": 4580496,
           "offset": 3690528,
           "size": 133,
-          "match_percent": 91.22222
+          "match_percent": 94.44444
         },
         {
           "name": "_ZN17MechAutofireAddonD0Ev",
@@ -14561,7 +14561,7 @@
           "address": 5245104,
           "offset": 4355136,
           "size": 133,
-          "match_percent": 91.22222
+          "match_percent": 94.44444
         },
         {
           "name": "_ZN17MechEdgeStopAddonD2Ev",
@@ -14569,7 +14569,7 @@
           "address": 5245104,
           "offset": 4355136,
           "size": 133,
-          "match_percent": 91.22222
+          "match_percent": 94.44444
         },
         {
           "name": "_ZN17MechEdgeStopAddonD0Ev",
@@ -15564,7 +15564,7 @@
           "address": 4464656,
           "offset": 3574688,
           "size": 388,
-          "match_percent": 53.724136
+          "match_percent": 55.577587
         },
         {
           "name": "_ZN24MechTouchTaskPlannedGoTo17BackgroundProcessEv",
@@ -15572,7 +15572,7 @@
           "address": 4465056,
           "offset": 3575088,
           "size": 285,
-          "match_percent": 79.203125
+          "match_percent": 82.1875
         },
         {
           "name": "_ZN17MechTouchTaskGoTo7OnStartEv",
@@ -15580,7 +15580,7 @@
           "address": 4465344,
           "offset": 3575376,
           "size": 453,
-          "match_percent": 64.096
+          "match_percent": 63.368
         },
         {
           "name": "_ZN21MechTouchTaskUseForce7OnStartEv",
@@ -15596,7 +15596,7 @@
           "address": 4465904,
           "offset": 3575936,
           "size": 440,
-          "match_percent": 69.05
+          "match_percent": 70.35
         },
         {
           "name": "_ZN35MechTouchTaskPlannedDoubleClickGoToD1Ev",
@@ -15604,7 +15604,7 @@
           "address": 4466352,
           "offset": 3576384,
           "size": 283,
-          "match_percent": 86.01266
+          "match_percent": 90.696205
         },
         {
           "name": "_ZN35MechTouchTaskPlannedDoubleClickGoToD2Ev",
@@ -15612,7 +15612,7 @@
           "address": 4466352,
           "offset": 3576384,
           "size": 283,
-          "match_percent": 86.01266
+          "match_percent": 90.696205
         },
         {
           "name": "_ZN35MechTouchTaskPlannedDoubleClickGoToD0Ev",
@@ -15628,7 +15628,7 @@
           "address": 4466704,
           "offset": 3576736,
           "size": 571,
-          "match_percent": 79.19444
+          "match_percent": 80.59722
         },
         {
           "name": "_ZN24MechTouchTaskPlannedGoToD2Ev",
@@ -15636,7 +15636,7 @@
           "address": 4466704,
           "offset": 3576736,
           "size": 571,
-          "match_percent": 79.19444
+          "match_percent": 80.59722
         },
         {
           "name": "_ZN24MechTouchTaskPlannedGoToD0Ev",
@@ -15652,7 +15652,7 @@
           "address": 4467344,
           "offset": 3577376,
           "size": 173,
-          "match_percent": 74.0
+          "match_percent": 76.35555
         },
         {
           "name": "_ZN21MechTouchTaskUseForce6OnStopEv",
@@ -15676,7 +15676,7 @@
           "address": 4467680,
           "offset": 3577712,
           "size": 237,
-          "match_percent": 49.484848
+          "match_percent": 52.60606
         },
         {
           "name": "_ZN17MechTouchTaskGoToD2Ev",
@@ -15684,7 +15684,7 @@
           "address": 4467680,
           "offset": 3577712,
           "size": 237,
-          "match_percent": 49.484848
+          "match_percent": 52.60606
         },
         {
           "name": "_ZN17MechTouchTaskGoToD0Ev",
@@ -15700,7 +15700,7 @@
           "address": 4467984,
           "offset": 3578016,
           "size": 996,
-          "match_percent": 46.647774
+          "match_percent": 46.307693
         },
         {
           "name": "_ZN18MechTouchTaskPanel6UpdateEv",
@@ -15764,7 +15764,7 @@
           "address": 4472144,
           "offset": 3582176,
           "size": 277,
-          "match_percent": 80.72059
+          "match_percent": 82.27941
         },
         {
           "name": "_ZN13MechTouchTaskC1ER36MechInputTouchGestureBasedController",
@@ -15828,7 +15828,7 @@
           "address": 4473664,
           "offset": 3583696,
           "size": 1333,
-          "match_percent": 62.874252
+          "match_percent": 61.83533
         },
         {
           "name": "_ZN24MechTouchTaskPlannedGoTo16SetupForAnalysisEv",
@@ -15860,7 +15860,7 @@
           "address": 4476784,
           "offset": 3586816,
           "size": 1135,
-          "match_percent": 27.787878
+          "match_percent": 27.931818
         },
         {
           "name": "_ZN24MechTouchTaskPlannedGoTo6UpdateEv",
@@ -16556,7 +16556,7 @@
           "address": 4482992,
           "offset": 3593024,
           "size": 141,
-          "match_percent": 91.68421
+          "match_percent": 94.73684
         },
         {
           "name": "_ZN24MechTouchTaskUseTeleportD2Ev",
@@ -16564,7 +16564,7 @@
           "address": 4482992,
           "offset": 3593024,
           "size": 141,
-          "match_percent": 91.68421
+          "match_percent": 94.73684
         },
         {
           "name": "_ZN21MechTouchTaskUseForceD1Ev",
@@ -16652,7 +16652,7 @@
           "address": 4483712,
           "offset": 3593744,
           "size": 149,
-          "match_percent": 92.1
+          "match_percent": 95.0
         }
       ]
     },
@@ -16826,7 +16826,7 @@
           "address": 4511376,
           "offset": 3621408,
           "size": 252,
-          "match_percent": 93.46774
+          "match_percent": 95.16129
         },
         {
           "name": "_ZN36MechInputTouchGestureBasedControllerD2Ev",
@@ -16834,7 +16834,7 @@
           "address": 4511376,
           "offset": 3621408,
           "size": 252,
-          "match_percent": 93.46774
+          "match_percent": 95.16129
         },
         {
           "name": "_ZN36MechInputTouchGestureBasedControllerD0Ev",
@@ -16922,7 +16922,7 @@
           "address": 4513792,
           "offset": 3623824,
           "size": 1880,
-          "match_percent": 40.60475
+          "match_percent": 40.688984
         },
         {
           "name": "_ZThn108_N36MechInputTouchGestureBasedController6OnHoldER12GameObject_sR11TouchHolder",
@@ -16946,7 +16946,7 @@
           "address": 4517072,
           "offset": 3627104,
           "size": 547,
-          "match_percent": 62.96689
+          "match_percent": 63.29801
         },
         {
           "name": "_ZN36MechInputTouchGestureBasedController15TriggerJumpTaskERK17JumpTriggerPacketbbb",
@@ -17010,7 +17010,7 @@
           "address": 4523424,
           "offset": 3633456,
           "size": 1113,
-          "match_percent": 74.947365
+          "match_percent": 74.5
         },
         {
           "name": "_ZN36MechInputTouchGestureBasedController20PerformCloseMechanicER12GameObject_sR11TouchHolder",
@@ -17026,7 +17026,7 @@
           "address": 4525808,
           "offset": 3635840,
           "size": 3444,
-          "match_percent": 43.061226
+          "match_percent": 44.27491
         },
         {
           "name": "_ZThn108_N36MechInputTouchGestureBasedController7OnClickER12GameObject_sR11TouchHolder",
@@ -17057,7 +17057,7 @@
           "address": 5245504,
           "offset": 4355536,
           "size": 312,
-          "match_percent": 56.121952
+          "match_percent": 59.463413
         },
         {
           "name": "_ZN35MechInputTouchGestureTrackingSystemD2Ev",
@@ -17065,7 +17065,7 @@
           "address": 5245504,
           "offset": 4355536,
           "size": 312,
-          "match_percent": 56.121952
+          "match_percent": 59.463413
         },
         {
           "name": "_ZN35MechInputTouchGestureTrackingSystemD0Ev",
@@ -17169,7 +17169,7 @@
           "address": 5251328,
           "offset": 4361360,
           "size": 3216,
-          "match_percent": 49.107327
+          "match_percent": 50.482113
         },
         {
           "name": "_ZN35MechInputTouchGestureTrackingSystem7ProcessER12GameObject_sRK16NuInputTouchData",
@@ -17963,7 +17963,7 @@
           "address": 4496480,
           "offset": 3606512,
           "size": 157,
-          "match_percent": 92.29269
+          "match_percent": 95.12195
         },
         {
           "name": "_ZN22MechJumpAutoPilotAddonD2Ev",
@@ -17971,7 +17971,7 @@
           "address": 4496480,
           "offset": 3606512,
           "size": 157,
-          "match_percent": 92.29269
+          "match_percent": 95.12195
         },
         {
           "name": "_ZN22MechJumpAutoPilotAddonD0Ev",
@@ -18552,7 +18552,7 @@
           "address": 4548464,
           "offset": 3658496,
           "size": 212,
-          "match_percent": 92.89474
+          "match_percent": 94.73684
         },
         {
           "name": "_ZN20MechTouchUITagButtonD2Ev",
@@ -18560,7 +18560,7 @@
           "address": 4548464,
           "offset": 3658496,
           "size": 212,
-          "match_percent": 92.89474
+          "match_percent": 94.73684
         },
         {
           "name": "_ZN20MechTouchUITagButtonD0Ev",
@@ -40065,7 +40065,7 @@
           "address": 1367200,
           "offset": 477232,
           "size": 344,
-          "match_percent": 63.46154
+          "match_percent": 65.82692
         },
         {
           "name": "_Z13ObjZappedBlueP12GameObject_s",
@@ -40089,7 +40089,7 @@
           "address": 1418224,
           "offset": 528256,
           "size": 344,
-          "match_percent": 74.61165
+          "match_percent": 76.32039
         },
         {
           "name": "_Z20ForceNextLungeTargetP19MechObjectInterface",
@@ -40097,7 +40097,7 @@
           "address": 1420336,
           "offset": 530368,
           "size": 344,
-          "match_percent": 74.61165
+          "match_percent": 76.32039
         },
         {
           "name": "_Z15ComboRotateCodeP12GameObject_si",
@@ -40113,7 +40113,7 @@
           "address": 1448432,
           "offset": 558464,
           "size": 1263,
-          "match_percent": 63.557144
+          "match_percent": 58.314285
         },
         {
           "name": "_Z14IsFacingTargetP7nuvec_sS0_ii",
@@ -47934,7 +47934,7 @@
           "address": 1358976,
           "offset": 469008,
           "size": 461,
-          "match_percent": 59.22689
+          "match_percent": 56.39496
         },
         {
           "name": "_ZL20ForcePushed_MoveCodeP12GameObject_s",
@@ -48190,7 +48190,7 @@
           "address": 1420688,
           "offset": 530720,
           "size": 801,
-          "match_percent": 71.371254
+          "match_percent": 71.97006
         },
         {
           "name": "_Z11JetPackCodeP12GameObject_siii",
@@ -48686,7 +48686,7 @@
           "address": 4579216,
           "offset": 3689248,
           "size": 236,
-          "match_percent": 92.89474
+          "match_percent": 94.73684
         },
         {
           "name": "_ZN12MoveToMarkerD2Ev",
@@ -48694,7 +48694,7 @@
           "address": 4579216,
           "offset": 3689248,
           "size": 236,
-          "match_percent": 92.89474
+          "match_percent": 94.73684
         },
         {
           "name": "_ZN9NuMechPtrI12MoveToMarkerLi4EE11ManagedBaseD0Ev",
@@ -48710,7 +48710,7 @@
           "address": 4579600,
           "offset": 3689632,
           "size": 244,
-          "match_percent": 93.25
+          "match_percent": 95.0
         },
         {
           "name": "_Z26SetMoveAndAnimateFunctionsjjjjiPvS_S_",
@@ -55106,7 +55106,7 @@
           "address": 5055488,
           "offset": 4165520,
           "size": 352,
-          "match_percent": 78.75238
+          "match_percent": 82.28571
         },
         {
           "name": "_Z16BuildIt_MoveCodeP12GameObject_s",
@@ -55114,7 +55114,7 @@
           "address": 5055840,
           "offset": 4165872,
           "size": 1298,
-          "match_percent": 76.08581
+          "match_percent": 76.38614
         }
       ]
     },
@@ -63248,7 +63248,7 @@
           "address": 1841056,
           "offset": 951088,
           "size": 2052,
-          "match_percent": 57.39268
+          "match_percent": 57.29512
         },
         {
           "name": "_Z25ThermalDetonator_ThrowMomP12GameObject_sP7nuvec_s",
@@ -66082,7 +66082,7 @@
           "address": 4580256,
           "offset": 3690288,
           "size": 133,
-          "match_percent": 91.22222
+          "match_percent": 94.44444
         },
         {
           "name": "_ZN24CantPickupBombTimerAddonD2Ev",
@@ -66090,7 +66090,7 @@
           "address": 4580256,
           "offset": 3690288,
           "size": 133,
-          "match_percent": 91.22222
+          "match_percent": 94.44444
         },
         {
           "name": "_ZN24CantPickupBombTimerAddonD0Ev",
@@ -66178,7 +66178,7 @@
           "address": 4643024,
           "offset": 3753056,
           "size": 193,
-          "match_percent": 86.083336
+          "match_percent": 87.75
         },
         {
           "name": "_Z16RemoveGameObjectP12GameObject_si",
@@ -83443,7 +83443,7 @@
           "address": 1443936,
           "offset": 553968,
           "size": 344,
-          "match_percent": 74.61165
+          "match_percent": 76.32039
         },
         {
           "name": "_Z22FireBountyHunterRocketP12GameObject_s",
@@ -85454,7 +85454,7 @@
           "address": 1359440,
           "offset": 469472,
           "size": 1612,
-          "match_percent": 75.573616
+          "match_percent": 74.96319
         },
         {
           "name": "_ZL17Asteroid_AddPartsP13GIZMOBLOWUP_s",
@@ -101801,7 +101801,7 @@
           "address": 2547706,
           "offset": 1657738,
           "size": 24,
-          "match_percent": 87.375
+          "match_percent": 99.875
         },
         {
           "name": "NuErrorSetFilter",
@@ -106419,7 +106419,7 @@
           "address": 2459611,
           "offset": 1569643,
           "size": 388,
-          "match_percent": 92.00971
+          "match_percent": 99.79612
         },
         {
           "name": "_ZL18NuFileEndianSwap16Pv",
@@ -106843,7 +106843,7 @@
           "address": 2475492,
           "offset": 1585524,
           "size": 729,
-          "match_percent": 98.69907
+          "match_percent": 99.916664
         },
         {
           "name": "NuDatFileSeek",
@@ -106867,7 +106867,7 @@
           "address": 2477505,
           "offset": 1587537,
           "size": 165,
-          "match_percent": 95.0
+          "match_percent": 100.0
         },
         {
           "name": "_Z24NuDatFileGetFreeHandleIXP10nudathdr_si",
@@ -110521,7 +110521,7 @@
           "address": 2683021,
           "offset": 1793053,
           "size": 45,
-          "match_percent": 99.64286
+          "match_percent": 100.0
         },
         {
           "name": "_Z12NuCosApprox2i",
@@ -110529,7 +110529,7 @@
           "address": 2683066,
           "offset": 1793098,
           "size": 50,
-          "match_percent": 99.666664
+          "match_percent": 100.0
         },
         {
           "name": "_ZL2xyjj",
@@ -111014,7 +111014,7 @@
           "address": 2599309,
           "offset": 1709341,
           "size": 512,
-          "match_percent": 93.69935
+          "match_percent": 100.0
         }
       ]
     },
@@ -122497,7 +122497,7 @@
       "address": 4502160,
       "offset": 3612192,
       "size": 133,
-      "match_percent": 91.22222,
+      "match_percent": 94.44444,
       "candidate_units": [
         "MechInputTouch/MechAutofireAddon.cpp.o",
         "MechInputTouch/MechEdgeStopAddon.cpp.o",
@@ -122511,7 +122511,7 @@
       "address": 4502160,
       "offset": 3612192,
       "size": 133,
-      "match_percent": 91.22222,
+      "match_percent": 94.44444,
       "candidate_units": [
         "MechInputTouch/MechAutofireAddon.cpp.o",
         "MechInputTouch/MechEdgeStopAddon.cpp.o",
@@ -122525,7 +122525,7 @@
       "address": 4502304,
       "offset": 3612336,
       "size": 141,
-      "match_percent": 91.68421,
+      "match_percent": 94.73684,
       "candidate_units": [
         "MechInputTouch/MechAutofireAddon.cpp.o",
         "MechInputTouch/MechEdgeStopAddon.cpp.o",

@@ -62,11 +62,12 @@ template <class T, i32 Tag> class NuMechPtr {
             if (next == this) {
                 object->managed_links = NULL;
             } else {
+                NuMechPtr *next_link = next;
                 NuMechPtr *previous_link = previous;
-                next->previous = previous_link;
-                previous_link->next = next;
+                next_link->previous = previous_link;
+                previous_link->next = next_link;
                 if (object->managed_links == this)
-                    object->managed_links = next;
+                    object->managed_links = next_link;
             }
             object = NULL;
             next = NULL;

@@ -2032,71 +2032,11 @@ void DrawCameraTarget(nuvec_s *) {
 }
 
 void DrawGameMessages() {
-    struct RENDER_MESSAGE {
-        char *text;
-        char text_buffer[0x78];
-        NUVEC position_a;
-        NUVEC target_position;
-        NUVEC position;
-        NUVEC start_position;
-        f32 field_0xac;
-        f32 target_scale;
-        f32 field_0xb4;
-        f32 field_0xb8;
-        f32 elapsed;
-        f32 duration;
-        f32 field_0xc4;
-        f32 field_0xc8;
-        u32 field_0xcc;
-        f32 field_0xd0;
-        f32 field_0xd4;
-        u32 flags;
-        u32 score;
-        u16 field_0xe0;
-        u16 field_0xe2;
-        u16 field_0xe4;
-        u16 icon;
-        nuhspecial_s extra_special;
-        u8 red;
-        u8 green;
-        u8 blue;
-        u8 alpha;
-        u8 active;
-        u8 field_0xf9;
-        u8 field_0xfa;
-        u8 field_0xfb;
-        u8 field_0xfc;
-        u8 field_0xfd;
-        u8 field_0xfe;
-        u8 field_0xff;
-        void (*delay_fn)(GAMEMESSAGE_s *);
-        void (*tick_fn)(GAMEMESSAGE_s *);
-        void (*update_fn)(GAMEMESSAGE_s *);
-        void (*draw_fn)(GAMEMESSAGE_s *, NUVEC *, f32);
-        void (*end_fn)(GAMEMESSAGE_s *);
-    };
-    static_assert(sizeof(RENDER_MESSAGE) == sizeof(GAMEMESSAGE_s), "render message backing layout");
-    static_assert(offsetof(RENDER_MESSAGE, draw_fn) == offsetof(GAMEMESSAGE_s, draw_callback),
-                  "render message callback offset");
     extern GAMEMESSAGE_s GameMessage[128];
     extern i32 DrawPanel3DObjectNoAlpha(float, float, float, float, float, float, u16, u16, u16, nuhspecial_s *, i32);
 
-    auto draw_special = [](nuhspecial_s *special, RENDER_MESSAGE *message, f32 x, f32 y, f32 z, f32 scale, f32 alpha) {
-        if (NuSpecialExistsFn(special) == 0) {
-            return;
-        }
-        const u32 flags = message->flags;
-        if ((flags & 0x20000) != 0) {
-            DrawPanel3DObjectNoAlpha(x, y, z, scale, scale, scale, message->field_0xe0, message->field_0xe2,
-                                     message->field_0xe4, special, 2);
-        } else {
-            DrawPanel3DObject(x, y, z, scale, scale, scale, message->field_0xe0, message->field_0xe2,
-                              message->field_0xe4, special, 2, alpha);
-        }
-    };
-
-    RENDER_MESSAGE *message = reinterpret_cast<RENDER_MESSAGE *>(GameMessage);
-    RENDER_MESSAGE *end = message + 128;
+    GAMEMESSAGE_s *message = GameMessage;
+    GAMEMESSAGE_s *end = message + 128;
     for (; message != end; ++message) {
         if (message->active == 0) {
             continue;
@@ -2107,21 +2047,23 @@ void DrawGameMessages() {
         if (message->field_0xd0 > 0.0f) {
             continue;
         }
-        if (message->elapsed >= message->duration && message->field_0xfa == 0) {
+        if (!(message->duration > message->elapsed) && message->field_0xfa == 0) {
             continue;
         }
 
+        u32 flags = message->flags;
         f32 progress = message->elapsed / message->duration;
-        if ((message->flags & 0x100) != 0) {
+        if ((flags & 0x100) != 0) {
             progress = 1.0f - NU_SIN_LUT(static_cast<i32>(progress * 16384.0f + 16384.0f));
-        } else if ((message->flags & 0x200) != 0) {
+        } else if ((flags & 0x200) != 0) {
             progress = NU_SIN_LUT(static_cast<i32>(progress * 16384.0f));
-        } else if ((message->flags & 0x400) != 0) {
+        } else if ((flags & 0x400) != 0) {
             progress = NU_SIN_LUT(static_cast<i32>(progress * 32768.0f));
-        } else if ((message->flags & 0x800) != 0) {
+        } else if ((flags & 0x800) != 0) {
             progress = 1.0f - NU_SIN_LUT(static_cast<i32>(progress * 32768.0f));
         }
 
+        f32 scale = (flags & 5) == 5 ? message->field_0xb8 : message->field_0xb4;
         NUVEC position = message->start_position;
         if (message->field_0xd4 != 0.0f && message->field_0xfb == 0) {
             const f32 limit = message->field_0xd4;
@@ -2137,40 +2079,56 @@ void DrawGameMessages() {
             }
         }
 
-        f32 scale = (message->flags & 5) == 5 ? message->field_0xb8 : message->field_0xb4;
-        if ((message->flags & 8) != 0) {
+        if ((flags & 8) != 0) {
             if (message->update_fn != NULL) {
-                message->update_fn(reinterpret_cast<GAMEMESSAGE_s *>(message));
+                message->update_fn(message);
+                flags = message->flags;
             }
             position.x = position.x + (message->target_position.x - position.x) * progress;
             position.y = position.y + (message->target_position.y - position.y) * progress;
             position.z = position.z + (message->target_position.z - position.z) * progress;
         }
-        if ((message->flags & 0x20) != 0) {
+        if ((flags & 0x20) != 0) {
             scale += (message->target_scale - scale) * progress;
         }
         position.x += message->field_0xc4;
         position.z += message->field_0xc8;
 
-        if (message->draw_fn != NULL) {
-            message->draw_fn(reinterpret_cast<GAMEMESSAGE_s *>(message), &position, scale);
+        if (message->draw_callback != NULL) {
+            message->draw_callback(message, &position, scale);
             continue;
         }
 
-        if (NuSpecialExistsFn(&message->extra_special) == 0) {
+        if (NuSpecialExistsFn(&message->special) != 0) {
+            const u32 draw_flags = message->flags;
+            if ((draw_flags & 0x20000) != 0) {
+                DrawPanel3DObjectNoAlpha(position.x, position.y, position.z, scale, scale, scale, message->field_0xe0,
+                                         message->rotation_y, message->field_0xe4, &message->special, 2);
+            } else {
+                const f32 alpha = (draw_flags & 0x10000) != 0 ? static_cast<f32>(message->alpha) / 128.0f : 1.0f;
+                DrawPanel3DObject(position.x, position.y, position.z, scale, scale, scale, message->field_0xe0,
+                                  message->rotation_y, message->field_0xe4, &message->special, 2, alpha);
+            }
+            if (GameMsg_GetExtraObjFn != NULL) {
+                nuhspecial_s *extra = GameMsg_GetExtraObjFn(message);
+                if (extra != NULL && NuSpecialExistsFn(extra) != 0) {
+                    const u32 draw_flags = message->flags;
+                    if ((draw_flags & 0x20000) != 0) {
+                        DrawPanel3DObjectNoAlpha(position.x, position.y, position.z, scale, scale, scale,
+                                                 message->field_0xe0, message->rotation_y, message->field_0xe4, extra,
+                                                 2);
+                    } else {
+                        const f32 alpha =
+                            (draw_flags & 0x10000) != 0 ? static_cast<f32>(message->alpha) / 128.0f : 1.0f;
+                        DrawPanel3DObject(position.x, position.y, position.z, scale, scale, scale, message->field_0xe0,
+                                          message->rotation_y, message->field_0xe4, extra, 2, alpha);
+                    }
+                }
+            }
+        } else {
             char *text = message->text != NULL ? message->text : message->text_buffer;
             Text3DEx(text, position.x, position.y, position.z, scale, scale, scale, message->field_0xfc, message->red,
                      message->green, message->blue, message->alpha);
-            continue;
-        }
-        draw_special(&message->extra_special, message, position.x, position.y, position.z, scale,
-                     (message->flags & 0x10000) != 0 ? static_cast<f32>(message->alpha) / 128.0f : 1.0f);
-        if (GameMsg_GetExtraObjFn != NULL) {
-            nuhspecial_s *extra = GameMsg_GetExtraObjFn(reinterpret_cast<GAMEMESSAGE_s *>(message));
-            if (extra != NULL) {
-                draw_special(extra, message, position.x, position.y, position.z, scale,
-                             (message->flags & 0x10000) != 0 ? static_cast<f32>(message->alpha) / 128.0f : 1.0f);
-            }
         }
     }
 }

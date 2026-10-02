@@ -5178,7 +5178,7 @@ void GameObjectStuffAfterAnimation() {
             CHARACTERANIM_s *animation =
                 static_cast<CHARACTERANIM_s *>(object->apiobj.character_model->model_data_a[object->context_animation]);
             if (animation != NULL && static_cast<i8>(animation->locator) != -1 &&
-                ((object->context_flags & 0x40) == 0 || debris_joint != -1)) {
+                ((object->context_flags & 0x40) == 0 || static_cast<i8>(object->pad_e3c[1]) != -1)) {
                 NUVEC points[2];
                 points[0] = points[1] =
                     *NUMTX_GET_ROW_VEC(&object->joint_matrices[static_cast<i8>(animation->locator)], 3);

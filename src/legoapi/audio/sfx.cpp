@@ -1404,16 +1404,16 @@ void PlayRepeatSfx(char *name, i32 sfx_id, f32 initial_delay, char play_count, f
         return;
     }
 
+    const i32 sound_slot = repsfxcount;
+    repsfxtab[sound_slot].state = REPEAT_SFX_PLAY;
     if (initial_delay > 0.0f) {
-        repsfxtab[repsfxcount].state = REPEAT_SFX_INITIAL_DELAY;
-    } else {
-        repsfxtab[repsfxcount].state = REPEAT_SFX_PLAY;
+        repsfxtab[sound_slot].state = REPEAT_SFX_INITIAL_DELAY;
     }
 
     if (sfx_id == -1)
         sfx_id = GetSfxId(name);
 
-    repsfxtab[repsfxcount].sfx_id = static_cast<i16>(sfx_id);
+    repsfxtab[sound_slot].sfx_id = static_cast<i16>(sfx_id);
     RepeatSfx &repeat = repsfxtab[repsfxcount];
     repsfxcount = (repsfxcount + 1) & 31;
     repeat.timer = initial_delay;

@@ -1512,8 +1512,8 @@ mode_selected:
         yaw = camera->yaw;
     }
     CamStopBlend += stop_blend_rate * FRAMETIME;
-    if (CamStopBlend > 1.0f)
-        CamStopBlend = 1.0f;
+    // Preserve NaNs on the quiet unordered path before clamping.
+    CamStopBlend = __builtin_isnan(CamStopBlend) ? CamStopBlend : MIN(1.0f, CamStopBlend);
     GameCam_UpdateLookRot(camera);
 
     NUMTX orientation = {};

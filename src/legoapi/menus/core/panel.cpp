@@ -71,16 +71,19 @@ static void DrawCoinTotal(i32 source, i32 hide_super_story_target) {
         return;
     }
 
-    const f32 timer = source == COIN_TOTAL_BONUS ? statstime : cointotaltime;
-    const i32 angle = static_cast<i32>(timer * static_cast<f32>(NUANG_90DEG));
-    const f32 y = NuTrigTable[(angle >> 1) & 0x7fff] * (STATSPOSY - STATSPOS2Y) + STATSPOS2Y + COINTOTAL_SCOREDY;
+    const f32 base_y = STATSPOS2Y;
+    const f32 delta_y = STATSPOSY - base_y;
+    i32 wave_index;
+    if (source == COIN_TOTAL_BONUS)
+        wave_index = (static_cast<i32>(static_cast<f32>(NUANG_90DEG) * statstime) >> 1) & 0x7fff;
+    else
+        wave_index = (static_cast<i32>(static_cast<f32>(NUANG_90DEG) * cointotaltime) >> 1) & 0x7fff;
+    const f32 y = delta_y * NuTrigTable[wave_index] + base_y + COINTOTAL_SCOREDY;
 
     DrawCoinTotalY = y;
 
     i32 total;
-    i32 red = 255;
-    i32 green = 191;
-    i32 blue = 0;
+    bool target_met = false;
 
     if (source == COIN_TOTAL_SUPER_STORY) {
         DrawSuperStoryTime(-y, SuperStoryTimer.time_elapsed, Game.episode_save[SuperStoryEpisode].superstory_time_limit,
@@ -98,9 +101,7 @@ static void DrawCoinTotal(i32 source, i32 hide_super_story_target) {
                 Text3DEx(text, 0.0f, y - 0.1f, 1.0f, 0.35f, 0.35f, 0.35f, 0, 255, 255, 255, 48);
             }
             if (SuperStoryScore > static_cast<u32>(Game.episode_save[SuperStoryEpisode].superstory_score_target)) {
-                red = 63;
-                green = 255;
-                blue = 31;
+                target_met = true;
             }
         }
     } else if (source == COIN_TOTAL_BONUS) {
@@ -109,7 +110,10 @@ static void DrawCoinTotal(i32 source, i32 hide_super_story_target) {
         total = static_cast<i32>(Game.coins);
     }
 
-    CoinTotal_Draw(total, y, CoinTotalScale, 1, 1.0f, red, green, blue);
+    if (target_met)
+        CoinTotal_Draw(total, y, CoinTotalScale, 1, 1.0f, 63, 255, 31);
+    else
+        CoinTotal_Draw(total, y, CoinTotalScale, 1, 1.0f, 255, 191, 0);
 }
 
 i32 Tag_UpdateHint(HINT_s *hint) {

@@ -1401,17 +1401,21 @@ void AddFootSteps(GameObject_s *object) {
 
 void PlayGruntSfx(GameObject_s *object) {
     CHARACTERDATA *character = object->apiobj.character_data;
-    i32 sfx = character->game_character->sfx_grunt;
-    if (sfx == -1) {
+    const i16 configured_sfx = character->game_character->sfx_grunt;
+    i32 sfx = configured_sfx;
+    if (configured_sfx == -1) {
         if ((character->model_flags & 0x44002010) != 0) {
             return;
         }
-        sfx = GameAudio->sfx_ids[(object->field_0xf01 & 8) != 0 ? 0x14 : 0x15];
-        if (sfx == -1) {
-            return;
+        if ((object->field_0xf01 & 8) != 0) {
+            sfx = GameAudio->sfx_ids[0x14];
+        } else {
+            sfx = GameAudio->sfx_ids[0x15];
         }
     }
-    GameAudio_PlaySfxById(sfx, &object->apiobj.collision_position, 0, 0);
+    if (sfx != -1) {
+        GameAudio_PlaySfxById(sfx, &object->apiobj.collision_position, 0, 0);
+    }
 }
 
 void PlaySabreSfx(char *name, GameObject_s *object, nuvec_s *position, i32) {

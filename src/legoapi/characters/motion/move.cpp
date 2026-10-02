@@ -2144,6 +2144,12 @@ void GunShip_DragBombSeekBlowUp(GameObject_s *object);
 
 // Original: 2,011 bytes.
 void MovePlayer_ROLLING(GameObject_s *object) {
+    struct {
+        NUANGVEC angles;
+        NUVEC position;
+        NUVEC velocity;
+        NUMTX matrix;
+    } local;
     object->field_0xe23 &= ~0x10;
     object->target_velocity.y = ObjInTube(object) ? 1.25f : 0.0f;
     f32 seek_rate = object->id == id_DRAGBOMB && (object->field_0xf01 & 2)
@@ -2164,8 +2170,10 @@ void MovePlayer_ROLLING(GameObject_s *object) {
             if (effect != -1) {
                 i32 count = ParticlesPerSecond(60.0f, FRAMETIME);
                 if (count > 0) {
-                    NUVEC position = {object->apiobj.collision_position.x, object->apiobj.water_height,
-                                      object->apiobj.collision_position.z};
+                    NUVEC &position = local.position;
+                    position.x = object->apiobj.collision_position.x;
+                    position.y = object->apiobj.water_height;
+                    position.z = object->apiobj.collision_position.z;
                     AddVariableShotDebrisEffect(effect, &position, count, 0, 0);
                 }
             }
@@ -2176,11 +2184,13 @@ void MovePlayer_ROLLING(GameObject_s *object) {
     if (WORLD->area != NULL && WORLD->area == GUNSHIP_ADATA)
         GunShip_DragBombSeekBlowUp(object);
     object->field_0x1086 = 0;
-    NUMTX matrix = object->apiobj.field_0xb8;
+    local.matrix = object->apiobj.field_0xb8;
+    NUMTX &matrix = local.matrix;
     matrix.m30 = matrix.m31 = matrix.m32 = 0.0f;
-    i32 heading = NuAtan2D(object->apiobj.velocity.x, object->apiobj.velocity.z);
-    NUVEC local_velocity;
-    NuVecRotateY(&local_velocity, &object->apiobj.velocity, -heading);
+    NUANGVEC &angles = local.angles;
+    angles.y = NuAtan2D(object->apiobj.velocity.x, object->apiobj.velocity.z);
+    NUVEC &local_velocity = local.velocity;
+    NuVecRotateY(&local_velocity, &object->apiobj.velocity, -angles.y);
     // Retail 0x154547..0x1548c2 rotates all four rows in this routine.
     // Keep the original components until both components of each row are written.
     const auto rotate_y = [&matrix](i32 angle) {
@@ -2199,12 +2209,12 @@ void MovePlayer_ROLLING(GameObject_s *object) {
         matrix.m30 = m30 * cosine + matrix.m32 * sine;
         matrix.m32 = matrix.m32 * cosine - m30 * sine;
     };
-    rotate_y(-heading);
+    rotate_y(-angles.y);
     {
         const i32 rotation =
             static_cast<i32>(((local_velocity.z * FRAMETIME) / object->apiobj.collision_radius) * 10430.3779296875f);
-        const f32 cosine = NU_SIN_LUT(static_cast<i32>(static_cast<u32>(rotation) + 0x4000u));
         const f32 sine = NU_SIN_LUT(rotation);
+        const f32 cosine = NU_SIN_LUT(static_cast<i32>(static_cast<u32>(rotation) + 0x4000u));
         const f32 m01 = matrix.m01;
         const f32 m11 = matrix.m11;
         const f32 m21 = matrix.m21;
@@ -2218,12 +2228,11 @@ void MovePlayer_ROLLING(GameObject_s *object) {
         matrix.m31 = m31 * cosine - matrix.m32 * sine;
         matrix.m32 = m31 * sine + matrix.m32 * cosine;
     }
-    rotate_y(heading);
-    i32 pitch, yaw, roll;
-    NuMtxGetEulerXYZ(&matrix, &pitch, &yaw, &roll);
-    object->apiobj.pitch_angle = pitch;
-    object->apiobj.field_0x276 = yaw;
-    object->apiobj.roll_angle = roll;
+    rotate_y(angles.y);
+    NuMtxGetEulerXYZ(&matrix, &angles.x, &angles.y, &angles.z);
+    object->apiobj.pitch_angle = angles.x;
+    object->apiobj.field_0x276 = angles.y;
+    object->apiobj.roll_angle = angles.z;
     GizmoBlowupCheckProximity(WORLD, object);
 }
 

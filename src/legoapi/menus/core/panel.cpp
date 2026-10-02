@@ -643,7 +643,7 @@ f32 DoubleScoreAlpha() {
 
 void DrawInDoubleScoreZone(f32 time) {
     const i32 alpha = static_cast<i32>(DoubleScoreAlpha() * 128.0f * time);
-    SmartTextEx(TTab[tDOUBLESCOREZONE], 0.0f, -0.6f, 1.0f, 1.0f, 1.0f, 1.0f, 0, 255, 255, 255, 1.5f, 1, NULL, 0, alpha);
+    SmartTextEx(TTab[tDOUBLESCOREZONE], 0.0f, -0.6f, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, 255, 255, 1.5f, 1, NULL, 0, alpha);
 }
 
 void Panel_Clear() {

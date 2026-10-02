@@ -1993,16 +1993,21 @@ void do_Pad_flymode_camera(edcam_s *camera, float delta_time, nupad_s *pad) {
                                ? 1.0f
                                : camera->auto_zoom_base + NuFabs(camera->distance) * camera->auto_zoom_dist_scale;
 
+    NUVEC opposite_offset;
+    opposite_offset.z = 0.0f;
+    opposite_offset.y = 0.0f;
+    opposite_offset.x = 0.0f;
     NUMTX rotation = numtx_identity;
     NuMtxRotateX(&rotation, camera->pitch);
     NuMtxRotateY(&rotation, camera->yaw);
 
-    NUVEC opposite_offset = {0.0f, 0.0f, -camera->distance};
+    opposite_offset.z = -camera->distance;
     NuVecMtxRotate(&opposite_offset, &opposite_offset, &rotation);
     NUVEC old_opposite;
     NuVecAdd(&old_opposite, &camera->position, &opposite_offset);
 
     const i32 pad_yaw = NuPs2ApplyDeadZone(pad->analog_right_x, kPadDeadZone);
+    const i32 yaw_speed = camera->pad_yaw_speed;
     const i32 pad_pitch = NuPs2ApplyDeadZone(pad->analog_right_y, kPadDeadZone);
     i32 pitch_delta = static_cast<i32>(static_cast<f32>(pad_pitch) * static_cast<f32>(camera->pad_pitch_speed) *
                                        delta_time * kPitchSpeedScale);
@@ -2011,22 +2016,20 @@ void do_Pad_flymode_camera(edcam_s *camera, float delta_time, nupad_s *pad) {
     }
     if ((camera->freedoms & EDCAM_FREEDOM_PITCH) != 0) {
         camera->pitch += pitch_delta;
-        if (camera->pitch > kPitchLimit) {
-            camera->pitch = kPitchLimit;
-        }
-        if (camera->pitch < -kPitchLimit) {
-            camera->pitch = -kPitchLimit;
-        }
+        camera->pitch = MIN(kPitchLimit, camera->pitch);
+        camera->pitch = MAX(-kPitchLimit, camera->pitch);
     }
     if ((camera->freedoms & EDCAM_FREEDOM_YAW) != 0) {
-        camera->yaw += static_cast<i32>(static_cast<f32>(pad_yaw) * static_cast<f32>(camera->pad_yaw_speed) *
-                                        delta_time * kYawSpeedScale);
+        camera->yaw +=
+            static_cast<i32>(static_cast<f32>(pad_yaw) * static_cast<f32>(yaw_speed) * delta_time * kYawSpeedScale);
     }
 
     rotation = numtx_identity;
     NuMtxRotateX(&rotation, camera->pitch);
     NuMtxRotateY(&rotation, camera->yaw);
-    opposite_offset = {0.0f, 0.0f, -camera->distance};
+    opposite_offset.z = -camera->distance;
+    opposite_offset.y = 0.0f;
+    opposite_offset.x = 0.0f;
     NuVecMtxRotate(&opposite_offset, &opposite_offset, &rotation);
     NUVEC new_opposite;
     NuVecAdd(&new_opposite, &camera->position, &opposite_offset);
@@ -2042,12 +2045,10 @@ void do_Pad_flymode_camera(edcam_s *camera, float delta_time, nupad_s *pad) {
     movement.y += static_cast<f32>(pad->analog_l1) * camera->position_speed.y * move_speed * frame_scale * 0.5f;
     movement.y -= static_cast<f32>(pad->analog_l2) * camera->position_speed.y * move_speed * frame_scale * 0.5f;
 
-    if ((camera->freedoms & EDCAM_FREEDOM_DISTANCE) != 0) {
+    if (camera->allow_distance) {
         camera->distance += static_cast<f32>(pad->analog_r1) * camera->distance_speed * zoom_speed * frame_scale;
         camera->distance -= static_cast<f32>(pad->analog_r2) * camera->distance_speed * zoom_speed * frame_scale;
-        if (camera->distance > -camera->minimum_distance) {
-            camera->distance = -camera->minimum_distance;
-        }
+        camera->distance = MIN(-camera->minimum_distance, camera->distance);
     }
 
     NuVecMtxRotate(&movement, &movement, &rotation);

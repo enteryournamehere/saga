@@ -2030,27 +2030,29 @@ void DrawTouchPrompt(char *prompt, char *unused_label, bool hovered, bool large)
             const float phase = NuFmod(elapsed_since_touch, 4.0f);
             const i32 angle = static_cast<i32>(phase * 0.25f * 65536.0f);
             const float wave = NuTrigTable[(angle >> 1) & 0x7fff] - 0.8f;
-            if (zero <= wave) {
+            if (!(wave < zero)) {
                 pulse = wave + 1.0f;
             }
         }
     }
 
     float icon_scale = ICONSIZE;
-    if (hovered) {
+    if (!hovered) {
+        if (!large) {
+            DrawPanel3DObject(ICONX, STATSPOSY, 1.0f, icon_scale, icon_scale, icon_scale, 0, 0, 0,
+                              &WORLD->lev_objs[0xa5].special, 0, 0.75f);
+            pulse = 0.6f;
+        } else {
+            icon_scale *= pulse;
+            DrawPanel3DObject(ICONX, STATSPOSY, 1.0f, icon_scale, icon_scale, icon_scale, 0, 0, 0,
+                              &WORLD->lev_objs[0xa5].special, 0, 0.75f);
+            pulse *= 0.6f;
+        }
+    } else {
         icon_scale *= 1.25f;
         DrawPanel3DObject(ICONX, STATSPOSY, 1.0f, icon_scale, icon_scale, icon_scale, 0, 0, 0,
                           &WORLD->lev_objs[0xa5].special, 0, 0.75f);
         pulse = 0.75f;
-    } else if (large) {
-        icon_scale *= 1.25f;
-        DrawPanel3DObject(ICONX, STATSPOSY, 1.0f, icon_scale, icon_scale, icon_scale, 0, 0, 0,
-                          &WORLD->lev_objs[0xa5].special, 0, 0.75f);
-        pulse *= 0.6f;
-    } else {
-        DrawPanel3DObject(ICONX, STATSPOSY, 1.0f, icon_scale, icon_scale, icon_scale, 0, 0, 0,
-                          &WORLD->lev_objs[0xa5].special, 0, 0.75f);
-        pulse = 0.6f;
     }
 
     if (prompt != NULL) {

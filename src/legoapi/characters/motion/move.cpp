@@ -3826,17 +3826,18 @@ void MovePlayer_VEHICLEDIRECTIONAL(GameObject_s *object) {
             object->target_velocity.z = carwash_delta.z * 3.0f;
             seek_rate = 5.0f;
         } else {
+            const i8 speed_context = object->character_context;
             f32 water_mul = 1.0f;
-            if (object->character_context == 0x3a)
+            if (speed_context == 0x3a)
                 object->field_0xdc8 = 1.0f;
-            else if (object->character_context == 0x36)
+            else if (speed_context == 0x36)
                 object->field_0xdc8 =
                     NuTrigTable[((i32)((1.0f - object->context_animation_timer / object->airborne_action_duration) *
                                            65536.0f +
                                        16384.0f) >>
                                  1) &
                                 0x7fff];
-            else if (object->character_context == 0x2a) {
+            else if (speed_context == 0x2a) {
                 f32 half = 0.5f * object->airborne_action_duration;
                 object->field_0xdc8 =
                     !(object->context_animation_timer >= half)
@@ -3877,8 +3878,7 @@ void MovePlayer_VEHICLEDIRECTIONAL(GameObject_s *object) {
                         desired = 35.0f;
                     }
                     desired /= 35.0f;
-                } else if (requested_speed > 0.0f && object->character_context != 0x23 &&
-                           object->character_context != 0x24) {
+                } else if (requested_speed > 0.0f && speed_context != 0x23 && speed_context != 0x24) {
                     if (api.intersects_water) {
                         f32 fraction = (api.water_height - api.collision_min.y) / api.field_0x1e0;
                         if (fraction < 0.0f)

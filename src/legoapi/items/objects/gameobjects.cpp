@@ -4553,15 +4553,16 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
                             distance = difference.x * difference.x + difference.z * difference.z;
                             if (!(object->heardistance * object->heardistance > distance))
                                 continue;
-                            const f32 dx = alert_obj->apiobj.collision_position.x - object->collision_position.x;
-                            const f32 dz = alert_obj->apiobj.collision_position.z - object->collision_position.z;
-                            if ((WORLD->api_object_sys->line_of_sight[object->field_0x289] & alert_mask) != 0 ||
-                                dx * dx + dz * dz > object->viewdistance * object->viewdistance) {
-                                object->objptr->alert_target = &alert_obj->apiobj;
-                                object->ai_awareness_mask |= alert_mask;
-                                awareness |= object->ai_awareness_mask;
-                                object->objptr->alert_target_timer = 5.0f;
+                            if ((WORLD->api_object_sys->line_of_sight[object->field_0x289] & alert_mask) == 0) {
+                                const f32 dx = alert_obj->apiobj.collision_position.x - object->collision_position.x;
+                                const f32 dz = alert_obj->apiobj.collision_position.z - object->collision_position.z;
+                                if (!(dx * dx + dz * dz > object->viewdistance * object->viewdistance))
+                                    continue;
                             }
+                            object->objptr->alert_target = &alert_obj->apiobj;
+                            object->ai_awareness_mask |= alert_mask;
+                            awareness |= object->ai_awareness_mask;
+                            object->objptr->alert_target_timer = 5.0f;
                         }
                     }
                 }

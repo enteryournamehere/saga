@@ -825,9 +825,13 @@ void DrawCables() {
             if (cable.slack > cable_slack) {
                 cable.slack = cable_slack;
             }
-        } else if (cable.total_length < tow_length) {
+        } else if (!(cable.total_length >= tow_length)) {
             f32 fraction = cable.total_length / tow_length;
-            fraction = fraction <= 1.0f ? 1.0f - fraction : 0.0f;
+            if (fraction > 1.0f) {
+                fraction = 0.0f;
+            } else {
+                fraction = 1.0f - fraction;
+            }
             cable.slack = fraction * cable_slack;
         } else {
             cable.slack = 0.0f;
@@ -835,8 +839,7 @@ void DrawCables() {
 
         f32 distance_along = 0.0f;
         if (cable.slack != 0.0f) {
-            const f32 total_length = cable.total_length;
-            const f32 density = nsegments_per_unit;
+            const f32 subdivision_scale = cable.total_length * nsegments_per_unit;
             NUVEC endpoint = cable.points[0];
             endpoint.y = y_span * 0.0f + cable.points[0].y;
             f32 ground_start = GameShadow(NULL, &endpoint, 5.0f, -1);
@@ -856,7 +859,7 @@ void DrawCables() {
                 NuVecSub(&step, &endpoint, &previous);
                 const f32 segment_length = cable.segment_lengths[segment];
                 const f32 subdivisions = static_cast<f32>(
-                    ceil(static_cast<double>(NuFdiv(segment_length, cable.total_length) * total_length * density)));
+                    ceil(static_cast<double>(NuFdiv(segment_length, cable.total_length) * subdivision_scale)));
                 const f32 step_length = NuFdiv(segment_length, subdivisions);
                 NuVecScale(&step, &step, NuFdiv(step_length, segment_length));
                 const f32 half_step = 0.5f * step_length;
@@ -877,9 +880,9 @@ void DrawCables() {
                     const i32 angle = phase <= 1.0f ? static_cast<i32>(phase * 32768.0f) : 32768;
                     local_distance += step_length;
                     const f32 end_sag = cable.slack * NU_SIN_LUT(angle);
+                    end.y -= end_sag;
                     const f32 end_fraction = NuFdiv(local_distance, cable.segment_lengths[segment]);
                     const f32 end_floor = end_fraction * ground_end + (1.0f - end_fraction) * ground_start + 0.05f;
-                    end.y -= end_sag;
                     if (end.y < end_floor) {
                         end.y = end_floor;
                     }
@@ -896,11 +899,11 @@ void DrawCables() {
         } else {
             for (i32 segment = 0; segment < cable.point_count - 1; ++segment) {
                 const f32 start_fraction = NuFdiv(distance_along, cable.total_length);
+                start = cable.points[segment];
+                start.y = start_fraction * y_span + cable.points[0].y;
                 distance_along += cable.segment_lengths[segment];
                 const f32 end_fraction = NuFdiv(distance_along, cable.total_length);
-                start = cable.points[segment];
                 end = cable.points[segment + 1];
-                start.y = y_span * start_fraction + cable.points[0].y;
                 end.y = y_span * end_fraction + cable.points[0].y;
                 if (solid_cable == 0) {
                     NuRndrLine3d(vertices, SolidMtl3D, NULL);

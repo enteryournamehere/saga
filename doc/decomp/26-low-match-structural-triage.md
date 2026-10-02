@@ -12345,3 +12345,90 @@ the full original2439-byte body restores64.0 before the merge and deliberately
 retains that limit for subsequent categories. Batch122 already documents this
 recovered behavior. A broader family-name history search is required before
 promoting an exact private-helper name whose older prose uses its public caller.
+
+### Checkpoint43 CI and isolated batches455–457
+
+Exact pushed head e334ce104b5cbfe8801b240ef32a8ec327304847 has all11
+GitHub checks COMPLETED/SUCCESS. Its +0.816624pp main-relative gain remains
+below the +2pp merge threshold; the PR is not merged.
+
+Batch455 changes only four original-backed unordered rejection predicates in
+Batarang_FindTarget: the two automatic forward tests and manual blowup screen
+X/Y tests. Distance/ranking policy, including the retained64 handoff, is
+unchanged. Its sole actual-O3 owner pair/two original reports gains16.28971515
+weighted bytes, target38.970802%→39.638687%,2242 bytes unchanged. All17
+original-backed names, known exacts and full symbol/undefined surfaces retain;
+two unbacked PC thunks remain unknown. The sole same-object qualification passes
+all18 non-target bodies,19 FDEs, full REL/storage/incoming closure and the
+explicit133-slot literal/symbol permutation. Qualification
+14afc238c12adf1125293e0d4dba17b5cceb127676d79dac0cb1060e1f418f92.
+Bounded canonical diagnostics remain pending, with no production integration.
+Captureba373a689e61bde823ddd115e4b503ef5b84e5e83aa7a6ed66d96a6c6821a07e.
+The prior Batch122 fixture's NaN oracle follows current predicates and is not
+retail-policy certification. Automatic NaN distance can independently reject
+a candidate; do not manufacture a forward-test witness with fake helpers.
+
+Batch456 restores LineToSphereIntersection's endpoint-roundtrip direction,
+ordered expanded quadratic arithmetic, two actual square-root calls and both
+ratios before nullable output publication. Its sole actual-O2 owner pair/two
+original reports gains184.9378042 weighted bytes, target42.140244%→68.750000%,
+463→711 bytes. All49 original-backed names and ten exacts retain; full symbol
+and undefined surfaces retain. The sole same-object qualification passes all51
+complete physical bodies/FDEs, full relocation/control inventories, startup,
+storage, literal and two COMDAT representations. The only target-related layout
+changes are explicitly enumerated; all50 non-target representations retain.
+Two unbacked PC thunks keep unknown absolute scores and original weights, with
+identical complete emitted representations. Qualification
+f117ad4b9dda2aacd7379c63d5a9fc984b80b343aada14906b01d329fb7b015b.
+Bounded canonical diagnostics and linked validation are recorded below.
+Capturee2b113f8a7890eceb1e5b8ce350550f39fa732eaf327096664740e0361cc0605.
+
+Batch457's complete original-backed GizTorp_Draw effect-ID/Fmod/global-scale
+candidate, including the safe captured-system fallback outside retail's valid
+global domain, loses282.40984548 weighted bytes in its sole actual-O3 owner
+pair/two original reports:46.144386%→9.844920%,745→821 bytes. It also adds
+the actual NuFmod undefined reference; that surface change is not exempted.
+No known exact is lost; both unbacked PC thunks remain unknown. The negative
+candidate is closed without variants, representation proof, runtime or
+production integration.
+Capturee248c09dc1f2a80c59a81c9c1b5d3871eed7a3d6119b30056dfdf5ae85ffee2d.
+
+The new complete read-only GenerateWaypoints audit finds no missing contract
+within initialized, allocated, bounded path storage. The retained index30
+pair→index32 final-write hazard exists in original and current code; this is
+boundary debt, not a universal safety claim or a matching proposal. Receipt
+db10fc1ede4aee86fe86384b44f36f2d27383a35bd52417a8e2d9b5b267cfe05.
+The separate complete cbFileSaveEffects audit likewise finds no supported
+repair: the defaults, page choices, overrides, backup/save/UI sequencing and
+directory restoration are represented. Neither low score justifies a new
+source-copy/register variant or a matching experiment.
+
+### Checkpoint44: line-sphere arithmetic and publication
+
+The frozen batch456 candidate passes all four GNU O2/SSE host64/i386 old/new
+ASan/UBSan diagnostics, with leak detection enabled and empty stderr. Each run
+passes24 finite target cases, five actual NuFsqrt threshold checks,192 assertions
+and three separately checked old-mechanism discrepancies. Canonical vector
+storage, nullable/shared outputs, untouched rejection sentinels, exact squared
+epsilon boundaries and adjacent discriminants are covered. The complete actual
+nufloat_android.c helper is unchanged; no fake callback or helper-call-count
+assertion substitutes for its behavior. Endpoint quantization and expanded-C
+cancellation cases are finite diagnostics, not shipped-camera asset witnesses.
+No full editor/camera, Android runtime, output/input alias, nonfinite, hardware
+libm or universal floating-environment claim is made.
+Runtime result6fd09779303ea89f56ff05f5cea8d68103ab52da21d7398eab5af8e0af40009d;
+both-ABI input catalog6d9b181619fb20e1d29e0a01d86d30d8b94742c7c62b33e32bd1a7f71e6e4cda.
+The sole candidate is integrated byte-exactly as utilities.cpp owner
+65ecf4b01a6feb766f0994128d39e3655c770880361c3eb10d83f12c5b133ef7.
+
+Android target, native and WASM builds and all five repository checks pass.
+The independent linked report reaches68.823010%: +0.003926pp over checkpoint43
+and +0.820550pp over main. Only LineToSphereIntersection changes,
+42.097560%→68.853660%, with all6293 raw exacts, original identity multiset,
+4722419-byte denominator and complete ownership summary retained.
+Raw report9fdc9fd7ee759dcd4ccc99509589d1e934ab104fc3f1b6194181da28168dc863;
+mapped report6741f5215994cb2628180790f22f755ccbc5cedd56b1b90f7bd6df582ec7e1b1.
+The initial metadata verifier stopped on a string-versus-integer size assertion;
+an additive verifier decodes the existing report's numeric size without another
+comparison, build or source variant. Both the failed verifier and partial output
+are preserved. The70.002460% merge threshold remains unmet; no merge is claimed.

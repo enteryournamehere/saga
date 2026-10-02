@@ -1255,12 +1255,8 @@ mode_selected:
         // it does NOT join the unmodified title-camera case3.
         case 6: {
             f32 *points = WORLD->portal_places[24]->positions;
-            position.x = points[0];
-            position.y = points[1];
-            position.z = points[2];
-            target.x = points[3];
-            target.y = points[4];
-            target.z = points[5];
+            memcpy(&position, points, sizeof(position));
+            memcpy(&target, points + 3, sizeof(target));
             goto customiser_camera_sway; // original0x111012
         }
 
@@ -1451,11 +1447,13 @@ mode_selected:
     }
     camera->desired_position = position;
     camera->target = target;
-    f32 dx = camera->target.x - camera->pos.x;
-    f32 dz = camera->target.z - camera->pos.z;
+    const NUVEC position_snapshot = camera->pos;
+    const NUVEC target_snapshot = camera->target;
+    f32 dx = target_snapshot.x - position_snapshot.x;
+    f32 dz = target_snapshot.z - position_snapshot.z;
     i32 pitch = pitch_override;
     if (pitch_override == -1)
-        pitch = static_cast<u16>(-NuAtan2D(camera->target.y - camera->pos.y, NuFsqrt(dx * dx + dz * dz)));
+        pitch = static_cast<u16>(-NuAtan2D(target_snapshot.y - position_snapshot.y, NuFsqrt(dx * dx + dz * dz)));
     if (camera->blend_duration > camera->blend_time && camera->blend_mode == 2)
         pitch = camera->blend_start_pitch + static_cast<i32>(RotDiff(camera->blend_start_pitch, pitch) * angle_blend);
     camera->desired_pitch = pitch;
@@ -1669,20 +1667,10 @@ void KeepOnScreen(GameObject_s *object) {
             controlled = true;
     }
     if ((static_cast<i8>(object->apiobj.flags_low) >= 0 && !controlled) || object->apiobj.field_0x287 != 0 ||
-        (object->field_0xefe & 4) == 0 || MiniCutCam != 0 || GetMenuID() != -1 || object->character_context == 0x2b) {
+        object->character_context == 0x2b || (object->field_0xefe & 4) == 0 || object->character_context == 0x47 ||
+        object->character_context == 0x0f || object->character_context == 0x1f || object->character_context == 0x46 ||
+        object->character_context == 0x51 || MiniCutCam != 0 || GetMenuID() != -1) {
         return;
-    }
-
-    switch (object->character_id_0x7a5) {
-        case 0x0f:
-        case 0x1f:
-        case 0x2b:
-        case 0x46:
-        case 0x47:
-        case 0x51:
-            return;
-        default:
-            break;
     }
 
     if (WORLD->current_level == BONUS_GUNSHIPA_LDATA && GameCam->mode == 0x0b) {
@@ -1759,13 +1747,13 @@ void KeepOnScreen(GameObject_s *object) {
                             -object->apiobj.field_0x1e0, NULL) != 0) {
             // Crossing the lower screen plane pushes toward the depth plane
             // selected by the camera pitch.
-            depth_plane = GameCam->dir.y > 0.0f ? &PlayPlane[5] : &PlayPlane[0];
+            depth_plane = !(GameCam->dir.y <= 0.0f) ? &PlayPlane[5] : &PlayPlane[0];
         } else if (OnOrInsidePlane(&object->apiobj.collision_position, &PlayPlane[3].point, &PlayPlane[3].normal, NULL,
                                    -object->apiobj.field_0x1e0, NULL) != 0) {
             // The upper screen plane uses the opposite depth response.  This
             // distinction is important: using the same plane for both sides
             // can cancel movement in the wrong world-space direction.
-            depth_plane = GameCam->dir.y > 0.0f ? &PlayPlane[0] : &PlayPlane[5];
+            depth_plane = !(GameCam->dir.y <= 0.0f) ? &PlayPlane[0] : &PlayPlane[5];
         }
 
         if (depth_plane != NULL) {

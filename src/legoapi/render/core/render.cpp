@@ -3468,25 +3468,39 @@ static void DrawWeapons(GameObject_s *object, i32 reflection, f32 weapon_scale) 
                     if ((object->apiobj.character_data->model_flags & 0x90) == 0x80) {
                         models[0] = 0xd;
                     } else {
-                        i32 color;
+                        i32 red = 0, green = 0, blue = 0, purple = 0;
                         if (object->id == id_BOB) {
-                            color = (object->field_0xefd & 2) ? 1 : 2;
+                            if (object->field_0xefd & 2)
+                                green = 1;
+                            else
+                                blue = 1;
                         } else if (AnakinGreenSabre(object)) {
-                            color = 1;
+                            green = 1;
                         } else {
-                            color = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)
-                                        ->field_0x117;
+                            const u8 color =
+                                static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)
+                                    ->field_0x117;
+                            if (color == 0)
+                                red = 1;
+                            else if (color == 1)
+                                green = 1;
+                            else if (color == 2)
+                                blue = 1;
+                            else if (color == 3)
+                                purple = 1;
                         }
-                        if (color < 4) {
+                        if (red || green || blue || purple) {
                             if (object->apiobj.field_0x27c != -1 && Cheat_IsOn(25)) {
-                                color = 0;
+                                red = 1;
+                                green = blue = purple = 0;
                             } else if (object->apiobj.field_0x27c != -1 && Player_HasPurpleForce(object)) {
-                                color = 3;
-                            } else if (color == 1 && object->id == id_GRIEVOUS && (hand == 0 || hand == 3)) {
-                                color = 2;
+                                purple = 1;
+                                red = green = blue = 0;
+                            } else if (green && object->id == id_GRIEVOUS && (hand == 0 || hand == 3)) {
+                                blue = 1;
+                                green = 0;
                             }
-                            DrawWeapon_SetSabreObjects(object, color == 0, color == 1, color == 2, color == 3, models,
-                                                       &hilt);
+                            DrawWeapon_SetSabreObjects(object, red, green, blue, purple, models, &hilt);
                             sabre = true;
                         }
                     }
@@ -3496,13 +3510,20 @@ static void DrawWeapons(GameObject_s *object, i32 reflection, f32 weapon_scale) 
                 if (object->id == id_JANGOFETT) {
                     rotation = 0xd1c8;
                 } else if (models[0] == 0x65 || models[0] == 0x67 || models[0] == 0x69 || models[0] == 0x6b) {
-                    i32 color = (models[0] - 0x65) / 2;
+                    i32 red, green, blue, purple;
                     if (object->apiobj.field_0x27c != -1 && Cheat_IsOn(25)) {
-                        color = 0;
+                        red = 1;
+                        green = blue = purple = 0;
                     } else if (object->apiobj.field_0x27c != -1 && Player_HasPurpleForce(object)) {
-                        color = 3;
+                        purple = 1;
+                        red = green = blue = 0;
+                    } else {
+                        red = models[0] == 0x65;
+                        green = models[0] == 0x67;
+                        blue = models[0] == 0x69;
+                        purple = models[0] == 0x6b;
                     }
-                    DrawWeapon_SetSabreObjects(object, color == 0, color == 1, color == 2, color == 3, models, &hilt);
+                    DrawWeapon_SetSabreObjects(object, red, green, blue, purple, models, &hilt);
                     sabre = true;
                 }
             }
@@ -3532,7 +3553,8 @@ static void DrawWeapons(GameObject_s *object, i32 reflection, f32 weapon_scale) 
                     NuMtxPreRotateX(&blade_matrix, rotation);
                 }
                 NuMtxPreScale(&blade_matrix, &scale);
-                const NUMTX saved_matrix = blade_matrix;
+                u8 saved_matrix[sizeof(NUMTX)];
+                memcpy(saved_matrix, &blade_matrix, sizeof(blade_matrix));
                 for (i32 side = 0;; ++side) {
                     for (i32 part = 0; part < 4; ++part) {
                         if (models[part] == -1 || (side && models[part] == hilt)) {
@@ -3560,10 +3582,10 @@ static void DrawWeapons(GameObject_s *object, i32 reflection, f32 weapon_scale) 
                         }
                     }
                     if (side || object->id != id_DARTHMAUL || object->apiobj.field_0x27c == -1 ||
-                        (!Cheat_IsOn(25) && !Player_HasPurpleForce(object))) {
+                        (!Cheat_IsOn(25) && (object->apiobj.field_0x27c == -1 || !Player_HasPurpleForce(object)))) {
                         break;
                     }
-                    blade_matrix = saved_matrix;
+                    memcpy(&blade_matrix, saved_matrix, sizeof(blade_matrix));
                     NUVEC reverse = {1.0f, -1.0f, 1.0f};
                     NuMtxPreScale(&blade_matrix, &reverse);
                 }

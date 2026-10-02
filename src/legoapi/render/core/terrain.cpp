@@ -5635,10 +5635,18 @@ extern "C" void NewTerrainScaleYMask(NUVEC *position, NUVEC *movement, u8 *hit_f
     TerI->inverse_object_scale = inverse_scale;
     TerI->inverse_object_scale_sq = inverse_scale_sq;
     TerI->collision_radius = collision_radius;
-    TerI->inverse_collision_radius = collision_radius == 0.0f ? 0.0f : 1.0f / collision_radius;
+    f32 inverse_collision_radius;
+    if (collision_radius == 0.0f) {
+        inverse_collision_radius = 0.0f;
+    } else {
+        inverse_collision_radius = 1.0f / collision_radius;
+    }
+    TerI->inverse_collision_radius = inverse_collision_radius;
     TerI->collision_radius_sq = collision_radius * collision_radius;
 
-    const f32 position_y = position->y + collision_radius * object_scale;
+    f32 position_y = collision_radius;
+    position_y *= object_scale;
+    position_y += position->y;
     TerI->start_position.x = TerI->position.x = position->x;
     TerI->start_position.y = TerI->position.y = position_y;
     TerI->start_position.z = TerI->position.z = position->z;
@@ -5711,8 +5719,8 @@ extern "C" void NewTerrainScaleYMask(NUVEC *position, NUVEC *movement, u8 *hit_f
                             TerI->movement_normal.z * TerI->surface->normals[0].z;
                 }
 
-                TERRAIN_GROUP *group = &CurTerr->groups[group_index];
                 const i32 hit_class = hit_type & TERRAIN_HIT_TYPE_CLASS_MASK;
+                TERRAIN_GROUP *group = &CurTerr->groups[group_index];
                 f32 wall_limit;
                 if (group->chunk_type == TERRAIN_CHUNK_GROUP_SECONDARY) {
                     wall_limit = hit_class > TERRAIN_HIT_TYPE_FACE && 0.95f > slope ? 0.98f : 0.707f;

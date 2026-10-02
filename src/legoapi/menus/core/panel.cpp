@@ -674,19 +674,21 @@ void SpeederChase_DrawMeleeTargets(i16 *character_ids, char *dimmed, i32 count) 
     if (SuperStory == 0)
         angle = (static_cast<i32>(minikittime * 32768.0f + 16384.0f) >> 1) & 0x7fff;
     i32 left_count = (count + 1) / 2;
+    const f32 left_count_float = static_cast<f32>(left_count);
     f32 left_x;
     f32 right_x;
     if ((count & 1) != 0) {
         f32 spread = 1.0f - (1.0f + NuTrigTable[angle]) * 0.5f;
-        left_x = -((0.475f - left_count * 0.05f) * spread);
-        right_x = -0.075f + (0.325f - (left_count - 1.0f) * 0.05f) * spread;
+        left_x = 0.0f - ((0.47500002384185791015625f - left_count_float * 0.05f) * spread);
+        right_x = 0.15f + (0.325f - (left_count_float - 1.0f) * 0.05f) * spread;
     } else {
         f32 spread = 1.0f - (1.0f + NuTrigTable[angle]) * 0.5f;
-        left_x = -0.075f - (0.4f - left_count * 0.05f) * spread;
-        right_x = 0.075f + (0.4f - left_count * 0.05f) * spread;
+        left_x = -0.075f - (0.4f - left_count_float * 0.05f) * spread;
+        right_x = 0.075f + (0.4f - left_count_float * 0.05f) * spread;
     }
 
-    f32 alpha = (1.0f - CurrentHintAlpha()) * base_alpha;
+    f32 alpha = base_alpha;
+    alpha *= 1.0f - CurrentHintAlpha();
     for (i32 i = 0; i < count; ++i) {
         f32 icon_alpha = (dimmed[i] != 0 ? 0.25f : 1.0f) * alpha;
         if (i < left_count) {
@@ -784,36 +786,38 @@ void DrawMeleeTargetsNumber(i16 *targets, u8 *counts, i32 count, u8 reset, nuhsp
             char text[16];
             sprintf(text, "%i", meleeTarg_localCount[i]);
 
-            if (counts[i] != meleeTarg_localCount[i] && meleeTarg_flashTime[i] == 0.0f)
-                meleeTarg_flashTime[i] = 0.01f;
-            meleeTarg_flashTime[i] += FRAMETIME;
+            i32 red = 255;
+            i32 green = 0;
+            if (counts[i] != meleeTarg_localCount[i] || meleeTarg_flashTime[i] != 0.0f) {
+                if (meleeTarg_flashTime[i] == 0.0f)
+                    meleeTarg_flashTime[i] = 0.01f;
+                meleeTarg_flashTime[i] += FRAMETIME;
 
-            i32 red;
-            i32 green;
-            if (meleeTarg_flashTime[i] < 0.375f) {
-                const f32 phase = meleeTarg_flashTime[i] / 0.375f * 255.0f;
-                green = static_cast<i32>(phase);
-                red = static_cast<i32>(255.0f - phase);
-                meleeTarg_scaleSize[i] = SeekLinearF(meleeTarg_scaleSize[i], 0.0f, 0.1f);
-            } else if (meleeTarg_flashTime[i] < 0.625f) {
-                meleeTarg_localCount[i] = counts[i];
-                red = 0;
-                green = 255;
-            } else if (meleeTarg_flashTime[i] < 1.0f) {
-                const f32 phase = (meleeTarg_flashTime[i] - 0.5f) * 2.0f * 255.0f;
-                red = static_cast<i32>(phase);
-                green = static_cast<i32>(255.0f - phase);
-                meleeTarg_scaleSize[i] = SeekLinearF(meleeTarg_scaleSize[i], 0.5f, 0.1f);
-            } else {
-                meleeTarg_flashTime[i] = 0.0f;
-                meleeTarg_scaleSize[i] = SeekLinearF(meleeTarg_scaleSize[i], 0.5f, 0.1f);
-                red = 255;
-                green = 0;
+                if (meleeTarg_flashTime[i] < 0.375f) {
+                    const f32 phase = meleeTarg_flashTime[i] / 0.375f * 255.0f;
+                    green = static_cast<i32>(phase);
+                    red = static_cast<i32>(255.0f - phase);
+                    meleeTarg_scaleSize[i] = SeekLinearF(meleeTarg_scaleSize[i], 0.0f, 0.1f);
+                } else if (meleeTarg_flashTime[i] < 0.625f) {
+                    meleeTarg_localCount[i] = counts[i];
+                    red = 0;
+                    green = 255;
+                } else if (meleeTarg_flashTime[i] < 1.0f) {
+                    const f32 phase = (meleeTarg_flashTime[i] - 0.5f) * 2.0f * 255.0f;
+                    red = static_cast<i32>(phase);
+                    green = static_cast<i32>(255.0f - phase);
+                    meleeTarg_scaleSize[i] = SeekLinearF(meleeTarg_scaleSize[i], 0.5f, 0.1f);
+                } else {
+                    meleeTarg_flashTime[i] = 0.0f;
+                    meleeTarg_scaleSize[i] = SeekLinearF(meleeTarg_scaleSize[i], 0.5f, 0.1f);
+                    red = 255;
+                    green = 0;
+                }
             }
 
             if (meleeTarg_localCount[i] > 0)
                 Text3D(text, x, 0.492600023746490478515625f, 0.0f, meleeTarg_scaleSize[i], meleeTarg_scaleSize[i],
-                       meleeTarg_scaleSize[i], 0, red, green, 0);
+                       meleeTarg_scaleSize[i], 0, red & 255, green & 255, 0);
 
             const f32 alpha_target =
                 static_cast<f32>(meleeTarg_localCount[i]) / static_cast<f32>(meleeTarg_maxCount[i]) * 2.0f;

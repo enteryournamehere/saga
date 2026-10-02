@@ -795,35 +795,40 @@ extern "C" {
         Music.queued_track = static_cast<i16>(track);
         Music.transition_frames = 0;
 
-        const i32 stream = 1 - Music.primary_stream;
-        Music.stream_status_delay[stream] = 6;
+        Music.stream_status_delay[1 - Music.primary_stream] = 6;
         NuSound3CancelCheckStereo();
         NuSound3PauseStereoStream(Music.primary_stream);
 
-        const i32 volume = static_cast<i32>(static_cast<f32>(g_music[track].index) * CutVolume);
-        NuSound3SetStereoStreamVolume(Music.primary_stream, volume);
+        NuSound3SetStereoStreamVolume(Music.primary_stream,
+                                      static_cast<i32>(static_cast<f32>(g_music[track].index) * CutVolume));
 
         i32 started = 0;
         if (Music.requested_track != track || Music.pause_requested ||
-            NuSound3GetStereoStreamStatus(stream) == NUSOUND_STEREO_STREAM_FINISHED) {
-            PlayAMusic(stream, track, volume, 0);
+            NuSound3GetStereoStreamStatus(1 - Music.primary_stream) == NUSOUND_STEREO_STREAM_FINISHED) {
+            PlayAMusic(1 - Music.primary_stream, track,
+                       static_cast<i32>(static_cast<f32>(g_music[track].index) * CutVolume), 0);
             started = 1;
         } else {
-            NuSound3ResumeStereoStream(stream);
-            NuSound3SetStereoStreamVolume(stream, volume);
+            NuSound3ResumeStereoStream(1 - Music.primary_stream);
+            NuSound3SetStereoStreamVolume(1 - Music.primary_stream,
+                                          static_cast<i32>(static_cast<f32>(g_music[track].index) * CutVolume));
         }
 
-        NuGCutSetCutAudioStream(stream);
+        NuGCutSetCutAudioStream(1 - Music.primary_stream);
         Music.requested_track = -1;
         Music.pause_requested = false;
         Music.transition = 1.0f;
-        if (state == MUSIC_PLAYBACK_DUAL_STREAM_PENDING) {
-            Music.state = MUSIC_PLAYBACK_DUAL_STREAM_PENDING;
-        } else if (state == 12) {
-            Music.state = static_cast<MusicPlaybackState>(12);
-        } else {
-            Music.state =
-                static_cast<u16>(Music.state) < 1 ? static_cast<MusicPlaybackState>(12) : MUSIC_PLAYBACK_DUAL_STREAM;
+        switch (state) {
+            case MUSIC_PLAYBACK_DUAL_STREAM_PENDING:
+                Music.state = MUSIC_PLAYBACK_DUAL_STREAM_PENDING;
+                break;
+            case 12:
+                Music.state = static_cast<MusicPlaybackState>(12);
+                break;
+            default:
+                Music.state = static_cast<u16>(Music.state) < 1 ? static_cast<MusicPlaybackState>(12)
+                                                                : MUSIC_PLAYBACK_DUAL_STREAM;
+                break;
         }
         Music.track_data = context;
         return started;
@@ -850,14 +855,15 @@ extern "C" {
 
         i32 requested;
         i32 stream;
+        i16 primary_stream;
         if (Music.state == MUSIC_PLAYBACK_STOPPED) {
             requested = Music.requested_track;
-            stream = Music.primary_stream;
+            primary_stream = Music.primary_stream;
+            stream = primary_stream;
             Music.stream_status_delay[stream] = 0;
-            if (requested == track) {
-                Music.primary_stream = 1 - Music.primary_stream;
-                stream = Music.primary_stream;
-            }
+            if (requested == track)
+                goto flip_primary_stream;
+            goto start_primary_music;
         } else if (mode != 1 && NUSOUND_STREAM_3 != -1) {
             requested = Music.requested_track;
             Music.primary_stream = 1 - Music.primary_stream;
@@ -875,14 +881,17 @@ extern "C" {
             goto clear_music_flags;
         } else {
             requested = Music.requested_track;
-            stream = Music.primary_stream;
+            primary_stream = Music.primary_stream;
+            stream = primary_stream;
             Music.stream_status_delay[stream] = 0;
-            if (requested == track && Music.state != MUSIC_PLAYBACK_DUAL_STREAM) {
-                Music.primary_stream = 1 - Music.primary_stream;
-                stream = Music.primary_stream;
-            }
+            if (requested != track || Music.state == MUSIC_PLAYBACK_DUAL_STREAM)
+                goto start_primary_music;
         }
 
+    flip_primary_stream:
+        Music.primary_stream = 1 - primary_stream;
+        stream = Music.primary_stream;
+    start_primary_music:
         NuSound3StopStereoStream(1 - stream);
         if (Music.requested_track == track && !Music.pause_requested &&
             NuSound3GetStereoStreamStatus(Music.primary_stream) != NUSOUND_STEREO_STREAM_FINISHED) {

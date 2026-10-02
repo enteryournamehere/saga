@@ -5730,13 +5730,19 @@ extern "C" void NewTerrainScaleYMask(NUVEC *position, NUVEC *movement, u8 *hit_f
                             TerI->movement_normal.z * TerI->surface->normals[0].z;
                 }
 
-                const i32 hit_class = hit_type & TERRAIN_HIT_TYPE_CLASS_MASK;
+                const u8 hit_class = hit_type & TERRAIN_HIT_TYPE_CLASS_MASK;
                 TERRAIN_GROUP *group = &CurTerr->groups[group_index];
                 f32 wall_limit;
                 if (group->chunk_type == TERRAIN_CHUNK_GROUP_SECONDARY) {
-                    wall_limit = hit_class > TERRAIN_HIT_TYPE_FACE && 0.95f > slope ? 0.98f : 0.707f;
+                    wall_limit = 0.707f;
+                    if (hit_class > TERRAIN_HIT_TYPE_FACE && 0.95f > slope) {
+                        wall_limit = 0.98f;
+                    }
                 } else {
-                    wall_limit = TerI->shape_adjusted != 0 ? 1.1f : -1.1f;
+                    wall_limit = 1.1f;
+                    if (TerI->shape_adjusted == 0) {
+                        wall_limit = -1.1f;
+                    }
                 }
 
                 if (wallover != 0.0f) {

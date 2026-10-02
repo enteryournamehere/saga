@@ -3660,10 +3660,14 @@ void MovePlayer_VEHICLEDIRECTIONAL(GameObject_s *object) {
     if ((object->field_0xe20 & 0x20) != 0 && object->character_context != 0x23 && object->character_context != 0x24) {
         MoveInactiveVehicle(object, 0, &other);
         if (other != NULL) {
-            api.field_0x276 = api.facing_angle = api.movement_facing_angle = other->apiobj.field_0x276;
+            api.field_0x276 = other->apiobj.field_0x276;
+            api.movement_facing_angle = api.field_0x276;
+            api.facing_angle = api.movement_facing_angle;
             api.velocity = other->apiobj.velocity;
             object->field_0xdc8 = other->field_0xdc8;
-            object->movement_lean_angle = object->secondary_lean_angle = object->tertiary_lean_angle = 0;
+            object->movement_lean_angle = 0;
+            object->tertiary_lean_angle = 0;
+            object->secondary_lean_angle = 0;
         }
         if (WORLD->current_level == PLATFORM_LDATA)
             return;
@@ -3678,7 +3682,9 @@ void MovePlayer_VEHICLEDIRECTIONAL(GameObject_s *object) {
             object->field_0xddc -= FRAMETIME;
         f32 turn_multiplier = 0.0f;
         if ((object->field_0xefd & 4) != 0) {
-            api.facing_angle = api.movement_facing_angle = api.field_0x276 = input_yaw;
+            api.movement_facing_angle = input_yaw;
+            api.facing_angle = api.movement_facing_angle;
+            api.field_0x276 = api.facing_angle;
         } else {
             f32 heading_seek_rate = 10.0f;
             if (CarWashHack == object) {
@@ -3715,7 +3721,7 @@ void MovePlayer_VEHICLEDIRECTIONAL(GameObject_s *object) {
                                       ((GAMECHARACTERDATA_s *)api.character_data->field11_0x24)->turn_rate) *
                                          ratio;
                 if (object->in_narrow_socket) {
-                    rate *= 1.0f - 0.25f * object->field_0xdc8;
+                    rate *= -0.25f * object->field_0xdc8 + 1.0f;
                     if (turn_multiplier != 0.0f &&
                         !((api.flags_low & 0x80) != 0 && (PODSPRINT_ADATA != NULL && WORLD->area == PODSPRINT_ADATA)))
                         rate *= turn_multiplier;
@@ -3723,7 +3729,7 @@ void MovePlayer_VEHICLEDIRECTIONAL(GameObject_s *object) {
                 api.movement_facing_angle = TurnRot(api.movement_facing_angle, input_yaw, (i32)(rate * 65536.0f), NULL);
                 if (object->in_narrow_socket) {
                     i32 delta = RotDiff(narrow_yaw, api.movement_facing_angle);
-                    i32 degrees = (i32)(60.0f - 30.0f * object->field_0xdc8);
+                    i32 degrees = static_cast<i32>(-30.0f * object->field_0xdc8 + 60.0f);
                     if (degrees < 0)
                         degrees = 0;
                     if ((api.flags_low & 0x80) != 0 && (PODSPRINT_ADATA != NULL && WORLD->area == PODSPRINT_ADATA))

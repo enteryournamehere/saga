@@ -1037,12 +1037,17 @@ giz_freeplay:
             savedFrametime = FRAMETIME;
             pastFrameTimes[frameCount % 5] = FRAMETIME;
 
+            longestFrameIndex = -1;
+            shortestFrameIndex = -1;
             frameTimeAccumulator = -1.0f;
-            longestFrameIndex = frameTimeAccumulator < pastFrameTimes[0] ? 0 : -1;
-            frameTimeAccumulator = MAX(pastFrameTimes[0], frameTimeAccumulator);
-
             shortestFrameTime = 999.0f;
-            shortestFrameIndex = pastFrameTimes[0] < shortestFrameTime ? 0 : -1;
+            if (frameTimeAccumulator < pastFrameTimes[0]) {
+                longestFrameIndex = 0;
+            }
+            if (pastFrameTimes[0] < shortestFrameTime) {
+                shortestFrameIndex = 0;
+            }
+            frameTimeAccumulator = MAX(pastFrameTimes[0], frameTimeAccumulator);
             shortestFrameTime = MIN(pastFrameTimes[0], shortestFrameTime);
 
             if (frameTimeAccumulator < pastFrameTimes[1]) {

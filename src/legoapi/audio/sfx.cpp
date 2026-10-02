@@ -1227,24 +1227,36 @@ void PlayLandSfx(GameObject_s *object, i32 type, i32) {
             return;
         }
         sfx = GameAudio->sfx_ids[0xb];
-    } else if (type >= 2 && type <= 4) {
-        sfx = GameAudio->sfx_ids[type + 0xa];
+    } else if (type == 2) {
+        sfx = GameAudio->sfx_ids[0xc];
+    } else if (type == 3) {
+        sfx = GameAudio->sfx_ids[0xd];
+    } else if (type == 4) {
+        sfx = GameAudio->sfx_ids[0xe];
     } else {
-        if (object->apiobj.is_underwater != 0) {
+        if (object->apiobj.is_underwater != 0 || object->apiobj.intersects_water != 0) {
             return;
         }
-        const bool alternate = (WorldInfo_CurrentlyActive()->current_level->flags & 0x1000) != 0;
-        if ((object->apiobj.character_data->model_flags & 0x10) != 0) {
-            sfx = GameAudio->sfx_ids[alternate ? 10 : 9];
-        } else {
+        const i32 alternate = WorldInfo_CurrentlyActive()->current_level->flags & 0x1000;
+        if ((object->apiobj.character_data->model_flags & 0x10) == 0) {
             if (type != 0) {
                 return;
             }
-            sfx = GameAudio->sfx_ids[alternate ? 8 : 7];
+            if (alternate != 0) {
+                sfx = GameAudio->sfx_ids[8];
+            } else {
+                sfx = GameAudio->sfx_ids[7];
+            }
+        } else {
+            if (alternate != 0) {
+                sfx = GameAudio->sfx_ids[10];
+            } else {
+                sfx = GameAudio->sfx_ids[9];
+            }
         }
     }
     if (sfx != -1) {
-        if (static_cast<i8>(object->apiobj.flags_high) < 0 || (object->field_0xefb & 8) != 0) {
+        if (static_cast<i8>(object->apiobj.flags_low) < 0 || (object->field_0xefb & 8) != 0) {
             GameAudio_PlaySfxById(sfx, &object->apiobj.lower_position, 0, 1);
         } else {
             PlaySfxByIdAndSetVolume(sfx, &object->apiobj.lower_position, 0.5f);

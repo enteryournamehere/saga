@@ -2312,119 +2312,135 @@ void DrawStatusMiniKit(float x, float y, float z, float built_scale, float new_s
         }
     }
 
-    if (packet->minikit_max == 0 || WORLD->minikit.field_0x8 == 0 || count <= 0)
-        return;
-
-    i32 i = 0;
-    do {
-        HUBMINIKITPIECE_s &piece = pieces[i];
-        NUMTX_ALIGNED16 matrix = piece.matrix;
-        if (i < currentminikit) {
-            NuMtxScale(&matrix, &built_size);
-        } else {
-            NuMtxScale(&matrix, &new_size);
-            i32 piece_angle = 0x2000;
-            if (i == currentminikit) {
-                const f32 phase = slideseek * 16384.0f + 49152.0f + 16384.0f;
-                piece_angle = (static_cast<i32>(phase) >> 1) & 0x7fff;
-            }
-            const HUBMINIKITPIECE_s *animated_pieces = static_cast<HUBMINIKITPIECE_s *>(WORLD->minikit.field_0x4);
-            const HUBMINIKITPIECE_s &animated_piece = animated_pieces[i];
-            if (animated_piece.direction <= 5) {
-                const f32 oscillation = NuTrigTable[piece_angle];
-                switch (animated_piece.direction) {
-                    case 0:
-                        matrix.m30 -= (static_cast<f32>(animated_piece.direction_index) * 0.025f + 0.25f) * oscillation;
-                        break;
-                    case 1:
-                        matrix.m30 += (static_cast<f32>(animated_piece.direction_index) * 0.025f + 0.25f) * oscillation;
-                        break;
-                    case 2:
-                        matrix.m31 -= (static_cast<f32>(animated_piece.direction_index) * 0.025f + 0.25f) * oscillation;
-                        break;
-                    case 3:
-                        matrix.m31 += (static_cast<f32>(animated_piece.direction_index) * 0.025f + 0.25f) * oscillation;
-                        break;
-                    case 4:
-                        matrix.m32 += (static_cast<f32>(animated_piece.direction_index) * 0.025f + 0.25f) * oscillation;
-                        break;
-                    case 5:
-                        matrix.m32 -= (static_cast<f32>(animated_piece.direction_index) * 0.025f + 0.25f) * oscillation;
-                        break;
+    if (packet->minikit_max != 0 && WORLD->minikit.field_0x8 != 0 && count > 0) {
+        i32 i = 0;
+        do {
+            HUBMINIKITPIECE_s &piece = pieces[i];
+            NUMTX_ALIGNED16 matrix = piece.matrix;
+            if (i >= currentminikit) {
+                NuMtxScale(&matrix, &new_size);
+                i32 piece_angle = 0x2000;
+                if (i == currentminikit) {
+                    const f32 phase = slideseek * 16384.0f + 49152.0f + 16384.0f;
+                    piece_angle = (static_cast<i32>(phase) >> 1) & 0x7fff;
                 }
+                const f32 oscillation = NuTrigTable[piece_angle];
+                const HUBMINIKITPIECE_s *animated_pieces = static_cast<HUBMINIKITPIECE_s *>(WORLD->minikit.field_0x4);
+                const HUBMINIKITPIECE_s &animated_piece = animated_pieces[i];
+                if (animated_piece.direction <= 5) {
+                    switch (animated_piece.direction) {
+                        case 0:
+                            matrix.m30 -=
+                                (static_cast<f32>(static_cast<i32>(animated_piece.direction_index)) * 0.025f + 0.25f) *
+                                oscillation;
+                            break;
+                        case 1:
+                            matrix.m30 +=
+                                (static_cast<f32>(static_cast<i32>(animated_piece.direction_index)) * 0.025f + 0.25f) *
+                                oscillation;
+                            break;
+                        case 2:
+                            matrix.m31 -=
+                                (static_cast<f32>(static_cast<i32>(animated_piece.direction_index)) * 0.025f + 0.25f) *
+                                oscillation;
+                            break;
+                        case 3:
+                            matrix.m31 +=
+                                (static_cast<f32>(static_cast<i32>(animated_piece.direction_index)) * 0.025f + 0.25f) *
+                                oscillation;
+                            break;
+                        case 4:
+                            matrix.m32 +=
+                                (static_cast<f32>(static_cast<i32>(animated_piece.direction_index)) * 0.025f + 0.25f) *
+                                oscillation;
+                            break;
+                        case 5:
+                            matrix.m32 -=
+                                (static_cast<f32>(static_cast<i32>(animated_piece.direction_index)) * 0.025f + 0.25f) *
+                                oscillation;
+                            break;
+                    }
+                }
+            } else {
+                NuMtxScale(&matrix, &built_size);
             }
-        }
-        if (i <= currentminikit) {
-            matrix.m30 += offset.x;
-            matrix.m31 += offset.y;
-            matrix.m32 += offset.z;
-        }
+            if (i <= currentminikit) {
+                matrix.m30 += offset.x;
+                matrix.m31 += offset.y;
+                matrix.m32 += offset.z;
+            }
 
-        const u16 rotation_y =
-            static_cast<u16>(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 2.0f) * 0.5f * 65536.0f));
-        const f32 cy = NU_COS_LUT(rotation_y);
-        const f32 sy = NU_SIN_LUT(rotation_y);
-#define STATUS_MINIKIT_ROTATE_Y(row)                                                                                   \
-    do {                                                                                                               \
-        const f32 first = matrix.m##row##0;                                                                            \
-        matrix.m##row##0 = first * cy + matrix.m##row##2 * sy;                                                         \
-        matrix.m##row##2 = matrix.m##row##2 * cy - first * sy;                                                         \
-    } while (0)
-        STATUS_MINIKIT_ROTATE_Y(0);
-        STATUS_MINIKIT_ROTATE_Y(1);
-        STATUS_MINIKIT_ROTATE_Y(2);
-        STATUS_MINIKIT_ROTATE_Y(3);
-#undef STATUS_MINIKIT_ROTATE_Y
+            const NUANG rotation_y =
+                static_cast<u16>(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 2.0f) * 0.5f * 65536.0f));
+            const f32 y0 = matrix.m00;
+            const f32 y1 = matrix.m10;
+            const f32 y2 = matrix.m20;
+            const f32 y3 = matrix.m30;
+            const f32 cy = NU_COS_LUT(rotation_y);
+            const f32 sy = NU_SIN_LUT(rotation_y);
+            matrix.m00 = y0 * cy + matrix.m02 * sy;
+            matrix.m02 = matrix.m02 * cy - y0 * sy;
+            matrix.m10 = y1 * cy + matrix.m12 * sy;
+            matrix.m12 = matrix.m12 * cy - y1 * sy;
+            matrix.m20 = y2 * cy + matrix.m22 * sy;
+            matrix.m22 = matrix.m22 * cy - y2 * sy;
+            matrix.m30 = y3 * cy + matrix.m32 * sy;
+            matrix.m32 = matrix.m32 * cy - y3 * sy;
 
-        const u16 z_phase =
-            static_cast<u16>(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 2.24f) / 2.24f * 65536.0f));
-        const u16 rotation_z = static_cast<u16>(static_cast<i32>(2730.0f * NU_SIN_LUT(z_phase)));
-        const f32 cz = NU_COS_LUT(rotation_z);
-        const f32 sz = NU_SIN_LUT(rotation_z);
-#define STATUS_MINIKIT_ROTATE_Z(row)                                                                                   \
-    do {                                                                                                               \
-        const f32 first = matrix.m##row##0;                                                                            \
-        matrix.m##row##0 = first * cz - matrix.m##row##1 * sz;                                                         \
-        matrix.m##row##1 = first * sz + matrix.m##row##1 * cz;                                                         \
-    } while (0)
-        STATUS_MINIKIT_ROTATE_Z(0);
-        STATUS_MINIKIT_ROTATE_Z(1);
-        STATUS_MINIKIT_ROTATE_Z(2);
-        STATUS_MINIKIT_ROTATE_Z(3);
-#undef STATUS_MINIKIT_ROTATE_Z
+            const u16 z_phase =
+                static_cast<u16>(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 2.24f) / 2.24f * 65536.0f));
+            const NUANG rotation_z = static_cast<u16>(static_cast<i32>(2730.0f * NU_SIN_LUT(z_phase)));
+            const f32 z0 = matrix.m00;
+            const f32 z1 = matrix.m10;
+            const f32 z2 = matrix.m20;
+            const f32 z3 = matrix.m30;
+            const f32 cz = NU_COS_LUT(rotation_z);
+            const f32 sz = NU_SIN_LUT(rotation_z);
+            matrix.m00 = z0 * cz - matrix.m01 * sz;
+            matrix.m01 = z0 * sz + matrix.m01 * cz;
+            matrix.m10 = z1 * cz - matrix.m11 * sz;
+            matrix.m11 = z1 * sz + matrix.m11 * cz;
+            matrix.m20 = z2 * cz - matrix.m21 * sz;
+            matrix.m21 = z2 * sz + matrix.m21 * cz;
+            matrix.m30 = z3 * cz - matrix.m31 * sz;
+            matrix.m31 = z3 * sz + matrix.m31 * cz;
 
-        const u16 x_phase =
-            static_cast<u16>(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 1.87f) / 1.87f * 65536.0f));
-        const u16 rotation_x = static_cast<u16>(static_cast<i32>(2730.0f * NU_SIN_LUT(x_phase) - 5461.0f));
-        const f32 cx = NU_COS_LUT(rotation_x);
-        const f32 sx = NU_SIN_LUT(rotation_x);
-#define STATUS_MINIKIT_ROTATE_X(row)                                                                                   \
-    do {                                                                                                               \
-        const f32 first = matrix.m##row##1;                                                                            \
-        matrix.m##row##1 = first * cx - matrix.m##row##2 * sx;                                                         \
-        matrix.m##row##2 = first * sx + matrix.m##row##2 * cx;                                                         \
-    } while (0)
-        STATUS_MINIKIT_ROTATE_X(0);
-        STATUS_MINIKIT_ROTATE_X(1);
-        STATUS_MINIKIT_ROTATE_X(2);
-        STATUS_MINIKIT_ROTATE_X(3);
-#undef STATUS_MINIKIT_ROTATE_X
+            const u16 x_phase =
+                static_cast<u16>(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 1.87f) / 1.87f * 65536.0f));
+            const NUANG rotation_x = static_cast<u16>(static_cast<i32>(2730.0f * NU_SIN_LUT(x_phase) - 5461.0f));
+            const f32 x0 = matrix.m01;
+            const f32 x1 = matrix.m11;
+            const f32 x2 = matrix.m21;
+            const f32 x3 = matrix.m31;
+            const f32 cx = NU_COS_LUT(rotation_x);
+            const f32 sx = NU_SIN_LUT(rotation_x);
+            matrix.m01 = x0 * cx - matrix.m02 * sx;
+            matrix.m02 = x0 * sx + matrix.m02 * cx;
+            matrix.m11 = x1 * cx - matrix.m12 * sx;
+            matrix.m12 = x1 * sx + matrix.m12 * cx;
+            matrix.m21 = x2 * cx - matrix.m22 * sx;
+            matrix.m22 = x2 * sx + matrix.m22 * cx;
+            matrix.m31 = x3 * cx - matrix.m32 * sx;
+            matrix.m32 = x3 * sx + matrix.m32 * cx;
 
-        matrix.m30 += x * PANEL3DMULX;
-        matrix.m31 += y * PANEL3DMULY;
-        matrix.m32 += z;
+            matrix.m30 += x * PANEL3DMULX;
+            matrix.m31 += y * PANEL3DMULY;
+            matrix.m32 += z;
 
-        if (i < 10) {
-            KitPart[i].matrix = matrix;
-            KitPart[i].special = &static_cast<HUBMINIKITPIECE_s *>(WORLD->minikit.field_0x4)[i].special;
-            KitPart[i].enabled = 1;
-        }
-        if (WORLD->lev_objs[206].active != 0)
-            DrawPanel3DObjectMtxNoAlpha(&static_cast<HUBMINIKITPIECE_s *>(WORLD->minikit.field_0x4)[i].special,
-                                        &matrix);
-        ++i;
-        pieces = static_cast<HUBMINIKITPIECE_s *>(WORLD->minikit.field_0x4);
-    } while (i < packet->minikit_max && i < WORLD->minikit.field_0x8 && i != count);
+            if (i < 10) {
+                KitPart[i].matrix = matrix;
+                KitPart[i].special = &static_cast<HUBMINIKITPIECE_s *>(WORLD->minikit.field_0x4)[i].special;
+                KitPart[i].enabled = 1;
+            }
+            if (WORLD->lev_objs[206].active != 0)
+                DrawPanel3DObjectMtxNoAlpha(&static_cast<HUBMINIKITPIECE_s *>(WORLD->minikit.field_0x4)[i].special,
+                                            &matrix);
+            ++i;
+            if (i >= packet->minikit_max || i >= WORLD->minikit.field_0x8 || i == count)
+                break;
+            pieces = static_cast<HUBMINIKITPIECE_s *>(WORLD->minikit.field_0x4);
+        } while (true);
+    }
 }
 
 extern i16 tUNKNOWN, tPOWERBRICK, tLOCKED, tGOLDBRICK;

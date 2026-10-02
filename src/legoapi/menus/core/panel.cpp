@@ -709,7 +709,7 @@ void DrawMeleeTargetsRows(i16 *targets, char *, f32 *values, i32 count) {
             ++row_counts[row];
     }
 
-    f32 x = (row_counts[0] - 1) * 0.12f * 0.5f;
+    f32 x = (row_counts[0] - 1) * 0.12000000476837158203125f * 0.5f;
     x = -x;
     f32 y = 0.615f;
     row = 0;
@@ -717,17 +717,17 @@ void DrawMeleeTargetsRows(i16 *targets, char *, f32 *values, i32 count) {
         const i32 target = targets[i];
         if (target != -1) {
             DrawCharIcon(target, x, y, 0.0f, 0.128f, 0xa7, values[i], values[i], 1, NULL);
-            x += 0.12f;
+            x += 0.12000000476837158203125f;
             continue;
         }
 
         const i32 previous_row = row++;
         y -= 0.14f;
-        const f32 width = row_counts[row] * 0.12f * 0.5f;
+        const f32 width = row_counts[row] * 0.12000000476837158203125f * 0.5f;
         if (((row_counts[row] - row_counts[previous_row] % 2) + row) & 1)
             x = -width;
         else
-            x = 0.06f - width;
+            x = 0.060000002384185791015625f - width;
     }
 }
 

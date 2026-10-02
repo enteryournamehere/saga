@@ -8086,7 +8086,7 @@ void UpdateGameObjects(WORLDINFO_s *world) {
                 SeekLinearF(object->interaction_arrow_blend, target, FRAMETIME + FRAMETIME);
             if (object->apiobj.model_draw_result == 0)
                 continue;
-            if (i >= lighting_start)
+            if (i >= lighting_start && i < HIGHGAMEOBJECT)
                 LightGameObject(object, world->rtl_set);
             if (object->interaction_arrow_blend > 0.0f) {
                 GAMECHARACTERDATA *data = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);

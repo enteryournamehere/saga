@@ -3290,17 +3290,6 @@ void DrawCross(nuvec_s *centre, float radius, numtl_s *material, i32 colour) {
 f32 SwipeDecalRenderer_MaxWidth = 0.6f;
 f32 SwipeDecalRenderer_MinWidth = 0.2f;
 
-static inline void SwipePrimUV(f32 u, f32 v) {
-    PrimVertexRaw *vertex = static_cast<PrimVertexRaw *>(g_NuPrim_StreamBufferPtr->void_ptr);
-    if (!g_NuPrim_NeedsHalfUVs) {
-        vertex->float_uv[0] = u;
-        vertex->float_uv[1] = v;
-    } else {
-        vertex->half_uv[0] = NuRndrFloatToHalf(u);
-        vertex->half_uv[1] = NuRndrFloatToHalf(v);
-    }
-}
-
 void SwipeDecalRenderer::Process(float frame_time) {
     width.Process(frame_time);
     alpha.Process(frame_time);
@@ -3310,6 +3299,18 @@ void SwipeDecalRenderer::Process(float frame_time) {
         alpha.delay = 0.2f;
     }
 }
+
+#define SWIPE_PRIM_UV(U, V)                                                                                            \
+    do {                                                                                                               \
+        PrimVertexRaw *vertex = static_cast<PrimVertexRaw *>(g_NuPrim_StreamBufferPtr->void_ptr);                      \
+        if (!g_NuPrim_NeedsHalfUVs) {                                                                                  \
+            vertex->float_uv[0] = (U);                                                                                 \
+            vertex->float_uv[1] = (V);                                                                                 \
+        } else {                                                                                                       \
+            vertex->half_uv[0] = NuRndrFloatToHalf(U);                                                                 \
+            vertex->half_uv[1] = NuRndrFloatToHalf(V);                                                                 \
+        }                                                                                                              \
+    } while (false)
 
 void SwipeDecalRenderer::Render() {
     NUVEC vertices[4] = {
@@ -3339,19 +3340,21 @@ void SwipeDecalRenderer::Render() {
     }
 
     NuRndrPrimSetColour(colour);
-    SwipePrimUV(0.0f, 0.0f);
+    SWIPE_PRIM_UV(0.0f, 0.0f);
     NuPrim2DAddXYZ(static_cast<f32>(PS2_VREZ_W) * vertices[0].x, static_cast<f32>(PS2_VREZ_H) * vertices[0].y, 0.0f);
     NuRndrPrimSetColour(colour);
-    SwipePrimUV(1.0f, 0.0f);
+    SWIPE_PRIM_UV(1.0f, 0.0f);
     NuPrim2DAddXYZ(static_cast<f32>(PS2_VREZ_W) * vertices[1].x, static_cast<f32>(PS2_VREZ_H) * vertices[1].y, 0.0f);
     NuRndrPrimSetColour(colour);
-    SwipePrimUV(0.0f, uv_height);
+    SWIPE_PRIM_UV(0.0f, uv_height);
     NuPrim2DAddXYZ(static_cast<f32>(PS2_VREZ_W) * vertices[2].x, static_cast<f32>(PS2_VREZ_H) * vertices[2].y, 0.0f);
     NuRndrPrimSetColour(colour);
-    SwipePrimUV(1.0f, uv_height);
+    SWIPE_PRIM_UV(1.0f, uv_height);
     NuPrim2DAddXYZ(static_cast<f32>(PS2_VREZ_W) * vertices[3].x, static_cast<f32>(PS2_VREZ_H) * vertices[3].y, 0.0f);
     NuPrim2DEnd();
 }
+
+#undef SWIPE_PRIM_UV
 
 SwipeDecalRenderer::SwipeDecalRenderer(TouchHolder &holder, i32 index, SwipeDecalRenderer::Style style) {
     alpha.Initialize();

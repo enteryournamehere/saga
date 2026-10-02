@@ -1674,10 +1674,8 @@ void Hub_DrawMiniKits(WORLDINFO_s *world) {
         MiniKitRotateZ(&matrix, (i32)(RotDiff(0, phase_z) * scale));
         MiniKitRotateY(&matrix, rotation);
         matrix.m30 = x + kit->offset_x;
-        matrix.m31 = hub_minikitviewer_pos.y;
-        matrix.m32 = hub_minikitviewer_pos.z;
-        matrix.m31 += lift + bob + (info ? info->panel_offset : 0.0f);
-        matrix.m32 += kit->offset_z;
+        matrix.m31 = hub_minikitviewer_pos.y + (lift + bob + (info ? info->panel_offset : 0.0f));
+        matrix.m32 = hub_minikitviewer_pos.z + kit->offset_z;
         NuMtxPreRotateZ(&matrix, (i32)(RotDiff(0, kit->rotation_velocity) * scale));
         for (i32 piece = 0; piece < pieces->piece_count; ++piece) {
             if (pieces->pieces[piece].enabled && NuSpecialExistsFn(&pieces->pieces[piece].special) &&

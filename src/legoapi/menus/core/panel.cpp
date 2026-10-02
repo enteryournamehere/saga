@@ -468,8 +468,8 @@ void UpdateStats() {
                                       : freeplay != 0 ? save.freeplay_buildup_complete != 0
                                                       : save.story_buildup_complete != 0;
                 if (!complete) {
-                    const u32 maximum =
-                        static_cast<u32>(freeplay != 0 ? WORLD->area->field38_0x90 : WORLD->area->field37_0x8c);
+                    const u32 maximum = static_cast<u32>(freeplay != 0 ? WORLD->area->true_hero_targets[1]
+                                                                       : WORLD->area->true_hero_targets[0]);
                     if (maximum != 0) {
                         if (BuildUpDone == 0) {
                             BuildUpTotal = 0;
@@ -873,6 +873,8 @@ void InitPanel(i32) {
 }
 
 void DrawPanel() {
+    // Original debug coordinates were never initialized by this port.
+    NUVEC coordinate_positions[8] = {};
     const i32 menu = GetMenuID();
     SetQFont2D();
     if (CUTSTOPGAME == 0)
@@ -883,8 +885,6 @@ void DrawPanel() {
     // The original loading shortcut reads this before initialization. Give that path a stable result.
     i32 removed_controller = -1;
     char text[512], auxiliary[128];
-    // Original debug coordinates were never initialized by this port.
-    NUVEC coordinate_positions[8] = {};
     f32 status_y = 0.0f;
     if (PANELOFF && !paused && (WORLD->current_level->flags & LEVEL_GAMEPLAY))
         return;
@@ -918,7 +918,7 @@ void DrawPanel() {
                 removed_controller = GamePad[i].pad->port;
                 sprintf(text, apitxt_CONTROLLERREMOVED, removed_controller + 1, removed_controller + 1);
                 i32 alpha = static_cast<u8>(static_cast<i32>((i == 0 ? 0.75f + pulse : 0.75f - pulse) * 128.0f));
-                SmartTextEx(text, 0.0f, i == 0 ? 0.5f : -0.5f, 1.0f, 0.4f, 0.4f, 0.4f, 0, 0, 255, 0, 1.5f, 4, 0, 0,
+                SmartTextEx(text, 0.0f, i == 0 ? 0.5f : -0.5f, 1.0f, 0.4f, 0.4f, 0.4f, 0, 63, 127, 255, 1.5f, 4, 0, 0,
                             alpha);
             }
         }
@@ -930,7 +930,7 @@ void DrawPanel() {
                 removed_controller = GamePad[i].pad->port;
                 sprintf(text, apitxt_CONTROLLERREMOVED, removed_controller + 1, removed_controller + 1);
                 i32 alpha = static_cast<u8>(static_cast<i32>((i == 0 ? 0.75f + pulse : 0.75f - pulse) * 128.0f));
-                SmartTextEx(text, 0.0f, i == 0 ? 0.5f : -0.5f, 1.0f, 0.4f, 0.4f, 0.4f, 0, 63, 127, 255, 1.5f, 4, 0, 0,
+                SmartTextEx(text, 0.0f, i == 0 ? 0.5f : -0.5f, 1.0f, 0.4f, 0.4f, 0.4f, 0, 0, 255, 0, 1.5f, 4, 0, 0,
                             alpha);
             }
         }
@@ -1083,22 +1083,20 @@ void DrawPanel() {
                                 DrawPanel3DObject(coin_x, y, 1.0f, scale, scale, scale, 0, 0, 0,
                                                   &WORLD->lev_objs[model].special, 0, alpha);
                             }
-                            i32 target = 0;
-                            bool draw_target = false;
                             if (Arcade) {
-                                if (arcade_flags & 8) {
+                                i32 target = 0;
+                                if (arcade_flags & 8)
                                     target = arcade_placed_stud_total;
-                                    draw_target = target != 0;
-                                } else if (arcade_flags & 4) {
+                                else if (arcade_flags & 4)
                                     target = Arcade_Mode[static_cast<i8>(ArcadeItem.field_c_0xc)].target;
-                                    draw_target = target != 0;
+                                if (target != 0) {
+                                    Text_MakeScore(target, auxiliary);
+                                    sprintf(text, "(%s)", auxiliary);
+                                    Text3DEx(text, 0.0f, y + PANEL_COINADJUSTDY, 1.0f, 0.35f, 0.35f, 0.35f, 0, 255, 255,
+                                             255, 48);
                                 }
                             } else if (BonusArea && VehicleArea) {
-                                target = BonusCoinTarget;
-                                draw_target = true;
-                            }
-                            if (draw_target) {
-                                Text_MakeScore(target, auxiliary);
+                                Text_MakeScore(BonusCoinTarget, auxiliary);
                                 sprintf(text, "(%s)", auxiliary);
                                 Text3DEx(text, 0.0f, y + PANEL_COINADJUSTDY, 1.0f, 0.35f, 0.35f, 0.35f, 0, 255, 255,
                                          255, 48);
@@ -1111,7 +1109,7 @@ void DrawPanel() {
                         i32 freeplay = GAMEDEMO ? 0 : FreePlay;
                         if (!SuperStory && !ChallengeMode && Mission_Active(NULL) == NULL && !Arcade &&
                             (WORLD->area->flags & 0x4010)) {
-                            i32 maximum = freeplay ? WORLD->area->field38_0x90 : WORLD->area->field37_0x8c;
+                            i32 maximum = WORLD->area->true_hero_targets[freeplay];
                             if (maximum != 0) {
                                 status_y =
                                     NU_SIN_LUT(static_cast<i32>(builduptime * 16384.0f)) * (STATSPOSY - STATSPOS2Y) +

@@ -643,21 +643,26 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
         GameCam_ResetLookRot(camera);
         return;
     }
-    if (CutSceneCameraCTRL && (CUTSTOPGAME || CUTCAMONLY)) {
-        camera->render_mtx = cutscenecammtx;
-        camera->mtx = camera->render_mtx;
-        set_cutscenecammtx = 0;
-        pNuCam->mtx = camera->render_mtx;
-        if (cutscenecam_focalLength > 0.0f) {
-            pNuCam->fov = NuCameraFocalLenToFOV(cutscenecam_focalLength);
-            pNuCam->fov *= (1.0f / NuIOS_GetAspectRatio()) / 0.75f;
+    if (CutSceneCameraCTRL) {
+        if (CUTSTOPGAME || CUTCAMONLY) {
+            camera->render_mtx = cutscenecammtx;
+            camera->mtx = camera->render_mtx;
+            set_cutscenecammtx = 0;
+            pNuCam->mtx = camera->render_mtx;
+            if (cutscenecam_focalLength > 0.0f) {
+                pNuCam->fov = NuCameraFocalLenToFOV(cutscenecam_focalLength);
+                pNuCam->fov *= (1.0f / NuIOS_GetAspectRatio()) / 0.75f;
+            }
+            NuCameraSet(pNuCam);
+            CutCamMtx = camera->render_mtx;
+            CUTCAM = 1;
+            return;
         }
-        NuCameraSet(pNuCam);
-        CutCamMtx = camera->render_mtx;
-        CUTCAM = 1;
+    } else if (CUTSTOPGAME) {
+        GameCam_ResetLookRot(camera);
         return;
     }
-    if ((!CutSceneCameraCTRL && CUTSTOPGAME) || NewMode || NewLData != NULL) {
+    if (NewMode || NewLData != NULL) {
         GameCam_ResetLookRot(camera);
         return;
     }
@@ -1393,7 +1398,9 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
         }
         if (camera->blend_duration > camera->blend_time) {
             blend = camera->blend_time / camera->blend_duration;
-            angle_blend = MIN(2.0f * blend, 1.0f);
+            angle_blend = 2.0f * blend;
+            if (angle_blend > 1.0f)
+                angle_blend = 1.0f;
             camera->blend_start_position.x =
                 camera->blend_end_position.x +
                 (camera->blend_destination_position.x - camera->blend_end_position.x) * blend;
@@ -1421,7 +1428,10 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
             position.y = camera->blend_start_position.y + (position.y - camera->blend_start_position.y) * blend;
             position.z = camera->blend_start_position.z + (position.z - camera->blend_start_position.z) * blend;
         }
-        f32 seek = MIN(position_seek * FRAMETIME, 1.0f) * CamStopBlend;
+        f32 seek = position_seek * FRAMETIME;
+        if (seek > 1.0f)
+            seek = 1.0f;
+        seek *= CamStopBlend;
         camera->pos.x += (position.x - camera->pos.x) * seek;
         camera->pos.y += (position.y - camera->pos.y) * seek;
         camera->pos.z += (position.z - camera->pos.z) * seek;
@@ -1565,6 +1575,7 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
                     camera_shake = 0.6f;
                     break;
                 }
+                object = Player[i];
                 if (object->camera_shake_strength > 0.0f && WORLD->area != NULL &&
                     (WORLD->area == PODRACE_ADATA || WORLD->area == PODSPRINT_ADATA)) {
                     camera_shake = object->camera_shake_strength * 2.0f;

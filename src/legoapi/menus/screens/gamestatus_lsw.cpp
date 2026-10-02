@@ -595,7 +595,8 @@ void InitStatusScreen(WORLDINFO_s *world) {
         p.minikit_max = (p.area->flags & 0x10) != 0 ? 10 : 0;
         if (p.minikit_count > p.minikit_max)
             p.minikit_count = p.minikit_max;
-        p.true_hero_target = static_cast<u32>((p.field_0xb0 & 0x40) != 0 ? p.area->field38_0x90 : p.area->field37_0x8c);
+        p.true_hero_target =
+            static_cast<u32>((p.field_0xb0 & 0x40) != 0 ? p.area->true_hero_targets[1] : p.area->true_hero_targets[0]);
     }
     p.area_time = AreaTimer.time_elapsed;
     const u32 total = p.coins_remaining[0] + p.coins_remaining[1];

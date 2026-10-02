@@ -2891,7 +2891,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
         object->target_velocity.y = 0.0f;
     }
     i32 move_vertical = 0;
-    bool separate_seek_rates = false;
+    i32 separate_seek_rates = false;
     NUVEC seek_rates;
     seek_rates.x = api.character_data->game_character->velocity_seek_rate;
     if (api.movement_direction.x != 0.0f || api.movement_direction.z != 0.0f) {
@@ -3070,200 +3070,198 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                             break;
                         }
                     }
-                    if (animation_movement || object->character_context == 5) {
-                        if ((CInfo[object->character_context].flags & 2) != 0) {
+                    if ((CInfo[object->character_context].flags & 2) != 0) {
+                        object->target_velocity.x = 0.0f;
+                        object->target_velocity.z = 0.0f;
+                        break;
+                    }
+                    if (object->character_context == 0x5f) {
+                        object->target_velocity.x = object->external_force.x;
+                        object->target_velocity.z = object->external_force.z;
+                        break;
+                    }
+                    switch (object->character_context) {
+                        case 0x21:
+                        case 0x22: {
+                            const u16 angle = api.movement_facing_angle;
+                            object->target_velocity.x = -NuTrigTable[angle >> 1] * 1.2f;
+                            object->target_velocity.z = -NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * 1.2f;
+                            break;
+                        }
+                        case 0x18:
+                        case 0x0c:
+                            if (object->incoming_bolt != NULL && desired_speed > 0.0f &&
+                                (pad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 &&
+                                (object->character_context == 0x18 || object->block_latch == 0)) {
+                                object->target_velocity.x =
+                                    NuTrigTable[input_angle >> 1] * api.character_data->game_character->run_speed;
+                                object->target_velocity.z = NuTrigTable[((input_angle + 0x4000) >> 1) & 0x7fff] *
+                                                            api.character_data->game_character->run_speed;
+                            } else {
+                                object->target_velocity.x = 0.0f;
+                                object->target_velocity.z = 0.0f;
+                            }
+                            break;
+                        case 0x41:
+                        case 0x17:
+                        case 0x1f:
+                        case 0x3c:
+                        case 0x35:
                             object->target_velocity.x = 0.0f;
                             object->target_velocity.z = 0.0f;
                             break;
-                        }
-                        if (object->character_context == 0x5f) {
-                            object->target_velocity.x = object->external_force.x;
-                            object->target_velocity.z = object->external_force.z;
+                        case 0x29:
+                            // Original 0x169c21: walking is allowed only when this
+                            // model supplies animation 0x57.
+                            if (api.character_model->model_data_b[0x57] != NULL)
+                                goto directional_walking;
+                            object->target_velocity.x = 0.0f;
+                            object->target_velocity.z = 0.0f;
+                            break;
+                        case 0x2d: {
+                            NUVEC position = api.position;
+                            GizGetBuildItPlayerPos(object, &position, NULL);
+                            object->target_velocity.x = (position.x - api.position.x) * 3.0f;
+                            object->target_velocity.z = (position.z - api.position.z) * 3.0f;
                             break;
                         }
-                        switch (object->character_context) {
-                            case 0x21:
-                            case 0x22: {
-                                const u16 angle = api.movement_facing_angle;
-                                object->target_velocity.x = -NuTrigTable[angle >> 1] * 1.2f;
-                                object->target_velocity.z = -NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * 1.2f;
-                                break;
-                            }
-                            case 0x18:
-                            case 0x0c:
-                                if (object->incoming_bolt != NULL && desired_speed > 0.0f &&
-                                    (pad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 &&
-                                    (object->character_context == 0x18 || object->block_latch == 0)) {
-                                    object->target_velocity.x =
-                                        NuTrigTable[input_angle >> 1] * api.character_data->game_character->run_speed;
-                                    object->target_velocity.z = NuTrigTable[((input_angle + 0x4000) >> 1) & 0x7fff] *
-                                                                api.character_data->game_character->run_speed;
+                        case 0x1c:
+                            move_vertical = ForcePushed_SetTargetMom(object, &seek_rates.x);
+                            break;
+                        case 0x0f:
+                            break;
+                        case 0x49:
+                            object->target_velocity.x = (object->launch_origin.x - api.position.x) * 8.0f;
+                            object->target_velocity.z = (object->launch_origin.z - api.position.z) * 8.0f;
+                            break;
+                        case 0x47: {
+                            if (object->action_movement_state == 1) {
+                                object->target_velocity = v000;
+                                api.velocity = object->target_velocity;
+                            } else {
+                                ZIPUP *zipup = static_cast<ZIPUP *>(object->field_0x788);
+                                if ((zipup->flags & 1) != 0) {
+                                    SeekVec(&api.position, &api.position, &zipup->rider_target_position, 8.0f);
                                 } else {
-                                    object->target_velocity.x = 0.0f;
-                                    object->target_velocity.z = 0.0f;
+                                    NuVecSub(&object->target_velocity, &zipup->hook_origin, &api.position);
+                                    NuVecNorm(&object->target_velocity, &object->target_velocity);
+                                    NuVecScale(&object->target_velocity, &object->target_velocity, 2.0f);
                                 }
-                                break;
-                            case 0x41:
-                            case 0x17:
-                            case 0x1f:
-                            case 0x3c:
-                            case 0x35:
-                                object->target_velocity.x = 0.0f;
-                                object->target_velocity.z = 0.0f;
-                                break;
-                            case 0x29:
-                                // Original 0x169c21: walking is allowed only when this
-                                // model supplies animation 0x57.
-                                if (api.character_model->model_data_b[0x57] != NULL)
-                                    goto directional_walking;
-                                object->target_velocity.x = 0.0f;
-                                object->target_velocity.z = 0.0f;
-                                break;
-                            case 0x2d: {
-                                NUVEC position = api.position;
-                                GizGetBuildItPlayerPos(object, &position, NULL);
-                                object->target_velocity.x = (position.x - api.position.x) * 3.0f;
-                                object->target_velocity.z = (position.z - api.position.z) * 3.0f;
-                                break;
                             }
-                            case 0x1c:
-                                move_vertical = ForcePushed_SetTargetMom(object, &seek_rates.x);
-                                break;
-                            case 0x0f:
-                                break;
-                            case 0x49:
-                                object->target_velocity.x = (object->launch_origin.x - api.position.x) * 8.0f;
-                                object->target_velocity.z = (object->launch_origin.z - api.position.z) * 8.0f;
-                                break;
-                            case 0x47: {
-                                if (object->action_movement_state == 1) {
-                                    object->target_velocity = v000;
-                                    api.velocity = object->target_velocity;
-                                } else {
-                                    ZIPUP *zipup = static_cast<ZIPUP *>(object->field_0x788);
-                                    if ((zipup->flags & 1) != 0) {
-                                        SeekVec(&api.position, &api.position, &zipup->rider_target_position, 8.0f);
-                                    } else {
-                                        NuVecSub(&object->target_velocity, &zipup->hook_origin, &api.position);
-                                        NuVecNorm(&object->target_velocity, &object->target_velocity);
-                                        NuVecScale(&object->target_velocity, &object->target_velocity, 2.0f);
-                                    }
-                                }
-                                move_vertical = 1;
-                                break;
-                            }
-                            case 5:
-                                if ((object->context_flags & 0x1c) != 0) {
-                                    object->target_velocity.x = 0.0f;
-                                    api.velocity.x = 0.0f;
-                                    object->target_velocity.z = 0.0f;
-                                    api.velocity.z = 0.0f;
-                                } else if (StepBackFromTarget(object) == 0) {
-                                    const f32 speed = AnimSpeed(api.character_model, object->context_animation);
-                                    const u16 angle = api.movement_facing_angle;
-                                    object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
-                                    object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
-                                }
-                                break;
-                            case 0x15: {
+                            move_vertical = 1;
+                            break;
+                        }
+                        case 5:
+                            if ((object->context_flags & 0x1c) != 0) {
+                                object->target_velocity.x = 0.0f;
+                                api.velocity.x = 0.0f;
+                                object->target_velocity.z = 0.0f;
+                                api.velocity.z = 0.0f;
+                            } else if (StepBackFromTarget(object) == 0) {
                                 const f32 speed = AnimSpeed(api.character_model, object->context_animation);
                                 const u16 angle = api.movement_facing_angle;
                                 object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
                                 object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
+                            }
+                            break;
+                        case 0x15: {
+                            const f32 speed = AnimSpeed(api.character_model, object->context_animation);
+                            const u16 angle = api.movement_facing_angle;
+                            object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
+                            object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
+                            break;
+                        }
+                        case 0x10: {
+                            const f32 speed = object->context_animation == 0x29
+                                                  ? AnimSpeed(api.character_model, 0x29)
+                                                  : api.character_data->game_character->run_speed;
+                            const u16 angle = api.movement_facing_angle;
+                            object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
+                            object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
+                            break;
+                        }
+                        case 0x31: {
+                            if (!api.player_controlled)
+                                goto directional_walking;
+                            const u16 angle = api.movement_facing_angle;
+                            object->target_velocity.x =
+                                NuTrigTable[angle >> 1] * api.character_data->game_character->run_speed;
+                            object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] *
+                                                        api.character_data->game_character->run_speed;
+                            break;
+                        }
+                        case 1:
+                        case 0x19:
+                        case 2:
+                        case 3:
+                        case 4:
+                        case 0x0d:
+                        case 0x0e:
+                        case 9:
+                        case 0x0a:
+                        case 0x16:
+                        case 0x1d:
+                        case 0x1b:
+                        case 0x12:
+                        case 8:
+                        case 0x13:
+                        case 0x14: {
+                        directional_action_momentum:
+                            // Original 0x169a49: these contexts only move through
+                            // their animation when CInfo permits animation momentum.
+                            if ((CInfo[object->character_context].flags & 0x10) != 0) {
+                                const f32 speed = AnimSpeed(api.character_model, object->context_animation);
+                                const u16 angle = api.movement_facing_angle;
+                                object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
+                                object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
+                            } else {
+                                object->target_velocity.x = 0.0f;
+                                object->target_velocity.z = 0.0f;
+                            }
+                            break;
+                        }
+                        case 0:
+                            if (object->action_movement_state == 3) {
+                                if (StepBackFromTarget(object) == 0) {
+                                    const u16 angle = api.movement_facing_angle;
+                                    object->target_velocity.x = NuTrigTable[angle >> 1] * object->field_0x768;
+                                    object->target_velocity.z =
+                                        NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * object->field_0x768;
+                                }
                                 break;
                             }
-                            case 0x10: {
-                                const f32 speed = object->context_animation == 0x29
-                                                      ? AnimSpeed(api.character_model, 0x29)
-                                                      : api.character_data->game_character->run_speed;
+                            if (object->action_movement_state == 4)
+                                goto directional_action_momentum;
+                            if (object->action_movement_state == 2) {
+                                f32 speed = api.character_data->game_character->run_speed;
+                                if ((object->context_variant_flags & 0x20) != 0)
+                                    speed = -speed;
                                 const u16 angle = api.movement_facing_angle;
                                 object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
                                 object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
                                 break;
                             }
-                            case 0x31: {
-                                if (!api.player_controlled)
-                                    goto directional_walking;
+                            if (object->context_variant_flags >= 0 &&
+                                (object->action_movement_state == 6 || object->action_movement_state == 7 ||
+                                 object->action_movement_state == 9)) {
+                                f32 speed = object->airborne_action_timer;
+                                if (object->action_movement_state == 6 &&
+                                    object->context_animation_timer >=
+                                        api.character_data->game_character->jump_duration) {
+                                    api.velocity.x = 0.0f;
+                                    api.velocity.z = 0.0f;
+                                    speed = 0.0f;
+                                }
                                 const u16 angle = api.movement_facing_angle;
-                                object->target_velocity.x =
-                                    NuTrigTable[angle >> 1] * api.character_data->game_character->run_speed;
-                                object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] *
-                                                            api.character_data->game_character->run_speed;
+                                object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
+                                object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
                                 break;
                             }
-                            case 1:
-                            case 0x19:
-                            case 2:
-                            case 3:
-                            case 4:
-                            case 0x0d:
-                            case 0x0e:
-                            case 9:
-                            case 0x0a:
-                            case 0x16:
-                            case 0x1d:
-                            case 0x1b:
-                            case 0x12:
-                            case 8:
-                            case 0x13:
-                            case 0x14: {
-                            directional_action_momentum:
-                                // Original 0x169a49: these contexts only move through
-                                // their animation when CInfo permits animation momentum.
-                                if ((CInfo[object->character_context].flags & 0x10) != 0) {
-                                    const f32 speed = AnimSpeed(api.character_model, object->context_animation);
-                                    const u16 angle = api.movement_facing_angle;
-                                    object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
-                                    object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
-                                } else {
-                                    object->target_velocity.x = 0.0f;
-                                    object->target_velocity.z = 0.0f;
-                                }
-                                break;
-                            }
-                            case 0:
-                                if (object->action_movement_state == 3) {
-                                    if (StepBackFromTarget(object) == 0) {
-                                        const u16 angle = api.movement_facing_angle;
-                                        object->target_velocity.x = NuTrigTable[angle >> 1] * object->field_0x768;
-                                        object->target_velocity.z =
-                                            NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * object->field_0x768;
-                                    }
-                                    break;
-                                }
-                                if (object->action_movement_state == 4)
-                                    goto directional_action_momentum;
-                                if (object->action_movement_state == 2) {
-                                    f32 speed = api.character_data->game_character->run_speed;
-                                    if ((object->context_variant_flags & 0x20) != 0)
-                                        speed = -speed;
-                                    const u16 angle = api.movement_facing_angle;
-                                    object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
-                                    object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
-                                    break;
-                                }
-                                if (object->context_variant_flags >= 0 &&
-                                    (object->action_movement_state == 6 || object->action_movement_state == 7 ||
-                                     object->action_movement_state == 9)) {
-                                    f32 speed = object->airborne_action_timer;
-                                    if (object->action_movement_state == 6 &&
-                                        object->context_animation_timer >=
-                                            api.character_data->game_character->jump_duration) {
-                                        api.velocity.x = 0.0f;
-                                        api.velocity.z = 0.0f;
-                                        speed = 0.0f;
-                                    }
-                                    const u16 angle = api.movement_facing_angle;
-                                    object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
-                                    object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
-                                    break;
-                                }
-                                goto directional_walking;
-                            default:
-                                goto directional_walking;
-                        }
-                        break;
+                            goto directional_walking;
+                        default:
+                            goto directional_walking;
                     }
+                    break;
                 directional_walking:
                     if ((pad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) != 0) {
                         object->target_velocity.x = 0.0f;

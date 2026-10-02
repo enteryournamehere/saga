@@ -135,6 +135,7 @@ extern "C" void MaskSounds(const u16 *mask) {
 void SetLevelSfxBits(WORLDINFO *world) {
     i32 sfx_ids[1024];
     i32 sfx_count = 0;
+    i32 sound_id;
 
 #define ADD_SFX(name) AddLevelSfxFromName(name, sfx_ids, &sfx_count, 0x400)
 #define ADD_GAME_SFX(id) GameAudio_AddSfx(id, sfx_ids, &sfx_count, 0x400)
@@ -180,7 +181,7 @@ void SetLevelSfxBits(WORLDINFO *world) {
         for (i32 i = 0; i < world->cutscene_sys->count; ++i) {
             CUTINFO *cut = world->cutscene_sys->cuts[i];
             // The original visits the six cutscene cues as separate checks.
-            i32 sound_id = cut->sfx[0].id;
+            sound_id = cut->sfx[0].id;
             if (sound_id != -1) {
                 sfx_ids[sfx_count++] = sound_id;
             }
@@ -548,36 +549,44 @@ void SetLevelSfxBits(WORLDINFO *world) {
         CHARACTERDATA *character = &CDataList[character_id];
         GAMECHARACTERDATA *game_character = static_cast<GAMECHARACTERDATA *>(character->field11_0x24);
 
-        if (game_character->sfx_die != -1) {
-            sfx_ids[sfx_count++] = game_character->sfx_die;
+        sound_id = game_character->sfx_die;
+        if (sound_id != -1) {
+            sfx_ids[sfx_count++] = sound_id;
         } else if ((character->model_flags & 0x44002010) == 0) {
             ADD_GAME_SFX((static_cast<i32>(game_character->flags_090 << 14) >> 31) + 0x1c);
         }
-        if (game_character->sfx_hurt != -1) {
-            sfx_ids[sfx_count++] = game_character->sfx_hurt;
+        sound_id = game_character->sfx_hurt;
+        if (sound_id != -1) {
+            sfx_ids[sfx_count++] = sound_id;
         } else if ((character->model_flags & 0x44002010) == 0) {
             ADD_GAME_SFX((static_cast<i32>(game_character->flags_090 << 14) >> 31) + 0x17);
         }
-        if (game_character->sfx_grunt != -1) {
-            sfx_ids[sfx_count++] = game_character->sfx_grunt;
+        sound_id = game_character->sfx_grunt;
+        if (sound_id != -1) {
+            sfx_ids[sfx_count++] = sound_id;
         } else if ((character->model_flags & 0x44002010) == 0) {
             ADD_GAME_SFX((static_cast<i32>(game_character->flags_090 << 14) >> 31) + 0x15);
         }
 
-        if (game_character->sfx_engine != -1) {
-            sfx_ids[sfx_count++] = game_character->sfx_engine;
+        sound_id = game_character->sfx_engine;
+        if (sound_id != -1) {
+            sfx_ids[sfx_count++] = sound_id;
         }
-        if (game_character->sfx_shoot != -1) {
-            sfx_ids[sfx_count++] = game_character->sfx_shoot;
+        sound_id = game_character->sfx_shoot;
+        if (sound_id != -1) {
+            sfx_ids[sfx_count++] = sound_id;
         }
-        if (game_character->sfx_footstep != -1) {
-            sfx_ids[sfx_count++] = game_character->sfx_footstep;
+        sound_id = game_character->sfx_footstep;
+        if (sound_id != -1) {
+            sfx_ids[sfx_count++] = sound_id;
         }
-        if (game_character->sfx_chatter != -1) {
-            sfx_ids[sfx_count++] = game_character->sfx_chatter;
+        sound_id = game_character->sfx_chatter;
+        if (sound_id != -1) {
+            sfx_ids[sfx_count++] = sound_id;
         }
-        if (game_character->sfx_sabre != -1) {
-            sfx_ids[sfx_count++] = game_character->sfx_sabre;
+        sound_id = game_character->sfx_sabre;
+        if (sound_id != -1) {
+            sfx_ids[sfx_count++] = sound_id;
         }
         for (i32 i = 0; i < 6 && game_character->sfx_misc[i] != -1; ++i) {
             sfx_ids[sfx_count++] = game_character->sfx_misc[i];

@@ -1292,12 +1292,11 @@ void Draw_LOADING() {
         NuVecNorm(&direction, &direction);                                                                             \
         brightness = direction.y * 0.5f + 0.5f;                                                                        \
         if (brightness <= near_angle)                                                                                  \
-            brightness = near_scale;                                                                                   \
+            brightness = near_scale * parameters->intensity;                                                           \
         else if (brightness >= far_angle)                                                                              \
-            brightness = far_scale;                                                                                    \
+            brightness = far_scale * parameters->intensity;                                                            \
         else                                                                                                           \
-            brightness = (brightness - near_angle) * scale_delta / angle_delta + near_scale;                           \
-        brightness *= parameters->intensity;                                                                           \
+            brightness = ((brightness - near_angle) * scale_delta / angle_delta + near_scale) * parameters->intensity; \
         if (parameters->directional) {                                                                                 \
             f32 angle = (i16)(0x4000 - NuASin(NuVecDot(&parameters->direction, &direction))) * 0.0054931640625f;       \
             if (angle < parameters->direction_near_angle) {                                                            \
@@ -1311,11 +1310,13 @@ void Draw_LOADING() {
                               parameters->direction_near_scale);                                                       \
             }                                                                                                          \
         }                                                                                                              \
-        u32 colour =                                                                                                   \
-            RGBA_TO_NUCOLOUR32((MIN(255.0f, (MAX(0.0f, brightness)))), (MIN(255.0f, (MAX(0.0f, brightness)))),         \
-                               (MIN(255.0f, (MAX(0.0f, brightness)))), 128);                                           \
+        u32 colour = (static_cast<u32>(static_cast<u8>(128)) << 24) |                                                  \
+                     (static_cast<u32>(static_cast<u8>(MIN(255.0f, MAX(0.0f, brightness)))) << 16) |                   \
+                     (static_cast<u32>(static_cast<u8>(MIN(255.0f, MAX(0.0f, brightness)))) << 8) |                    \
+                     static_cast<u32>(static_cast<u8>(MIN(255.0f, MAX(0.0f, brightness))));                            \
         if (!g_NuPrim_NeedsOverbrightening)                                                                            \
-            g_NuPrim_StreamBufferPtr->u32_ptr[3] = ((colour >> 1) & 0x7f7f7f) | (colour & 0xff000000);                 \
+            g_NuPrim_StreamBufferPtr->u32_ptr[3] =                                                                     \
+                ((static_cast<i32>(colour) >> 1) & 0x7f7f7f) | (colour & 0xff000000);                                  \
         else                                                                                                           \
             g_NuPrim_StreamBufferPtr->u32_ptr[3] = colour;                                                             \
         NuPrim2DAddXYZ((vx), (vy), 0.0f);                                                                              \

@@ -1202,11 +1202,12 @@ giz_freeplay:
     }
 
     LastLData = WORLD->current_level;
-    last_area = -1;
+    i = -1;
     if (PlayTrailer == -1) {
         LastAData = &ADataList[Area];
-        last_area = Area;
+        i = Area;
     }
+    last_area = i;
 
     if (LastLData == CREDITS_LDATA) {
         savedFrametime = 1.0f;
@@ -1221,15 +1222,17 @@ giz_freeplay:
     Level = i;
 
     if (Area != last_area) {
-        LevelChange = (u32)(NewLData->idx != LastLData->idx);
+        const i32 didLevelChange = NewLData->idx != LastLData->idx;
         LevelChangesInArea = 0;
+        LevelChange = didLevelChange;
     } else {
         i = 0;
         if (last_area != -1) {
             i = LevelChangesInArea + 1;
         }
-        LevelChange = (u32)(NewLData->idx != LastLData->idx);
+        const i32 didLevelChange = NewLData->idx != LastLData->idx;
         LevelChangesInArea = i;
+        LevelChange = didLevelChange;
         if (new_level_from_menu == 0) {
             goto after_sound;
         }
@@ -1325,9 +1328,10 @@ after_sound:
     }
 
     c = StatusPacket.status_flags;
-    if ((c == 0) ||
-        ((((STATUS_LDATA == NULL) || (STATUS_LDATA != LastLData)) && ((LastLData->flags & LEVEL_STATUS) == 0)) &&
-         ((CREDITS_LDATA == NULL) || (CREDITS_LDATA != LastLData)))) {
+    // Keep the outgoing level snapshot through the player-progress writes.
+    level = LastLData;
+    if ((c == 0) || ((((STATUS_LDATA == NULL) || (STATUS_LDATA != level)) && ((level->flags & LEVEL_STATUS) == 0)) &&
+                     ((CREDITS_LDATA == NULL) || (CREDITS_LDATA != level)))) {
     status_players:
         if (afterArea == NULL) {
             goto after_status;
@@ -1366,7 +1370,7 @@ after_sound:
         PlayerProgress[7].field_0x7 = 0;
         PlayerProgress[7].coins = 0;
 
-        if ((afterArea == NULL) || ((i != (u32)(byte)afterArea->index) || (TITLES_LDATA == LastLData))) {
+        if ((afterArea == NULL) || ((i != (u32)(byte)afterArea->index) || (TITLES_LDATA == level))) {
             UsePlayerList = 2;
             goto status_players;
         }

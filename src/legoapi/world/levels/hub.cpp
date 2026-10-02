@@ -247,8 +247,8 @@ static const NUVEC Hub_PercentPos = {-26.713f, 0.7f, -48.777f};
 static const NUVEC ClipsSignOffset = {-0.114f, -0.0385f, -0.045f};
 
 static inline void Hub_SetStatsTextMtx(NUMTX *mtx, i32 angle) {
-    const f32 sine = NU_SIN_LUT(angle);
     const f32 cosine = NU_COS_LUT(angle);
+    const f32 sine = NU_SIN_LUT(angle);
     mtx->m00 = cosine;
     mtx->m01 = 0.0f;
     mtx->m02 = -sine;
@@ -398,27 +398,23 @@ static f32 HUB_AREAPANELX_TWOTRUEJEDIGOLDBRICKS[6] = {-0.15f, -0.45f, 0.75f, -0.
 static f32 HUB_AREAPANELX_1TRUEJEDIGB_NOCHALLENGE[6] = {-0.201f, 0.201f, 0.6f, -0.6f, 0.0f, 0.0f};
 f32 *HUB_AREAPANELX = HUB_AREAPANELX_ONETRUEJEDIGOLDBRICK;
 
-static inline void Hub_DrawEpisodeCompletionSign(WORLDINFO_s *world, i32 episode) {
-    nuhspecial_s *special = &HubAreaInfo[episode * 7 + 6].lock;
-    if (NuSpecialExistsFn(special) == 0) {
-        return;
-    }
-
-    NUMTX draw_mtx = *NuSpecialGetDrawMtx(special);
-    const f32 direction_x = draw_mtx.m20;
-    const f32 direction_z = draw_mtx.m22;
-    NuMtxSetTranslation(&draw_mtx, const_cast<NUVEC *>(&ClipsSignOffset));
-    NuMtxRotateY(&draw_mtx, NuAtan2D(direction_x, direction_z) + NUANG_90DEG);
-    NuMtxTranslate(&draw_mtx, NuSpecialGetDrawPos(special));
-    Draw3DObjectMtx(world, 316, &draw_mtx);
-    Draw3DObjectMtx(world, Episode_IsComplete(&EDataList[episode], NULL) != 0 ? 320 : 319, &draw_mtx);
-}
-
 void Hub_Draw3D(WORLDINFO_s *world) {
     Store_HubDrawFloorTargets(world);
 
+    NUMTX sign_mtx;
     for (i32 episode = 0; episode < 6; episode++) {
-        Hub_DrawEpisodeCompletionSign(world, episode);
+        nuhspecial_s *special = &HubAreaInfo[episode * 7 + 6].lock;
+        if (NuSpecialExistsFn(special) == 0) {
+            continue;
+        }
+        sign_mtx = *NuSpecialGetDrawMtx(special);
+        NUVEC direction;
+        memcpy(&direction, reinterpret_cast<const byte *>(&sign_mtx) + offsetof(NUMTX, m20), sizeof(direction));
+        NuMtxSetTranslation(&sign_mtx, const_cast<NUVEC *>(&ClipsSignOffset));
+        NuMtxRotateY(&sign_mtx, NuAtan2D(direction.x, direction.z) + NUANG_90DEG);
+        NuMtxTranslate(&sign_mtx, NuSpecialGetDrawPos(special));
+        Draw3DObjectMtx(world, 316, &sign_mtx);
+        Draw3DObjectMtx(world, Episode_IsComplete(&EDataList[episode], NULL) != 0 ? 320 : 319, &sign_mtx);
     }
 
     Customiser_Draw3D(CharacterCustomiser);
@@ -441,11 +437,10 @@ void Hub_Draw3D(WORLDINFO_s *world) {
 
     if (QFont3DZ != NULL) {
         const i32 spin = static_cast<i32>(NuFmod(GameTimer.time_elapsed, 5.0f) / 5.0f * 65536.0f);
-        const i32 angle = static_cast<i32>(NU_SIN_LUT(spin) * 2730.0f + 8192.0f);
+        const u16 angle = static_cast<u16>(NU_SIN_LUT(spin) * 2730.0f + 8192.0f);
         const i32 pulse = static_cast<i32>(NuFmod(GameTimer.time_elapsed, 3.21f) / 3.21f * 65536.0f);
         const f32 bob = NU_SIN_LUT(pulse) * 0.01f;
         const i32 alpha = static_cast<i32>(Hub_HologramAlpha * 15.0f + 56.0f);
-        const u32 colour = (static_cast<u32>(alpha) << 24) | 0xff7f00;
 
         char text[128];
         sprintf(text, "%.1f%%", static_cast<f32>(Game.completion * 100) / COMPLETIONPOINTS);
@@ -460,9 +455,10 @@ void Hub_Draw3D(WORLDINFO_s *world) {
         NuQFntSet(QFont3DZ);
         NuQFntSetMtx(QFont3DZ, &text_mtx);
         NuQFntSetCoordinateSystem(NUQFNT_CSMODE_ABSOLUTE);
+        const u32 colour = (static_cast<u32>(alpha) << 24) | 0xff7f00;
         NuQFntSetColour(QFont3DZ, colour);
         NuQFntSetScale(QFont3DZ, 0.00375f, 0.005f);
-        NuQFntMove(QFont3DZ, NuQFntPrintLenU(QFont3DZ, text) * -0.5f, 0.0f, 0.0f);
+        NuQFntMove(QFont3DZ, -NuQFntPrintLenU(QFont3DZ, text) * 0.5f, 0.0f, 0.0f);
         NuQFntPrintU(QFont3DZ, text);
         NuQFntPopPrintMode();
 
@@ -470,7 +466,8 @@ void Hub_Draw3D(WORLDINFO_s *world) {
         Text_LocaliseDecimalPoint(text);
         Hub_SetStatsTextMtx(&text_mtx, angle);
         NuMtxTranslate(&text_mtx, const_cast<NUVEC *>(&Hub_PercentPos));
-        text_mtx.m31 += bob + 0.16f;
+        text_mtx.m31 += bob;
+        text_mtx.m31 += 0.16f;
 
         NuQFntPushPrintMode(NUQFNT_CSMODE_ABSOLUTE);
         NuQFntSet(QFont3DZ);
@@ -478,13 +475,14 @@ void Hub_Draw3D(WORLDINFO_s *world) {
         NuQFntSetCoordinateSystem(NUQFNT_CSMODE_ABSOLUTE);
         NuQFntSetColour(QFont3DZ, colour);
         NuQFntSetScale(QFont3DZ, 0.0028124998f, 0.00375f);
-        NuQFntMove(QFont3DZ, NuQFntPrintLenU(QFont3DZ, text) * -0.5f, 0.0f, 0.0f);
+        NuQFntMove(QFont3DZ, -NuQFntPrintLenU(QFont3DZ, text) * 0.5f, 0.0f, 0.0f);
         NuQFntPrintU(QFont3DZ, text);
         NuQFntPopPrintMode();
 
         if (NuSpecialExistsFn(&LevHSpecial[15]) != 0) {
+            NUVEC position = *NuSpecialGetDrawPos(&LevHSpecial[15]);
             Hub_SetStatsTextMtx(&text_mtx, angle);
-            NuMtxTranslate(&text_mtx, NuSpecialGetDrawPos(&LevHSpecial[15]));
+            NuMtxTranslate(&text_mtx, &position);
             NuSpecialDrawAtAlpha(&LevHSpecial[15], &text_mtx, Hub_HologramAlpha * 0.2f + 0.8f);
         }
     }

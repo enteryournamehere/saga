@@ -2468,7 +2468,10 @@ void TerrainPlayer(GameObject_s *object) {
         api.field_0x1f8 = (api.field_0x1f8 & ~4u) | (skip_motion ? 4u : 0u);
         object->field_0x1084 = 0;
         const i32 previous_platform = entry_platform;
-        const bool direct_integration = (api.field_0x1f8 & 0x20) != 0 || (object->field_0xe20 & 0x20) != 0 ||
+        // Original 0x102952/0x102bfb carries this byte through the call-free
+        // integration selection before setting its terrain-update bit.
+        const u8 integration_flags = object->field_0xe20;
+        const bool direct_integration = (api.field_0x1f8 & 0x20) != 0 || (integration_flags & 0x20) != 0 ||
                                         object->movement_spline != NULL || object->move_override != NULL ||
                                         (object->character_context == 0x0f && object->field_0x7a3 <= 1) ||
                                         (object->character_context == 0x2c && object->field_0x7a3 == 0) ||
@@ -2477,7 +2480,7 @@ void TerrainPlayer(GameObject_s *object) {
             // Original 0x102940/0x102bf8 selects integration without a terrain
             // query for these motion owners and action states.
             api.respawn_timer = 0.0f;
-            object->field_0xe20 |= 2;
+            object->field_0xe20 = integration_flags | 2;
             if (TimingBarSet == 2)
                 TBOPENFN("Ter", 2);
             api.field_0x27d = 0;

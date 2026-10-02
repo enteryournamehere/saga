@@ -735,10 +735,19 @@ void LoadSpecialSfxFile(WORLDINFO *world) {
     char path[268];
     sprintf(path, "%s.sfx", world->config_file);
     if (NuFileExists(path) != 0 && SpecialSfxLoad(path, world) != 0) {
-        for (i32 i = 0; i < world->special_sfx_count; i++) {
-            if ((world->special_sfx[i].flags & 0xf) == 1) {
-                SetupBlowupSfx(world, &world->special_sfx[i]);
-            }
+        i32 count = world->special_sfx_count;
+        specialsfx_s *entry = world->special_sfx;
+        if (count > 0) {
+            i32 i = 0;
+            do {
+                const i32 flags = entry->flags & 0xf;
+                if (flags == 1) {
+                    SetupBlowupSfx(world, entry);
+                }
+                ++i;
+                count = world->special_sfx_count;
+                ++entry;
+            } while (i < count);
         }
     }
 }

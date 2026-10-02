@@ -5015,8 +5015,8 @@ static void LightSabreStreakCode(GameObject_s *object, i32 blade, i32 effect) {
             }
             return;
         }
-        if ((object->sabre_flags & 4) != 0 &&
-            ((object->apiobj.flags_low & 0x80) != 0 || (object->field_0xef8 & 0x40) != 0 || object->use_action == 5)) {
+        if (((object->apiobj.flags_low & 0x80) != 0 || (object->field_0xef8 & 0x40) != 0 || object->use_action == 5) &&
+            (object->sabre_flags & 4) != 0) {
             if ((object->apiobj.flags_low & 0x80) == 0 && object->apiobj.model_draw_result == 0) {
                 if (object->blowup_target == NULL)
                     return;

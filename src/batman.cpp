@@ -1075,11 +1075,10 @@ giz_freeplay:
                 shortestFrameIndex = 3;
             }
             frameTimeAccumulator = MAX(pastFrameTimes[3], frameTimeAccumulator);
-            shortestFrameTime = MIN(pastFrameTimes[3], shortestFrameTime);
-
             if (frameTimeAccumulator < pastFrameTimes[4]) {
                 longestFrameIndex = 4;
             }
+            shortestFrameTime = MIN(pastFrameTimes[3], shortestFrameTime);
             if (pastFrameTimes[4] < shortestFrameTime) {
                 shortestFrameIndex = 4;
             }

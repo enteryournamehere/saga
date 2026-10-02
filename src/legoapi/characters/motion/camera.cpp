@@ -235,9 +235,12 @@ void GameCam_UpdateLookRot(GAMECAMERA_s *camera) {
     if (MiniCutCam == 0) {
         if (Player[0] != NULL && static_cast<i8>(Player[0]->apiobj.flags_low) < 0 &&
             Player[0]->pad_gamepad->pad != NULL) {
-            i32 look_source = 1;
-            if (GameCam_ObjLookingWithLeftStick != NULL)
-                look_source = GameCam_ObjLookingWithLeftStick(Player[0]);
+            i32 look_source;
+            if (GameCam_ObjLookingWithLeftStick == NULL)
+                goto player0_right_look;
+            look_source = GameCam_ObjLookingWithLeftStick(Player[0]);
+            if (look_source != 1 && look_source != 2)
+                goto player0_look_done;
             if (look_source == 2) {
                 f32 horizontal = 0.0f, vertical = 0.0f;
                 if (Player[0]->pad_gamepad->input_mode == 1) {
@@ -261,21 +264,25 @@ void GameCam_UpdateLookRot(GAMECAMERA_s *camera) {
                 }
                 camera->field_0x204 += vertical;
                 camera->field_0x208 += horizontal;
-                contributing_players += 1.0f;
             } else if (look_source == 1) {
+            player0_right_look:
                 nupad_s *pad = Player[0]->pad_gamepad->pad;
-                camera->field_0x208 +=
-                    (static_cast<f32>(static_cast<u32>(pad->analog_right_x)) - 127.5f) * (1.0f / 127.5f) * look_yaw;
-                camera->field_0x204 +=
-                    (static_cast<f32>(static_cast<u32>(pad->analog_right_y)) - 127.5f) * (1.0f / 127.5f) * look_pitch;
-                contributing_players += 1.0f;
+                f32 horizontal = static_cast<f32>(static_cast<u32>(pad->analog_right_x));
+                f32 vertical = static_cast<f32>(static_cast<u32>(pad->analog_right_y));
+                camera->field_0x208 += (horizontal - 127.5f) * (1.0f / 127.5f) * look_yaw;
+                camera->field_0x204 += (vertical - 127.5f) * (1.0f / 127.5f) * look_pitch;
             }
+            contributing_players += 1.0f;
+        player0_look_done:;
         }
         if (Player[1] != NULL && static_cast<i8>(Player[1]->apiobj.flags_low) < 0 &&
             Player[1]->pad_gamepad->pad != NULL) {
-            i32 look_source = 1;
-            if (GameCam_ObjLookingWithLeftStick != NULL)
-                look_source = GameCam_ObjLookingWithLeftStick(Player[1]);
+            i32 look_source;
+            if (GameCam_ObjLookingWithLeftStick == NULL)
+                goto player1_right_look;
+            look_source = GameCam_ObjLookingWithLeftStick(Player[1]);
+            if (look_source != 1 && look_source != 2)
+                goto player1_look_done;
             if (look_source == 2) {
                 f32 horizontal = 0.0f, vertical = 0.0f;
                 if (Player[1]->pad_gamepad->input_mode == 1) {
@@ -299,15 +306,16 @@ void GameCam_UpdateLookRot(GAMECAMERA_s *camera) {
                 }
                 camera->field_0x204 += vertical;
                 camera->field_0x208 += horizontal;
-                contributing_players += 1.0f;
             } else if (look_source == 1) {
+            player1_right_look:
                 nupad_s *pad = Player[1]->pad_gamepad->pad;
-                camera->field_0x208 +=
-                    (static_cast<f32>(static_cast<u32>(pad->analog_right_x)) - 127.5f) * (1.0f / 127.5f) * look_yaw;
-                camera->field_0x204 +=
-                    (static_cast<f32>(static_cast<u32>(pad->analog_right_y)) - 127.5f) * (1.0f / 127.5f) * look_pitch;
-                contributing_players += 1.0f;
+                f32 horizontal = static_cast<f32>(static_cast<u32>(pad->analog_right_x));
+                f32 vertical = static_cast<f32>(static_cast<u32>(pad->analog_right_y));
+                camera->field_0x208 += (horizontal - 127.5f) * (1.0f / 127.5f) * look_yaw;
+                camera->field_0x204 += (vertical - 127.5f) * (1.0f / 127.5f) * look_pitch;
             }
+            contributing_players += 1.0f;
+        player1_look_done:;
         }
     }
     if (contributing_players > 1.0f) {

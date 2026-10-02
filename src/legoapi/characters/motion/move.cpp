@@ -647,6 +647,7 @@ extern i16 id_NAFFDROID1, id_NAFFDROID2, id_NAFFDROID4, id_MOUSEDROID;
 static void DodgeCode(GameObject_s *, i32, i32);
 void Grapple_MoveCode(GameObject_s *);
 void SpecialMove_VictimCode(GameObject_s *);
+void Tag_Check(GameObject_s *);
 i32 ObjInNarrowSock(GameObject_s *, SOCKSYS *, i32);
 i32 PodLevel(AREADATA_s *);
 void KeepOnScreen(GameObject_s *);
@@ -6783,6 +6784,7 @@ void MovePlayer_NETWORK(GameObject_s *object) {
         if (glow_model == -1)
             glow_model = 0xdf;
     }
+    Tag_Check(object);
     ForcePushCode(object, 0, 0);
     object->field_0xd8c = 1.0f;
     if (api.field_0x287 == 0 && FadeSys.fade == 0.0f) {

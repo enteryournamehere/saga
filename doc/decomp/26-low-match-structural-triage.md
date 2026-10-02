@@ -9633,5 +9633,75 @@ five repository tests and the complete format/tidy/forward-declaration/symbol/
 report hook. Fresh mapped and raw linked reports agree at **68.598274%**,
 **+0.595814 percentage points** from current main, with all **6,292** original
 exact address/symbol records retained. Production owner bytes equal the
-sole frozen positive candidate after formatting. GitHub verification follows
-on the exact pushed head; the cycle remains below **70.002460%**.
+sole frozen positive candidate after formatting. Root independently verified
+all eleven GitHub checks passed on exact pushed head
+`875d714983db21ca6d83df9085eaa5c50fb9a7c7`; the cycle remains below
+**70.002460%**.
+
+### Batch 356: explicit matrix serialization reserved
+
+The original sixteen named matrix-field endian calls in `Bolt_Init` are
+expressed using canonical `NUMTX` members in offset order, retaining the
+swap flag, payload copy, cursor advancement and every other owner byte.
+This is a source-form proposal, not a missing operation or gameplay fix.
+The sole unchanged O3 complete-owner gate loses **478.4467935 weighted
+bytes**, **58.661440% → 47.993730%**. All sixty-three original-backed
+functions, five exacts and complete symbol/storage/nonfunction-extent/U
+Counters retain. An ambient-environment preparation error was corrected
+before compilation; actual action environment and arguments were preserved.
+The negative unit remains frozen without production integration, variants
+or runtime-fixture expenditure.
+
+### Batch 350: network-player tag-state update
+
+`MovePlayer_NETWORK` restores the original unconditional `Tag_Check` call
+after glow-model selection and before `ForcePushCode`. The later terrain tag
+update remains separate. The unchanged O2 complete-owner gate gains
+**32.87102942 weighted bytes**,69.889534% → 71.909880%,1627 → 1643 bytes
+(original1627). All four owner exacts retain; the only undefined-reference
+addition is the original-backed `Tag_Check`. The unscored rendering helper
+has complete byte/relocation/referenced-storage and decoded branch-target
+invariance, proving zero delta without assigning an absolute missing score.
+
+Root independently runs **974 cases / 40,041 checks per ABI** with complete
+actual network/tag/takeover/math/helper bodies. Host address/undefined/leak
+sanitizers and NDK32 diagnostics pass. Each safe old-body control fails exactly
+four named tag flag/HUD/context-delay/pause assertions without a crash.
+Controller/GPU/audio/navigation/combat leaf services are declared stable
+recorders, not full gameplay. Actual finite takeover publication executes;
+remote-bit admission and context51 are explicitly seeded states, not claims
+that unrecovered outer producers execute. Helper excerpts use their own
+production actions. Fixture-only declaration/include/event-name repairs
+preserve actual source bodies and historical failed diagnostics.
+
+Fresh mapped/raw linked reports agree at **68.598970%**, retaining all
+**6,292** exact address/symbol records from checkpoint21. Target, native and
+WASM builds pass. The cycle remains below **70.002460%**.
+
+### Batches 357/360: frozen reserves
+
+The original signed curve-type capture in `NuHGobjEvalDwaBlend2` is expressed
+once per existing arm without changing serialized u8 storage or supported
+curve behavior. Its sole unchanged O3 complete-owner gate loses
+**10.82043056 weighted bytes**,31.273912% → 30.382608%. All246 original-backed
+functions, forty exacts and full symbol/storage/undefined-reference Counters
+retain. No integration, variants or runtime fixture follow the negative unit.
+
+The complete best-bolt-target1e9 sentinel candidate has zero known weighted
+delta across46 uniquely scored original-backed functions, with eight known
+exacts retained. `GizForces_BoltHit`1045B and `StoreProgress`2960B remain
+unscored; full net is **unknown**, not measured neutral. Ten removed/nine
+added named compiler-literal/storage rows fail the strict surface gate,
+although undefined references retain. It remains unqualified without
+recompilation, report reruns, speculative score normalization or fixtures.
+
+### Checkpoint 22 verification
+
+The integrated network tag-state repair passes target, native and WASM
+builds, all five repository tests and the complete forward-declaration/tidy/
+symbol/report pre-commit checks. Fresh linked reports agree at
+**68.598970%**, **+0.596510 percentage points** from current main; the complete
+raw exact address/symbol set retains all **6,292** checkpoint21 records.
+Production source equals the frozen positive candidate. Final-head GitHub
+verification remains pending until this checkpoint is pushed; no merge is
+authorized below the cycle's **70.002460%** threshold.

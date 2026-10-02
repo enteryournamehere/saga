@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.08503,
+    "fuzzy_match_percent": 68.18669,
     "total_code": "4722419",
-    "matched_code": "526137",
-    "matched_code_percent": 11.141261,
+    "matched_code": "526729",
+    "matched_code_percent": 11.153796,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6290,
-    "matched_functions_percent": 46.734528,
+    "matched_functions": 6292,
+    "matched_functions_percent": 46.749386,
     "total_units": 1
   },
   "text": {
@@ -46598,7 +46598,7 @@
           "address": 3820144,
           "offset": 2930176,
           "size": 1329,
-          "match_percent": 0.0
+          "match_percent": 73.447365
         },
         {
           "name": "do_mouse_flymode_camera",
@@ -46694,7 +46694,7 @@
           "address": 5080416,
           "offset": 4190448,
           "size": 90,
-          "match_percent": 96.9
+          "match_percent": 99.9
         },
         {
           "name": "_Z17SetCameraMatricesv",
@@ -46726,7 +46726,7 @@
           "address": 5081888,
           "offset": 4191920,
           "size": 341,
-          "match_percent": 58.68254
+          "match_percent": 65.61905
         },
         {
           "name": "_Z23GameCam_GetAdjustedYRotP12GAMECAMERA_s",
@@ -46742,7 +46742,7 @@
           "address": 5090064,
           "offset": 4200096,
           "size": 294,
-          "match_percent": 97.054794
+          "match_percent": 100.0
         },
         {
           "name": "_Z22GameCameraMakeMiniCut2P7nuvec_sS0_iffffiii",
@@ -46750,7 +46750,7 @@
           "address": 5090368,
           "offset": 4200400,
           "size": 298,
-          "match_percent": 99.8
+          "match_percent": 100.0
         },
         {
           "name": "_Z22GameCameraMakeMiniCut3jfiiiPviP7nuvec_sfffffffiP11nugspline_scc",
@@ -74990,7 +74990,7 @@
           "address": 1095536,
           "offset": 205568,
           "size": 12138,
-          "match_percent": 39.31178
+          "match_percent": 48.617558
         },
         {
           "name": "_Z19DrawGameObjectsDrawi",
@@ -75270,7 +75270,7 @@
           "address": 3033344,
           "offset": 2143376,
           "size": 9601,
-          "match_percent": 58.68241
+          "match_percent": 79.1799
         },
         {
           "name": "NuDisplaySceneRndr",
@@ -75742,7 +75742,7 @@
           "address": 5578176,
           "offset": 4688208,
           "size": 975,
-          "match_percent": 44.691917
+          "match_percent": 44.99495
         }
       ]
     },
@@ -77737,7 +77737,7 @@
           "address": 1058464,
           "offset": 168496,
           "size": 12323,
-          "match_percent": 22.504639
+          "match_percent": 23.964098
         },
         {
           "name": "TerrainSetImpactData",
@@ -86644,7 +86644,7 @@
           "address": 1766272,
           "offset": 876304,
           "size": 10455,
-          "match_percent": 39.770596
+          "match_percent": 43.731625
         },
         {
           "name": "_Z14Hub_ResetPanelv",
@@ -86756,7 +86756,7 @@
           "address": 1795760,
           "offset": 905792,
           "size": 9054,
-          "match_percent": 15.747258
+          "match_percent": 16.787315
         },
         {
           "name": "_Z17Hub_MakeModelListv",

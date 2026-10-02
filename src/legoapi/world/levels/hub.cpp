@@ -582,7 +582,7 @@ void Hub_Update(WORLDINFO_s *world) {
                     }
                 }
                 GameObject_s *custodian =
-                    AddDynamicCreature(id, &store_pack.custodian_position, store_pack.custodian_angle,
+                    AddDynamicCreature(id, &StorePack[pack].custodian_position, store_pack.custodian_angle,
                                        const_cast<char *>("party"), path_info, NULL, 1, NULL, NULL, 0, 1);
                 if (custodian != NULL) {
                     custodian->field_0xee8 = store_pack.custodian_position.x;
@@ -1086,9 +1086,9 @@ void Hub_DrawPanel(WORLDINFO_s *) {
     if (hub_episode != -1 && hub_episode_time > 0.0f) {
         const i32 alpha = static_cast<i32>(128.0f * hub_episode_time);
         if (hub_episode == 6) {
-            i32 mini_count = 0, mini_total = 0, char_count = 0, char_total = 0;
-            i32 buildup_count = 0, buildup_total = 0, story_count = 0, story_total = 0;
-            i32 free_count = 0, free_total = 0, red_count = 0, red_total = 0;
+            i32 red_total = 0, red_count = 0, free_total = 0, free_count = 0;
+            i32 story_total = 0, story_count = 0, buildup_total = 0, buildup_count = 0;
+            i32 char_total = 0, char_count = 0, mini_total = 0, mini_count = 0;
             for (i32 i = 0; i < EPISODECOUNT; ++i) {
                 Episode_CountOpenAreas(i, -1, Game.area_save);
                 mini_count += EpMiniKitCount;
@@ -1151,14 +1151,15 @@ void Hub_DrawPanel(WORLDINFO_s *) {
             }
         } else if (hub_episode == 8) {
             i32 gold_count = 0, gold_total = 0, buildup_count = 0, buildup_total = 0;
-            for (i32 i = 0; i < AREACOUNT; ++i) {
-                AREADATA *area = &ADataList[i];
+            AREADATA *area = ADataList;
+            AREASAVE_s *save = Game.area_save;
+            for (i32 i = 0; i < AREACOUNT; ++i, ++area, ++save) {
                 if (area == HUB_ADATA || (area->flags & 0x22) || area->episode_index != 0xff || (area->flags & 0x2010))
                     continue;
                 if (area->flags & 0x100) {
                     if (GOLDBRICKFORSUPERBONUS) {
                         ++gold_total;
-                        if (Game.area_save[i].area_complete)
+                        if (save->area_complete)
                             ++gold_count;
                     }
                     continue;
@@ -1166,12 +1167,12 @@ void Hub_DrawPanel(WORLDINFO_s *) {
                 if (area->flags & 4 || area->flags & 0x800)
                     continue;
                 ++gold_total;
-                if (Game.area_save[i].area_complete)
+                if (save->area_complete)
                     ++gold_count;
                 if (area->flags & 0x4000) {
                     ++gold_total;
                     ++buildup_total;
-                    if (Game.area_save[i].story_buildup_complete || Game.area_save[i].freeplay_buildup_complete) {
+                    if (save->story_buildup_complete || save->freeplay_buildup_complete) {
                         ++gold_count;
                         ++buildup_count;
                     }
@@ -1347,34 +1348,23 @@ void Hub_DrawPanel(WORLDINFO_s *) {
                             green = menu_flash ? MENUFLASH0G : MENUFLASH1G;
                             blue = menu_flash ? MENUFLASH0B : MENUFLASH1B;
                         }
-                    } else {
-                        if (menu_pulse > 0.0f) {
-                            red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
-                                                   static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse));
-                            green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
-                                                     static_cast<u32>(MENUNORMALG) * (1.0f - menu_pulse));
-                            blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulse +
-                                                    static_cast<u32>(MENUNORMALB) * (1.0f - menu_pulse));
-                        } else {
-                            red = MENUENTRYR;
-                            green = MENUENTRYG;
-                            blue = MENUENTRYB;
-                        }
-                    }
-                } else {
-                    if (menu_pulse > 0.0f) {
-                        red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
-                                               static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse));
-                        green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
-                                                 static_cast<u32>(MENUNORMALG) * (1.0f - menu_pulse));
-                        blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulse +
-                                                static_cast<u32>(MENUNORMALB) * (1.0f - menu_pulse));
-                    } else {
-                        red = MENUENTRYR;
-                        green = MENUENTRYG;
-                        blue = MENUENTRYB;
+                        goto hub_episode_colour_ready;
                     }
                 }
+                // Touch selection and the other entries share the normal menu pulse.
+                if (menu_pulse > 0.0f) {
+                    red = static_cast<i32>(static_cast<u32>(MENUFLASH0R) * menu_pulse +
+                                           static_cast<u32>(MENUNORMALR) * (1.0f - menu_pulse));
+                    green = static_cast<i32>(static_cast<u32>(MENUFLASH0G) * menu_pulse +
+                                             static_cast<u32>(MENUNORMALG) * (1.0f - menu_pulse));
+                    blue = static_cast<i32>(static_cast<u32>(MENUFLASH0B) * menu_pulse +
+                                            static_cast<u32>(MENUNORMALB) * (1.0f - menu_pulse));
+                } else {
+                    red = MENUENTRYR;
+                    green = MENUENTRYG;
+                    blue = MENUENTRYB;
+                }
+            hub_episode_colour_ready:
                 size *= grow;
                 f32 opacity = phase;
                 if (!Episode_CountOpenAreas(i, -1, Game_AreaSave))
@@ -1384,8 +1374,9 @@ void Hub_DrawPanel(WORLDINFO_s *) {
                 const i32 bonus = Episode_FindAreaFromFlags(&EDataList[i], 5, 5);
                 i32 object = 167;
                 if (bonus != -1 && Game_AreaSave &&
-                    (Game_AreaSave[bonus].area_complete || static_cast<f32>(ADataList[bonus].challenge_trial_time) >
-                                                               Game_AreaSave[bonus].challenge_trial_time))
+                    (Game_AreaSave[bonus].area_complete ||
+                     static_cast<f32>(static_cast<i32>(ADataList[bonus].challenge_trial_time)) >
+                         Game_AreaSave[bonus].challenge_trial_time))
                     object = 168;
                 const f32 scale = icon_size * size;
                 DrawPanel3DObject(x, y, 1.0f, scale, scale, scale, 0, 0, 0, &WORLD->lev_objs[object].special, 0,

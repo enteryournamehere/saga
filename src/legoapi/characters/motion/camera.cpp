@@ -70,14 +70,14 @@ void GameCam_Blend(GAMECAMERA_s *camera, f32 duration, f32 curve, i32 mode) {
     if (camera == NULL) {
         camera = GameCam;
     }
-    if (duration <= 0.0f || camera->mode == -1) {
+    if (!(duration > 0.0f) || camera->mode == -1) {
         return;
     }
 
     camera->blend_start_pitch = camera->desired_pitch;
     camera->blend_start_yaw = camera->desired_yaw;
     camera->blend_start_roll = camera->desired_roll;
-    camera->blend_mode = mode < 1 ? 1 : 2;
+    camera->blend_mode = static_cast<u32>(mode) < 1 ? 1 : 2;
     camera->previous_camera_mode = camera->previous_mode;
 
     camera->blend_start_position = camera->desired_position;
@@ -150,7 +150,7 @@ void GameCam_Judder(GAMECAMERA_s *camera, float amount, i32 axis, nuvec_s *sourc
 }
 
 void GameCam_HitRoll() {
-    const f32 amount = qrand() > 0x7fff ? 0.25f : -0.25f;
+    const f32 amount = qrand() <= 0x7fff ? -0.25f : 0.25f;
     GameCam_Judder(GameCam, amount, 2, NULL);
 }
 
@@ -2114,25 +2114,34 @@ extern "C" {
 
         if (buttons == 2 || buttons == 5) {
             if (camera->freedoms & EDCAM_FREEDOM_DISTANCE) {
-                if (mouse_x != 0.0f || mouse_y != 0.0f)
+                if (mouse_y != 0.0f || mouse_x != 0.0f)
                     TargetAng = static_cast<i16>(NuAtan2D(-mouse_x, -mouse_y));
-                i32 difference = static_cast<u16>(TargetAng - MouseOldAng);
+                u16 angle = static_cast<u16>(TargetAng);
+                i32 difference = static_cast<u16>(angle - MouseOldAng);
                 if (difference > 0x7fff)
                     difference -= 0x10000;
-                i16 angle = TargetAng;
-                if (difference >= -20000 && difference <= 20000)
-                    angle = static_cast<i16>(MouseOldAng + difference / 4);
-                MouseOldAng = TargetAng;
+                if (abs(difference) > 20000)
+                    angle = static_cast<u16>(TargetAng);
+                else
+                    angle = static_cast<u16>(MouseOldAng + difference / 4);
+                MouseOldAng = angle;
 
                 f32 sine = NU_SIN_LUT(static_cast<u16>(angle) + 0x2000);
                 if (NuFabs(sine) > 0.1f) {
-                    sine += sine <= 0.0f ? 0.1f : -0.1f;
-                    f32 distance = camera->distance + NuFsqrt(mouse_x * mouse_x + mouse_y * mouse_y) * sine *
-                                                          zoom_scale * camera->mouse_move_speed;
+                    if (sine > 0.0f)
+                        sine -= 0.1f;
+                    else
+                        sine += 0.1f;
+                    f32 distance = NuFsqrt(mouse_x * mouse_x + mouse_y * mouse_y) * sine *
+                                       (zoom_scale * camera->distance_speed) * camera->mouse_move_speed +
+                                   camera->distance;
                     const f32 minimum = -camera->minimum_distance;
-                    camera->distance = distance <= minimum ? distance : minimum;
+                    camera->distance = MIN(minimum, distance);
                 }
             }
+        } else if (buttons == 3 || buttons == 4) {
+            movement.x += mouse_x * 0.0078125f;
+            movement.y -= mouse_y * 0.0078125f;
         } else if (buttons == 1) {
             if (camera->freedoms & EDCAM_FREEDOM_PITCH) {
                 camera->pitch -= static_cast<i32>(mouse_y * 16.0f);
@@ -2143,14 +2152,11 @@ extern "C" {
             }
             if (camera->freedoms & EDCAM_FREEDOM_YAW)
                 camera->yaw -= static_cast<i32>(mouse_x * 16.0f);
-        } else if (buttons == 3 || buttons == 4) {
-            movement.x = mouse_x * 0.0078125f;
-            movement.y = -mouse_y * 0.0078125f;
         }
 
         const f32 minimum = -camera->minimum_distance;
         const f32 distance = camera->distance - zoom_scale * camera->distance_speed * mouse_z;
-        camera->distance = distance <= minimum ? distance : minimum;
+        camera->distance = MIN(minimum, distance);
 
         NUMTX rotation = numtx_identity;
         NuMtxRotateX(&rotation, camera->pitch);

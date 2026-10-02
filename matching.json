@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.008125,
+    "fuzzy_match_percent": 68.00891,
     "total_code": "4722419",
-    "matched_code": "527905",
-    "matched_code_percent": 11.1786995,
+    "matched_code": "529037",
+    "matched_code_percent": 11.20267,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6308,
-    "matched_functions_percent": 46.868267,
+    "matched_functions": 6315,
+    "matched_functions_percent": 46.920277,
     "total_units": 1
   },
   "text": {
@@ -51877,7 +51877,7 @@
           "address": 5087776,
           "offset": 4197808,
           "size": 185,
-          "match_percent": 99.945946
+          "match_percent": 100.0
         },
         {
           "name": "_Z14Minicam_Updatev",
@@ -60446,7 +60446,7 @@
           "address": 4944128,
           "offset": 4054160,
           "size": 89,
-          "match_percent": 75.85714
+          "match_percent": 75.95238
         },
         {
           "name": "_Z18GizRandom_ActivateP7GIZMO_si",
@@ -60462,7 +60462,7 @@
           "address": 4944384,
           "offset": 4054416,
           "size": 138,
-          "match_percent": 83.22222
+          "match_percent": 83.244446
         },
         {
           "name": "_Z15createGizRandomPviPiPc",
@@ -60470,7 +60470,7 @@
           "address": 4944528,
           "offset": 4054560,
           "size": 332,
-          "match_percent": 99.98148
+          "match_percent": 100.0
         },
         {
           "name": "_Z23GizRandom_RegisterGizmoi",
@@ -74879,7 +74879,7 @@
           "address": 2680521,
           "offset": 1790553,
           "size": 113,
-          "match_percent": 88.30303
+          "match_percent": 100.0
         },
         {
           "name": "nugraphGenerateLookupTable",
@@ -82312,7 +82312,7 @@
           "address": 1199984,
           "offset": 310016,
           "size": 367,
-          "match_percent": 99.89474
+          "match_percent": 99.92105
         },
         {
           "name": "_ZL11Titles_InitP11WORLDINFO_s",
@@ -89041,7 +89041,7 @@
           "address": 3129897,
           "offset": 2239929,
           "size": 166,
-          "match_percent": 92.41936
+          "match_percent": 100.0
         },
         {
           "name": "SetAllInstancesVisible",
@@ -104427,7 +104427,7 @@
           "address": 2496387,
           "offset": 1606419,
           "size": 116,
-          "match_percent": 96.128204
+          "match_percent": 100.0
         },
         {
           "name": "_ZL10InsertDataP9nuqthdr_siPv",
@@ -104443,7 +104443,7 @@
           "address": 2496897,
           "offset": 1606929,
           "size": 91,
-          "match_percent": 99.757576
+          "match_percent": 100.0
         },
         {
           "name": "_ZL7AddNodeP9nuqthdr_si",
@@ -105015,7 +105015,7 @@
           "address": 2506882,
           "offset": 1616914,
           "size": 129,
-          "match_percent": 94.48485
+          "match_percent": 100.0
         },
         {
           "name": "NuStringTok",

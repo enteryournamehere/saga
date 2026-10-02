@@ -15,6 +15,8 @@ i32 NuVSPrintf(char *dest, const char *format, va_list args) {
 }
 
 i32 NuSPrintfW(NUWCHAR *dest, NUWCHAR *format, ...) {
+    // The original initializes this local but never reads it.
+    i32 length = 0;
     va_list args;
     char ascii_format[256];
     char text[256];

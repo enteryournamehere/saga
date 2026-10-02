@@ -5692,29 +5692,32 @@ i32 ForcePushed_SetTargetMom(GameObject_s *object, float *seek_rate) {
         float push_z = object->apiobj.position.z - source->apiobj.position.z;
         float nearest_distance_squared = 2.25f;
         GameObject_s *candidate = Obj;
-        for (i32 index = 0; index < HIGHGAMEOBJECT; ++index, ++candidate) {
+        i32 object_count = HIGHGAMEOBJECT;
+        for (i32 index = 0; index < object_count; ++index, ++candidate) {
             if ((candidate->apiobj.field_0x1f8 & 0x1001) != 0x1001 || candidate->apiobj.field_0x287 != 0 ||
                 candidate == source || candidate == object || candidate->apiobj.field_0x27c != -1 ||
-                (candidate->field_0xefb & 8) != 0 || CannotKill(candidate) != 0 ||
-                (candidate->apiobj.character_data->model_flags & 0x4002010) != 0x10) {
+                (candidate->field_0xefb & 8) != 0) {
                 continue;
             }
-            GAMECHARACTERDATA *character =
-                static_cast<GAMECHARACTERDATA *>(candidate->apiobj.character_data->field11_0x24);
-            if ((character->flags_090 & 0x40) != 0 || (character->flags_094[1] & 2) != 0 ||
-                candidate->id == id_GONKDROID || candidate->apiobj.collision_min.y > object->apiobj.collision_max.y ||
-                object->apiobj.collision_min.y > candidate->apiobj.collision_max.y) {
-                continue;
-            }
-            float dx = candidate->apiobj.position.x - object->apiobj.position.x;
-            float dz = candidate->apiobj.position.z - object->apiobj.position.z;
-            if (!(0.0f > push_x * dx + push_z * dz)) {
-                float distance_squared = dx * dx + dz * dz;
-                if (distance_squared < nearest_distance_squared) {
-                    nearest_distance_squared = distance_squared;
-                    nearest = candidate;
+            if (CannotKill(candidate) == 0 && (candidate->apiobj.character_data->model_flags & 0x4002010) == 0x10) {
+                GAMECHARACTERDATA *character =
+                    static_cast<GAMECHARACTERDATA *>(candidate->apiobj.character_data->field11_0x24);
+                if (!((character->flags_090 & 0x40) != 0 || (character->flags_094[1] & 2) != 0 ||
+                      candidate->id == id_GONKDROID ||
+                      candidate->apiobj.collision_min.y > object->apiobj.collision_max.y ||
+                      object->apiobj.collision_min.y > candidate->apiobj.collision_max.y)) {
+                    float dx = candidate->apiobj.position.x - object->apiobj.position.x;
+                    float dz = candidate->apiobj.position.z - object->apiobj.position.z;
+                    if (!(0.0f > push_x * dx + push_z * dz)) {
+                        float distance_squared = dx * dx + dz * dz;
+                        if (distance_squared < nearest_distance_squared) {
+                            nearest_distance_squared = distance_squared;
+                            nearest = candidate;
+                        }
+                    }
                 }
             }
+            object_count = HIGHGAMEOBJECT;
         }
     }
     float dx;

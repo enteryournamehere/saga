@@ -12024,6 +12024,30 @@ All eleven GitHub checks are independently verified COMPLETED/SUCCESS on the
 exact checkpoint38 pushed head8c671d7829362398651314049045c05992a55d46.
 The below-threshold gain still does not authorize merging.
 
+Batch446's initial representation proof stops on a GCC D5 group signature
+defined in its GROUP section rather than the member code section. The failed
+proof remains preserved. The additive446-r1 proof qualifies exactly three
+such unchanged LOCAL NOTYPE signatures and all eight member-defined signatures,
+their raw symbol/header/name/payload bytes and complete whole-object code,
+relocations, data, incoming edges,43 labels,171 cases and143 unwind records.
+Qualification4989c2a8180e019c6303b875ac71928435ef59d17e120f67a25bf52a95abb022.
+
+The frozen446 old/new GNU64/i386 O2 sanitizer diagnostics each pass896 cases
+and9859 checks with identical same-ABI output, using actual canonical records,
+context/cheat producers and math helpers. All four runs have empty stderr and
+status0 under ASan/UBSan/leak detection. Stable direct SuperPush admission is
+diagnostic only: no shipped nonzero producer, concurrency or full-engine/NDK
+equivalence is claimed; existing math/helper debt remains outside this change.
+Resultff8e2fe03f902911ca6e9c4c432570569ad1408a5f85747361720b8023d89737.
+The exact frozen446 source form is integrated pending linked validation.
+
+Batch447's sole original-O3 owner pair gains192.92421995 original-weighted
+bytes: turret best-target53.449665% to69.953020%,1065 to1112 emitted bytes.
+All37 backed rows and six exacts retain. Acceptance stops on specific constant
+storage changes (.LC23 cst4/.LC28 cst16 to .LC23 cst16) and two unknown thunks;
+whole-object qualification remains pending. No source variant or matching
+rerun is made, and this isolated gain is not counted in the linked report.
+
 Batch446's sole unchanged-O2 whole-owner pair measures368.390733 positive
 original-weighted bytes: ForcePushed_SetTargetMom46.503570% to74.625000%,
 1273 to1281 emitted bytes. All136 backed rows and4 exacts retain; it is the
@@ -12058,3 +12082,20 @@ Raw reportd640bd581de7a74628eab5db133553e669cef5715f28e8f2f2b8848e5c0c2ba7;
 mapped reporta6e3b5c553e9aee8607e2c7cf552f28a184277551572c8dc39a4a09be4d75890.
 Exact pushed-head GitHub validation follows separately. Batch446 remains
 isolated and is not included in this linked gain.
+
+All eleven GitHub checks are independently verified COMPLETED/SUCCESS on the
+exact checkpoint39 pushed head7b5440cc4867b8c032e7660148f0175bf0654b5b.
+The below-threshold gain still does not authorize merging.
+
+### Checkpoint40 linked validation
+
+The integrated446 force-push loop form passes native, WASM and Android target
+builds and all five repository checks. One independent linked report reaches
+68.800860% fuzzy matching, +0.007840pp over checkpoint39 and +0.798400pp over
+main. ForcePushed_SetTargetMom is the only linked score change; all6293 raw
+exacts, original identities,4722419-byte denominator and source ownership
+retain. The +2pp threshold70.002460% remains unmet; no merge is authorized.
+Raw report5d2bce5114a0af0b1c162dcfcd2f451d3e8c9014246a37de810ffa7084f1c0c2;
+mapped report60d4e03506505f91c65960d28e35f6d5049bc2cdbddc8cedbd103a7524a504dc.
+Exact pushed-head GitHub validation follows separately. Turret447 remains
+isolated pending specific qualification and is not included in this gain.

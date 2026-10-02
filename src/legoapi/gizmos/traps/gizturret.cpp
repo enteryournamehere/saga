@@ -379,8 +379,8 @@ static void GizTurrets_Update(void *context, void *system_ptr, float frame_time)
                                                    NULL, turret->controller != NULL);
                 FindAnglesXY(&direction, NULL, NULL);
                 NUANGVEC angles;
-                angles.x = temp_xrot;
-                angles.y = temp_yrot;
+                angles.x = static_cast<u16>(temp_xrot);
+                angles.y = static_cast<u16>(temp_yrot);
                 NuMtxSetRotationXYVU0(&direction_matrix, &angles);
             }
             i32 flags = turret->controller != NULL ? 4 : 2;

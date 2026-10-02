@@ -414,14 +414,14 @@ static void UpdatePacemakerDisplay(void *lev_objs) {
 
 // Mine update — mirrors _ZL18UpdatePodRaceMinesv. Host: mines behind the
 // camera despawn, mines touched by a vehicle explode (players die instead).
-// Client: mines flagged in client_mines by the host explode on contact.
+// Client: present, unacknowledged mines report every overlapping vehicle.
 static __used__ void UpdatePodRaceMines(void) {
     GameObject_s *minesarr[64];
     i32 minecount = 0;
 
-    // Collect active vehicles from the shared object pool (Obj, stride
-    // 0x10e4); the pool end is Obj + 0x43900 (= 64 objects).
-    for (GameObject_s *obj = (GameObject_s *)Obj; obj != (GameObject_s *)((u8 *)Obj + 0x43900); obj++) {
+    // The shared pool contains 64 canonical GameObject records.
+    GameObject_s *objects = Obj;
+    for (GameObject_s *obj = objects; obj != objects + 64; obj++) {
         if (obj != NULL && (obj->apiobj.field_0x1f8 & 0x1001) == 0x1001 && obj != pod_pacemaker)
             minesarr[minecount++] = obj;
     }
@@ -431,13 +431,13 @@ static __used__ void UpdatePodRaceMines(void) {
     // Host path runs inline first in the original; the client mirror sits at
     // the end of the function behind this early-out.
     if (netclient == 0) {
-        GAMECAMERA_s *cam = GameCam;
         for (MINEENTRY_s *entry = &mines->mines[0]; entry != &mines->mines[64]; entry++) {
             if (entry->active == 0)
                 continue;
 
             NUVEC delta;
-            NuVecSub(&delta, &entry->pos, &cam->pos);
+            NuVecSub(&delta, &entry->pos, &GameCam->pos);
+            GAMECAMERA_s *cam = GameCam;
             float along = delta.x * cam->dir.x + delta.y * cam->dir.y + delta.z * cam->dir.z;
             if (along < 0.0f) {
                 // Behind the camera: drop the mine again.
@@ -466,8 +466,8 @@ static __used__ void UpdatePodRaceMines(void) {
                     continue;
                 float dx = obj->apiobj.pos_x - entry->pos.x;
                 float dz = obj->apiobj.pos_z - entry->pos.z;
-                float rr = *(float *)((u8 *)obj + 0x1dc) + r;
-                if (rr * rr <= dx * dx + dz * dz)
+                float rr = obj->apiobj.field_0x1dc + r;
+                if (!(rr * rr > dx * dx + dz * dz))
                     continue;
 
                 if ((u8)obj->apiobj.field_0x27c == 0xff) {
@@ -483,7 +483,7 @@ static __used__ void UpdatePodRaceMines(void) {
                     AddFiniteShotPART(mines->mine_part, &entry->pos, 1);
                 GameCam_HitJudder();
                 GameCam_NewShake(NULL, 0.75f, 1.0f, 1.0f);
-                PlaySfx("Explode1", (NUVEC *)((u8 *)obj + 0x80));
+                PlaySfx("Explode1", &obj->apiobj.collision_position);
                 PodLoseSpeed(obj, 1, 1);
 
                 i32 slot = (i32)(entry - &mines->mines[0]);
@@ -500,13 +500,15 @@ static __used__ void UpdatePodRaceMines(void) {
     }
 
     {
-        float radius = mines->mine_radius;
         CLIENTMINES_s *client = &client_mines;
         for (u32 idx = 0; idx < 0x40; idx++) {
             u32 mask = 1u << (idx & 0x1f);
-            // Words 0xc0/0xc1: host mine-present flags; 0xc2/0xc3: exploded ack.
-            if (((client->present_words[idx >> 5] | client->exploded_words[idx >> 5]) & mask) == 0)
+            // Retail widens the signed 32-bit mask, including its bit-31 quirk.
+            u32 high_mask = 0u - (mask >> 31);
+            if (((client->present_words[0] & mask) | (client->present_words[1] & high_mask)) == 0 ||
+                ((client->exploded_words[0] & mask) | (client->exploded_words[1] & high_mask)) != 0)
                 continue;
+            float radius = mines->mine_radius;
             NUVEC *mine_pos = &client->positions[idx];
             for (i32 i = 0; i < minecount; i++) {
                 GameObject_s *obj = minesarr[i];
@@ -514,8 +516,8 @@ static __used__ void UpdatePodRaceMines(void) {
                     continue;
                 float dx = obj->apiobj.pos_x - mine_pos->x;
                 float dz = obj->apiobj.pos_z - mine_pos->z;
-                float rr = *(float *)((u8 *)obj + 0x1dc) + radius;
-                if (rr * rr <= dx * dx + dz * dz)
+                float rr = obj->apiobj.field_0x1dc + radius;
+                if (!(rr * rr > dx * dx + dz * dz))
                     continue;
                 if (mines->mine_debris != -1)
                     AddGameDebris(WORLD->debris_sys, mines->mine_debris, mine_pos);
@@ -523,9 +525,9 @@ static __used__ void UpdatePodRaceMines(void) {
                     AddFiniteShotPART(mines->mine_part, mine_pos, 1);
                 GameCam_HitJudder();
                 GameCam_NewShake(NULL, 0.75f, 1.0f, 1.0f);
-                PlaySfx("Explode1", mine_pos);
-                client->exploded_words[idx >> 5] |= mask;
-                break;
+                PlaySfx("Explode1", &obj->apiobj.collision_position);
+                client->exploded_words[0] |= mask;
+                client->exploded_words[1] |= high_mask;
             }
         }
     }

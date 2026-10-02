@@ -12180,3 +12180,100 @@ Raw report6e9a52bb8bc20d6e0748495d4381afebdabc37550ce7188e2b9b244bf3b2c5b4;
 mapped report0892d2264dc8005c03a3dda5d1d03b657c3ab50934e7e45630d54b6ab1dccb9e.
 Exact pushed-head GitHub validation follows separately. Mine448 remains
 isolated pending runtime verification and is not included in this gain.
+
+All eleven GitHub checks are COMPLETED/SUCCESS on exact checkpoint41 head
+7c63c4221d43b022a917d42e7d0a8fa47eff6a12, with main still
+a496c28beece66a24ccdf7336571b6836f45e6aa. The +2pp gate remains unmet;
+this green checkpoint does not authorize merging.
+
+### Isolated over-gap gesture452 and mine448 diagnostics
+
+The sole452 whole-owner O2 pair restores early initialized packet capture,
+guarded speed reload after normalization and lowercase global-player velocity
+backup/rollback. Null-config speed-zero guards remain; null global player
+deliberately falls back to the argument object instead of reproducing retail's
+null dereference. Actual global identity is proved by its original GOT slot,
+not inferred from Player[0]. No callback mutation or shipped multiplayer claim.
+The pair gains212.72231837 original-weighted bytes,37.780373% to59.915890%,
+1089 to989 emitted bytes. All12 exacts and complete symbol/undefined surfaces
+retain. Specific representation and runtime proofs are pending; no linked
+gain or production integration is claimed.
+Capture68872b3a568ccb07f3e4d82b1321541f42c2220e011fa81aade52a9cc506dea9.
+
+Mine448 original runtime preparation is preserved with pre-integration camera
+source provenance. Additive r1 freezes the same three used camera helpers;
+its first GNU64 metadata preflight stops on unlisted cstddef before objects.
+ROOT fully reviews that sole consumed header; additive r2 individually pins
+it, retaining all131 prior GNU headers. Both r2 metadata preflights pass, but
+the first host64 old fixture compilation stops on misspelled VARIPTR.voidptr;
+canonical common.h declares void_ptr. All failed evidence is retained. A
+separate one-token fixture spelling repair is authorized, not a matching or
+test-oracle variant. No mine runtime pass or linked gain is yet claimed.
+
+Mine448 additive r3 repairs only that fixture member spelling and its strict
+metadata assertion. Both GNU64/i386 O3 sanitizer builds pass. The sole runtime
+run stops at host64-new-controls on the repeated collision/reset counter
+assertion; old host64 reset/helper controls pass, and no i386 runtime follows
+the failure. This result remains unqualified pending read-only oracle/admission
+review. No production change, matching retry or runtime-pass claim follows.
+
+The sole451 editor rotation candidate restores three raw-backed translation-row
+copies into the existing escaped average scratch. Its O2 full-owner pair loses
+9.02935875 original-weighted bytes:25.462633% to24.754448%,1103 to1291 emitted
+bytes. All74 exacts and symbol/undefined surfaces retain. This candidate is
+closed without variants, representation proof, runtime or production edits.
+
+The initial specific452 representation proof stops before output because its
+original-thunk assertion wrongly requires absence rather than absence of a
+positive-size exact-name row. All original/candidate objects and reports stay
+unchanged. Only an additive exact-row metadata repair is being prepared;
+unbacked thunk scores and original weights remain unassigned.
+
+The additive452-r1 metadata repair pins both original LOCAL HIDDEN zero-size
+thunk rows exactly and leaves all remaining proof constraints unchanged. Its
+sole execution passes all44 function names/40 physical bodies and FDEs,
+254 symbols,14 COMDATs, full relocations/storage/container and static incoming
+references. No nontarget instruction-operand exception is needed. Only the
+target extent, five following function coordinates, exact target-following
+padding and sixteen zero vtable-alignment bytes differ. Absolute thunk scores
+remain unknown; their complete emitted representations have zero delta.
+Qualificatione16e04df4a82df1bbcdd84dd3521575f8e20a0399d8a35eb04390fc308367e40.
+The target remains isolated while bounded canonical runtime preparation proceeds.
+
+### Mine448 and turret453 qualification
+
+Mine448 additive r4 repairs only fixture construction: canonical APIOBJECT
+position and collision_position share a union, so its prior separate writes
+unintentionally moved contacts outside the admitted radius. All assertions and
+target bodies remain unchanged. Both GNU64/i386 O3 ASan/UBSan builds pass.
+Each new ABI passes2150 cases/95259 checks/2129 target calls with identical
+diagnostic digest. Old i386 passes98 retained-control cases and fails the six
+independent acknowledgement, presence, word, overlap, SFX-position and NaN
+witnesses as expected. Old GNU64 passes21 reset/helper/storage cases with zero
+target calls; its fixed-byte pool makes target admission invalid. No old64
+equivalence or full-engine/asset/audio/GPU certification is claimed.
+Runtime result981a0b40f6f12533faa001fa37fcaedc2d639af01d5b7d602a6a4cc9a3da560e.
+The previously qualified sole mine body is integrated pending linked validation.
+
+Turret453 restores the two retail zero-extended16-bit angle loads without
+changing ABI or options. The sole O3 owner pair gains12.902678186 weighted
+bytes,5.3446107% to5.5759244%, with all6 exacts retained. Its specific proof
+requires exactly two BF-to-B7 opcode bytes across the entire31580-byte ELF;
+all other bytes,38 nontarget bodies,39 FDEs, full relocations, symbols, storage
+and container remain identical. Exhaustive65536 component-payload integer
+algebra proves both sine/cosine LUT indices identical for signed and unsigned
+widening in the actual consumer. This is not a gameplay-failure claim.
+Qualification8b5fa4f0884e5fcdfdfa4ffa514ca9690f7049574d6c846f323adf51f70781c2.
+The sole two casts are integrated pending linked validation.
+
+### Checkpoint42 linked validation
+
+Android target, native and WASM builds and all five repository tests pass.
+The independent linked report reaches68.814570%: +0.006830pp over checkpoint41
+and +0.812110pp over main. Only UpdatePodRaceMines44.182610%→65.200000%
+and GizTurrets_Update5.375295%→5.614477% change. All6293 raw exacts,
+original identity multiset,4722419-byte denominator and complete ownership
+summary retain. The70.002460% merge threshold remains unmet.
+Raw reportc0e4aba394674ea40af81b67c1428b5fc7703a5987ef1c23839cd6d472f26226;
+mapped report54f428413ef97ac10833c23448a11a5c84b8a1bf415fbae2e235a24a49b85429.
+Exact pushed-head GitHub checks are still pending; no merge is claimed.

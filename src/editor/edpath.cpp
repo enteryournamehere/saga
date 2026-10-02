@@ -1939,12 +1939,13 @@ extern "C" {
         }
         EDAIPATHNODE_s *node = (EDAIPATHNODE_s *)NuLinkedListGetHead(&path->nodes);
         while (node != nullptr) {
+            const i32 node_index = node->index;
 #define CHECK_PATH_CONNECTION(slot)                                                                                    \
     {                                                                                                                  \
         EDAIPATHNODE_s *other = node->connections[slot].node;                                                          \
-        if (other != nullptr && !(checked[node->index][other->index / 8] & (1 << (other->index % 8)))) {               \
-            checked[node->index][other->index / 8] |= 1 << (other->index % 8);                                         \
-            checked[other->index][node->index / 8] |= 1 << (node->index % 8);                                          \
+        if (other != nullptr && !(checked[node_index][other->index / 8] & (1 << (other->index % 8)))) {                \
+            checked[node_index][other->index / 8] |= 1 << (other->index % 8);                                          \
+            checked[other->index][node_index / 8] |= 1 << (node_index % 8);                                            \
             f32 fraction;                                                                                              \
             f32 width;                                                                                                 \
             i32 angle;                                                                                                 \
@@ -1952,7 +1953,7 @@ extern "C" {
                 result->on_path = 1;                                                                                   \
                 result->path = path;                                                                                   \
                 result->first = node;                                                                                  \
-                result->second = other;                                                                                \
+                result->second = node->connections[slot].node;                                                         \
                 result->fraction = fraction;                                                                           \
                 result->width = width;                                                                                 \
                 result->angle = angle;                                                                                 \

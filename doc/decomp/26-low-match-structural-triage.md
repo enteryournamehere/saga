@@ -11762,3 +11762,159 @@ owner gains. Raw18ffc003b0ab1aff57a844d465bf77cb43b8258cfe5e6e5c78b1720a9aec50e9
 mappedadfeea2d27b493d64977a5f489757e6fc35cd7afcbc619c5f26534159f9d468b.
 The70.002460% merge threshold remains unmet. Normal commit-hook regeneration,
 Codex attribution, push and exact pushed-head CI validation follow.
+
+Checkpoint36's normal hook passes full format/tidy/symbol/report checks. Its
+generated report is byte-identical to the independent capture; episodeI.cpp
+stays byte-identical to423's frozen candidate. Commit536af50c8007ae6bd4642864fae18422d18c4a52
+preserves Fabian's authorship and the verified Codex co-author trailer and is
+pushed toPR121. Initial exact-head checks pass repository/matching/site checks;
+platform checks are still pending, not declared green.
+
+Subsequent independent GitHub inspection verifies all eleven checks
+COMPLETED/SUCCESS on exact pushed head536af50c8007ae6bd4642864fae18422d18c4a52.
+PR121 remains open because the70.002460% linked matching threshold is unmet.
+
+Batch434's sole additive r2 proof stops at the complete normalized render body
+comparison; failed log and all frozen objects/reports/scripts remain preserved.
+Read-only metadata isolates two actual register bytes at Render+39d/+3a0:
+baseline loads/tests member+24 intoECX, candidate intoEAX. Same JE destination
+and PC-relocated targets alone do not qualify these opcode differences.
+An exact both-branch register/flags-use audit follows separately; no generic
+normalizer exemption, proof rerun, runtime or production integration is granted.
+
+### Batch438 finite minikit status census without a candidate
+
+A worker freezes87 eligible item/object/props rows, subtracting82 historical
+named/family exclusions before cap12, leaving only five metadata survivors.
+Exactly one complete raw/current/type/helper/producer audit covers1130-byte
+MiniKit_LSW_Update at1ee8b0, including all status states and real service order.
+No substantial finite-valid-domain omission supports a source candidate;
+the trial closes without compiler/preprocessor/report/runtime expenditure.
+Raw state6 unordered-time handling remains a disclosed nonfinite discrepancy,
+not a claimed finite-equivalence or gameplay repair. The other four survivors
+remain deferred, not audited/closed. Frozen worker audit438 records the scope;
+this census is not a new root runtime/full-engine equivalence certification.
+
+### Batch436 non-target representation qualification
+
+Root executes the separately reviewed same-object proof once. All ten
+non-target functions and the unscored12-byte bx thunk retain complete decoded
+bodies after the specifically checked AddElementR call-displacement adjustment.
+Full storage, symbol identities,37 relocations, groups and12 unwind entries
+retain their documented relationships. No register/opcode masking or unknown
+score imputation is used. Runtime preparation follows separately; no production
+integration yet. Proof capture786bb96840dcebaa49a46efe65cf1c120751707b4cba31c9a41b1eadd4e00f21
+pins the sole matching pair, not a new comparison.
+
+### Batches439/440 finite faithful closures without trials
+
+Worker439 audits the complete5735-byte KaminoC_Update and actual canonical
+level state, packet masks, literals, producers and direct services. Existing
+phase/occupancy/selection/visibility/sound logic agrees in the admitted loaded
+level domain; NULL-first-player and low tile-count debts also exist in retail.
+Worker440 audits the complete1105-byte HomeNearestTorpTarget with canonical
+packet/bolt/type records and actual finder/vector/angle/matrix services.
+Its steering, lifetime snapshots and target publication agree; invalid target
+type/draw-position and unconfigured type debts remain excluded. Neither audit
+supports a source candidate, compilation, export or runtime trial. These are
+bounded worker static closures, not root full-gameplay equivalence certificates.
+KaminoE and UpdateRippleSet are the next separately scoped deferred audits;
+other survivors remain unknown. Frozen440 manifest20b9f95b8ee784c7ad245b49af0753c75417a5e16bf296b66e7112a52f535932.
+
+### Batch437 Whip source-form proposal and metadata boundary
+
+Root reads the complete1854-byte original, complete current owner and actual
+duration/helper/type/producer contracts. Retail reloads the canonical target
+field after duration computation before phase-zero aiming. The sole proposal
+adds that typed reload inside the existing guard; the real duration helpers do
+not mutate the target, so this is source-form matching, not a gameplay bug or
+fabricated callback witness. Active scheduling remains unresolved. Fresh aquery
+confirms the unchangedO3 action; an initial empty overescaped query is preserved
+and never used as compiler authority. The first metadata-only gate staging
+stops on an indentation mismatch in its verifier, before preprocessing,
+objects or reports. Failed partial staging is preserved; a separate additive
+metadata correction must keep the frozen source candidate unchanged.
+
+Root reviews the additive indentation-only correction and both actual146-input
+preprocessing closures before the sole unchangedO3 owner pair. The trial loses
+33.8958477 original-weighted bytes: Whip_MoveCode48.257618% to46.429363%,
+1682 to1730 emitted bytes. All three backed functions retain their identities,
+Counter/U inventories and zero prior exacts; the two unbacked thunks remain
+unknown. This negative candidate closes without variants, runtime, non-target
+qualification or production integration. The first failed staging remains
+preserved and is not recast as a matching attempt.
+
+Batch434's separately reviewed additive r3 qualification admits only the exact
+two Render register bytes after both branch def-use audits. EAX is killed before
+either successor uses it; ECX is neither read nor published before the linked
+font path overwrites it. All other body bytes, relocations, storage, groups and
+unwind relationships retain their exact checked invariants. This is a narrow
+representation proof, not a generic register normalizer or gameplay runtime
+certificate; the failed r2 comparison remains preserved. A bounded scalar
+bitmap diagnostic follows separately before integration.
+
+The first434/436 runtime preflights stop on exact GNU dry-plan metadata paths,
+before objects or runtime. Additive metadata dispatchers preserve their frozen
+fixtures, candidate bodies, headers and sanitizer/compiler options; they admit
+only the separately reviewed shared directory/files and exact named dependency
+outputs. Actual both-ABI input review remains required before any compilation.
+
+The corrected434 preflight individually qualifies both39-input header closures,
+actual backend/link inputs and sanitizer ELF dependencies. GNU64/i386 diagnostics
+each pass520200 admitted bitmap pair/slot cases,65536 promotion-only signed-i16
+values and7479411 checks with ASAN/UBSAN/LSan enabled. This certifies only the
+four exact bitmap scalar expressions, not path geometry, renderer execution or
+the private helper ABI. Root integrates the exact frozen434 source candidate;
+linked whole-binary retention/improvement is still required before committing.
+Runtime result023dbfc46d9ca308e31c1cd6a64c66575239a59f2778876dd03fd542d8819c66.
+
+### Bounded faithful closures and unmeasured source-form leads
+
+Separate workers close the deferred5430-byte KaminoE_Update and514-byte
+SplineKnot::Smooth as faithful in their documented initialized finite domains.
+KaminoE retains all six phases, both-bolt first-distance reuse and actual
+connection/WAIT reset semantics; Smooth retains all neighbor cases, tangentW0
+and the actual return-zero terrain-ray service. No source candidate or matching
+trial follows those closures, and no full-engine/runtime claim is made.
+
+The683-byte GizSpinner_ResetAll audit likewise finds faithful material behavior;
+the original target/previous adjacent-u16 store order remains an explicitly
+unmeasured reserve, not a claim of zero possible gain. A metadata nomination or
+shared-owner inventory is not a completed function audit. The separate671-byte
+GizmoPickups_StoreProgress has an ordinary captured typed cursor/count and
+independent512-stop lead, plus original memset order. The816-byte UpdateRippleSet
+has a stable scan-phase frame/list/count capture and final-count publication
+lead. Each has only one frozen source proposal; matching is still unmeasured.
+
+Batch436's reviewed GNU64/i386 default-O0 sanitizer diagnostics each pass2763
+finite initialized-storage cases and32685 checks;2760 old controls pass, while
+the old first-child predicate fails the separately expected safe fallback case.
+Actual12-byte i386 and24-byte native entries are distinguished, with no claim
+for serialized/native layout equivalence, NULL-copy debt or full-engine runtime.
+ASAN/UBSAN/LSan produce no findings. The exact frozen436 candidate is integrated;
+runtime result1c51e04716e79e4b864b8a09e2b15ab5b5c76b3f915bc0e7fa62ee72c1ae6830.
+The isolated target rises66.50588% to94.80294%, with603.8592604 positive
+original-weighted bytes,11 backed functions and both prior exacts retained.
+
+The next bounded CP36 history-first deformation screen subtracts all14 eligible
+previously audited/trialed bodies before its cap; the rendering screen likewise
+subtracts13 audited/reserved rendering bodies and leaves24 outside its scope.
+Neither supports a new trial. These are narrow no-new-target findings, not a
+claim that all low-matching functions are exhausted.
+
+Batch442's sole unchanged-O3 whole-owner pair follows root review of both143
+actual preprocessing inputs and the exact scan-only source difference. It loses
+461.56401888 original-weighted bytes: UpdateRippleSet68.633026% to12.068808%,
+858 to867 emitted bytes. All19 backed functions, fullCounter/U and zero prior
+exacts retain; two zero-extent thunks remain explicitly unknown. The negative
+candidate closes without variants, representation proofs, runtime or integration.
+
+### Checkpoint37 linked validation
+
+The integrated434/436 changes pass final native, WASM and Android target builds
+and all five repository checks. One independent linked report reaches68.759820%
+fuzzy matching, +0.015310pp over checkpoint36 and +0.757360pp over main.
+All6293 raw exacts, original identities,4722419-byte denominator and source
+ownership retain. The +2pp threshold70.002460% is not reached; no merge is
+authorized by this checkpoint. Raw report9dfc40bab1f342aa6c995a20e1f6f19975d20897962ac6738ae49516751cd0cf;
+mapped reportb226682efff28eb8fc8fe65f1625eef5e20adc79090849ab6c894db2374acd37.

@@ -520,22 +520,25 @@ void MenuDrawExtras(MENU_s *menu) {
             const i16 text_id = entry.text_id != NULL ? *entry.text_id : -1;
             const char *name = text_id >= 0 && TTab[text_id] != NULL ? TTab[text_id] : entry.name;
             snprintf(text, sizeof(text), "%s: %s", name != NULL ? name : "", value);
-        } else {
-            dme_rgb = 1;
-            dme_r = 0xdf;
-            dme_g = 0x3f;
-            dme_b = 0;
         }
 
-        if (menu->draw_y > 0.6f) {
-            alpha = menu->draw_y > 0.9f ? 0.0f : alpha * (1.0f - (menu->draw_y - 0.6f) / 0.3f);
+        if (cheat > 7) {
+            dme_rgb = 1;
+        }
+        dme_r = 0xdf;
+        dme_g = 0x3f;
+        dme_b = 0;
+
+        const f32 distance = NuFabs(menu->draw_y);
+        if (distance > 0.15f) {
+            alpha = distance > 0.6f ? 0.0f : alpha * (1.0f - (distance - 0.15f) / 0.45000002f);
         }
         if (Paused != 0) {
             dme_align = PauseMenus_Align;
             menu->draw_x = PauseMenus_X;
         }
         dme_sy = menu->item_scale;
-        DrawMenuEntryEx(menu, text, static_cast<i32>(static_cast<f32>(MenuA) * alpha));
+        DrawMenuEntryEx(menu, text, static_cast<u8>(static_cast<i32>(static_cast<f32>(MenuA) * alpha)));
     }
 }
 

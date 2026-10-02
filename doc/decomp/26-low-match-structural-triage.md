@@ -9523,4 +9523,115 @@ all five repository tests and the complete format/tidy/forward-declaration/
 symbol/report commit hook. Its fresh mapped and raw reports agree at
 **68.595024%**; the complete raw exact address/symbol set retains all **6,292**
 records from checkpoint19. No compiler options, calling conventions, public
-layout or assets changed. GitHub verification follows on the exact pushed head.
+layout or assets changed. Root independently verified all eleven GitHub checks
+passed on exact pushed head `5e4a6cb2e2cbbcd955f8a0be788cf672c7bbf9fa`.
+
+### Batch 347: complete turret priority unit reserved
+
+`GizTurrets_OpponentSelection` restores the original unconditional first
+admitted candidate in priority10/8 modes, retaining pure-distance mode's1e9
+sentinel, priority precedence, tie comparisons, nullable guards and all other
+filters. Canonical finite serialized coordinates/radii admit the discrepancy;
+no particular shipped large-radius asset is asserted. Safe repeated signed
+cursor operation requires a nonnegative initialized cursor and count<=127;
+the unrelated count128 wrap debt is unchanged.
+
+Its sole unchanged O3 complete-owner gate is **neutral: zero weighted bytes**,
+39 emitted / 37 original-backed functions, every original score unchanged,
+all six exacts and the complete readelf symbol/type/bind/visibility/storage/
+nonfunction-extent/multiplicity and U Counters retained. Two bulk reports
+verify unique scored LOCAL pair identities against original raw addresses.
+The complete unit is reserved without production integration, runtime fixtures,
+recompilation or partial/source-shape variants. The accompanying bounded
+ChangeTechnoTgt/pickup-collision census finds no supported finite omission.
+
+### Checkpoint20 fresh object census
+
+Exactly three further fresh screens close `LevelObjects_InitForLevel`,
+`ActivateCharacter` and `FinishWeirdoNames` without qualified omissions.
+Resolved scene switch/GOT routing and actual lookup/surface/path helpers
+account for the first two complete bodies. The third already expresses the
+original uppercasing/space-padding contract; raw vectorization is not missing
+behavior. Existing arena/count/name-translation storage debts are recorded,
+not guessed repaired. No exports, compiler trials or fixtures follow this
+closed census.
+
+### Batch 349: extras-menu fade and row-colour contract
+
+`MenuDrawExtras` restores the original absolute-Y fade: thresholds0.15/0.6,
+the exact positive divisor `0.45000002f` (IEEE0x3ee66667), and explicit signed
+integer then byte alpha conversion. Rows8–43 select custom RGB independently
+of purchase status; every row publishes223/63/0. Existing nullable name/text
+fallbacks, bounded formatting, purchase/bonus checks and menu guards retain.
+
+The sole unchanged O3 full-owner gate gains **151.8541904 weighted bytes**,
+**32.556652% → 49.812810%**,800 → 824 bytes (original880). All seventeen
+exacts and the complete readelf symbol/type/bind/visibility/storage/nonfunction
+extent/multiplicity and undefined-reference Counters retain. Two original
+bulk reports verify the same unique original raw-address/size pairs; only
+the requested original score changes. No compiler-label exception is needed.
+
+Root independently built and ran **332 cases per ABI** with complete actual
+draw/update/cheat/scroll/row/header/text-wrapper bodies, all400 canonical menu
+geometry slots, ordered leaf traces, fade boundaries, RGB reset side effects
+and purchase controls. Host address/undefined/float-cast/leak sanitizers and
+NDK32 diagnostics pass; both safe old-body controls fail their named assertion
+without a crash. Font/GPU, controller, audio lookup and navigation are declared
+stable recorder seams, not full gameplay. Helpers use the diagnostic fixture
+owner's options, not claims of each separate helper action. Inputs are finite,
+with canonical MenuA0–128 and bounded typed menu/save/cheat storage.
+
+### Batches 352/354: complete negative units reserved
+
+The ordinary `StartDoorPositions` i32 result contract preserves all spline
+publications but its sole unchanged O3 full-owner gate loses **43.1721171
+weighted bytes**,74.945740% → 70.914730%. All thirty-three original-backed
+functions, five exacts and complete symbol/U Counters retain. Existing callers
+ignore the result; no new gameplay consumer is claimed.
+
+The complete `DrawMiniSnowTroopers` original16384 phase/rate unit loses
+**9.07044796 weighted bytes**,48.215233% → 47.572850%, across twenty-two
+original-backed functions. Undefined references retain; compiler labels38/39
+change storage and40 is added. Negative net already closes the unit, so no
+compiler-label exemption or parser repair follows. Both units remain frozen
+reserves without source variants, production integration or runtime fixtures.
+
+The complete NULL-index `NuHGobjRndrMtxDwa` count-one contract (batch353)
+likewise loses **13.9692366 weighted bytes**,54.844370% → 53.599340%, in its
+sole unchanged O3 gate. All246 original-backed functions, forty exacts and
+complete symbol/U Counters retain. The first preparation's permissive literal
+filter and missing-score default were corrected before any compilation; the
+candidate remained byte-identical. It is reserved without integration or
+fixtures; current callers' non-NULL lists are not a gameplay NULL producer.
+
+### Batches 348/351: unknown comparison coverage remains unqualified
+
+Component513's six frozen O2 objects were compiled once. The first detailed
+bulk diagnostic failed in objdiff's section-order pass before serialization;
+its empty output is retained, not treated as a score. Six fast summary reports
+reuse those same objects. The deduplicated union has585 original function
+records, no ambiguous physical pairings or pairing drift, retained prior
+exacts/private helpers/external-U closure, but thirteen unknown records and
+unqualified compiler-label/data-extent surface changes. Its known paired
+subtotal is -4.5830496 bytes; full net remains bounded
+[-3831.5830496,3822.4169504], **not a measured negative or positive**. No
+partial ownership variant, score normalization or fixture follows.
+
+Batch351's complete `NuGScnUpdate` waiting-frame candidate remains frozen
+after one O3 baseline/candidate compile. Three omitted-score rows account for
+3026 original bytes; missing scores are not assigned zero. Two emitted entries
+move, and `NuDisplaySceneRndr` has a nonrelocated same-text local call that a
+relocation-only dependency parser does not cover. Whole-owner net remains
+unknown, not negative/neutral. No production integration or fixture follows
+this unqualified owner gate. A future full-linked trial of the same candidate
+would require separate explicit verification, not silently dropping coverage.
+
+### Checkpoint 21 verification
+
+The integrated extras-menu repair passes target, native and WASM builds, all
+five repository tests and the complete format/tidy/forward-declaration/symbol/
+report hook. Fresh mapped and raw linked reports agree at **68.598274%**,
+**+0.595814 percentage points** from current main, with all **6,292** original
+exact address/symbol records retained. Production owner bytes equal the
+sole frozen positive candidate after formatting. GitHub verification follows
+on the exact pushed head; the cycle remains below **70.002460%**.

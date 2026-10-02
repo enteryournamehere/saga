@@ -3605,55 +3605,59 @@ extern "C" {
         f32 along = (position->x - start->position.x) * dx + (position->z - start->position.z) * dz + distance;
         if (along > length || along < 0.0f) {
             AIPATHNODE *junction = along < 0.0f ? start : end;
-            i32 best_index = -1;
-            f32 best_dot = -FLT_MAX;
-            for (i32 index = 0; index < junction->connection_count; ++index) {
-                AIPATHCNX *candidate = junction->connections[index];
-                if (candidate == connection) {
-                    continue;
-                }
-                AIPATHNODE *candidate_start = &nodes[candidate->direction_a];
-                AIPATHNODE *candidate_end = &nodes[candidate->direction_b];
-                dx = candidate_end->position.x - candidate_start->position.x;
-                dz = candidate_end->position.z - candidate_start->position.z;
-                i32 reverse = 0;
-                if (direction_x * dx + direction_z * dz < 0.0f) {
-                    dx = candidate_start->position.x - candidate_end->position.x;
-                    dz = candidate_start->position.z - candidate_end->position.z;
-                    reverse = 1;
-                }
-                dx /= candidate->horizontal_distance;
-                dz /= candidate->horizontal_distance;
-                if ((candidate->traversal_flags[reverse] & 0xc0000000u) == 0) {
-                    f32 dot = direction_x * dx + direction_z * dz;
-                    if (dot > best_dot) {
-                        best_dot = dot;
-                        best_index = index;
+            const i32 connection_end = static_cast<i32>(junction->connection_count) + 1;
+            if (connection_end != 1) {
+                AIPATHCNX **connections = junction->connections;
+                i32 best_index = -1;
+                f32 best_dot = -FLT_MAX;
+                for (i32 index = 1; index != connection_end; ++index) {
+                    AIPATHCNX *candidate = connections[index - 1];
+                    if (candidate == connection) {
+                        continue;
+                    }
+                    AIPATHNODE *candidate_start = &nodes[candidate->direction_a];
+                    AIPATHNODE *candidate_end = &nodes[candidate->direction_b];
+                    dx = candidate_end->position.x - candidate_start->position.x;
+                    dz = candidate_end->position.z - candidate_start->position.z;
+                    i32 reverse = 0;
+                    if (direction_x * dx + direction_z * dz < 0.0f) {
+                        dx = candidate_start->position.x - candidate_end->position.x;
+                        dz = candidate_start->position.z - candidate_end->position.z;
+                        reverse = 1;
+                    }
+                    dx /= candidate->horizontal_distance;
+                    dz /= candidate->horizontal_distance;
+                    if ((candidate->traversal_flags[reverse] & 0xc0000000u) == 0) {
+                        f32 dot = direction_x * dx + direction_z * dz;
+                        if (dot > best_dot) {
+                            best_dot = dot;
+                            best_index = index - 1;
+                        }
                     }
                 }
-            }
-            if (best_index != -1) {
-                connection = junction->connections[best_index];
-                if (along < 0.0f) {
-                    length = connection->horizontal_distance;
-                    along += length;
-                } else {
-                    along -= length;
-                    length = connection->horizontal_distance;
+                if (best_index != -1) {
+                    connection = connections[best_index];
+                    if (along < 0.0f) {
+                        length = connection->horizontal_distance;
+                        along += length;
+                    } else {
+                        along -= length;
+                        length = connection->horizontal_distance;
+                    }
+                    start = &nodes[connection->direction_a];
+                    end = &nodes[connection->direction_b];
+                    dx = end->position.x - start->position.x;
+                    dz = end->position.z - start->position.z;
+                    if (direction_x * dx + direction_z * dz < 0.0f) {
+                        dx = start->position.x - end->position.x;
+                        dz = start->position.z - end->position.z;
+                        AIPATHNODE *swap = start;
+                        start = end;
+                        end = swap;
+                    }
+                    dx /= length;
+                    dz /= length;
                 }
-                start = &nodes[connection->direction_a];
-                end = &nodes[connection->direction_b];
-                dx = end->position.x - start->position.x;
-                dz = end->position.z - start->position.z;
-                if (direction_x * dx + direction_z * dz < 0.0f) {
-                    dx = start->position.x - end->position.x;
-                    dz = start->position.z - end->position.z;
-                    AIPATHNODE *swap = start;
-                    start = end;
-                    end = swap;
-                }
-                dx /= length;
-                dz /= length;
             }
         }
         f32 fraction = NuFmin(NuFmax(along / length, 0.0f), 1.0f);

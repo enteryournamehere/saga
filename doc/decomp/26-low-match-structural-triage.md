@@ -11418,3 +11418,205 @@ Raw SHA2564c2ed110e620ce412e1f452aa75c8f5e4e9b8ae55645ef4a1adabf13a1e4ca4f;
 mapped1c721045fb28f503b07df9d73277c0aa47e72d2af34d20caaa18242d620ee203.
 The normal commit hook will independently regenerate the report before push.
 The70.002460% cycle threshold remains unmet; queued422–426 are not counted.
+
+Checkpoint34's full normal format/tidy/symbol/report hook passes and its
+generated matching.json is byte-identical to the independent mapped capture.
+Root commits/pushes93adf13a7baf9b34bcc7d58434a069b487c8ca87 with Fabian's
+authorship and Codex attribution. Final-head checks are monitored separately;
+pending CI and the unmet cycle threshold do not permit a merge.
+
+All eleven GitHub checks subsequently complete successfully on the exact
+93adf13a head. Independently captured final-head SHA256
+1c75f531253a9099516539ae0846a78493da513bb1ae533b6130fcf4042194e7
+qualifies both identity and all COMPLETED/SUCCESS conclusions. The unmet
+70.002460% cycle threshold still prevents a merge.
+
+### Batch425 bounded rejected text-decoder trial
+
+Root reviews the complete516-byte original decoder, real codeword helper,
+canonical UTF16/UTF8 producers and one frozen full-owner actual O2 pair.
+Six omitted CJK normalization branches and the promoted continuation-byte
+range expression are restored with individually bounded480-byte publications
+and short-circuit NUL lookahead. The sole gate's63 uniquely backed subtotal
+is−146.6391504 weighted bytes; TextDecode28.418440→qualified protocol0,
+367→800 emitted bytes, all two known exacts and complete Counter/U retain.
+The original-backed startup pairing remains explicitly unknown on both
+sides; unbacked Text3DEx.part.0/thunk scores also remain unknown. This is a negative known
+subtotal, not a fully qualified whole-owner total. The matching trial closes
+without further representation proofs, runtime, variants, reports or integration.
+The actual behavior correction remains separately frozen, not claimed fixed.
+Manifest SHA256d31e96b0d5ee377fef01b1522393e5288c9f02526501af371c9032b80b1eba7f;
+capture09d01c876c368293472eba6ae74a902053bae54c2c1c215da8486d87689b4f9a.
+
+### Batch422 original current-manager effect-node assignment
+
+Root reviews the complete366-byte original Handle assignment, canonical typed
+node/list/effect lifetime and allocation calls before the sole actual O2 pair.
+The original allocates a12-byte/aligned4 zeroed node on the current manager,
+not PushNuListNode's scratch-manager/accounting discipline; guarded placement
+construction reloads the live source value before the existing Append contract.
+One necessary standard new header is already in the actual production closure.
+The pair gains156.37868988 weighted bytes across44 backed rows, retaining
+all eleven exacts; target32.556602→75.283020%,290→352 bytes, only target
+score changes. Complete Counter/U deltas explicitly replace Push with BlockAlloc,
+add one-byte empty string storage and renumber the unchanged float1 constant.
+Original raw allocation targets/arguments/empty string, all other code/REL,
+startup consumer/storage and canonical append links are independently proved;
+two unbacked thunks retain code/COMDAT/unwind/call closure, never absolute scores.
+Manifest SHA25620dcb5be909c6d3c6e874df21c2b34ad23f27145e59fdcc5098ebce31970706d;
+captureb352334e82a41cc662e42db5f320ee447e98cce454001ef422ffd3e4d20faa2e;
+specific proof95e88419a9a47595e5cbbef8cf97d2dc366332f7353f30fc34185d24e954c19a;
+thunk proof9c3dfabfacc1cd34516ef78dc4ebcf8898ecb919004d6fdd2cfa8a8d7901ff17.
+
+Root separately approves all four actual GNU O2 preflight closures before any
+objects, then runs full old/new bodies on host64/i386 SSE with ASan/UBSan/
+float-cast/leak checks. Each passes32 cases: old8,700/8,702 checks, new7,548/
+7,550. Real canonical Handle/list/effect lifetimes, ordered links/values,
+duplicate references, empty-source removal and complete traced allocation
+disciplines retain. The old and new expected disciplines differ deliberately;
+this is not false allocation equivalence. One identical fixture-only friend
+admits nonempty lists; no public gameplay producer was found or fabricated.
+Allocation services are typed seams, not real TLS/allocator certification.
+NULL voices only; unchanged non-NULL voice paths are raw-qualified but playback,
+Voice lifetime/hardware/concurrency are not runtime-certified. Each actual
+destructor releases all nodes; source/effects/output lifetimes are genuine.
+Runtime manifest49c5f30787a26039118b2c544ac882a98a52c096b79ec7ff062186352a5d922a;
+staged manifest e2f36758cdd24d0d94428cf712ff2bc7682e2b4cc71fd4cd5ec56d290349aaa3;
+reviewed preflight4079879d72adeb0c9eaf1d44874daaf5df88ac9fd9e56c99aa78f3632236eee6;
+resultb1f12868039ce09a43d1ee12d8faa1449f5a692e901c45c0888733ce7fac582e.
+Root integrates the whole byte-identical frozen owner; linked measurement follows
+at the next checkpoint, not implied by this isolated gain.
+
+### Batch424 network-point captured traversal qualification
+
+The full1479-byte original network search captures its typed item base/promoted
+u8 count before one-based ascending traversal; scratch dx/dz writes still occur
+for blocked/nonwinning candidates. One ordinary source correction retains these
+operations and the count255 sentinel256 without helpers/options/ABI changes.
+The sole actual O3 pair gains166.14424887 weighted bytes across57 uniquely
+backed rows, retaining all four exacts and complete Counter/U with no gate errors.
+Target45.065790→56.299343%,1474→1471 bytes; only target score changes.
+Manifest SHA25624cfc523d558d806e25885c6d7f9578e85f125057da588704e8331df9168b8ae;
+capture7bed4e5fca9191002f7c5ec89525810cb17568e7ce0dac28d47c1da2c5f8ed12.
+
+Four unbacked emitted units remain absolute-score unknown:93-byte startup,
+1124-byte private state helper and two12-byte PC-thunk sections. An additive
+full-owner representation proof covers every non-target full normalized body,
+all allocated storage/REL/COMDAT/init-array, four complete FDE/CIE records and
+122 incoming code/data/unwind edges. Its first execution stops on two unowned
+alignment jumps; failed script/log are frozen. A targeted complete direct/REL
+census then independently identifies exactly two identical15-byte EB0D/13-NOP
+gaps, preceding terminal backward jumps, no gap symbols/REL/incoming edges and
+bounded next-function destinations. Root approves only these exact descriptors;
+every other unowned transfer still fails. The qualified additive proof passes,
+without compiler/report/source retries or invented original weights/scores.
+Script SHA25651aa4df80a143f981e35e2641c2d3fe41be085a18030de2ee598d5d15d6fcf94;
+proof443126830374d61467983f51a208dc0b0971cf72e67e3a23770c4838808e442d.
+Root completes both staged GNU O3 host64/i386-SSE diagnostics after personally
+reviewing the actual header/backend/link closures and finite additive atomic/LTO
+catalog. Both145-case runs pass724 checks with ASan/UBSan and leak detection;
+both executable representations and recursive library identities qualify before
+either execution. Canonical initialized networks cover counts0/1/255, blocked
+and nonwinning scratch writes, direction flags and NULL-connection fallback.
+Independent binary32 result checks and complete input/network immutability pass.
+No invalid indices, concurrent mutation, full gameplay or Android runtime claim.
+Stage9a4843c537d093106558bc814d31dcad2b23a48e96a932e9bd350e5e046942bb;
+resume catalog7c9d7b4a1bd8a50e72e5d579edb550ad47c446b211b4789b40ac39c0587befdf;
+result7083deed4a306584e605e5145de7943b44dfa8f4d60fc95e990e50d0cad41b60.
+Root integrates the complete byte-identical frozen owner; linked gain remains
+subject to the next independent whole-library checkpoint.
+
+### Batch427 bounded motion history screen
+
+A fixed twelve-name checkpoint34 motion/combat screen finds only previously
+closed reconstructions or recorded compiler-layout debt. This is a history
+eligibility screen, not a fresh complete-body equivalence proof. No new
+candidate, compiler/report trial or runtime is prepared. FindTargetObject's
+recorded frame/register/trace differences do not establish omitted behavior;
+FindFurthestPlayerFromVec's retained NULL safety is not replaced with retail
+absolute-address writes. Low percentages alone do not reopen rejected variants.
+Frozen audit SHA25695a13ca48a71d2e50a74feadc3420418334e2f83d1b510fe30ff263b1aaa86f6.
+
+### Batch426 captured episode-clip traversal
+
+The complete393-byte original captures player/level/item bases and initial
+promoted u16 extent, refreshing the extent only after an accepted ID write.
+One typed traversal retains NULL player/output behavior and ascending IDs.
+The sole actual O2 owner pair gains33.72713424 weighted bytes across20 backed
+rows; both exacts and complete Counter/U retain. Target27.508196→36.090164%,
+159→195 bytes; two unbacked thunks retain complete representation/dependencies
+under a separate same-object proof, never assigned absolute scores.
+Manifest696ddd65b113fb0aaff99412882ffc109c6a14893a578e353d80e9ba360226c2;
+captureffcaf9044ca60a6e287abfc887d9fd2383b45d1af3c814953cf60733e7585ff3;
+proof1ad9611b1f78e26d999606e13751d67103075c4aa708679da984f5fa99860c5c.
+
+Root reviews both actual GNU header/backend/link preflights before objects.
+A missing finite atomic-script/library and embedded no-LTO-wrapper inventory
+is repaired additively before execution; original runners/preflights remain
+frozen, no source/command/report retry. Existing ANDROID declarations accompany
+HOST_BUILD without Bionic headers. All four full old/new GNU O2 host64/i386
+SSE sanitizer/leak runs pass21,552 cases/3,079,697 checks each, with empty runtime
+stderr. Canonical live arrays, signed episode extremes, optional output, extent
+0/1/128, ordering/canaries and complete input/global immutability are checked.
+No fabricated alias mutation, parser/gameplay execution or universal128-clip
+asset bound is claimed. Caller output capacity remains a valid-domain precondition.
+Additive catalogff7f6bbd12e40db23e9cee96867900a824b5b51a915bc70b387d6af079bcd2f3;
+host resultf5f12fc0284517b7655b0daa8d8693a85d9dc175401ac8a991d8147cefd5bc3e;
+i386 result7d0f992293026ff67984f0ff23111d0e282346bceff1d4087ea3e18cfd50ecbe.
+Root integrates the complete byte-identical frozen owner; linked gain follows
+at the next checkpoint rather than being inferred from the isolated pair.
+
+### Batch428 rejected debris-expiry load trial
+
+Root reviews all1472 original bytes, canonical32-chunk/eight-key records,
+complete real list/lock helpers and arena producers. One typed expiry-only
+table reload retains the initially captured effect for active/panel/render/key
+operations. No fabricated helper mutation, concurrent arena safety or gameplay
+bug witness is claimed. Both actual O3 preprocess closures/commands are fully
+reviewed before the sole frozen owner pair and two original reports.
+The nine-backed-row subtotal falls463.63717794 weighted bytes; DebFree
+45.193550→13.727273%,1328→1368 bytes, AllChunks79.619050→79.261900%.
+One exact and complete Counter/U retain with no qualification errors.
+Unbacked startup/bx/cx scores remain unknown; this is not a qualified whole-owner
+total. Negative trial closes without further proof/runtime/variants/integration.
+Gate manifest49998515f9e1676761d91dac623d1cb1b9f35350fb372106d3eae356c38bb9b6;
+capturec7e2e0a6b2046587e8aa2c2907fb701e1c103cba37aa0b356004bb1254fb29a1.
+
+Two additional bounded history/frontier screens avoid repeating existing work.
+The twelve-name below20% screen contains only earlier restorations/reserves;
+audit5cf23a92beff1405fb3877eb18b7e5b75d67c1971c68eb5192b72b7cffac8521.
+The renderer screen promotes only NuPostEffectInit for a fresh full raw/current/
+canonical helper/producer audit: all six allocations and ordered resources/
+lock/reset operations are present; actual2048-byte filter storage fits1308 bytes.
+No missing GPU services are inferred from genuine retail platform no-ops.
+Other eleven entries are metadata/history-only, not newly proved full bodies.
+No candidate or gate is prepared for either screen.
+The analogous twelve-name gizmo/object screen also promotes no unit, excluding
+named earlier complete closures/reserves before new raw/helper review; it is
+history-only. Audit405a83992ed2a8aba3d837d9fd75b0077e88ecf8c5e1edefd21d0b2a31b232ec.
+
+### Checkpoint35 linked integration
+
+The independently rebuilt Android library integrates only the fully qualified
+sound-handle422, network-direction424 and episode-clips426 frozen owners.
+GNU native, WASM and all five repository tests pass. Live Bazel ownership maps
+the whole-library version2 report to68.739555%, +0.007530 percentage points from
+checkpoint34 and +0.737095 from main68.002460%. All6293 previous raw exacts,
+original name/VA/extent multiplicities,4722419-byte denominator and452-unit
+ownership inventory retain. No isolated gain is substituted for linked gain.
+Raw report66d2f1c7e87625fda194920cc42e4c8e7a7ffc0157d7b757a45f6afcdf8fb0ad;
+mapped29399aaeb7aecfe579dd2e83158f91461d51ccb32ff661768c37b785555da6b5.
+The +2-point threshold70.002460% remains unmet; no merge is authorized by this
+checkpoint. Normal commit-hook regeneration and pushed-head CI still follow.
+
+Batch423's one additive representation proof initially stops before proof at a
+mutable unrelated producer pin after the approved426 integration. The failure
+and original gate/scripts/reports remain preserved. Root reviews an explicit
+historical snapshot boundary covering all182 old inputs and the exact complete
+426 file delta, then the additive proof passes: all77 non-target normalized
+bodies, five unknown full representations/unwind/incoming, allocated storage
+and complete symbol/undefined inventories qualify. The only surface delta is
+the specifically proved removed0.0f literal .LC1 and original-backed typed Game
+reference; no prior undefined symbol is lost or absolute unknown score invented.
+Proof09861bb75cd95d4236dc04f3a6940b5f56d8c45c0f0b7c2594ce31112028dcb0.
+Runtime preparation is authorized, but423 is not integrated at checkpoint35.

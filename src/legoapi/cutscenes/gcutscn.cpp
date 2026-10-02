@@ -289,14 +289,22 @@ void CutScenePlayer_SetObjects(CUTINFO *cut) {
 
 i32 CutScenePlayer_CountEpisodeClips(i32 episode, i32 include_guests, i16 *ids) {
     i32 count = 0;
-    if (CutScenePlayer != NULL) {
-        for (i32 i = 0; i < CutScenePlayer->clip_count; ++i) {
-            CUTSCENEPLAYERCLIP *clip = &CutScenePlayer->clips[i];
-            if (LDataList[clip->level_id].episode_index == episode ||
-                (include_guests != 0 && clip->guest_episode == episode)) {
-                if (ids != NULL)
-                    ids[count] = i;
-                ++count;
+    CUTSCENEPLAYER_s *player = CutScenePlayer;
+    if (player != NULL) {
+        i32 clip_count = player->clip_count;
+        if (clip_count != 0) {
+            LEVELDATA *levels = LDataList;
+            CUTSCENEPLAYERCLIP *clip = player->clips;
+            for (i32 i = 0; i < clip_count; ++i, ++clip) {
+                if (levels[clip->level_id].episode_index == episode ||
+                    (include_guests != 0 && clip->guest_episode == episode)) {
+                    if (ids != NULL) {
+                        ids[count++] = i;
+                        clip_count = player->clip_count;
+                    } else {
+                        ++count;
+                    }
+                }
             }
         }
     }

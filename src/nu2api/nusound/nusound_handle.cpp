@@ -1,5 +1,7 @@
 #include "nu2api_nusound_types.h"
 
+#include <new>
+
 pthread_mutex_t NuSoundHandle::sCriticalSection;
 
 NuSoundHandle::NuSoundHandle() : intrusive_prev(NULL), intrusive_next(NULL), voice(NULL) {
@@ -208,7 +210,14 @@ NuSoundHandle &NuSoundHandle::operator=(NuSoundHandle &other) {
     for (; node != end; node = node->next) {
         NuSoundEffect *effect = static_cast<NuListNode<NuSoundEffect *> *>(node)->value;
         effect->Disable();
-        NuSoundMemory::PushNuListNode(effects, effect);
+        NuListNode<NuSoundEffect *> *copy =
+            static_cast<NuListNode<NuSoundEffect *> *>(NuMemoryGet()->GetThreadMem()->_BlockAlloc(
+                sizeof(NuListNode<NuSoundEffect *>), alignof(NuListNode<NuSoundEffect *>),
+                NuMemoryManager::MEM_ALLOC_SET_TO_ZERO, "", NUMEMORY_CATEGORY_NONE));
+        if (copy != NULL) {
+            new (copy) NuListNode<NuSoundEffect *>(NULL, NULL, static_cast<NuListNode<NuSoundEffect *> *>(node)->value);
+        }
+        effects.Append(copy);
     }
     while (other.effects.Head() != other.effects.Tail()) {
         other.effects.Remove(other.effects.Head());

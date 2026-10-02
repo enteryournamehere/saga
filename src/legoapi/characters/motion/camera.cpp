@@ -625,6 +625,7 @@ static void PlayerCamPos(GameObject_s *object, NUVEC *position, NUVEC *reference
 // Function prefix and mode selection. MainRenderTime guard precedes cutscenes.
 void MoveGameCamera(GAMECAMERA_s *camera) {
     i32 shared_count = 0;
+    i32 index;
     NUVEC player_focus[2], player_positions[2];
     GameObject_s *camera_players[2];
     i32 player_roll[2], vehicle_player[2];
@@ -678,7 +679,6 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
         if (newgamecamtime >= 10.0f || WORLD->camera_splines[6] == NULL || WORLD->camera_splines[7] == NULL)
             newgamecam = 0;
     }
-    bool choose_fallback = false;
     if (menu_id == 14 && hub_minikitviewer_camspl != NULL)
         camera->mode = 9;
     else if (menu_id == 8 && WORLD->camera_splines[24] != NULL)
@@ -718,7 +718,7 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
                     previous_candidate_count = camera->sock_position.candidate_count;
                     CutBorderScale = 0.0f;
                 }
-                choose_fallback = true;
+                goto choose_gameplay_camera;
             }
         } else if (ObstacleCamTime >= ObstacleCamStart && ObstacleCamEnd > ObstacleCamTime) {
             camera->mode = 2;
@@ -729,13 +729,15 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
                 CutBorderScale = 1.0f;
             }
         } else
-            choose_fallback = true;
+            goto choose_gameplay_camera;
     } else if (Door_UseCutCam && Door_CutLookAtPlayers && Door_CutCamWait > 0.0f) {
         Door_CutCamWait -= FRAMETIME;
         camera->mode = 4;
     } else
-        choose_fallback = true;
-    if (choose_fallback && camera->mode == -1) {
+        goto choose_gameplay_camera;
+    goto mode_selected;
+choose_gameplay_camera:
+    if (camera->mode == -1) {
         camera->mode = 0;
         if (Door_UseCutCam && GameTimer.update_count == 0)
             camera->mode = 4;
@@ -747,6 +749,7 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
                 camera->mode = 11;
         }
     }
+mode_selected:
     if (camera->mode != previous_mode) {
         if (previous_mode == 4) {
             GameCam_Blend(camera, Door_CutCamBlendTime, Door_CutLookAtPlayers ? 0.0f : Door_CutCamWait, 1);
@@ -812,12 +815,11 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
                         if (landspeeder_lookahead == 0.0f) {
                             landspeeder_speed = object->apiobj.horizontal_velocity_magnitude;
                             landspeeder_lookahead = object->apiobj.horizontal_velocity_magnitude * 0.6f;
-                            landspeeder_yaw = static_cast<u16>(object->apiobj.movement_facing_angle);
+                            landspeeder_yaw = static_cast<u16>(object->apiobj.field_0x276);
                         } else {
                             landspeeder_lookahead =
                                 (landspeeder_lookahead + object->apiobj.horizontal_velocity_magnitude * 0.6f) * 0.5f;
-                            landspeeder_yaw =
-                                (landspeeder_yaw + static_cast<u16>(object->apiobj.movement_facing_angle)) * 0.5f;
+                            landspeeder_yaw = (landspeeder_yaw + static_cast<u16>(object->apiobj.field_0x276)) * 0.5f;
                             landspeeder_speed =
                                 (landspeeder_speed + object->apiobj.horizontal_velocity_magnitude) * 0.5f;
                         }
@@ -850,13 +852,13 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
                 } else
                     player_roll[player_count] = 0;
                 camera_players[player_count] = object;
-                player_yaw[player_count] = object->apiobj.movement_facing_angle;
+                player_yaw[player_count] = object->apiobj.field_0x276;
                 player_count++;
             }
             if (player_count != 0) {
                 complexsockposition_forcesock = movegamecamera_forcesock;
                 f32 separation_scale;
-                i32 camera_result =
+                index =
                     SockSysCamera(WORLD->sock_sys, &camera->pos, camera->mode != camera->previous_mode, player_focus,
                                   player_positions, player_count, &camera->sock_position, &position, &target,
                                   &blend_duration, &position_seek, &angle_seek, &camera_shake, &separation_scale);
@@ -869,7 +871,6 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
                     direction.y = 0.0f;
                     NuVecNorm(&direction, &direction);
                     f32 pullback = 0.0f;
-                    i32 delta;
                     if (vehicle_count) {
                         u16 heading;
                         if (player_count == 2 && vehicle_player[0] && vehicle_player[1])
@@ -878,11 +879,11 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
                             heading = player_yaw[0];
                         else
                             heading = player_yaw[1];
-                        delta = RotDiff(angle, heading);
+                        index = RotDiff(angle, heading);
                         if ((camera->sock_position.location.sock == -1 ||
                              (WORLD->sock_sys->sock[camera->sock_position.location.sock].flags & 0x1000) == 0) &&
-                            abs(delta) > 0x4000)
-                            pullback = (abs(delta) - 0x4000) * (1.0f / 16384.0f);
+                            abs(index) > 0x4000)
+                            pullback = (abs(index) - 0x4000) * (1.0f / 16384.0f);
                     }
                     camera->field_0x1e8 = SeekLinearF(camera->field_0x1e8, pullback, FRAMETIME);
                     camera->field_0x1ec = SeekValF(camera->field_0x1ec, camera->field_0x1e8, 3.0f);
@@ -893,8 +894,8 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
                     if (vehicle_count &&
                         (camera->sock_position.location.sock == -1 ||
                          (WORLD->sock_sys->sock[camera->sock_position.location.sock].flags & 0x1000) == 0)) {
-                        lateral = 1.0f - abs(0x4000 - abs(delta)) * (1.0f / 16384.0f);
-                        if (delta < 0)
+                        lateral = 1.0f - abs(0x4000 - abs(index)) * (1.0f / 16384.0f);
+                        if (index < 0)
                             lateral = -lateral;
                     }
                     camera->field_0x1f0 = SeekLinearF(camera->field_0x1f0, lateral, FRAMETIME);
@@ -1175,20 +1176,20 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
                 target.x = 0.0f;
                 target.y = 0.0f;
                 target.z = 0.0f;
-                i32 focus_count = 0;
+                shared_count = 0;
                 NUVEC player_focus;
                 if (Player[0] != NULL && (static_cast<i8>(Player[0]->apiobj.flags_low) < 0 || LookAtBoth != 0)) {
                     PlayerCamPos(Player[0], &player_focus, &position);
                     NuVecAdd(&target, &target, &player_focus);
-                    focus_count = 1;
+                    shared_count = 1;
                 }
                 if (Player[1] != NULL && (static_cast<i8>(Player[1]->apiobj.flags_low) < 0 || LookAtBoth != 0)) {
                     PlayerCamPos(Player[1], &player_focus, &position);
                     NuVecAdd(&target, &target, &player_focus);
-                    ++focus_count;
+                    ++shared_count;
                 }
-                if (focus_count != 0) {
-                    NuVecScale(&target, &target, 1.0f / static_cast<f32>(focus_count));
+                if (shared_count != 0) {
+                    NuVecScale(&target, &target, 1.0f / static_cast<f32>(shared_count));
                 }
             }
             ComplexSockPosition(WORLD->sock_sys, &position, -1, -1, &camera->sock_position);
@@ -1263,13 +1264,12 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
         case 7: {
             position = WORLD->camera_splines[15]->pts[0];
             target = WORLD->camera_splines[15]->pts[1];
-            i32 active_index;
-            Customiser_GetActiveWeirdoIndex(&active_index, &shared_count);
+            Customiser_GetActiveWeirdoIndex(&index, &shared_count);
             if (shared_count == 1) {
-                if (MenuPacket.reserved_0[active_index] != 0)
-                    active_index = !active_index;
-                target.x = CustomisePos[active_index].x;
-                target.z = CustomisePos[active_index].z;
+                if (MenuPacket.reserved_0[index] != 0)
+                    index = !index;
+                target.x = CustomisePos[index].x;
+                target.z = CustomisePos[index].z;
                 NUVEC offset;
                 NuVecSub(&offset, &target, &position);
                 NuVecScale(&offset, &offset, 0.25f);

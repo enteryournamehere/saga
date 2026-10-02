@@ -3714,10 +3714,10 @@ static void DrawParaphernalia(GameObject_s *object) {
     if ((config->flags_094[0] & 1) == 0) {
         if (object->apiobj.character_data->flags & 1) {
             i32 locator = config->thingy_locator;
-            matrix = object->apiobj.field_0xb8;
-            if (locator != -1 && object->apiobj.character_model->points_of_interest[locator] != NULL &&
-                object->apiobj.model_draw_result)
-                matrix = joints[locator];
+            matrix = locator != -1 && object->apiobj.character_model->points_of_interest[locator] != NULL &&
+                             object->apiobj.model_draw_result
+                         ? joints[locator]
+                         : object->apiobj.field_0xb8;
             reflected = object->apiobj.field_0x138;
             CharScene_Draw(WORLD, object->id, &matrix, object->field_0x1088 ? &reflected : NULL);
         } else if (object->id == id_CATAPULT && (object->field_0x7a5 != 0x0a || (object->context_flags & 0x40) == 0 ||
@@ -4044,7 +4044,7 @@ static void DrawParaphernalia(GameObject_s *object) {
         f32 frame = *special_time;
         if ((frame >= 70.0f && frame <= 210.0f) || (frame >= 310.0f && frame <= 433.0f)) {
             matrix = joints[locator];
-            NuMtxPreRotateZ(&matrix, 0xc000);
+            NuMtxPreRotateZ(&matrix, -0x4000);
             NuSpecialDrawAt(&WORLD->lev_objs[0x0a].special, &matrix);
             if (object->field_0x1088 && MatrixReflection(&matrix, object->field_0x1087, object->field_0x1020,
                                                          WORLD->current_level->unknown_0cc, &special_reflected))
@@ -4081,7 +4081,7 @@ static void DrawParaphernalia(GameObject_s *object) {
                     scale = 1.0f - (fraction - 0.9f) / 0.1f;
                 NUVEC scaling = {scale, scale, scale};
                 NuMtxSetScale(&matrix, &scaling);
-                NuMtxRotateX(&matrix, static_cast<u16>(-65536.0f * fraction));
+                NuMtxRotateX(&matrix, static_cast<u16>(static_cast<i32>(-65536.0f * fraction)));
                 NuMtxRotateY(&matrix, object->apiobj.field_0x276);
                 NuMtxTranslate(&matrix, reinterpret_cast<NUVEC *>(&joints[0].m30));
                 matrix.m31 += 0.2f * NuTrigTable[(static_cast<i32>(fraction * 32768.0f) >> 1) & 0x7fff];

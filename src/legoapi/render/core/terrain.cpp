@@ -2456,16 +2456,16 @@ void TerrainPlayer(GameObject_s *object) {
 
         const f32 speed_squared =
             (api.velocity.x * api.velocity.x + api.velocity.y * api.velocity.y) + api.velocity.z * api.velocity.z;
-        const bool skip_motion =
-            (object->field_0xefc & 0x20) == 0 && (object->field_0xf02 & 0x40) != 0 && !special_path_endpoints &&
-            object->ai.field_0x180 == NULL && static_cast<i8>(api.flags_low) >= 0 &&
-            (object->field_0xe23 & 0x10) == 0 && object->field_0xe31 == 0 && object->character_context != 0 &&
-            object->character_context != 0x1c && api.field_0x281 != 8 &&
-            (static_cast<u32>(GameTimer.update_count) > 1 || (api.field_0x1f4 & 5) != 0) &&
-            (api.field_0x27d & 3) != 0 && api.supporting_platform_id == -1 &&
-            movement_threshold * movement_threshold >= speed_squared && object->character_context != 0x0f &&
-            object->character_context != 0x0b && object->character_context != 0x1e;
-        api.field_0x1f8 = (api.field_0x1f8 & ~4u) | (skip_motion ? 4u : 0u);
+        const bool perform_motion =
+            !((object->field_0xefc & 0x20) == 0 && (object->field_0xf02 & 0x40) != 0 && !special_path_endpoints &&
+              object->ai.field_0x180 == NULL && static_cast<i8>(api.flags_low) >= 0 &&
+              (object->field_0xe23 & 0x10) == 0 && object->field_0xe31 == 0 && object->character_context != 0 &&
+              object->character_context != 0x1c && api.field_0x281 != 8 &&
+              (static_cast<u32>(GameTimer.update_count) > 1 || (api.field_0x1f4 & 5) != 0) &&
+              (api.field_0x27d & 3) != 0 && api.supporting_platform_id == -1 &&
+              movement_threshold * movement_threshold >= speed_squared && object->character_context != 0x0f &&
+              object->character_context != 0x0b && object->character_context != 0x1e);
+        api.field_0x1f8 = (api.field_0x1f8 & ~4u) | (perform_motion ? 0u : 4u);
         object->field_0x1084 = 0;
         const i32 previous_platform = entry_platform;
         // Original 0x102952/0x102bfb carries this byte through the call-free
@@ -2496,7 +2496,7 @@ void TerrainPlayer(GameObject_s *object) {
             // grounding path.  Full swept collision is reserved for path
             // connections whose traversal flags require special collision.
             api.respawn_timer = 0.0f;
-            if (!skip_motion) {
+            if (perform_motion) {
                 if (TimingBarSet == 2)
                     TBOPENFN("Ter", 2);
                 object->field_0xe20 |= 2;
@@ -2564,7 +2564,7 @@ void TerrainPlayer(GameObject_s *object) {
                     TBCLOSEFN("Ter", 2);
             }
         } else {
-            if (skip_motion) {
+            if (!perform_motion) {
                 api.velocity.x = 0.0f;
                 api.velocity.y = 0.0f;
                 api.velocity.z = 0.0f;
@@ -2752,7 +2752,7 @@ void TerrainPlayer(GameObject_s *object) {
             bool stopped_without_terrain = false;
             if (floor_height != 2000000.0f) {
                 object->field_0xe20 |= 2;
-                if (!skip_motion) {
+                if (perform_motion) {
                     const f32 bottom_offset = api.field_0xa8 * object->character_bottom;
                     const f32 top = object->character_top * api.field_0xa8 + api.position.y;
                     const f32 bottom = api.position.y + bottom_offset;
@@ -3037,9 +3037,7 @@ void TerrainPlayer(GameObject_s *object) {
             }
             Tag_Check(object);
             PreResetCode(object);
-            if (api.character_data->move_fn != NULL) {
-                api.character_data->move_fn(object);
-            }
+            api.character_data->move_fn(object);
             PostResetCode(object);
             if ((api.character_data->model_flags & 0x00200000) == 0) {
                 BigJumpCode(object);

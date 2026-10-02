@@ -2695,7 +2695,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                 goto directional_heading_0;
             goto directional_common_heading;
         directional_heading_0:
-            if ((context_flags & 0x2000) == 0 && object->action_movement_state == 3) {
+            if ((CInfo[object->character_context].flags & 0x2000) == 0 && object->action_movement_state == 3) {
                 FaceOpponent(object, NULL);
                 break;
             }
@@ -2705,7 +2705,8 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                 break;
             goto directional_common_heading;
         directional_heading_0x0a:
-            if ((context_flags & 0x2000) != 0 || static_cast<u16>(object->context_animation - 0x5a) > 2)
+            if ((CInfo[object->character_context].flags & 0x2000) != 0 ||
+                static_cast<u16>(object->context_animation - 0x5a) > 2)
                 goto directional_common_heading;
             api.movement_facing_angle = NuAtan2D(object->attack_target_position.x - api.position.x,
                                                  object->attack_target_position.z - api.position.z);
@@ -2717,7 +2718,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                 api.movement_facing_angle += 0x8000;
             break;
         directional_heading_0x18: {
-            if ((context_flags & 0x2000) != 0)
+            if ((CInfo[object->character_context].flags & 0x2000) != 0)
                 goto directional_common_heading;
             NUVEC *position = NULL;
             if (object->incoming_bolt != NULL) {
@@ -2735,7 +2736,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
             break;
         }
         directional_heading_0x0c: {
-            if ((context_flags & 0x2000) != 0)
+            if ((CInfo[object->character_context].flags & 0x2000) != 0)
                 goto directional_common_heading;
             if (object->block_latch != 0)
                 break;
@@ -2761,7 +2762,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                 api.movement_facing_angle += 0x8000;
             break;
         directional_heading_0x25:
-            if ((context_flags & 0x2000) == 0 && object->context_animation != 0x58) {
+            if ((CInfo[object->character_context].flags & 0x2000) == 0 && object->context_animation != 0x58) {
                 FaceOpponent(object, NULL);
                 break;
             }
@@ -2777,18 +2778,18 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                                                      object->force_part->position.z - api.collision_position.z);
             break;
         directional_common_heading:
-            if ((context_flags & 0x2000) != 0) {
+            if ((CInfo[object->character_context].flags & 0x2000) != 0) {
                 SetPushAngle(object);
             } else if (object->context_target_position != NULL) {
                 FaceOpponent(object, object->context_target_position);
                 api.movement_facing_angle += 0x8000;
-            } else if (pad->operator_data != NULL && (context_flags & 1) == 0) {
+            } else if (pad->operator_data != NULL && (CInfo[object->character_context].flags & 1) == 0) {
                 NUVEC *position = static_cast<NUVEC *>(pad->operator_data);
                 api.movement_facing_angle = NuAtan2D(position->x - api.position.x, position->z - api.position.z);
             } else if (api.field_0x27c != -1 && api.field_0x27c == BonusWinner) {
                 api.movement_facing_angle = NuAtan2D(GameCam->pos.x - api.position.x, GameCam->pos.z - api.position.z);
             } else if (pad->input_magnitude > 0.0f &&
-                       ((context_flags & 1) == 0 || SuperCarry_Carrying(object) ||
+                       ((CInfo[object->character_context].flags & 1) == 0 || SuperCarry_Carrying(object) ||
                         (object->character_context == 0x20 && (object->field_0xef9 & 1) != 0)) &&
                        object->delayed_turn_timer <= 0.0f && object->character_context != 0x13 &&
                        (object->field_0xf01 & 2) == 0 &&
@@ -3507,15 +3508,17 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                 object->target_velocity.z = -2.0f;
         }
     }
-    const bool seek_vertical = move_vertical != 0 || ObjInTube(object);
-    // Original 0x167ac2: the context payload is shared by several gizmo
-    // types; the vertical path tests its byte at +0x68 without a type gate.
-    if (seek_vertical && object->field_0x788 != NULL && (static_cast<const u8 *>(object->field_0x788)[0x68] & 1) != 0) {
-        seek_rates.x *= 0.5f;
-        seek_rates.y *= 0.5f;
-        seek_rates.z *= 0.5f;
-    }
-    if (!seek_vertical) {
+    if (move_vertical != 0 || ObjInTube(object)) {
+        // The vertical path shares the gizmo payload byte at +0x68.
+        if (object->field_0x788 != NULL && (static_cast<const u8 *>(object->field_0x788)[0x68] & 1) != 0) {
+            seek_rates.x *= 0.5f;
+            seek_rates.y *= 0.5f;
+            seek_rates.z *= 0.5f;
+        }
+        api.velocity.x = SeekValF(api.velocity.x, object->target_velocity.x, seek_rates.x);
+        api.velocity.y = SeekValF(api.velocity.y, object->target_velocity.y, seek_rates.y);
+        api.velocity.z = SeekValF(api.velocity.z, object->target_velocity.z, seek_rates.z);
+    } else {
         if ((object->field_0xe20 & 8) != 0 && api.field_0x27d != 0) {
             const f32 current_speed = NuVecMag(&api.velocity);
             const f32 target_speed = NuVecMag(&object->target_velocity);
@@ -3543,15 +3546,13 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
         } else {
             object->field_0xd78 = 1.0f;
         }
-    }
-    if (!seek_vertical && object->character_context == 0x26) {
-        api.velocity.x = object->target_velocity.x;
-        api.velocity.z = object->target_velocity.z;
-    } else {
-        api.velocity.x = SeekValF(api.velocity.x, object->target_velocity.x, seek_rates.x);
-        if (seek_vertical)
-            api.velocity.y = SeekValF(api.velocity.y, object->target_velocity.y, seek_rates.y);
-        api.velocity.z = SeekValF(api.velocity.z, object->target_velocity.z, seek_rates.z);
+        if (object->character_context == 0x26) {
+            api.velocity.x = object->target_velocity.x;
+            api.velocity.z = object->target_velocity.z;
+        } else {
+            api.velocity.x = SeekValF(api.velocity.x, object->target_velocity.x, seek_rates.x);
+            api.velocity.z = SeekValF(api.velocity.z, object->target_velocity.z, seek_rates.z);
+        }
     }
     game_character = api.character_data->game_character;
     if ((game_character->flags_090 & 1) != 0) {

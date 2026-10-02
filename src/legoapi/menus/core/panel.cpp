@@ -986,18 +986,26 @@ void DrawPanel() {
                                     object->field_0xcc0->id == id_YODA;
                     if (own_icon) {
                         f32 icon_time = object->hud_icon_timer;
-                        i32 visible = icon_time <= 0.0f || (icon_time < 2.0f && NuFmod(icon_time, 0.4f) < 0.2f);
+                        i32 visible = 0;
+                        if (icon_time <= 0.0f)
+                            visible = 1;
+                        else if (icon_time < 2.0f)
+                            visible = NuFmod(icon_time, 0.4f) < 0.2f;
                         DrawCharIcon(object->id, icon_x, status_y, 0.0f, icon_size, 0xa6, alpha, alpha, visible, NULL);
                     } else {
                         f32 icon_time = object->hud_icon_timer;
-                        i32 visible = icon_time <= 0.0f || (icon_time < 2.0f && NuFmod(icon_time, 0.4f) < 0.2f);
+                        i32 visible = 0;
+                        if (icon_time <= 0.0f)
+                            visible = 1;
+                        else if (icon_time < 2.0f)
+                            visible = NuFmod(icon_time, 0.4f) < 0.2f;
                         i32 id = object->field_0xcc0 == NULL ? object->id : object->field_0xcc0->id;
                         DrawCharIcon(id, icon_x, status_y, 0.0f, icon_size, 0xa6, alpha, alpha, visible, NULL);
                     }
                     f32 name_x = -(ICONX + 0.075f);
                     if (object->apiobj.player_controlled && object->apiobj.character_data->name_id != -1) {
                         bool draw_name = paused != 0;
-                        if (!draw_name && !(object->hud_icon_timer <= 0.0f) && !(object->hud_icon_timer >= 2.0f))
+                        if (!draw_name && object->hud_icon_timer > 0.0f && object->hud_icon_timer < 2.0f)
                             draw_name = NuFmod(object->hud_icon_timer, 0.4f) < 0.2f;
                         if (draw_name) {
                             f32 width = Game.options_save.widescreen ? 0.7f : 0.5f;
@@ -1009,9 +1017,9 @@ void DrawPanel() {
                     }
                     if (!paused && FadeSys.fade == 0.0f && object->apiobj.player_controlled &&
                         MechSystems::Get()->PlayerButton().panel_state == NULL) {
-                        if (ONEPLAYERPOWERUPS && !(object->field_0xdec <= 0.0f)) {
+                        if (ONEPLAYERPOWERUPS && object->field_0xdec > 0.0f) {
                             if (!FindGameMsgsWithID(7, 0, object->apiobj.field_0x27c, NULL) &&
-                                (!(object->field_0xdec < 3.0f) ||
+                                (object->field_0xdec >= 3.0f ||
                                  PickupFlickerFrame % PickUpFlickerFrames < PickUpFlickerTest)) {
                                 nuhspecial_s *special = &WORLD->lev_objs[0xd0].special;
                                 u16 angle = PowerUp_PanelYRot[0];
@@ -1149,7 +1157,7 @@ void DrawPanel() {
                                                      &WORLD->lev_objs[0xd2].special, 2);
                         }
                     }
-                    if (!(DoubleScoreTime <= 0.0f))
+                    if (DoubleScoreTime > 0.0f)
                         DrawInDoubleScoreZone(DoubleScoreTime);
                 }
                 if (BonusArea && WORLD->area != NULL && (WORLD->area->flags & 0x104) == 4) {
@@ -1158,7 +1166,7 @@ void DrawPanel() {
                     i32 active1 = Player[0] != NULL && Player[0]->apiobj.player_controlled;
                     DrawBonusScore(status_y, active1, active2, 1.0f, scores);
                 }
-                if (HUB_ADATA != NULL && WORLD->area == HUB_ADATA && !(goldbricktime <= 0.0f)) {
+                if (HUB_ADATA != NULL && WORLD->area == HUB_ADATA && goldbricktime > 0.0f) {
                     f32 y =
                         (STATSPOS2Y - STATSPOSY) * NU_SIN_LUT(static_cast<i32>(goldbricktime * 16384.0f)) - STATSPOS2Y;
                     Hub_DrawImportantBrick(0xd3, 0.0f, y, 1.0f, Game.gold_bricks, GOLDBRICKPOINTS);
@@ -1252,7 +1260,7 @@ void DrawPanel() {
                                     distance = distance2;
                             }
                             distance = NuFsqrt(distance);
-                            if (!(distance <= 10.0f))
+                            if (distance > 10.0f)
                                 distance = 10.0f;
                             alpha *= 1.0f - distance / 10.0f;
                         } else

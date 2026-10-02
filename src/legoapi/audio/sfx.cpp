@@ -1682,8 +1682,6 @@ void GameAudio_PlaySfxAndSetVolume(i32 sfx, nuvec_s *position, f32 volume) {
 }
 
 extern "C" void MusicSeekOffset(i32 track, f32 seek_offset) {
-    const i16 transition_frames = Music.transition_frames;
-    const i16 primary_stream = Music.primary_stream;
     if (seek_offset < 0.0f) {
         seek_offset = Music.seek_offset;
     }
@@ -1695,22 +1693,25 @@ extern "C" void MusicSeekOffset(i32 track, f32 seek_offset) {
         if (Music.current_track == track && !Music.pause_requested) {
             return;
         }
-        const i32 stream = Music.primary_stream;
-        Music.requested_track = -1;
-        Music.state = MUSIC_PLAYBACK_DUAL_STREAM;
+        const i16 primary_stream = Music.primary_stream;
+        const i32 stream = primary_stream;
         Music.current_track = static_cast<i16>(track);
         Music.queued_track = static_cast<i16>(track);
-        reinterpret_cast<u8 *>(&Music)[stream + 0x12] = 0;
-        if (transition_frames < 64) {
+        Music.requested_track = -1;
+        Music.state = MUSIC_PLAYBACK_DUAL_STREAM;
+        Music.stream_status_delay[stream] = 0;
+        if (Music.transition_frames < 64) {
             Music.pause_requested = true;
         } else {
             Music.pause_requested = false;
-            const i32 volume = static_cast<i32>(static_cast<f32>(g_music[track].index) * MusicVolume);
+            const i32 track_volume = g_music[track].index;
+            const f32 music_volume = MusicVolume;
             if (NOSOUND == 0 && NOMUSIC == 0) {
                 NuSound3StopStereoStream(stream);
                 NuSound3PlayStereoV(NUSOUNDPLAYTOK_STEREOSTREAM, stream, NUSOUNDPLAYTOK_SAMPLE, track,
-                                    NUSOUNDPLAYTOK_VOL, volume, NUSOUNDPLAYTOK_STARTOFFSET,
-                                    static_cast<f64>(seek_offset), NUSOUNDPLAYTOK_ONESHOT, NUSOUNDPLAYTOK_END);
+                                    NUSOUNDPLAYTOK_VOL, static_cast<i32>(static_cast<f32>(track_volume) * music_volume),
+                                    NUSOUNDPLAYTOK_STARTOFFSET, static_cast<f64>(seek_offset), NUSOUNDPLAYTOK_ONESHOT,
+                                    NUSOUNDPLAYTOK_END);
                 Music.secondary_stream = primary_stream;
             }
             Music.transition_frames = 0;
@@ -1719,20 +1720,22 @@ extern "C" void MusicSeekOffset(i32 track, f32 seek_offset) {
         return;
     }
 
-    const i32 stream = Music.primary_stream;
+    const i16 primary_stream = Music.primary_stream;
+    const i32 stream = primary_stream;
     Music.pause_requested = false;
-    reinterpret_cast<u8 *>(&Music)[stream + 0x12] = 0;
-    Music.state = MUSIC_PLAYBACK_ACTIVE;
-    Music.transition_frames = 0;
-    Music.requested_track = static_cast<i16>(track);
+    Music.stream_status_delay[stream] = 0;
     Music.current_track = static_cast<i16>(track);
     Music.queued_track = static_cast<i16>(track);
-    const i32 volume = static_cast<i32>(static_cast<f32>(g_music[track].index) * MusicVolume);
+    Music.requested_track = static_cast<i16>(track);
+    Music.state = MUSIC_PLAYBACK_ACTIVE;
+    Music.transition_frames = 0;
+    const i32 track_volume = g_music[track].index;
+    const f32 music_volume = MusicVolume;
     if (NOSOUND == 0 && NOMUSIC == 0) {
         NuSound3StopStereoStream(stream);
         NuSound3PlayStereoV(NUSOUNDPLAYTOK_STEREOSTREAM, stream, NUSOUNDPLAYTOK_SAMPLE, track, NUSOUNDPLAYTOK_VOL,
-                            volume, NUSOUNDPLAYTOK_STARTOFFSET, static_cast<f64>(seek_offset), NUSOUNDPLAYTOK_ONESHOT,
-                            NUSOUNDPLAYTOK_END);
+                            static_cast<i32>(static_cast<f32>(track_volume) * music_volume), NUSOUNDPLAYTOK_STARTOFFSET,
+                            static_cast<f64>(seek_offset), NUSOUNDPLAYTOK_ONESHOT, NUSOUNDPLAYTOK_END);
         Music.transition_frames = 0;
         Music.secondary_stream = primary_stream;
     }

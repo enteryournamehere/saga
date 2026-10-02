@@ -2454,8 +2454,6 @@ void GameAIProcess() {
     }
     u64 awareness = 0;
     NUVEC wall_direction;
-    NUVEC direction, forward;
-    NUVEC lateral, ray, movement;
     u8 shifted_flag;
     u8 cleared_flag;
     object = Obj;
@@ -2564,6 +2562,7 @@ void GameAIProcess() {
             if ((object->field_0xef8 & 0x80) != 0 && object->ai.opponent_object != NULL) {
                 BOLTTYPE_s *bolt = BoltType_FindByID(0, WORLD);
                 if (bolt->field_10 * bolt->field_14 > object->ai.opponent_metric) {
+                    NUVEC direction, forward;
                     NuVecSub(&direction, &object->ai.opponent_object->collision_position,
                              &object->apiobj.collision_position);
                     f32 scale = object->ai.opponent_metric == 0.0f ? 0.0f : 1.0f / object->ai.opponent_metric;
@@ -2686,6 +2685,7 @@ void GameAIProcess() {
             }
             goto ai_after_wall_shuffle;
         ai_wall_shuffle: {
+            NUVEC lateral, ray, movement;
             object->field_0xf02 |= 1;
             AIPATHNODE *nodes = object->ai.path_info.path->nodes;
             i32 direction = object->ai.path_info.direction;
@@ -2809,18 +2809,20 @@ void GameAIProcess() {
                             if (object->id == id_DROIDEKA)
                                 Player_ToggleCharacter(object, 1, 0);
                             object->input_toggle_hold_time = object->apiobj.model_draw_result != 0 ? 0.25f : 0.0f;
-                            if (object->id == object->route_character_id &&
-                                Suit_GetIndex(static_cast<SUIT_s *>(object->suit)) == object->route_suit_index) {
-                                Player_ToggleCharacter(object, -1, 0);
-                                if (object->id == id_DROIDEKA)
+                            if (object->id == object->route_character_id) {
+                                const i32 route_suit_index = object->route_suit_index;
+                                if (Suit_GetIndex(static_cast<SUIT_s *>(object->suit)) == route_suit_index) {
                                     Player_ToggleCharacter(object, -1, 0);
-                                object->route_character_id = object->id;
-                                object->route_suit_index = Suit_GetIndex(static_cast<SUIT_s *>(object->suit));
-                                object->ai.next_route = object->route_search_index;
-                                AISysFindRoute(&object->ai);
-                                object->route_search_index = object->ai.next_route;
-                                if (object->route_search_index == object->route_start_index)
-                                    object->field_0xefc |= 0x40;
+                                    if (object->id == id_DROIDEKA)
+                                        Player_ToggleCharacter(object, -1, 0);
+                                    object->route_character_id = object->id;
+                                    object->route_suit_index = Suit_GetIndex(static_cast<SUIT_s *>(object->suit));
+                                    object->ai.next_route = object->route_search_index;
+                                    AISysFindRoute(&object->ai);
+                                    object->route_search_index = object->ai.next_route;
+                                    if (object->route_search_index == object->route_start_index)
+                                        object->field_0xefc |= 0x40;
+                                }
                             }
                         }
                     }

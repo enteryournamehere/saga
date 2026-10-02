@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.00246,
+    "fuzzy_match_percent": 68.00426,
     "total_code": "4722419",
-    "matched_code": "526137",
-    "matched_code_percent": 11.141261,
+    "matched_code": "526943",
+    "matched_code_percent": 11.158328,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6290,
-    "matched_functions_percent": 46.734528,
+    "matched_functions": 6296,
+    "matched_functions_percent": 46.779106,
     "total_units": 1
   },
   "text": {
@@ -36815,7 +36815,7 @@
           "address": 5428544,
           "offset": 4538576,
           "size": 76,
-          "match_percent": 99.44444
+          "match_percent": 100.0
         },
         {
           "name": "_ZN13NetFtpManagerC2Ev",
@@ -36823,7 +36823,7 @@
           "address": 5428544,
           "offset": 4538576,
           "size": 76,
-          "match_percent": 99.44444
+          "match_percent": 100.0
         },
         {
           "name": "_ZN13NetFtpManager4InitEv",
@@ -40689,7 +40689,7 @@
           "address": 1418576,
           "offset": 528608,
           "size": 62,
-          "match_percent": 99.61539
+          "match_percent": 100.0
         },
         {
           "name": "_Z19SetBallooningHeightP12GameObject_sf",
@@ -106963,7 +106963,7 @@
           "address": 2484402,
           "offset": 1594434,
           "size": 131,
-          "match_percent": 81.88636
+          "match_percent": 100.0
         },
         {
           "name": "NuFileExtGetType",
@@ -106979,7 +106979,7 @@
           "address": 2484587,
           "offset": 1594619,
           "size": 264,
-          "match_percent": 89.309525
+          "match_percent": 100.0
         },
         {
           "name": "NuFileExtGetExt",
@@ -106987,7 +106987,7 @@
           "address": 2484851,
           "offset": 1594883,
           "size": 197,
-          "match_percent": 84.09677
+          "match_percent": 100.0
         },
         {
           "name": "NuFileExtRemove",

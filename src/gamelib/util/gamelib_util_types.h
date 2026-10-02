@@ -183,6 +183,9 @@ struct FtpFile {
     u32 message_read_offset;
     u32 message_write_offset;
     void *transfer;
+    FtpFile() {
+        transfer = NULL;
+    }
     i32 Accept();
     i32 Accept(i32);
     i32 Accept(i32, void *);

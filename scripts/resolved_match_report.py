@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 """Compare functions by what their PIC-relative operands refer to.
 
-objdiff compares a linked function's ``GOTOFF`` displacements numerically. A
-displacement is the distance from the GOT to a `.rodata`, `.data` or `.bss`
-item, so it only matches when the data layout of the whole binary matches.
-This experimental report resolves each such operand in both binaries instead
-and treats two instructions as equal when they refer to the same thing:
+The project's objdiff fork recovers the GOT-base ``add``, GOT-slot loads and
+``lea`` of a uniquely named symbol in linked i386 code, but compares other
+``GOTOFF`` displacements numerically: loads and stores of globals and statics,
+constants, unlabeled literals, indexed operands, and everything in a function
+with a jump table. A displacement is the distance from the GOT to a `.rodata`,
+`.data` or `.bss` item, so it only matches when the data layout of the whole
+binary matches. This experimental report resolves every such operand in both
+binaries instead and treats two instructions as equal when they refer to the
+same thing:
 
-- the same named symbol at the same offset (globals, file statics, statics
-  inside functions);
-- a GOT slot for the same symbol;
+- the same named symbol at the same offset, defined in the same section
+  (globals, file statics, statics inside functions; `.data` and `.bss` differ,
+  as an initialized variable is not a zeroed one);
+- a GOT slot for the same symbol, defined in the same section;
 - an anonymous constant with identical bytes (width taken from the operand);
 - an identical C string (for ``lea`` of a literal);
 - a compiler-generated table (``CSWTCH.n``, ``.LCn``) with identical contents;
@@ -151,6 +156,7 @@ class Binary:
         self.functions: dict[str, tuple[int, int]] = {}
         function_counts: Counter[str] = Counter()
         dynamic_names: list[str] = []
+        self.definitions: dict[str, int] = {}
         for sh in raw:
             if sh[1] not in (SHT_SYMTAB, SHT_DYNSYM):
                 continue
@@ -165,6 +171,7 @@ class Binary:
                 if not value or not name:
                     continue
                 symbols.add((value, size, name))
+                self.definitions.setdefault(name, value)
                 if sh[1] == SHT_SYMTAB and info & 0xF == STT_FUNC:
                     function_counts[name] += 1
                     self.functions[name] = (value, size)
@@ -217,6 +224,11 @@ class Binary:
             index -= 1
         return best
 
+    def placement(self, address: int | None) -> str:
+        """Section of a definition: initialized and zeroed data are not interchangeable."""
+        section = None if address is None else self.section(address)
+        return section.name if section else "undefined"
+
     def identity(self, address: int, width: int | None, mnemonic: str) -> tuple:
         """What the operand at address refers to, comparable across binaries."""
         section = self.section(address)
@@ -227,13 +239,14 @@ class Binary:
             if slot is None:
                 return ("got-unknown",)
             if slot[0] == "sym":
-                return ("got", slot[1])
+                definition = self.definitions.get(slot[1])
+                return ("got", "sym", slot[1], 0, self.placement(definition))
             return ("got",) + self.identity(slot[1], width, "ptr")
         symbol = self.containing(address)
         if symbol and symbol[2].startswith(ANONYMOUS_TABLE) and symbol[1] > 0:
             return ("table", self.read(symbol[0], symbol[1]), address - symbol[0])
         if symbol and not symbol[2].startswith(".L"):
-            return ("sym", symbol[2], address - symbol[0])
+            return ("sym", symbol[2], address - symbol[0], section.name)
         if section.name == ".rodata":
             if mnemonic == "lea" or width is None:
                 raw = self.read(address, 256) or b""
@@ -410,11 +423,12 @@ def describe(identity: tuple) -> str:
     if kind == "str":
         return repr(identity[1][:-1].decode("latin-1"))
     if kind == "sym":
-        return f"{identity[1]}+{identity[2]}" if identity[2] else identity[1]
+        name = f"{identity[1]}+{identity[2]}" if identity[2] else identity[1]
+        return f"{name} in {identity[3]}"
     if kind == "table":
         return "compiler table"
     if kind == "got":
-        return "GOT(" + describe(identity[1:]) + ")" if len(identity) > 2 else f"GOT({identity[1]})"
+        return "GOT(" + describe(identity[1:]) + ")" if len(identity) > 1 else "GOT(?)"
     return kind
 
 

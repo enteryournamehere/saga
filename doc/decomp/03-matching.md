@@ -93,11 +93,16 @@ reporting, hooks, or CI.
 
 ## Resolved comparison (experimental)
 
-objdiff compares the linked libraries' `GOTOFF` displacements as numbers. Each
+The project's objdiff fork recovers some PIC-relative operands in the linked
+libraries: the GOT-base `add` after a PC thunk, loads from GOT slots, and `lea`
+of an address covered by exactly one named symbol. It still compares other
+`GOTOFF` displacements as numbers: loads and stores of globals and statics,
+SSE and x87 constants, string literals without a unique label, indexed
+operands, and every operand of a function that contains a jump table. Each
 displacement is the distance from the GOT to a `.rodata`, `.data` or `.bss`
-item, so a function whose code is correct still scores just under 100% until
-the data layout of the whole binary matches. To see how much of the remaining
-difference is only layout, run:
+item, so such a function still scores just under 100% until the data layout of
+the whole binary matches. To see how much of the remaining difference is only
+layout, run:
 
 ```bash
 bazel build --config=target //src:saga_target
@@ -105,18 +110,21 @@ bazel run //scripts:resolved_match_report
 ```
 
 The report resolves each differing PIC-relative operand in both libraries and
-accepts it when both refer to the same symbol and offset, a GOT slot for the
-same symbol, identical constant bytes, the same string, an identical
-compiler-generated table, or a jump table with the same case offsets. Branches
-compare targets by symbol, ignoring clone numbering. Everything else must be
-textually identical with the same instruction count, so the check is somewhat
-stricter than objdiff where it applies: of objdiff's exact functions only those
-calling a different compiler clone, or loading different data, fail it.
+accepts it when both refer to the same symbol and offset in the same section
+(`.data` and `.bss` differ), a GOT slot for such a symbol, identical constant
+bytes, the same string, an identical compiler-generated table, or a jump table
+with the same case offsets. Anonymous literals are compared by content, not by
+their `.LCn` label: the number only records where the literal was first used in
+its unit, so equal labels can hold different strings. Branches compare targets
+by symbol, ignoring clone numbering. Everything else must be textually
+identical with the same instruction count, so the check is somewhat stricter
+than objdiff where it applies: of objdiff's exact functions only those calling
+a different compiler clone, or loading different data, fail it.
 
 It also lists near-exact functions whose resolved data differs: wrong
-constants, strings, globals and field offsets that raw displacements cannot
-distinguish from layout. This is a diagnostic; `matching.json`, the README
-progress table and CI still use objdiff's score.
+constants, strings, globals, data sections and field offsets that raw
+displacements cannot distinguish from layout. This is a diagnostic;
+`matching.json`, the README progress table and CI still use objdiff's score.
 
 ## Common pitfalls
 

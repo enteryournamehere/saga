@@ -500,11 +500,11 @@ giz_freeplay:
                     UpdateGameMenu(GamePad, 1);
                     if (Player[0] != NULL) {
                         UpdateCoinPacket(Player[0]->coinpacket, Player[0]->apiobj.player_controlled,
-                                         (i32)(char)Player[0]->apiobj.field_0x27c);
+                                         Player[0]->apiobj.field_0x27c);
                     }
                     if (Player[1] != NULL) {
                         UpdateCoinPacket(Player[1]->coinpacket, Player[1]->apiobj.player_controlled,
-                                         (i32)(char)Player[1]->apiobj.field_0x27c);
+                                         Player[1]->apiobj.field_0x27c);
                     }
                     Debris(1);
                 } else {
@@ -1212,7 +1212,7 @@ giz_freeplay:
         legoSetMusicVolume(savedFrametime);
     }
 
-    Area = (i32)(char)NewLData->area_index;
+    Area = NewLData->area_index;
     i = NewLData->idx;
     Level = i;
 

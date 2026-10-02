@@ -2161,10 +2161,12 @@ void MovePlayer_ROLLING(GameObject_s *object) {
         if (1.0f > object->turn_braking) {
             object->target_velocity.x = (1.0f - object->turn_braking) * 0.0f;
             object->target_velocity.z = object->target_velocity.x;
+            if (object->field_0xe36 == 2) {
+                object->target_velocity.x *= 0.5f;
+                object->target_velocity.z *= 0.5f;
+            }
         }
         if (object->field_0xe36 == 2) {
-            object->target_velocity.x *= 0.5f;
-            object->target_velocity.z *= 0.5f;
             NewRumble(object->pad_gamepad->pad, (qrand() * 1.5259022e-05f) * 0.5f, 0);
             i32 effect = WORLD->debris_sys->entries[58].effect;
             if (effect != -1) {

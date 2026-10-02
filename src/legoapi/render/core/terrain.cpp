@@ -6628,7 +6628,7 @@ namespace {
 
 i16 *NewScanHandelFull(nuvec_s *position, nuvec_s *movement, f32 radius, i32 scan_type, i32 terrain_mask) {
     TerrainScanWriter writer;
-    if (CurTerr == NULL || position == NULL || movement == NULL || !TerrainBeginHandle(&writer))
+    if (!TerrainBeginHandle(&writer))
         return NULL;
     i16 *result = reinterpret_cast<i16 *>(writer.group_header);
     struct HandleWorkspace {
@@ -6826,8 +6826,9 @@ i16 *NewScanHandelFull(nuvec_s *position, nuvec_s *movement, f32 radius, i32 sca
                 while (batch->marker >= 0) {
                     const i32 count = static_cast<i16>(batch->shape_count);
                     TERRAIN_SHAPE *shapes = reinterpret_cast<TERRAIN_SHAPE *>(batch + 1);
-                    for (i32 j = 0; j < count; ++j) {
-                        TERRAIN_SHAPE *shape = &shapes[j];
+                    TERRAIN_SHAPE *source_cursor = shapes;
+                    for (i32 remaining = count; remaining > 0; --remaining, ++source_cursor) {
+                        TERRAIN_SHAPE *shape = source_cursor;
                         platinrange = 1;
                         if (reinterpret_cast<u8 *>(writer.cursor) >= writer.limit ||
                             (shape->material[1] != 0 && (shape->material[1] & terrain_mask) == 0))

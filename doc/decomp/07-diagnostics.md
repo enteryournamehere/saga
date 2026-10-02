@@ -123,6 +123,26 @@ parameter signedness, and whether the function became local or inline. Use:
 bazel run //scripts/checks:check_symbols -- --list
 ```
 
+### A report function has no `fuzzy_match_percent` field
+
+Distinguish a missing function row from a protobuf default. Objdiff report
+version2 uses a non-optional proto3 float for `ReportItem.fuzzy_match_percent`:
+its JSON serializer omits zero and its decoder restores zero. For a report
+from a verified compatible generator, an existing uniquely identified row
+with an omitted field therefore has a report score of0, not an unknown score.
+The production report mapper already follows this rule. Experimental gates
+must not require the field to be explicitly present and reject valid zero
+scores as unknown.
+
+Validate report version/provenance, exact name, original raw address (after
+section-relative conversion), original extent and emitted symbol identity
+before decoding that default. A missing/ambiguous row, explicit null, invalid
+number, unsupported schema or unbacked emitted helper remains unresolved;
+never apply a general missing-value-to-zero fallback. A report score of0
+also does not prove behavioral disagreement: objdiff's report generator can
+use0 when its internal symbol comparison has no score. Preserve that distinction
+when diagnosing matching versus gameplay correctness.
+
 ### Extra symbol appears
 
 Determine whether it is intended reconstructed code, a compiler-generated

@@ -10548,3 +10548,220 @@ charshadows.cpp byte-equals the sole frozen batch394 candidate. Target,
 native and WASM builds and all five repository tests pass. Final normal
 hook and pushed-head CI results are recorded separately; the70.002460%
 cycle merge threshold is not reached.
+
+### Batch402: parent-condition source form closed unqualified
+
+Root reviews the complete original/current `ProcessFlowBox`, canonical parent
+loader and actual output/activation services, then executes the sole frozen
+whole-owner pair in `/tmp/saga-gizmo402-census.8vAZ5e/gate402`. Manifest SHA256
+990512c69212cdb0abb8938f4f951072f826928e0e507c5fc18f2572556ca447 pins
+93 source inputs,47 external/generated inputs and the unchanged actual O3
+action. Both actual consumed dependency closures qualify. The sole change
+expresses short-circuit parent success with a bool rather than comparing the
+post-break index with the parent count; this is a stable loaded-topology
+source form, not an invented callback-mutation gameplay bug. Retail's
+output_indices[0], private ABI and all other body bytes remain untouched.
+
+The known subtotal gains137.4764415 original-weighted bytes. LOCAL target
+raw0x4b1bb0/original925 bytes rises8.402174% → 23.264492%,946 → 930
+emitted bytes. All57 original-backed rows pair uniquely with finite scores;
+both known exacts and every undefined identity retain. The strict Counter
+removes.L687/.L688 and adds.L691/.L692, all zero-size LOCAL/NOTYPE `.text`
+labels. These are not silently exempted; the two unbacked thunks also lack a
+new independently reviewed representation proof. The modest unit closes
+unqualified without extra proof, runtime, variants, compiler/report retries
+or production integration. Sole root execution finishes with status1 and
+preserves both objects/reports and the initial strict result.
+
+### Checkpoint27 service/world censuses: two faithful targets
+
+Two fixed twelve-entry censuses close without proposed changes. The service
+packet `/tmp/saga-service-frontier12.ufPbBL/census.md` has SHA256
+991c4b97d23edebfcc90ab8d8e1bdb292adf452c603f37df00aec7a52d51cd2f.
+Its sole complete child audit is LOCAL `fnAudioSample`,raw0x348f70/2807
+bytes/78.39917%. All eighteen keyword branches, enabled/disabled filename
+handling, signed bucket/index chains, reference counts, persistent filename
+policy, clamps and terminal68-byte copy are already present, backed by
+canonical parser/string/CRC services and producer/consumer records. The other
+eleven entries are current-source/history screens, not original equivalence
+proofs or measured reserves.
+
+The world/AI packet `/tmp/saga-rowtowards-cp27-census.y6C2IY/audit.md` has
+SHA256992aa92ed7bce67074daf07ddb87a518877f0c6e0542bd2ac43018e208d1d56a.
+Its sole complete child audit is LOCAL `RowMoveTowards`,raw0x3d7c00/1851
+bytes/76.75903%. Route inheritance/admission, turn geometry, endpoint
+reversal, asymmetric leader eligibility and straight movement are already
+present, with canonical16-member/four-row admission and actual math/speed
+services. Retail stack realignment alone does not justify an alignment
+attribute. The other eleven entries remain metadata/history-only. Reviewed
+and later archival ledger hashes are distinguished in the packet. Root reads
+both complete audits but does not claim to have independently repeated their
+raw/helper closures. Neither census runs an export, compiler, report or
+runtime, and neither changes production.
+
+### Checkpoint28: exact pushed-head CI verified
+
+All eleven PR121 checks complete SUCCESS on exact pushed head
+98d2b8dc3df180c80c22334c0ae69b8b8447717b, independently verified using
+the PR head and all check conclusions. The normal commit hook passes and
+preserves the human author plus verified Codex co-author trailer. The
+68.672380% checkpoint remains below70.002460%; no merge is attempted.
+
+### Checkpoint28 additional faithful audio/path censuses
+
+Root reads both complete child audits; this is not an independent repetition
+of their full raw/helper proof or a runtime-equivalence claim. No candidate,
+export, compile, matching report, runtime or production integration follows.
+
+`CalculatePositionalMix`,GLOBAL raw0x328cc0/5626 bytes/85.52264%, closes
+without substantial admitted-finite omission. All five modes, listener
+admission/detachment/attachment, screen transform, coefficient/MAX blend,
+gain/LFE and metadata publication are present. The surprising second-listener
+outer angle intentionally uses the first angle in retail too. Nonfinite
+admission differences and tiny stable-endpoint source forms are reserved,
+not promoted. Packet `/tmp/saga-positionalmix-cp28.9EGdAO/audit.md` has SHA256
+f0dd991ef155e9619eba149b3d7f013e4cf9952ec74e3c823a32140c4a4ab79a.
+
+Plain-C `WithinConnection`,raw0x3eee20/2179 bytes/68.46311%, has its complete
+route/checksum, radius erosion, both actual dynamic-node refreshes, circle/
+capsule/endcap/interpolated-height geometry, shared intersection polynomial
+and path-info publication. Canonical u16 route masks ordinarily select0..15
+or sentinel0xff. Inherited route64..254 shifts remain outside the defined
+C++ domain; scratch Y remains uninitialized before the actual rotation copies
+it, as in the original scratch setup. Thus this is an algorithmic census,
+not a fully defined C++/sanitizer-equivalence claim. No tiny UB-only matching
+correction is proposed. Packet `/tmp/saga-withinconnection-cp28.s7qkZU/audit.md`
+has SHA25664daff513ecf92e54b231e50589a9ed339c9bea6350d7621d5c75d16cec5a7d1.
+
+### Checkpoint28 additional finite faithful censuses
+
+Four further child audits close without candidates, exports, compiler/report
+trials, runtime fixtures or production changes. Root reads their complete
+audits, not independently repeats all raw/helper proof. Deficit rankings are
+opportunity indicators, never measured gains. Other screened names remain
+metadata/source-only unless their own prior full closure is cited.
+
+- `Bolts_Draw`,raw0x480320/1389 bytes/54.619050%: all32 slots, persistent
+  scale scratch, actual scale callback, primary/glow/reflection/shadow draws,
+  unordered sentinel tests and paused/end gates are present. Retail inlined
+  rotation math is not grounds for manual helper fanout. Audit
+  `/tmp/saga-boltsdraw-cp28.SVAZ6i/audit.md`,SHA256
+  db155cf0ebad84dc0107711a22f1d2b1b8fdfb4d35217251b999d739647dcf90.
+- `PlatSkinEndReigster`,raw0x38eee0/1406 bytes/52.36011%: reverse scratch,
+  conditional bounds,49 cells,257 count clears, secondary platform-link
+  quirk and cache metadata are present. Initialized allocated arenas, valid
+  scene indices and defined finite conversions are required; no active
+  gameplay callsite is established. Initial prose literal-address errors
+  are preserved and explicitly corrected by the final freeze. Audit
+  `/tmp/saga-platskin-cp28-census.oRYKvx/audit.md`,SHA256
+  2af617a61fb119af20b81700bdc8136a8a16f62411c2b3543eec7b2b354ad18e.
+- `areaEditor_Process`,raw0x3e0470/3322 bytes/54.480520%: options, hover,
+  select/create/move/scale, delete, rotation, height and list cycling are
+  present. Actual camera service explains the preserved initial-selection
+  skip. The wider-host shared-storage concern stays separately deferred.
+  Audit `/tmp/saga-menu-area-cp28.2hVA0x/audit.md`,SHA256
+  4cfbca11b8067e1ff9ffa1b90a2c94045ed46c26242051d0997ebb66c7fd6d68;
+  its append-only addendum clarifies497 owner lines, not nominal500.
+- `DrawTouchPrompt`,raw0x458b80/1052 bytes/34.245%: icon/text branches,
+  controller/timer pulse, real unused remainder service, canonical literals
+  and helper submissions are present. The known unordered-wave discrepancy
+  is outside the finite timer/conversion domain; no NaN-only trial follows.
+  Audit `/tmp/saga-render-cp28-touchprompt.W2jYnK/audit.md`,SHA256
+  9e5dfc74d65f023f8c9358af3d1611df0b4cb124e6e24fa2e51391aa7403ac81.
+
+### Checkpoint28 final bounded faithful censuses
+
+Root reads the child audits; these are static closures, not measured gains
+or root repetitions of all binary/helper evidence. No candidates, compiler
+trials, exports, runtime fixtures or production changes result.
+
+- `Move_CHARACTER`,raw0x16f500/2399 bytes/70.559260%: input/context,
+  weapon/jetpack/gravity, rocket event, landing, grab, victim and modifier
+  tails are present. Actual producer/helper effects explain the required
+  existing reloads. Audit `/tmp/saga-move-character-closure.f9inZP/audit.md`,
+  SHA2567ac878bc6dc441064218850f3914fcabb25ffc4d05d4bf456e901423bf1c3dba.
+- `Collection_GetIDList`,raw0x4dd480/1076 bytes/53.317610%: flag mask,
+  all nonzero ownership returns (including2), optional first/second outputs,
+  current list/count accesses and final sentinel are present. Loaded valid
+  IDs and adequate outputs are required; malformed indices or metadata
+  aliasing are not supported by this audit. Audit
+  `/tmp/saga-collectionid-cp28.hvdgC8/audit.md`,SHA256
+  0f2ec4a81ccea2c0ab4f6fd8edbc242c812d86d09ff8c9d56cc3ae894b232965.
+- `NuDynamicLight::setupCustomCameraFrustum`,raw0x2b96b0/1280 bytes/
+  53.353897%: cache setup, split copy, per-set frustum/shadow/matrix/capsule,
+  split planes and camera restoration are present. Original constructor
+  independently confirms two RenderSets; admitted count1..3 cannot reach
+  retail's oversized SIMD paths. No invented array capacity/alignment or
+  copy fanout follows. Audit `/tmp/saga-customfrustum-cp28.zFc1zC/audit.md`,
+  SHA25649e39d3d3e581e851efcfc79c8b486bf6d67de81b6f61833c81177b1acd97a64.
+
+### Batches403/404: single gates and protobuf-default diagnosis
+
+Both frozen candidates receive exactly one complete production-option
+baseline/candidate compile pair and two bulk original/object reports. Full
+dependency/action/tool freezes and literal ELF Counter/U retention pass.
+Neither initial gate authorizes integration or runtime; no variants or
+report retries follow. A separate protocol/representation review is below.
+
+- Batch403 restores the separate local `Loader` in `RequestDecode` through
+  semaphore signalling. The known subtotal improves294.8269404 weighted
+  original bytes; target29.50186→57.5539%,396→892 emitted bytes, original1051.
+  Seven known exacts retain. The historical gate rejects an omitted score
+  for original-backed501-byte `RequestBuffer`; bx/cx thunks also remain
+  unbacked, with no independent representation qualification. Capture
+  `/tmp/saga-requestdecode403.KkQkcV/gate-capture.json`,SHA256
+  dc58eb16d4b06fa1708ebbe9a1d7760e567f779b5419f7c5468bf4475135348f.
+- Batch404 changes only three selected signed-size guard expressions in
+  `AndroidOBBUtils::LookupPackagePath`; no assets/package data are touched.
+  Target1658→1283 emitted bytes, original1139. Baseline report score8.006803%
+  is explicit, candidate field is omitted. The original strict gate closes
+  unqualified, with three finite collateral rows unchanged. Capture
+  `/tmp/saga-obb-guard-sourceform.V0QZzB/gate404/gate-capture.json`,SHA256
+  039bc36d8e6e28cb4af046b5597a2d185a3445d6a2adf7192254f06a2021e10c.
+
+Root then independently diagnoses the protocol, without changing/re-running
+these immutable gates. Installed objdiff-cli3.8.1 SHA256
+aadcbc10c958934220cfbf8f6008fb0303b7c3c4fea087e2f657b5e690837eb3
+equals the local release executable in `/home/fabian/git/objdiff`.
+The local schema `objdiff-core/protos/report.proto` makes this a non-optional
+proto3 float. The generated release serializer omits0 and decoder restores0;
+`objdiff-cli/src/cmd/report.rs` also records0 for an absent internal score.
+Both captured reports declare version2. Thus an omitted field on a validated
+existing row is a known *report metric* zero, not necessarily a successfully
+computed instruction comparison. This does not permit scoring absent rows,
+unbacked helpers, invalid numbers or unresolved pairings as zero.
+
+The production report mapper already decodes this protobuf default. Future
+experimental gates must follow the same verified schema rule after exact
+row identity validation (see07-diagnostics), instead of falsely stopping on
+every zero-valued score. Historical packet outputs remain unchanged. This
+correction does not qualify403's unbacked helpers or manufacture a404 gain;
+404's decoded target metric actually declines from8.006803% to0.
+
+Root subsequently qualifies403's specific unbacked bx/cx representations
+independently: each complete12-byte code section (including eight NOP bytes),
+flags/alignment, COMDAT membership/signature, absence of code relocations,
+entire referenced CIE/FDE and its exact R_386_PC32 target/addend retain.
+Only the relative CIE-position field is normalized after prior extent drift;
+no code, instruction operands or absolute scores are fabricated. The separate
+read-only `/tmp/saga-requestdecode403-protocol-proof.py` checks frozen input
+hashes, both report versions, the exact501-byte/raw0x31fa90 protocol-zero row,
+all37 original-backed owner functions, seven retained exacts and full Counter/U.
+It passes without compiler/report execution or modifying the historical gate.
+The metric delta remains+294.8269404 weighted original bytes. This specific
+post-gate protocol correction permits bounded real-service runtime preparation
+for the unchanged403 candidate; it is not a blanket unknown-score exemption.
+
+Two further child faithful closures produce no candidates or experiments:
+`Bolt_Debris_LSW`,raw0x1be610/1107 bytes/54.855373%, retains all point/debris,
+live double-damage, special shake/rumble and explosive-cheat/arcade tails;
+its dogfight indexed-tail storage debt is not certified host-safe. Audit
+`/tmp/saga-boltdebris-cp28.isa6CJ/audit.md` is read completely by root.
+`NuSoundSystem::CreateEffect`,raw0x31bda0/1180 bytes/39.44856%, retains all
+eight allocations, actual constructors and initialise/list-registration tail.
+Redundant remaining-delay initialization is not a missing behavior; valid
+scratch/list and sufficient list-node allocation remain required. Audit
+`/tmp/saga-createeffect-cp28.UKbmPd/audit.md`,SHA256
+23318d25bc9fbff0f8bb9da049c98554af5e6f8ebd6fda176f91faa45749ceb2,
+is read completely by root. Neither audit claims recursive engine/runtime
+equivalence or identifies an original omission to implement.

@@ -11918,3 +11918,75 @@ All6293 raw exacts, original identities,4722419-byte denominator and source
 ownership retain. The +2pp threshold70.002460% is not reached; no merge is
 authorized by this checkpoint. Raw report9dfc40bab1f342aa6c995a20e1f6f19975d20897962ac6738ae49516751cd0cf;
 mapped reportb226682efff28eb8fc8fe65f1625eef5e20adc79090849ab6c894db2374acd37.
+
+### Batch443 pickup-progress provisional positive
+
+Root selects the exact gizmos/fx action from all three fresh owner actions;
+the first empty-filter query is preserved but is not compiler authority. After
+reviewing the exact180-entry production dependency file (178 unique inputs),
+both actual preprocessing closures and the cursor/init-order-only source
+difference, root executes one unchanged-O3 full-owner pair and two bulk reports.
+StoreProgress rises62.570470% to94.543625%,710 to670 emitted bytes, with
+214.53987005 positive original-weighted bytes. All33 backed functions and11
+prior exacts, fullCounter/U and original identities retain without pairing
+errors. Four unbacked private/thunk bodies remain unknown; they need separately
+reviewed specific representation proof, not imputed zero scores. Finite runtime
+preparation follows separately. No production integration is authorized yet.
+Gate manifestaa097e08780cd0fdad96128c924b2b6b7fb23c054216babfe903f8583cb8df32.
+
+The separately root-reviewed443 proof retains all36 non-target representations,
+including the1515/809-byte private parts,93-byte startup and both actual12-byte
+COMDAT thunks. Only four individually asserted CALL/LEA operands change; each
+still resolves to its exact original function entry. All REL/addends, static
+incoming/interior references,37 unwind records,184 raw symbols, complete storage,
+groups and executable/container gaps are accounted for. Unknown absolute scores
+remain unknown. Qualification30a8eab98dd205d1f2d01f7bb789ad869e8c0b01469d7b433dcf4362a275c37b.
+Both initial GNU runtime compilations fail before objects because the fixture
+omits the canonical NuMemoryPS declaration header. Failed logs/closures are
+preserved; an additive fixture include-order repair does not change candidate,
+records, options, oracle or matching evidence. Runtime remains unqualified.
+
+The exact pushed checkpoint37 headb8773c32da9890d0308be4aa7373c6104b8a5885
+passes all eleven GitHub checks (COMPLETED/SUCCESS). Its below-threshold matching
+gain still does not authorize merging.
+
+Separate complete audits close2970-byte KeepOnScreen and1388-byte edpartLoadPageEx
+as faithful in their explicitly admitted initialized finite domains. The former
+retains last-response/count and original-velocity overwrite quirks; the latter
+retains versioned loading and start-before-publication order, with both actual
+retail endian/count services verified as nine-byte no-ops. Shared malformed-input
+and nonfinite debt is recorded without speculative repairs. Neither yields a
+candidate, compiler trial or runtime fixture. Source-only motion survivors and
+partial editor nominations remain open rather than being blanket-excluded.
+
+The additive443 runtime packet changes only canonical NuMemoryPS declaration
+include order and exact r1 output paths. ROOT reviews both actual complete
+294-input catalogs, unchanged backend/link/runtime closures and both compiled
+ELFs before the sole sanitizer execution. Old and new GNU64/i386 each pass5497
+cases,811893 checks and10737 calls, including negative counts, allocated counts
+above512, all flag bytes, bitmap word boundaries and NULL combinations. Stable
+allocated record storage and the original always-zero activated bitmap quirk
+retain; ASAN/UBSAN/LSan emit no findings. Resultce996a1d57d201a81e6a7f59c30c120c7b4c7132af51921792646d13cbb0f747.
+The exact frozen443 candidate is now integrated; no full-engine/Android runtime
+or broader alias/gameplay claim is inferred from these native diagnostics.
+
+Batch444's sole unchanged-O3 whole-owner pair measures1348.16085963 positive
+original-weighted bytes; Titles_Draw47.594593% to92.103040%,3221 to3061 bytes.
+All25 backed functions and the prior exact retain, with no pairing or undefined
+surface changes. The gate explicitly reserves six renamed zero-extent LOCAL
+text labels (.L169..174 versus .L206..211), not an automatic renumbering waiver.
+Specific whole-object qualification and finite runtime remain pending; no
+candidate integration, matching retry or alternative source variant occurs.
+Capture2b69f7c26f1e5f21c8b07a52851e313ba04ade0aeb5277379d4d7a1966b2b127.
+
+### Checkpoint38 linked validation
+
+The integrated443 pickup change passes native, WASM and Android target builds
+and all five repository checks. One independent linked report reaches68.764360%
+fuzzy matching, +0.004540pp over checkpoint37 and +0.761900pp over main.
+All6293 raw exacts, original identities,4722419-byte denominator and source
+ownership retain. The +2pp threshold70.002460% is not reached; no merge is
+authorized by this checkpoint. Raw report8fca470fc6904d9e2e727eb87deee8d24493b3ff3db9cfd107ab4269f1423e89;
+mapped report09c463e024ed06db3955c2f4da66868961d4a996399fce8a7c2644c4b23faedc.
+Exact pushed-head GitHub validation follows separately. Batch444 remains
+isolated and is not included in this linked gain.

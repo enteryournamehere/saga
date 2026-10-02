@@ -671,9 +671,9 @@ static void GizmoPickups_ClearProgress(void *, void *progress_ptr) {
 static void GizmoPickups_StoreProgress(void *world_ptr, void *, void *progress_ptr) {
     GIZMOPICKUPPROGRESS_s *progress = static_cast<GIZMOPICKUPPROGRESS_s *>(progress_ptr);
     if (progress != NULL) {
-        memset(progress->collected, 0, sizeof(progress->collected));
-        memset(progress->enabled, 0xff, sizeof(progress->enabled));
         memset(progress->visible, 0xff, sizeof(progress->visible));
+        memset(progress->enabled, 0xff, sizeof(progress->enabled));
+        memset(progress->collected, 0, sizeof(progress->collected));
         memset(progress->activated, 0, sizeof(progress->activated));
     }
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
@@ -682,20 +682,18 @@ static void GizmoPickups_StoreProgress(void *world_ptr, void *, void *progress_p
         return;
     }
 
-    const i32 count = world->gizmo_pickup_sys->pickup_count < GIZMOPICKUP_PROGRESS_CAPACITY
-                          ? world->gizmo_pickup_sys->pickup_count
-                          : GIZMOPICKUP_PROGRESS_CAPACITY;
-    for (i32 index = 0; index < count; ++index) {
-        const GIZMOPICKUP_s &pickup = world->gizmo_pickup_sys->pickups[index];
+    const i32 count = world->gizmo_pickup_sys->pickup_count;
+    const GIZMOPICKUP_s *pickup = world->gizmo_pickup_sys->pickups;
+    for (i32 index = 0; index < count && index < GIZMOPICKUP_PROGRESS_CAPACITY; ++index, ++pickup) {
         const i32 word = index >> 5;
         const u32 bit = 1u << (index & 31);
-        if ((pickup.state_flags & GIZMOPICKUP_STATE_VISIBLE) == 0) {
+        if ((pickup->state_flags & GIZMOPICKUP_STATE_VISIBLE) == 0) {
             progress->visible[word] &= ~bit;
         }
-        if ((pickup.state_flags & GIZMOPICKUP_STATE_ENABLED) == 0) {
+        if ((pickup->state_flags & GIZMOPICKUP_STATE_ENABLED) == 0) {
             progress->enabled[word] &= ~bit;
         }
-        if ((pickup.state_flags & GIZMOPICKUP_STATE_COLLECTED) != 0) {
+        if ((pickup->state_flags & GIZMOPICKUP_STATE_COLLECTED) != 0) {
             progress->collected[word] |= bit;
         }
     }

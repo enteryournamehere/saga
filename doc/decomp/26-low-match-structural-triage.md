@@ -10076,3 +10076,84 @@ candidates. GitHub checks for this new checkpoint remain pending; the cycle
 is below70.002460% and is not eligible for merging. Platform/editor runtime
 preparations and further particle/quaternion candidate comparisons are separate
 work, not improvements included in this checkpoint.
+
+Checkpoint25's exact pushed head
+`4a3815f796198b56480b0ba4768fd508af4d1376` subsequently passes all eleven
+GitHub checks. The head identity, count and SUCCESS conclusions are independently
+checked; the matching threshold remains unmet.
+
+### Batch376: platform shape-count traversal
+
+The sole unchanged O3 comparison gains135.77285925 known weighted bytes;
+`SkinPlatform` rises33.919666% → 42.540165%,1478 → 1430 bytes
+(original1575). All seven scored original rows and complete symbol/U Counters
+retain. Complete own-section thunk bodies, COMDATs, decoded references and
+storage independently qualify unchanged representation for the two unscored
+thunks, without assigning absolute scores.
+
+Full old/new `SkinPlatform` bodies with actual terrain, transform, square-root
+and trig helpers pass780 cases and617,365 checks per ABI, with matching digest
+`9e5a5126`, on host ASan/UBSan/leak detection and NDK32 Linux-libc diagnostics.
+The fourteen actual preflight translation units are qualified before any build;
+a finite four-header metadata supplement preserves and qualifies the first
+stopped preflight. Independent geometry/output-byte checks cover stable,
+disjoint canonical streams, signed empty counts, multiple batches, mirrored
+triangles/quads and finite threshold cases. Malformed streams, nonfinite input,
+overlap, live count mutation and full gameplay are outside the admitted domain.
+Mode-zero/two trig initialization is linked, not claimed tested. Production
+integration byte-equals the sole frozen owner candidate; linked checkpoint
+verification is pending.
+
+### Batches380/381: particle and quaternion reserves
+
+The sole O2 `UpdateParts` typed-cursor comparison has exactly zero known gain
+across124 scored originals and retains seven known exacts. Two compiler-storage
+names change, so its complete symbol surface is unqualified. The original
+93-byte initializer and3351-byte `PartCollide` remain unscored, not zero-weight.
+No further proof, runtime fixture, source variant or integration is justified.
+An exact checkpoint25 documentation-append metadata qualification precedes the
+sole comparison and preserves the original frozen snapshot.
+
+The sole O3 `NuAnimBuffEvaluate_3_QuatB` cursor comparison loses208.18635174
+known weighted bytes;79.029600% → 69.484146%,2082 → 2179 bytes
+(original2181). All twenty scored originals, one known exact and complete
+symbol/U Counters retain; two unscored thunks remain explicitly unknown.
+Existing quaternion-slot/root-scale allocation debts are recorded, not
+silently repaired or runtime-validated. No variant, runtime or integration
+follows this negative comparison.
+
+### Batch378: editor-input runtime qualification
+
+Full frozen old/new Update bodies and fifteen actual helper excerpts pass all
+256 finite cases per ABI on host ASan/UBSan/leak detection and NDK32 Linux-libc
+diagnostics. Canonical live pad/menu/camera/context records cover digital masks,
+pad admission, property release, menu state, analogue cursor reset, repeat-state
+transitions and complete ray bytes. Independent state-transition checks agree.
+The sole unchanged production O2 gate and complete unknown-representation proof
+remain the matching authority; diagnostic helpers all use the owner O2 options,
+not each helper's individual production action. No mutated callback, complete
+editor/gameplay or Android-device/Bionic execution is claimed.
+
+Both actual preprocessor closures qualify against finite pinned catalogs before
+either object build, and build dependencies equal those preflights. A PREP-only
+failure-output repair changes `fprintf(stderr,...)` to `printf(...)`, avoiding a
+Bionic `__sF` dependency in the Linux-libc witness. Prior fixture, manifest and
+scripts are preserved; actual bodies, helpers, cases and action options are
+unchanged. The sole runtime passes without retry. Integrated production source
+byte-equals the sole frozen owner candidate; linked verification is pending.
+
+### Checkpoint26 linked gate (before commit)
+
+The integrated platform/editor owners pass target, native and WASM builds.
+Independent raw and mapped linked reports agree at **68.667076%**,
+**+0.664616 percentage points** from main and **+0.011526 points** from
+checkpoint25. All **6,293** previous raw address/symbol exact identities retain;
+none are gained or lost. Local full checks and pushed-head CI remain separate
+pending qualifications. The70.002460% merge threshold is not reached.
+
+The complete pre-commit qualification subsequently passes all five repository
+tests, format, canonical forward-declaration, target/native/WASM tidy and symbol
+checks, plus generated Pages report refresh. Both formatted owners still
+byte-equal their sole frozen candidates; generated68.667076%/6,293 agrees with
+the independently checked linked reports. No new pushed-head CI result is
+claimed before the next commit.

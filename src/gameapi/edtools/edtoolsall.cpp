@@ -4959,7 +4959,6 @@ void EdInputContext::Set(i32 input, float value, float repeat_delay) {
 void EdInputContext::Update(nucamera_s *camera, nupad_s *new_pad, float elapsed, bool) {
     static __used__ volatile u8 UseMouse;
     pad = new_pad;
-    delta_time = elapsed;
 
     f32 *view = reinterpret_cast<f32 *>(reserved_00);
     view[0] = camera->mtx.m30;
@@ -4986,6 +4985,7 @@ void EdInputContext::Update(nucamera_s *camera, nupad_s *new_pad, float elapsed,
     view[13] = ray_end.y - view[9];
     view[14] = ray_end.z - view[10];
     view[15] = 0.0f;
+    delta_time = elapsed;
 
     // The original editor suppresses its input context while a property text
     // field is being edited, releasing held actions before returning.
@@ -4999,14 +4999,22 @@ void EdInputContext::Update(nucamera_s *camera, nupad_s *new_pad, float elapsed,
     const i32 shift_or_s = NuKeyboard(0x2a) | NuKeyboard(0x36) | NuKeyboard(0x1f);
     const i32 alt_or_space = NuKeyboard(0x38) | NuKeyboard(0xb8) | NuKeyboard(0x39);
     const i32 control_or_c = NuKeyboard(0x1d) | NuKeyboard(0x9d) | NuKeyboard(0x2e);
-    const u32 buttons = new_pad->digital_buttons;
-    const i32 left_click = (NuMouseReadButtons() == 1 || (buttons & 0x800) != 0) && !alt_or_space;
+    const i32 left_click = (NuMouseReadButtons() == 1 || (pad->digital_buttons & 0x800) != 0) && !alt_or_space;
     const f32 mouse_x = NuMouseReadXVel();
     const f32 mouse_y = NuMouseReadYVel();
     const f32 mouse_z = NuMouseReadZVel();
-    const bool pad_enabled = edGetPadDisabled() == 0;
-    const bool menu_closed = pad_enabled && eduiGetActiveMenu() == NULL;
-    const i32 right_click = NuMouseReadButtons() == 2 || (pad_enabled && (buttons & 0x20) != 0);
+    u32 square = 0;
+    i32 right_click;
+    if (edGetPadDisabled() == 0) {
+        if (eduiGetActiveMenu() == NULL) {
+            const u32 buttons = pad->digital_buttons;
+            square = buttons & 0x80;
+            Set(38, static_cast<f32>(buttons & 0x40), elapsed);
+        }
+        right_click = NuMouseReadButtons() == 2 || (pad->digital_buttons & 0x20) != 0;
+    } else {
+        right_click = NuMouseReadButtons() == 2;
+    }
     Set(0, mouse_x, elapsed);
     Set(1, mouse_y, elapsed);
     Set(2, mouse_z, elapsed);
@@ -5043,10 +5051,8 @@ void EdInputContext::Update(nucamera_s *camera, nupad_s *new_pad, float elapsed,
     Set(33, static_cast<f32>(NuKeyboard(9)), elapsed);
     Set(34, static_cast<f32>(NuKeyboard(10)), elapsed);
     Set(35, static_cast<f32>(NuKeyboard(11)), elapsed);
-    Set(37, static_cast<f32>(menu_closed ? buttons & 0x80 : 0), elapsed);
-    if (menu_closed)
-        Set(38, static_cast<f32>(buttons & 0x40), elapsed);
-    Set(39, static_cast<f32>(buttons & 0x800), elapsed);
+    Set(37, static_cast<f32>(square), elapsed);
+    Set(39, static_cast<f32>(pad->digital_buttons & 0x800), elapsed);
     memset(cleared, 0, sizeof(cleared));
 }
 

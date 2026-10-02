@@ -10157,3 +10157,136 @@ checks, plus generated Pages report refresh. Both formatted owners still
 byte-equal their sole frozen candidates; generated68.667076%/6,293 agrees with
 the independently checked linked reports. No new pushed-head CI result is
 claimed before the next commit.
+
+Checkpoint26's pushed head `8c6689b848d2eaf63521624e07ddbe91943c10c5`
+subsequently passes all eleven GitHub checks. Exact head identity, check count
+and SUCCESS conclusions are independently verified; the +2-point threshold
+remains unmet.
+
+### Batches382/385: excluded comparisons
+
+The sole O2 cutscene stream-skip correction loses56.328159549 known weighted
+bytes. `instNuGCutSceneUpdate` falls2.0513513% → 0.4783784%,3130 → 3111 bytes
+(original3581). Complete current-stream/version guards and the separately
+audited skip-stream contract are retained in the isolated candidate; earlier
+initial-state/dispatch debts are not claimed solved. All81 finite original
+pairs, two known exacts and complete symbol/U Counters retain. Camera-update
+and additional unbacked helper/initializer/thunk scores remain explicitly
+unknown. No further proof, runtime, variant or integration follows the loss.
+
+The sole O2 pad-camera staged-quotient comparison raises its target61.830040%
+→ 64.739130%, gaining34.5890801 known weighted bytes across37 uniquely scored
+original pairs. All three known exacts and complete symbol/U Counters retain.
+Two distinct original93-byte LOCAL initializer identities remain unscored:
+their alias-inclusive uncertainty bound is186 bytes, not a guessed zero score
+or deduplicated93-byte bound. The conditional interval excluding unqualified
+unbacked thunks is[-151.4109199,+220.5890801] bytes, so net improvement is not
+established. Root reproduces the read-only census from the same two frozen
+reports/objects; no additional compiler/report, expensive representation proof,
+runtime or integration is performed. The older gate's first-unknown stop is
+preserved; future packets use complete unknown inventories.
+
+### Batches384/386: full-body censuses
+
+Fresh complete reference exports close the previously partial
+`AIScriptLoadAllPakFile` and `Hub_UpdateMiniKits` audits. Canonical source,
+full original bodies and actual producer/helper evidence reveal no large
+missing contract or new grounded matching proposal. AI derivation/inherited
+parameter expansion is compiler inlining evidence, not permission for manual
+fanout. The minikit audit separately reserves a narrow language-correctness
+issue: a finite negative combined angle is truncated to signed i32 and then
+wrapped to u16 in retail, while direct float-to-u16 is out of range. This is
+a symbolic finite witness, not a measured matching gain or runtime validation.
+No candidate, compiler comparison, fixture or production change is prepared
+for either census; malformed input/allocator policy debts remain unchanged.
+
+### Batch387: display-scene clone registration
+
+The sole unchanged O2 whole-owner gate gains45.03835926 original-weighted bytes;
+`NuDisplaySceneClone` rises58.605656% → 60.732113%,2226 → 2229 bytes
+(original2118). All23 original-backed rows are finitely and uniquely scored;
+three known exacts and complete symbol/U Counters retain. The three unbacked
+helpers are separately qualified from these same objects: complete body bytes,
+decoded internal branches, resolved CALL/GOT relocations, storage and thunk
+COMDAT prove unchanged representation. Their absolute scores/original weights
+remain unassigned, not zero. No new comparison report or compilation is used
+for this bounded proof.
+
+Exact frozen old/new final-registration fragments with canonical scene,
+sort-priority and manager records pass480 cases per mode/ABI. Host
+ASan/UBSan/leak detection passes72,640 checks; NDK32 Linux-libc diagnostics pass
+72,644 checks (including four target-layout assertions). All four outputs share
+digest`b87ff7b1`. Independent signed-key/tie ordering, full links/counts,
+unrelated fields, canaries and legal one-past formation checks cover stable
+nonnegative bounded arrays, existing sorted lists, planes-2..2 and equal keys.
+All four actual preprocessor dependency closures qualify before any object
+build; build closures equal the preflights. This source-form fixture does not
+test complete clone allocation, rendering, platform services, pthread locking
+or concurrency. Production owner byte-equals the sole frozen candidate;
+linked checkpoint verification remains pending.
+
+### Batch389: area-list census
+
+The fresh full2441-byte `Areas_ConfigureList` reference and canonical parser,
+startup/storage/helper audit establish no missing valid-data contract or
+grounded source-form change. The twelve-target screen distinguishes this
+complete census from other partial or historical entries; `Area_Configure` is
+a different previously closed function. No candidate, compiler comparison or
+runtime fixture follows. Existing malformed-number and unused buffer-end
+policies are not silently repaired or universally validated.
+
+### Batch383: turret reset contracts
+
+The sole unchanged O3 whole-owner comparison gains120.885335999 weighted bytes;
+`GizTurrets_Reset` rises47.169174% → 59.567670%,995 → 1047 bytes
+(original975). All37 finitely scored original pairs, six exacts and complete
+symbol/U Counters retain. Both unbacked zero-size thunk symbols are qualified
+from their actual12-byte section contents, complete decoded bodies, storage,
+COMDAT and absence of outgoing references; their absolute scores and original
+weights are not invented.
+
+Retail-backed corrections initialize the complete signed platform id for all
+roles, guard actual animation services against a null set, seed the average
+fallback before the real helper, and use primary times inverse-secondary for
+the relative transform. Full frozen old/new Reset bodies and twelve actual
+helper bodies pass592 candidate cases and10,724 checks per ABI;576 safe old
+controls expose576 platform,96 average and216 transform defects. Independent
+matrix and complete record/payload/progress/visibility checks cover platform
+indices through257, missing and filtered handles, rigid quarter rotations,
+unequal translations, all progress bit planes and the63/64 index boundary.
+Separate old-null child processes reproduce the actual helper fault; the
+candidate null guard passes. Host ASan/UBSan/leak detection and actual-owner-O3
+NDK32 Linux-libc diagnostics both pass, with preprocessor closures qualified
+before compilation. Diagnostic helpers use the owner O3 options, not each
+helper's own production action. Fixed-room portal and unreachable animated
+evaluation seams do not claim complete portal, animation, gameplay or Bionic
+validation. Integrated production source byte-equals the frozen candidate;
+linked checkpoint verification remains pending.
+
+### Batch388: collision-position fallback reserve
+
+The sole unchanged O3 owner comparison substitutes canonical collision-position
+coordinates in the character-model fallback and gains5.2166092 known weighted
+bytes. Its target rises73.53684% → 73.69925%,3045 → 3061 bytes
+(original3212);61 known exacts and complete symbol/U Counters retain. The
+original-backed initializer and additional unbacked helpers/thunks remain
+explicitly unscored, so net owner improvement is not established. No additional
+comparison, expensive closure proof, runtime fixture or production integration
+follows. The existing unordered-aware radius condition remains unchanged;
+misleading decompiler syntax is not used to change its NaN behavior.
+
+### Checkpoint27 linked gate (before commit)
+
+Integrated turret-reset and display-clone owners pass target, native and WASM
+builds. Independent raw and mapped linked reports agree at **68.670600%**,
+**+0.668140 percentage points** from main and **+0.003524 points** from
+checkpoint26. All **6,293** previous raw address/symbol exact identities retain,
+with none gained or lost. Main remains`a496c28beece66a24ccdf7336571b6836f45e6aa`
+after fetch and is already an ancestor. Full local checks and final pushed-head
+CI are separate qualifications; the70.002460% merge threshold remains unmet.
+
+Full local pre-commit qualification subsequently passes all five repository
+tests, formatting, canonical forward declarations, target/native/WASM tidy,
+symbol checks and generated matching refresh. Both formatted production owners
+still byte-equal their frozen candidates. Pushed-head CI is not inferred from
+these local successes.

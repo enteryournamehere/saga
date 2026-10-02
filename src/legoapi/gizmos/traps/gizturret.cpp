@@ -812,45 +812,43 @@ static void GizTurrets_Reset(void *world_ptr, void *system_ptr, void *progress_p
         if (turret->anim_set != NULL) {
             GAMEANIMOBJ_s *object = turret->anim_set->objects;
             while (object != NULL) {
-                u8 *object_data = static_cast<u8 *>(object->object_data);
-                if (object_data[1] == 1) {
+                GizTurretAnimObjectData *object_data = static_cast<GizTurretAnimObjectData *>(object->object_data);
+                if (object_data->role == 1) {
                     turret->primary_anim_obj = object;
-                    object_data[2] = 0xff;
-                    if (world->terrain != NULL && NuSpecialExistsFn(&object->special) != 0) {
-                        object_data[2] = static_cast<u8>(FindPlatInst(NuSpecialGetInstanceix(&object->special)));
-                        if (object_data[2] != 0xff) {
-                            turret->runtime_flags |= 2;
-                        }
-                    }
-                } else if (object_data[1] == 2) {
+                } else if (object_data->role == 2) {
                     turret->secondary_anim_obj = object;
-                    object_data[2] = 0xff;
+                }
+                object_data->platform_id = -1;
+                if (world->terrain != NULL && NuSpecialExistsFn(&object->special) != 0) {
+                    object_data->platform_id = static_cast<i16>(FindPlatInst(NuSpecialGetInstanceix(&object->special)));
+                    if (object_data->platform_id != -1) {
+                        turret->runtime_flags |= 2;
+                    }
                 }
                 object = object->next;
             }
-        }
 
-        turret->room_id = world->current_gscn != NULL
-                              ? static_cast<i16>(NuPortalWhichRoom(world->current_gscn, &turret->position))
-                              : -1;
-        if ((turret->behavior_flags & 2) != 0) {
-            turret->field_0x3c = turret->position;
-            GameAnimSet_GetAveragePos(turret->anim_set, &turret->field_0x30, 0, 1, 1);
-            turret->field_0x3c = turret->field_0x30;
-        }
-        if ((turret->behavior_flags & 0x800) != 0) {
-            turret->field_0xf0 = turret->field_0xec;
-            turret->field_0x3c = turret->field_0x30;
-        }
-        GameAnimSet_EvaluateState(turret->anim_set);
+            turret->room_id = world->current_gscn != NULL
+                                  ? static_cast<i16>(NuPortalWhichRoom(world->current_gscn, &turret->position))
+                                  : -1;
+            if ((turret->behavior_flags & 2) != 0) {
+                turret->field_0x30 = turret->position;
+                GameAnimSet_GetAveragePos(turret->anim_set, &turret->field_0x30, 0, 1, 1);
+                turret->field_0x3c = turret->field_0x30;
+            }
+            if ((turret->behavior_flags & 0x800) != 0) {
+                turret->field_0xf0 = turret->field_0xec;
+                turret->field_0x3c = turret->field_0x30;
+            }
+            GameAnimSet_EvaluateState(turret->anim_set);
 
-        if (turret->primary_anim_obj != NULL && turret->secondary_anim_obj != NULL &&
-            NuSpecialExistsFn(&turret->primary_anim_obj->special) != 0 &&
-            NuSpecialExistsFn(&turret->secondary_anim_obj->special) != 0) {
-            NUMTX *primary_mtx = NuSpecialGetMtx(&turret->primary_anim_obj->special);
-            NUMTX *secondary_mtx = NuSpecialGetMtx(&turret->secondary_anim_obj->special);
-            NuMtxInv(&turret->field_0xa4, primary_mtx);
-            NuMtxMul(&turret->field_0xa4, secondary_mtx, &turret->field_0xa4);
+            if (turret->primary_anim_obj != NULL && NuSpecialExistsFn(&turret->primary_anim_obj->special) != 0 &&
+                turret->secondary_anim_obj != NULL && NuSpecialExistsFn(&turret->secondary_anim_obj->special) != 0) {
+                NUMTX *primary_mtx = NuSpecialGetMtx(&turret->primary_anim_obj->special);
+                NUMTX *secondary_mtx = NuSpecialGetMtx(&turret->secondary_anim_obj->special);
+                NuMtxInv(&turret->field_0xa4, secondary_mtx);
+                NuMtxMul(&turret->field_0xa4, primary_mtx, &turret->field_0xa4);
+            }
         }
 
         if (index <= 0x3f && has_progress != 0) {

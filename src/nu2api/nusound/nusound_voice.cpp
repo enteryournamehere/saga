@@ -89,8 +89,6 @@ NuSoundVoice::NuSoundVoice(NuSoundSource *sound_source, bool loop) {
     sound_source->VoiceReference();
     this->sound_source = sound_source;
 
-    memset(this->mix_gains, 0, sizeof(this->mix_gains));
-
     this->field63_0x98 = 0.0f;
     this->field64_0x9c = 0.0f;
     this->field65_0xa0 = 1.0f; // falloff attenuation
@@ -126,6 +124,7 @@ NuSoundVoice::NuSoundVoice(NuSoundSource *sound_source, bool loop) {
     this->flags = (u8)(this->flags & 0xf0 | 0x10); // mix update on the first Update
 
     this->SetState(PLAYSTATE_STOPPED); // libTTapp.so ctor tail (0x3275b9)
+    memset(this->mix_gains, 0, sizeof(this->mix_gains));
 }
 
 NuSoundVoice::~NuSoundVoice() {

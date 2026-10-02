@@ -10765,3 +10765,158 @@ scratch/list and sufficient list-node allocation remain required. Audit
 23318d25bc9fbff0f8bb9da049c98554af5e6f8ebd6fda176f91faa45749ceb2,
 is read completely by root. Neither audit claims recursive engine/runtime
 equivalence or identifies an original omission to implement.
+
+`NuSoundStreamer::RequestFill`,raw0x3262b0/1115 bytes/58.676365%, also
+closes after its first complete raw audit: local QueueElement registration,
+queue copy, atomic publication, Signal and post-signal local unlink are
+already present. Full actual producer/worker/fill-service records support
+that bounded static result, not a host64 or concurrency claim. Root reads
+the complete audit `/tmp/saga-requestfill-cp28.5yQLT7/audit.md`,SHA256
+00e7b1b9aff5a217e659baea8264e4f6336a368706eff3249585f397df1190f3.
+No candidate, new report, compiler or runtime follows this census.
+
+The separate403 protocol/representation script has SHA256
+78cd599aa6cdb6b2a55182716fd231c154ce570ebdd765039af019c4755fbf3b;
+its retained result `/tmp/saga-requestdecode403-protocol-proof-result.json`
+has SHA256bf408f359da01eee6bdf1987fc5cfecfc22e928274b640d2da5aa6b0b3e4bbe0.
+
+### Checkpoint29 CI and batches405/406 measured gates
+
+All eleven GitHub checks complete successfully on exact pushed checkpoint29
+head `ea76697111708f144c0ebf47c6daae3947078745`. Matching remains68.672380%,
++0.669920 percentage points from current main,6293 raw exacts; the +2-point
+cycle threshold is not reached.
+
+Batch405 moves only the existing `NuSoundVoice` eight-gain memset after
+the existing SetState call, matching retail construction order. One unchanged
+O3 owner pair and two reports pass strict name/alias-inclusive qualification:
+C1/C2 each22.638159→80.6579%,736→733 emitted bytes,749 original bytes,
+net+869.13572018 weighted original bytes. All91 original-backed owner rows
+are accounted for,50 exacts retain and full ELF Counter/U retains. The two
+unbacked thunks keep unknown absolute scores; their representation review
+and bounded constructor verification are separate prerequisites. This is a
+natural source-form improvement, not a gameplay bug claim. Capture
+`/tmp/saga-voiceconstructor-cp28.9Tk9JL/gate-capture.json`,SHA256
+e5740624ed6c257d233fc38cb79959ad75a45b47ff89ac8c20614d8e433f3f93.
+Before execution, root corrects a protocol snapshot filename collision;
+original manifest/audit/snapshots retain and the candidate remains identical.
+Pure parser controls pass three valid cases and nineteen rejected cases.
+
+Batch406 removes only the unsigned narrowing of canonical signed camera_index
+in the lookahead comparison. The unchanged O2 gate accounts for all82
+original-backed owner rows, retains two exacts and full Counter/U. Target
+0→0.57738096%,2305 emitted bytes both sides,2100 original bytes;
+net+12.12500016 weighted original bytes. The old immutable camera census is
+not rewritten. Ordinary nonnegative camera indices give identical branch
+results for all byte schedule values; no authored -1/255 witness or whole
+camera/geometry runtime claim is invented. Capture
+`/tmp/saga-cutcam-sourceform406.jolf7b/gate406/gate-capture.json`,SHA256
+881fc735216abe463ce0e76981ba9d6df367933015a9510e164866d342e8a931.
+Neither isolated result is a linked gain or authorizes integration yet.
+
+Batch403's first genuine host-i386 ASan/UBSan diagnostic builds actual old/new
+decoder owners and canonical weak/source/buffer/semaphore services after all
+nine -E/-MD preflights pass. The first current matrix returns failed checks
+only for an overly strong whole-slot byte-stability oracle, with empty
+sanitizer stderr: actual weak-list insertion/unlink legitimately changes
+previously queued nodes' prev/next links. No production defect or sanitizer
+success is inferred from this failed run. Original outputs are preserved;
+an additive fixture-only correction must check payload stability and real
+list integrity, not forbid legitimate link updates. No production source,
+matching candidate, compiler options or captured matching report changes.
+Initial stdout `/tmp/saga-requestdecode-runtime403.fKl0EI/runs/current-matrix.stdout`,
+SHA2568bcd75ca8ec112e23bc926ea6069cbb1dc312641a37f4ae7d4a1b766b1fa414d.
+
+The additive403 oracle-only repair subsequently passes. It compiles just
+two revised fixture objects and reuses all seven initial actual owner/helper
+objects byte-exactly; no matching/compiler-owner retry occurs. Both revised
+fixture preflight closures retain the same canonical/system headers. Current
+and old matrices each cover61 cases/2545 Signal observations (618880 and
+617607 checks respectively); current witness passes163 checks, old witness
+fails exactly the single expected local-Loader-at-Signal check. All four
+stderr captures are empty under ASan/UBSan with leak detection. Ordinary
+callback destruction clears registered pointers through actual canonical
+weak services. The result
+`/tmp/saga-requestdecode-runtime403-oracle-r2.Wbo8OR/runs/result.json`,SHA256
+fd7b3dd8ca8bf5c18c7748574b08ade554c607a176739b5bd21af0e4a25ce8f6,
+qualifies the narrow sequential lifetime/queue change, not scheduler,
+concurrency, codec/device/audio output or Android Bionic execution.
+
+Batch406's proportional pure integer-promotion proof also passes all32768
+admitted camera0..127/nextbyte0..255 pairs (128 equal,32640 unequal), using
+verbatim changed expressions and pinned actual canonical i8/u8 declarations.
+This is algebraic predicate verification, not C++ runtime/full-camera testing.
+Result `/tmp/saga-cutcam-sourceform406.jolf7b/predicate406/root-result.json`,
+SHA25693479a451ae0bf9ebf21ca3d76b11ea3ad23fe6ab47adf442a6b188d5b5a916d.
+
+Batch405's separate complete thunk-representation proof passes: both actual
+12-byte bx/cx sections, zero-sized GLOBAL/HIDDEN symbols, COMDAT membership,
+code relocations and associated CIE/FDE representation retain. Only the
+relative CIE pointer is normalized; unknown absolute scores stay unknown.
+The genuine GNU-i386 constructor diagnostic subsequently passes all six
+preflight closures and builds both versions. Its first current execution
+produces empty stdout/stderr and fails the expected-output gate. The wrapper
+did not retain the process return code, so no sanitizer success, constructor
+defect or startup failure is inferred. Original files/builds are preserved;
+an additive same-binary diagnostic must capture the missing process status.
+
+Batch407's sole O3 whole-owner pair improves Doors_Check (raw0x4876b0,
+1152 bytes) from61.96063 to79.8189%,1116 to1134 emitted bytes;
+known net+205.7272704 weighted original bytes. All33 original owner rows,
+five exacts and undefined identities retain. The strict gate remains closed
+on one added zero-sized LOCAL/NOTYPE .LC7 in .rodata.cst4. A separate complete
+literal-storage/use proof is required; there is no blanket label exemption,
+source variant, compiler retry or extra report.
+
+Batch408's sole unchanged O3 whole-owner gate passes: PodRaceCUpdate
+(raw0x1fe890,869 bytes)33.189575 to85.175354%,744 to885 emitted bytes,
+net+451.75641951 weighted original bytes. All73 original-backed owner rows,
+nine exacts and complete Counter/U retain. The complete source correction
+restores zero-fade admission, pulse comparison, canonical CUTINFO.instance
+finished bit, same-frame state progression, all ten boost slots and completion.
+Actual loader failure can publish a null instance; a separately documented
+null-instance guard preserves safety outside the valid retail domain. Root
+also verifies the original GOT slot0x6124f0 has R_386_RELATIVE addend0x6a0f00,
+the actual LevHSpecial base. Bounded behavioral verification is still pending;
+isolated owner gains are not linked-binary progress or integration claims.
+
+The additive405 status capture records SIGSYS, with empty outputs and all
+frozen artifacts unchanged. Root then obtains approval to execute the exact
+same two binaries, environment and oracle outside the syscall-restricted
+sandbox, changing only the exclusive capture directory. Both OLD and CURRENT
+pass14096 cases/1705616 checks, return0 and have empty sanitizer stderr;
+ASan/UBSan and leak detection remain enabled. This supports bounded sequential
+final-state/source/weak-reference equivalence, not Android audio, factory/device
+execution, concurrency or intermediate-state publication. Initial failed
+captures remain immutable. Current/old status SHA256 are respectively
+657e944f4e41774f16059ff276f05df403d24817132ee2fe6857017ca04bbf0d
+and70b7ee385b55bb428b5e6d18d41505c55dd33ec048782af5489684387dc0daff.
+Root integrates the exact frozen403 and405 source changes after their narrow
+verification; their combined linked gain has not yet been measured.
+
+The strict low-score motion screen finds no fresh unit among14 original
+functions at least1500 bytes and at most30%: each has a named prior complete
+audit, integrated closure or measured reserve. Three adjacent movement owners
+also have prior coverage. Root reads the full history-only census
+`/tmp/saga-motion-cp28-history-screen.Ki9ISd/audit.md`; this is eligibility
+exhaustion, not a fresh semantic-equivalence proof or reason to replay trials.
+Subsequent selection widens the score band while retaining original-backed
+natural source forms as eligible; no gameplay bug is required for a matching
+improvement. Rejected source variants and artificial compiler-shape changes
+remain excluded. Root also integrates the exact406 signed comparison after
+its finite promotion proof; full linked measurement is still pending.
+
+### Checkpoint30 linked audio/camera unit
+
+The exact403 decoder lifetime,405 constructor clear order and406 signed
+comparison changes pass target/native/WASM builds and all five repository
+tests. One fresh whole-binary report and live Bazel ownership mapping measure
+68.697290%,+0.024910 percentage points over checkpoint28 and+0.694830 over
+current main. All6293 prior raw name/address/size exact identities and the
+complete original denominator retain; all452 mapped owners and assignment
+counts are unchanged. Raw report SHA256
+d2910eb322199cb86eb3f5af0e3c6523aa85bfe34ebf0a469fb7374dd48a9484;
+mapped report SHA256
+97fded975eb54b82752736ba760146069473beddafdb8562f5ff398e661b9208.
+407/408 remain separately pending, not part of this linked checkpoint. The
+70.002460% cycle threshold remains unmet; no merge is authorized by this gain.

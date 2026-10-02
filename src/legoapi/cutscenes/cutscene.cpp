@@ -2264,7 +2264,7 @@ static __used__ void instNuGCutCamSysUpdate(instNUGCUTSCENE_s *instance, float f
         if (state_index < system->state_animation->count) {
             const f32 next_state_frame = system->state_animation->times[state_index];
             if (next_state_frame - frame < 1.0f &&
-                system->state_animation->values[state_index] != static_cast<u8>(camera_instance->camera_index)) {
+                system->state_animation->values[state_index] != camera_instance->camera_index) {
                 f32 render_frame = next_state_frame - 1.0f;
                 if ((instance->flags_8a & 4) != 0) {
                     render_frame = instance->cutscene->duration - render_frame;

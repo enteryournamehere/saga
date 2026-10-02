@@ -1351,14 +1351,29 @@ mode_selected:
             NuVecRotateY(&lateral, &v001, yaw);
             GunshipANorm = lateral;
             NuVecRotateY(&lateral, &lateral, 0x4000);
-            NUVEC offset = {0.0f, 0.0f, 0.0f};
+            NUVEC &offset = mode_scratch;
+            offset.z = 0.0f;
+            offset.x = 0.0f;
+            offset.y = 0.0f;
             i32 player_count = 0;
             for (i32 index = 0; index < 2; ++index) {
                 if (Player[index] != NULL) {
                     f32 projection = (Player[index]->apiobj.pos_x - target.x) * lateral.x +
                                      (Player[index]->apiobj.pos_z - target.z) * lateral.z;
-                    offset.x += lateral.x * projection;
-                    offset.z += lateral.z * projection;
+                    const f32 contribution_x = lateral.x * projection;
+                    const f32 contribution_z = lateral.z * projection;
+                    offset.x = contribution_x + offset.x;
+                    offset.z = contribution_z + offset.z;
+                    // Preserve the new contribution's NaN payload without an FP comparison.
+                    static_assert(sizeof(f32) == sizeof(u32), "binary32 contribution storage");
+                    u32 contribution_x_bits;
+                    u32 contribution_z_bits;
+                    memcpy(&contribution_x_bits, &contribution_x, sizeof(contribution_x_bits));
+                    memcpy(&contribution_z_bits, &contribution_z, sizeof(contribution_z_bits));
+                    if ((contribution_x_bits & 0x7fffffffu) > 0x7f800000u)
+                        offset.x = contribution_x;
+                    if ((contribution_z_bits & 0x7fffffffu) > 0x7f800000u)
+                        offset.z = contribution_z;
                     ++player_count;
                 }
             }

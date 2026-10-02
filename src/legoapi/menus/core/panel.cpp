@@ -1156,7 +1156,7 @@ void DrawPanel() {
                             u16 angle = static_cast<u16>(
                                 static_cast<i32>(NuFmod(GlobalTimer.time_elapsed, 4.0f) * 0.25f * 65536.0f) + 0x1555);
                             f32 scale = PANEL_REDBRICKSCALE * RedBrickScale;
-                            u16 pitch = static_cast<u16>(1820.0f * NuTrigTable[angle & 0x7fff]);
+                            i16 pitch = static_cast<i16>(1820.0f * NuTrigTable[angle & 0x7fff]);
                             DrawPanel3DObjectNoAlpha(x, status_y, 1.0f, scale, scale, scale, pitch, angle, 0,
                                                      &WORLD->lev_objs[0xd2].special, 2);
                         }

@@ -542,123 +542,136 @@ void SetLevelSfxBits(WORLDINFO *world) {
 
     for (i32 character_id = 0; character_id < apicharsys->character_count; ++character_id) {
         i16 model_id = apicharsys->playermodelids[character_id];
-        if (model_id == -1 || (apicharsys->models[model_id].flags & 1) == 0) {
-            continue;
-        }
+        if (model_id != -1 && (apicharsys->models[model_id].flags & 1) != 0) {
+            CHARACTERDATA *character = &CDataList[character_id];
+            GAMECHARACTERDATA *game_character = static_cast<GAMECHARACTERDATA *>(character->field11_0x24);
 
-        CHARACTERDATA *character = &CDataList[character_id];
-        GAMECHARACTERDATA *game_character = static_cast<GAMECHARACTERDATA *>(character->field11_0x24);
-
-        sound_id = game_character->sfx_die;
-        if (sound_id != -1) {
-            sfx_ids[sfx_count++] = sound_id;
-        } else if ((character->model_flags & 0x44002010) == 0) {
-            ADD_GAME_SFX((static_cast<i32>(game_character->flags_090 << 14) >> 31) + 0x1c);
-        }
-        sound_id = game_character->sfx_hurt;
-        if (sound_id != -1) {
-            sfx_ids[sfx_count++] = sound_id;
-        } else if ((character->model_flags & 0x44002010) == 0) {
-            ADD_GAME_SFX((static_cast<i32>(game_character->flags_090 << 14) >> 31) + 0x17);
-        }
-        sound_id = game_character->sfx_grunt;
-        if (sound_id != -1) {
-            sfx_ids[sfx_count++] = sound_id;
-        } else if ((character->model_flags & 0x44002010) == 0) {
-            ADD_GAME_SFX((static_cast<i32>(game_character->flags_090 << 14) >> 31) + 0x15);
-        }
-
-        sound_id = game_character->sfx_engine;
-        if (sound_id != -1) {
-            sfx_ids[sfx_count++] = sound_id;
-        }
-        sound_id = game_character->sfx_shoot;
-        if (sound_id != -1) {
-            sfx_ids[sfx_count++] = sound_id;
-        }
-        sound_id = game_character->sfx_footstep;
-        if (sound_id != -1) {
-            sfx_ids[sfx_count++] = sound_id;
-        }
-        sound_id = game_character->sfx_chatter;
-        if (sound_id != -1) {
-            sfx_ids[sfx_count++] = sound_id;
-        }
-        sound_id = game_character->sfx_sabre;
-        if (sound_id != -1) {
-            sfx_ids[sfx_count++] = sound_id;
-        }
-        for (i32 i = 0; i < 6 && game_character->sfx_misc[i] != -1; ++i) {
-            sfx_ids[sfx_count++] = game_character->sfx_misc[i];
-        }
-
-        if ((character->model_flags & 0x40) != 0) {
-            ADD_SFX("drd_r2_scope_up");
-            ADD_SFX("drd_r2_scope_down");
-            ADD_SFX("drd_r2_mvt_water_lp");
-        }
-        if ((game_character->flags_090 & 0x400) != 0) {
-            ADD_SFX("TowCable_Fire");
-            ADD_SFX("TowCable_Latch");
-            ADD_SFX("TowCable_Detach");
-            ADD_SFX("TowCable_Snap");
-        }
-        if ((character->model_flags & 0x2000) != 0) {
-            ADD_SFX("XWing_Torpedo");
-            ADD_SFX("env_tractorbeam_lp");
-            if ((character->model_flags & 0x04000000) == 0) {
-                ADD_SFX("Explode1");
-            }
-        }
-        if (character_id == id_CHEWBACCA) {
-            ADD_SFX("C3_Hurt");
-            ADD_SFX("C3_Death");
-        }
-        if (character->move_fn == Move_BEAST) {
-            ADD_SFX("Lego_Poo");
-            ADD_SFX("Lego_PLOP");
-            ADD_SFX("FliesLp");
-        }
-        if (game_character->uses_weapon_action == 10) {
-            ADD_SFX("veh_tie_by");
-            ADD_SFX("Tie_Spins");
-        }
-        if (character_id == id_EWOK || character_id == id_WICKET) {
-            ADD_SFX("wpn_bomb_drop");
-            ADD_SFX("exp_bomb");
-        }
-        if ((game_character->flags_090 & 4) != 0) {
-            ADD_SFX("ForceLightningLp");
-        } else if ((game_character->flags_090 & 2) != 0) {
-            ADD_SFX("ForceChokeCrunch");
-        } else if ((character->model_flags & 8) != 0) {
-            ADD_SFX("ForceMindTrick");
-        }
-        if (game_character->uses_weapon_action == 12 && (character->model_flags & 8) != 0 && id_GAMORREANGUARD != -1 &&
-            apicharsys->playermodelids[id_GAMORREANGUARD] != -1) {
-            ADD_SFX("ForceChokeCrunch");
-        }
-        if ((game_character->flags_094[3] & 0x20) != 0) {
-            ADD_GAME_SFX(0x4c);
-            ADD_GAME_SFX(0x4d);
-            ADD_GAME_SFX(0x4e);
-        }
-
-        CHARACTER_EFFECT_s *effect = character->effects;
-        if (effect != NULL) {
-            while (effect->character_id != -1) {
-                if (effect->sound_id != -1) {
-                    sfx_ids[sfx_count++] = effect->sound_id;
+            {
+                const i16 configured_sfx = game_character->sfx_die;
+                if (configured_sfx != -1) {
+                    sfx_ids[sfx_count++] = configured_sfx;
+                } else if ((character->model_flags & 0x44002010) == 0) {
+                    ADD_GAME_SFX((static_cast<i32>(game_character->flags_090 << 14) >> 31) + 0x1c);
                 }
-                ++effect;
             }
-        }
-        if ((character->model_flags & 0x20) != 0) {
-            ADD_SFX("TC14_VLA");
-            ADD_SFX("TC14_VLN");
-        }
-        if ((character->model_flags & 0x40) != 0) {
-            ADD_SFX("R2D2_VLA");
+            {
+                const i16 configured_sfx = game_character->sfx_hurt;
+                if (configured_sfx != -1) {
+                    sfx_ids[sfx_count++] = configured_sfx;
+                } else if ((character->model_flags & 0x44002010) == 0) {
+                    ADD_GAME_SFX((static_cast<i32>(game_character->flags_090 << 14) >> 31) + 0x17);
+                }
+            }
+            {
+                const i16 configured_sfx = game_character->sfx_grunt;
+                if (configured_sfx != -1) {
+                    sfx_ids[sfx_count++] = configured_sfx;
+                } else if ((character->model_flags & 0x44002010) == 0) {
+                    ADD_GAME_SFX((static_cast<i32>(game_character->flags_090 << 14) >> 31) + 0x15);
+                }
+            }
+            {
+                const i16 configured_sfx = game_character->sfx_engine;
+                if (configured_sfx != -1) {
+                    sfx_ids[sfx_count++] = configured_sfx;
+                }
+            }
+            {
+                const i16 configured_sfx = game_character->sfx_shoot;
+                if (configured_sfx != -1) {
+                    sfx_ids[sfx_count++] = configured_sfx;
+                }
+            }
+            {
+                const i16 configured_sfx = game_character->sfx_footstep;
+                if (configured_sfx != -1) {
+                    sfx_ids[sfx_count++] = configured_sfx;
+                }
+            }
+            {
+                const i16 configured_sfx = game_character->sfx_chatter;
+                if (configured_sfx != -1) {
+                    sfx_ids[sfx_count++] = configured_sfx;
+                }
+            }
+            {
+                const i16 configured_sfx = game_character->sfx_sabre;
+                if (configured_sfx != -1) {
+                    sfx_ids[sfx_count++] = configured_sfx;
+                }
+            }
+            for (i32 i = 0; i < 6 && game_character->sfx_misc[i] != -1; ++i) {
+                sfx_ids[sfx_count++] = game_character->sfx_misc[i];
+            }
+
+            if ((character->model_flags & 0x40) != 0) {
+                ADD_SFX("drd_r2_scope_up");
+                ADD_SFX("drd_r2_scope_down");
+                ADD_SFX("drd_r2_mvt_water_lp");
+            }
+            if ((game_character->flags_090 & 0x400) != 0) {
+                ADD_SFX("TowCable_Fire");
+                ADD_SFX("TowCable_Latch");
+                ADD_SFX("TowCable_Detach");
+                ADD_SFX("TowCable_Snap");
+            }
+            if ((character->model_flags & 0x2000) != 0) {
+                ADD_SFX("XWing_Torpedo");
+                ADD_SFX("env_tractorbeam_lp");
+                if ((character->model_flags & 0x04000000) == 0) {
+                    ADD_SFX("Explode1");
+                }
+            }
+            if (character_id == id_CHEWBACCA) {
+                ADD_SFX("C3_Hurt");
+                ADD_SFX("C3_Death");
+            }
+            if (character->move_fn == Move_BEAST) {
+                ADD_SFX("Lego_Poo");
+                ADD_SFX("Lego_PLOP");
+                ADD_SFX("FliesLp");
+            }
+            if (game_character->uses_weapon_action == 10) {
+                ADD_SFX("veh_tie_by");
+                ADD_SFX("Tie_Spins");
+            }
+            if (character_id == id_EWOK || character_id == id_WICKET) {
+                ADD_SFX("wpn_bomb_drop");
+                ADD_SFX("exp_bomb");
+            }
+            if ((game_character->flags_090 & 4) != 0) {
+                ADD_SFX("ForceLightningLp");
+            } else if ((game_character->flags_090 & 2) != 0) {
+                ADD_SFX("ForceChokeCrunch");
+            } else if ((character->model_flags & 8) != 0) {
+                ADD_SFX("ForceMindTrick");
+            }
+            if (game_character->uses_weapon_action == 12 && (character->model_flags & 8) != 0 &&
+                id_GAMORREANGUARD != -1 && apicharsys->playermodelids[id_GAMORREANGUARD] != -1) {
+                ADD_SFX("ForceChokeCrunch");
+            }
+            if ((game_character->flags_094[3] & 0x20) != 0) {
+                ADD_GAME_SFX(0x4c);
+                ADD_GAME_SFX(0x4d);
+                ADD_GAME_SFX(0x4e);
+            }
+
+            CHARACTER_EFFECT_s *effect = character->effects;
+            if (effect != NULL) {
+                while (effect->character_id != -1) {
+                    if (effect->sound_id != -1) {
+                        sfx_ids[sfx_count++] = effect->sound_id;
+                    }
+                    ++effect;
+                }
+            }
+            if ((character->model_flags & 0x20) != 0) {
+                ADD_SFX("TC14_VLA");
+                ADD_SFX("TC14_VLN");
+            }
+            if ((character->model_flags & 0x40) != 0) {
+                ADD_SFX("R2D2_VLA");
+            }
         }
     }
 

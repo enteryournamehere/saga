@@ -4852,9 +4852,10 @@ static void LightSabreStreakCode(GameObject_s *object, i32 blade, i32 effect) {
         else
             colour = static_cast<i8>(GCDataList[object->id].field_0x117);
         object->blade_states[blade] = colour;
+        const u8 *rgb = BladeTab[colour].colour;
+        const u32 red = rgb[0], green = rgb[1], blue = rgb[2];
         if (object->apiobj.model_draw_result != 0) {
-            const u8 *rgb = BladeTab[colour].colour;
-            const u32 packed = 0xff000000u | rgb[0] | (rgb[1] << 8) | (rgb[2] << 16);
+            const u32 packed = 0xff000000u | red | (green << 8) | (blue << 16);
             AddStreakPoints(points, 0.25f, packed, &object->sabre_streaks[blade][0], 0, object);
             if (object->field_0x1087 != 0 && object->field_0x1020 != 2000000.0f) {
                 f32 plane = object->field_0x1020;
@@ -4893,8 +4894,12 @@ static void LightSabreStreakCode(GameObject_s *object, i32 blade, i32 effect) {
     NUVEC maximum = {points[2].x + extent, points[2].y + extent, points[2].z + extent};
     if ((object->sabre_flags & 4) != 0) {
         NUVEC direction;
-        NuVecRotateY(&direction, &v001,
-                     static_cast<u16>(object->apiobj.facing_angle + (object->character_context == 16 ? 0x8000 : 0)));
+        u16 angle;
+        if (object->character_context == 16)
+            angle = object->apiobj.field_0x276 + 0x8000;
+        else
+            angle = object->apiobj.field_0x276;
+        NuVecRotateY(&direction, &v001, angle);
         NuVecScale(&difference, &direction, 0.2f);
         NuVecAdd(&points[0], &object->apiobj.collision_position, &difference);
         NuVecScale(&difference, &direction, 0.5f);
@@ -4934,11 +4939,10 @@ static void LightSabreStreakCode(GameObject_s *object, i32 blade, i32 effect) {
                 continue;
             GAMECHARACTERDATA *target_data =
                 static_cast<GAMECHARACTERDATA *>(target->apiobj.character_data->field11_0x24);
-            // Ordered comparisons reject an unordered bound in the original SSE tests.
-            if ((target_data->flags_090 & 0x8000) != 0 || !(target->apiobj.collision_min.x <= maximum.x) ||
-                !(minimum.x <= target->apiobj.collision_max.x) || !(target->apiobj.collision_min.z <= maximum.z) ||
-                !(minimum.z <= target->apiobj.collision_max.z) || !(target->apiobj.collision_min.y <= maximum.y) ||
-                !(minimum.y <= target->apiobj.collision_max.y))
+            if ((target_data->flags_090 & 0x8000) != 0 || target->apiobj.collision_min.x > maximum.x ||
+                minimum.x > target->apiobj.collision_max.x || target->apiobj.collision_min.z > maximum.z ||
+                minimum.z > target->apiobj.collision_max.z || target->apiobj.collision_min.y > maximum.y ||
+                minimum.y > target->apiobj.collision_max.y)
                 continue;
             for (i32 point = 2; point >= 0; --point) {
                 if (!SphereSphereOverlapScaleY(&target->apiobj.collision_position, target->apiobj.field_0x1dc,

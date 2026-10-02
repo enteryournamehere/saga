@@ -780,7 +780,7 @@ void DrawMeleeTargetsNumber(i16 *targets, u8 *counts, i32 count, u8 reset, nuhsp
         if (FadeSys.fade != 0.0f)
             return;
 
-        f32 x = (count - 1) * 0.24f * 0.5f;
+        f32 x = (count - 1) * 0.2400000095367431640625f * 0.5f;
         x = -x;
         for (i32 i = 0; i < count; ++i) {
             char text[16];
@@ -823,7 +823,7 @@ void DrawMeleeTargetsNumber(i16 *targets, u8 *counts, i32 count, u8 reset, nuhsp
                 static_cast<f32>(meleeTarg_localCount[i]) / static_cast<f32>(meleeTarg_maxCount[i]) * 2.0f;
             meleeTarg_alpha[i] = SeekLinearF(meleeTarg_alpha[i], alpha_target, 0.005f);
             DrawCharIcon(targets[i], x, 0.634f, 0.0f, 0.128f, 0xa7, meleeTarg_alpha[i], meleeTarg_alpha[i], 1, special);
-            x += 0.24f;
+            x += 0.2400000095367431640625f;
         }
         return;
     }

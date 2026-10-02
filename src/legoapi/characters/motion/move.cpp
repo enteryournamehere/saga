@@ -2925,7 +2925,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                        object->character_context == 0x59) {
                 {
                     const u16 angle = api.movement_facing_angle;
-                    object->target_velocity.x = NuTrigTable[angle >> 1];
+                    object->target_velocity.x = NU_SIN_LUT(angle);
                     api.velocity.x = object->target_velocity.x;
                     object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff];
                     api.velocity.z = object->target_velocity.z;
@@ -3038,7 +3038,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                                         ? api.facing_angle
                                         : api.movement_facing_angle;
                                 const f32 speed = animation_speed * speed_multiplier;
-                                object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
+                                object->target_velocity.x = NU_SIN_LUT(angle) * speed;
                                 object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
                                 if (object->character_context == 0x25 && object->context_animation != 0x58)
                                     NuVecRotateY(&object->target_velocity, &object->target_velocity, 0x4000);
@@ -3062,7 +3062,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                         if (object->character_context == 0x5a) {
                             if (object->field_0x7a3 == 0 && (api.field_0x1f8 & 2) == 0) {
                                 const u16 angle = api.movement_facing_angle;
-                                object->target_velocity.x = -NuTrigTable[angle >> 1] * object->external_force.z;
+                                object->target_velocity.x = -NU_SIN_LUT(angle) * object->external_force.z;
                                 object->target_velocity.z =
                                     -NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * object->external_force.z;
                             } else {
@@ -3086,7 +3086,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                         case 0x21:
                         case 0x22: {
                             const u16 angle = api.movement_facing_angle;
-                            object->target_velocity.x = -NuTrigTable[angle >> 1] * 1.2f;
+                            object->target_velocity.x = -NU_SIN_LUT(angle) * 1.2f;
                             object->target_velocity.z = -NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * 1.2f;
                             break;
                         }
@@ -3162,14 +3162,14 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                             } else if (StepBackFromTarget(object) == 0) {
                                 const f32 speed = AnimSpeed(api.character_model, object->context_animation);
                                 const u16 angle = api.movement_facing_angle;
-                                object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
+                                object->target_velocity.x = NU_SIN_LUT(angle) * speed;
                                 object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
                             }
                             break;
                         case 0x15: {
                             const f32 speed = AnimSpeed(api.character_model, object->context_animation);
                             const u16 angle = api.movement_facing_angle;
-                            object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
+                            object->target_velocity.x = NU_SIN_LUT(angle) * speed;
                             object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
                             break;
                         }
@@ -3178,7 +3178,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                                                   ? AnimSpeed(api.character_model, 0x29)
                                                   : api.character_data->game_character->run_speed;
                             const u16 angle = api.movement_facing_angle;
-                            object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
+                            object->target_velocity.x = NU_SIN_LUT(angle) * speed;
                             object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
                             break;
                         }
@@ -3187,7 +3187,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                                 goto directional_walking;
                             const u16 angle = api.movement_facing_angle;
                             object->target_velocity.x =
-                                NuTrigTable[angle >> 1] * api.character_data->game_character->run_speed;
+                                NU_SIN_LUT(angle) * api.character_data->game_character->run_speed;
                             object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] *
                                                         api.character_data->game_character->run_speed;
                             break;
@@ -3214,7 +3214,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                             if ((CInfo[object->character_context].flags & 0x10) != 0) {
                                 const f32 speed = AnimSpeed(api.character_model, object->context_animation);
                                 const u16 angle = api.movement_facing_angle;
-                                object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
+                                object->target_velocity.x = NU_SIN_LUT(angle) * speed;
                                 object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
                             } else {
                                 object->target_velocity.x = 0.0f;
@@ -3226,7 +3226,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                             if (object->action_movement_state == 3) {
                                 if (StepBackFromTarget(object) == 0) {
                                     const u16 angle = api.movement_facing_angle;
-                                    object->target_velocity.x = NuTrigTable[angle >> 1] * object->field_0x768;
+                                    object->target_velocity.x = NU_SIN_LUT(angle) * object->field_0x768;
                                     object->target_velocity.z =
                                         NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * object->field_0x768;
                                 }
@@ -3239,7 +3239,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                                 if ((object->context_variant_flags & 0x20) != 0)
                                     speed = -speed;
                                 const u16 angle = api.movement_facing_angle;
-                                object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
+                                object->target_velocity.x = NU_SIN_LUT(angle) * speed;
                                 object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
                                 break;
                             }
@@ -3255,7 +3255,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                                     speed = 0.0f;
                                 }
                                 const u16 angle = api.movement_facing_angle;
-                                object->target_velocity.x = NuTrigTable[angle >> 1] * speed;
+                                object->target_velocity.x = NU_SIN_LUT(angle) * speed;
                                 object->target_velocity.z = NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff] * speed;
                                 break;
                             }
@@ -3317,7 +3317,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                                                  (api.character_data->game_character->flags_090 & 0x100) != 0)
                                             ? api.facing_angle
                                             : api.movement_facing_angle;
-                                    object->target_velocity.x = speed * NuTrigTable[angle >> 1];
+                                    object->target_velocity.x = speed * NU_SIN_LUT(angle);
                                     object->target_velocity.z = speed * NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff];
                                     if (api.anim_packet.blend_animation_a == 0x4f ||
                                         api.anim_packet.blend_animation_a == 0x26)
@@ -3426,8 +3426,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                     if (WORLD->current_level == VADERA_LDATA && !api.player_controlled &&
                         GameCam->sock_position.location.sock == 0)
                         walking_speed *= 1.0416666269302368f;
-                    object->target_velocity.x =
-                        NuTrigTable[walking_angle >> 1] * walking_speed * water_speed_multiplier;
+                    object->target_velocity.x = NU_SIN_LUT(walking_angle) * walking_speed * water_speed_multiplier;
                     object->target_velocity.z =
                         NuTrigTable[((walking_angle + 0x4000) >> 1) & 0x7fff] * walking_speed * water_speed_multiplier;
                     break;

@@ -1537,14 +1537,30 @@ static u8 cacheValues[256];
 
 void ClearScreen();
 
+static inline u16 AlphaImageFloatToHalf(f32 value) {
+    u32 bits;
+    memcpy(&bits, &value, sizeof(bits));
+    i32 mantissa = bits & 0x7fffff;
+    i32 sign = bits >> 31;
+    i32 exponent = static_cast<i32>((bits >> 23) & 0xff) - 0x70;
+    i32 half_exponent = 0;
+    if (exponent >= 0) {
+        half_exponent = 0x7c00;
+        if (exponent < 0x20) {
+            half_exponent = exponent * 0x400;
+        }
+    }
+    return static_cast<u16>((mantissa >> 13) | (sign << 15) | half_exponent);
+}
+
 static inline void AlphaImagePrimUV(f32 u, f32 v) {
     PrimVertexRaw *vertex = static_cast<PrimVertexRaw *>(g_NuPrim_StreamBufferPtr->void_ptr);
     if (!g_NuPrim_NeedsHalfUVs) {
         vertex->float_uv[0] = u;
         vertex->float_uv[1] = v;
     } else {
-        vertex->half_uv[0] = NuRndrFloatToHalf(u);
-        vertex->half_uv[1] = NuRndrFloatToHalf(v);
+        vertex->half_uv[0] = AlphaImageFloatToHalf(u);
+        vertex->half_uv[1] = AlphaImageFloatToHalf(v);
     }
 }
 
@@ -1636,16 +1652,16 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
                     } else if (!(angle > parameters->direction_far_angle)) {
                         f32 blend;
                         if (parameters->direction_bias == 1.0f)
-                            blend = (angle - parameters->direction_near_angle) /
-                                    (parameters->direction_far_angle - parameters->direction_near_angle);
+                            blend = 1.0f - (angle - parameters->direction_near_angle) /
+                                               (parameters->direction_far_angle - parameters->direction_near_angle);
                         else
-                            blend = NuPowFast((angle - parameters->direction_near_angle) /
+                            blend = 1.0f -
+                                    NuPowFast((angle - parameters->direction_near_angle) /
                                                   (parameters->direction_far_angle - parameters->direction_near_angle),
                                               parameters->direction_bias);
                         brightness +=
-                            128.0f *
-                            ((1.0f - blend) * (parameters->direction_far_scale - parameters->direction_near_scale) +
-                             parameters->direction_near_scale);
+                            128.0f * (blend * (parameters->direction_far_scale - parameters->direction_near_scale) +
+                                      parameters->direction_near_scale);
                     }
                 }
                 colour = (static_cast<u32>(static_cast<u8>(MIN(255.0f, MAX(0.0f, brightness)))) << 24) | 0x808080;
@@ -1676,15 +1692,16 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
                 } else if (!(angle > parameters->direction_far_angle)) {
                     f32 blend;
                     if (parameters->direction_bias == 1.0f)
-                        blend = (angle - parameters->direction_near_angle) /
-                                (parameters->direction_far_angle - parameters->direction_near_angle);
+                        blend = 1.0f - (angle - parameters->direction_near_angle) /
+                                           (parameters->direction_far_angle - parameters->direction_near_angle);
                     else
-                        blend = NuPowFast((angle - parameters->direction_near_angle) /
-                                              (parameters->direction_far_angle - parameters->direction_near_angle),
-                                          parameters->direction_bias);
-                    brightness += 128.0f * ((1.0f - blend) *
-                                                (parameters->direction_far_scale - parameters->direction_near_scale) +
-                                            parameters->direction_near_scale);
+                        blend =
+                            1.0f - NuPowFast((angle - parameters->direction_near_angle) /
+                                                 (parameters->direction_far_angle - parameters->direction_near_angle),
+                                             parameters->direction_bias);
+                    brightness +=
+                        128.0f * (blend * (parameters->direction_far_scale - parameters->direction_near_scale) +
+                                  parameters->direction_near_scale);
                 }
             }
             const u8 alpha = static_cast<u8>(MIN(255.0f, MAX(0.0f, brightness)));

@@ -1611,6 +1611,14 @@ static inline void MiniKitRotateZ(NUMTX *m, NUANG a) {
     m->m31 = m30 * sinx + m->m31 * cosx;
 }
 
+static inline HUBAREAINFO_s *Hub_FindAreaInfoByIndex(i32 area) {
+    for (HUBAREAINFO_s *info = HubAreaInfo; info->area_name != NULL; ++info) {
+        if (info->area != NULL && area == info->area->index)
+            return info;
+    }
+    return NULL;
+}
+
 void Hub_DrawMiniKits(WORLDINFO_s *world) {
     if (world->minikit_pieces_buf == NULL || world->hub_minikits == NULL)
         return;
@@ -1630,13 +1638,7 @@ void Hub_DrawMiniKits(WORLDINFO_s *world) {
         HUBMINIKITPIECES_s *pieces = world->minikit_pieces_buf[area];
         if (pieces == NULL || ADataList[area].minikit_id == -1)
             continue;
-        HUBAREAINFO_s *info;
-        for (info = HubAreaInfo; info->area_name != NULL; ++info) {
-            if (info->area != NULL && area == info->area->index)
-                break;
-        }
-        if (info->area_name == NULL)
-            info = NULL;
+        HUBAREAINFO_s *info = Hub_FindAreaInfoByIndex(area);
         f32 x;
         if (area == areas[(selected + (count - 2)) % count])
             x = -4.0f;
@@ -2028,13 +2030,7 @@ void Hub_UpdateMiniKits(WORLDINFO_s *world) {
         i32 model = ADataList[i].minikit_id;
         if (model != -1 && world->hub_minikits != NULL) {
             HUBMINIKIT_s *current = &world->hub_minikits[i];
-            HUBAREAINFO_s *info = HubAreaInfo;
-            for (; info->area_name != NULL; ++info) {
-                if (info->area != NULL && info->area->index == i)
-                    break;
-            }
-            if (info->area_name == NULL)
-                info = NULL;
+            HUBAREAINFO_s *info = Hub_FindAreaInfoByIndex(i);
             CHARACTERDATA *data = &CDataList[model];
             current->radius = data->collision_radius;
             current->height_ratio = (data->bounds_max_y - data->bounds_min_y) / (data->collision_radius * 2.0f);

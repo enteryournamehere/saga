@@ -9702,6 +9702,140 @@ builds, all five repository tests and the complete forward-declaration/tidy/
 symbol/report pre-commit checks. Fresh linked reports agree at
 **68.598970%**, **+0.596510 percentage points** from current main; the complete
 raw exact address/symbol set retains all **6,292** checkpoint21 records.
-Production source equals the frozen positive candidate. Final-head GitHub
-verification remains pending until this checkpoint is pushed; no merge is
-authorized below the cycle's **70.002460%** threshold.
+Production source equals the frozen positive candidate. Root independently
+verified all eleven GitHub checks passed on exact pushed head
+`7177d103cabe759fe211cc929963345dd93a14b4`; no merge is authorized below the
+cycle's **70.002460%** threshold.
+
+### Batch 355: character-config cursor and string source form
+
+`CharConfig_ConfigureAll` restores the original captured character-list cursor,
+advancing at every loop increment including skipped records, and the original
+path-prefix/directory/filename string-service order. No loader, parser, public
+layout or compiler option changes. Known production configuration services do
+not replace the published list/count; arbitrary replacement callbacks and
+concurrent startup re-entry are outside the equivalence claim.
+
+Its sole unchanged O2 complete-owner gate gains **53.78615816 weighted bytes**,
+57.471745% → 60.570026%,1757 → 1781 bytes (original1736). Full symbol/U Counters
+retain. The unique original93B initializer remains unscored: complete217B
+emitted body,27 relocations, referenced storage and decoded branch destinations
+are identical, proving precisely zero delta, not an absolute invented score.
+All other unscored physical clones/thunks are likewise retained and audited.
+
+Root independently runs **64 scenarios / 5,866 checks per ABI** using exact
+changed loop/string fragments and actual `NuStrCpy`/`NuStrCat`. Host address/
+undefined/leak sanitizers and NDK32 diagnostics pass. The excerpts use the
+configuration owner's O2 diagnostic context, not claims about each string
+helper's separate action. Count0–8, admission skips and fixture-only post-block
+continues retain typed cursor identities. Long255-byte paths and NULL sources
+are helper/block-only diagnostics, not admission through private CharConfig's
+separate128-byte path. No full loader/parser/startup runtime test is claimed.
+
+### Batch 359: cannon prefix admission and chain stop
+
+`UpdateTrooperCannons` restores object-present/absent mutually exclusive AtEnd
+checks and stops after the first absent cannon or nonlocal-client admission.
+Existing linked-object fallback and nonempty callback preservation retain.
+Actual server Reset producers can leave first/interior holes followed by live
+records; this is not a fabricated callback-mutation witness.
+
+The sole unchanged O3 full-owner gate gains **387.13707162 weighted bytes**,
+54.156864% → 83.026146%,1138 → 1197 bytes (original1341). All22 original-backed
+scores are covered, other21 unchanged; full symbol/U Counters retain, with no
+owner exact loss. Root independently executes **70 finite cases** using complete
+actual updater/Init/Reset/Killed bodies, real AtEnd and real string leaf:
+**2,199 host / 2,202 NDK32 checks**. Host address/undefined/leak sanitizers pass;
+each helper uses its separate frozen production action in the NDK lane. Both
+safe old-body controls fail only the named later-record chain-stop assertion.
+Typed lookup/activation/build/visibility services are stable declared seams;
+no full particles, animation, assets, network or gameplay validation is claimed.
+
+### Batch 361: particle-cursor marker scratch lifetime
+
+The eight existing cursor markers now reuse one canonical `NUVEC` scratch:
+rotate/publish the start, then rotate/publish the end. All colors, submissions,
+outer caches and other owner bytes retain. This is an original-backed source
+form, not a missing operation or an artificial alignment requirement.
+
+The sole unchanged O2 complete-owner gate gains **1,432.96007394 weighted
+bytes**,32.699528% → 54.064670%,7443 → 7283 bytes (original6707). All74 owner
+exacts and full symbol/storage/undefined-reference Counters retain. Twenty
+unscored original records, including the initializer and destructor aliases,
+have full emitted-byte/relocation/referenced-storage/decoded-branch invariance;
+their delta is proven zero without inventing an absolute missing score.
+
+Root runs **64 cases / 512 bitwise marker-pair comparisons per ABI** using the
+exact changed marker block, actual Y/Z rotations and actual trig-table producer.
+Host address/undefined/leak sanitizers and NDK32 diagnostics pass; the helpers
+use their own unchanged production actions. Stable line recording compares
+initialized position/color/count/order/material/matrix fields, not full editor
+or gameplay behavior. Angles span valid u16 inputs and cameras remain finite.
+An NDK/glibc diagnostic-only `isfinite` link incompatibility was repaired solely
+in the fixture assertion with equivalent exponent-bit classification. The old
+host binary and five NDK objects were reused; all old artifacts/failure logs
+remain frozen. Actual production blocks, helpers and test inputs did not change.
+
+### Batch 362: canonical lighting scratch-record stride
+
+`computeWarpEffect`'s ten transformed scratch records use canonical `NUVEC4`
+storage matching retail's sixteen-byte stride. Actual vector transformation
+publishes only XYZ; projection creates a typed XYZ snapshot for `NuVecAdd`.
+No fourth-component read, invented padded type, new prefix alias, alignment
+attribute, public ABI or compiler option is introduced. The independent input
+corner-copy-loop lead is deferred, not a source variant of this measured unit.
+
+The sole unchanged O2 complete-owner gate gains **48.32541525 weighted bytes**,
+65.750000% → 66.320885%,8646 → 9206 bytes (original8465). All141 original-backed
+records are covered, all27 exacts and complete symbol/U Counters retain. Root
+runs **48 finite cases / ten records / 5,664 checks per ABI** using the exact
+changed private helpers, actual vector math and canonical reciprocal helper.
+Host address/undefined/float-cast/leak sanitizers and production-NDK32 object
+diagnostics pass. Bitwise XYZ/bounds identity, a finite scalar oracle and record
+guards pass with poisoned W never read. This is not full lighting, renderer,
+Android/Bionic or arbitrary projective-input validation.
+
+Two isolated diagnostic authority repairs retain the sole matching objects and
+gate: a reviewed doc-only ledger change was pinned against complete old/current
+snapshots; then all51 consumed inputs were enumerated and the single actual NDK
+fixincludes `stdio.h` explicitly hashed. All eight fixture objects and both
+existing binaries were reused for the run-only resume. No matching recompilation,
+blanket dependency exemption, source repair or compiler-option retry occurred.
+Future packets snapshot the evolving review ledger instead of treating its live
+append-only edits as changes to a candidate's code authority.
+
+### Batches 358/363/365: excluded complete units
+
+The complete `EdDrawPolySector` candidate's known target gain is only
+0.48042872 weighted bytes; an unscored initializer and changed compiler-label
+surface leave whole-owner net **unknown**. It stays unqualified without a
+positive-net claim, integration or runtime-fixture expenditure.
+
+The complete collision output-cursor/live accepted-tail reload unit loses
+**2,075.78836506 weighted bytes**,78.098410% → 19.160637%,3446 → 3403 bytes
+(original3522), in its sole unchanged O3 gate. The first pass/capacity/guards
+retain. Full symbol/U Counters retain, with no exact loss; only the target's
+score changes. The existing creature-action stream already has the original
+parameter cursor and is not another candidate.
+
+The complete `GizmoBlowupBurstDraw` shadow argument correction loses
+**75.4481655 weighted bytes**,73.473690% → 69.574560%,1903 → 1895 bytes
+(original1935), in its sole unchanged O3 gate. Full symbol/U Counters and exacts
+retain. Both negative units remain frozen without variants, production changes
+or runtime fixtures. The PanelHint, AveragePos, DROIDEKA, bounding-box, voice
+coefficient and alpha-grid bounded censuses yielded no further supported unit;
+stack realignment alone is not evidence of an aligned consumer requirement.
+
+### Checkpoint 23 verification
+
+The four integrated units above (355/359/361/362) pass target, native and WASM
+builds, all five repository tests and the complete format/forward-declaration/
+tidy/symbol/report checks. Fresh mapped and raw linked reports agree at
+**68.639720%**, **+0.637260 percentage points** from current main and
+**+0.040750 points** from checkpoint22. The complete raw address/symbol exact
+set retains all **6,292** records with no losses. After formatting, all four
+production owners byte-equal their sole frozen positive candidates. The WASM
+link retains the previously observed SceneObjectHelper destructor-signature
+warning; its build succeeds, and this batch does not change that owner.
+Final-head GitHub checks are pending the checkpoint push. The cycle remains
+below **70.002460%** and is not eligible for merging.

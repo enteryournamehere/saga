@@ -2077,14 +2077,16 @@ void edpartDrawCursor() {
     draw_axis({0.0f, 0.5f, 0.0f});
     draw_axis({0.0f, 0.0f, 0.5f});
     auto draw_mark = [&](NUVEC start, NUVEC end) {
-        rotate(start);
-        rotate(end);
-        line[0].position.x = edpart_cam_pos.x + start.x;
-        line[0].position.y = edpart_cam_pos.y + start.y;
-        line[0].position.z = edpart_cam_pos.z + start.z;
-        line[1].position.x = edpart_cam_pos.x + end.x;
-        line[1].position.y = edpart_cam_pos.y + end.y;
-        line[1].position.z = edpart_cam_pos.z + end.z;
+        NUVEC scratch = start;
+        rotate(scratch);
+        line[0].position.x = edpart_cam_pos.x + scratch.x;
+        line[0].position.y = edpart_cam_pos.y + scratch.y;
+        line[0].position.z = edpart_cam_pos.z + scratch.z;
+        scratch = end;
+        rotate(scratch);
+        line[1].position.x = edpart_cam_pos.x + scratch.x;
+        line[1].position.y = edpart_cam_pos.y + scratch.y;
+        line[1].position.z = edpart_cam_pos.z + scratch.z;
         line[0].colour = line[1].colour = 0xff00ff00;
         NuRndrLine3d(line, edpart_mtl, NULL);
     };

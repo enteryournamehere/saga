@@ -877,28 +877,29 @@ void UpdateTrooperCannons(WORLDINFO_s *) {
     for (i32 i = 0; i < 4; ++i) {
         TROOPERCANNON_s &cannon = troopercannons[i];
 
-        if (cannon.buildit != NULL && netclient == 0 && GizBuildIt_AtEnd(cannon.buildit)) {
+        if (cannon.buildit != NULL && netclient == 0) {
             if (cannon.object != NULL) {
-                if (cannon.rebuilding != 0) {
+                if (GizBuildIt_AtEnd(cannon.buildit) && cannon.rebuilding != 0) {
                     ActivateCharacter(cannon.character_name, NULL, 0);
                     GizBuildit_SetVisibility(cannon.buildit, 0);
                     cannon.rebuilding = 0;
                     WORLD->level_progress->destroyed_trooper_cannon_mask &= ~(1u << i);
                 }
-            } else {
+            } else if (GizBuildIt_AtEnd(cannon.buildit)) {
                 GizBuildIt_KillParts(cannon.buildit);
                 GizBuildIt_SetToStart(cannon.buildit, 0, 0);
                 GizBuildit_SetVisibility(cannon.buildit, 0);
             }
         }
 
-        if (cannon.object != NULL && netclient == 0) {
-            GameObject_s *callback_object = cannon.object->field_0xcc0;
-            if (callback_object == NULL)
-                callback_object = cannon.object;
-            if (callback_object->field_0xeb4 == NULL)
-                callback_object->field_0xeb4 = KilledTrooperCannon;
-        }
+        if (cannon.object == NULL || netclient != 0)
+            break;
+
+        GameObject_s *callback_object = cannon.object->field_0xcc0;
+        if (callback_object == NULL)
+            callback_object = cannon.object;
+        if (callback_object->field_0xeb4 == NULL)
+            callback_object->field_0xeb4 = KilledTrooperCannon;
     }
 }
 

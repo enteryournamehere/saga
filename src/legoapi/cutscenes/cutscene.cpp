@@ -1526,6 +1526,21 @@ extern "C" {
         if ((instance->flags_88 & 2) != 0) {
             instNuGCutSceneEnd(instance);
         }
+        instNUGCUTCHARSYS_s *character_instance = instance->character_instance;
+        if (character_instance != NULL) {
+            NUGCUTCHARSYS_s *system = instance->cutscene->character_system;
+            if (system != NULL) {
+                i32 count = system->character_count;
+                for (i32 i = 0; i < count; ++i) {
+                    NUGCUTCHAR_s *character = &system->characters[i];
+                    instNUGCUTCHAR_s *inst_character = &character_instance->characters[i];
+                    if ((character->flags & 2) != 0 && NuCutSceneCharacterDestroyData != NULL) {
+                        NuCutSceneCharacterDestroyData(character, inst_character);
+                        count = system->character_count;
+                    }
+                }
+            }
+        }
         if (instance->next != NULL) {
             instance->next->previous = instance->previous;
         }

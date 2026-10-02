@@ -9013,7 +9013,8 @@ pass on each. Host LeakSanitizer passes. A typed named-object callback records
 only real query/return effects; no fabricated mutations or gameplay test.
 Target/native builds and all five repository checks pass. Combined linked
 matching is **68.577610%**, **+0.575150 points** over main, retaining all
-**6,292 exacts**. New pushed-head GitHub checks remain required.
+**6,292 exacts**. All eleven GitHub checks passed on independently verified
+checkpoint 17 head `03e7691d2afdb2fcb30f555a65b422a1983dd538`.
 
 ### Closed frontiers and structural prerequisites after checkpoint 16
 
@@ -9036,7 +9037,156 @@ implementation. No padding clone, invented ownership or option change.
 
 Visibility-tree restoration likewise still needs producer-qualified node
 storage and bounds. Raw box-node **32-byte** and instance-node **12-byte**
-field accesses do not establish tree-array capacities or the missing retail
-`myvisi` storage. Original two-bit output at context byte-20 is not the
+field accesses do not establish tree-array capacities. A follow-up identifies
+retail `myvisi` as a four-byte BSS borrowed context alias at `0x11a2a20`,
+assigned by `NuVisiInstTree`, not an allocation or tree owner. Original
+two-bit output at context byte-20 is not the
 one-bit occlusion result at byte-24. Camera-plane helper availability alone
 does not justify a wrapper-only restoration or guessed format conversion.
+
+### Reserved complete units after checkpoint 17
+
+The following sole unchanged-action whole-owner trials remain unintegrated;
+no runtime fixtures or source variants were spent on their neutral/negative
+results. All retain existing exact functions and the original symbol surface.
+
+- **316, MoveToMarker::Render**: original bob/height/position association and
+  unsigned alpha-word packing form a complete correction. The canonical
+  `move.cpp` replay is net neutral (0% target before/after, 780 → 776 bytes).
+  The preliminary temporary-basename startup-symbol mismatch is superseded
+  by that replay, not evidence for another source trial.
+- **317, GameAntinodeUpdate**: original timer admission is ordered `> 0` and
+  expiry ordered `<= 0`; the current negated comparisons differ for NaN.
+  Complete correction loses **151.539065 weighted original bytes**,
+  **46.148026% → 33.424343%**. No production NaN witness is claimed.
+- **318, NuMemoryManager::_TryBlockAlloc**: restore actual bin selection,
+  dirty large-bin sorting, aligned carving and recursive page request.
+  Preserve the raw bitmap OR-of-bin-index oddity and upstream null-handler
+  guard. Complete unchanged O2 unit loses **359.360386 weighted bytes**,
+  including DumpBlock collateral; target **25.876574% → 1.534005%**.
+- **320, AreasOpenAll**: save mode byte is `field_0x5[2]`, not the completion
+  byte, and completion-point recalculation is outside the optional hub gate.
+  Complete correction is neutral, **18.891026%** before/after. Actual store
+  query and empty hub helper are not replaced with invented effects.
+- **321, GizSpinnerUpdate**: restore the finite nonzero below-tiptoe speed
+  floor while retaining existing nonfinite guard policy. Actual O3 owner,
+  not an O2 override, loses **30.844041 weighted bytes**,
+  **39.826004% → 38.650097%**. Unpublished pure scratch translation is not
+  manufactured as observable rendering.
+- **322, ConvertToUsedBlock**: retail normal-footer range includes manager
+  index 29 (`cmp 0x1d/jbe`); extended footer starts at 30. Debug unknown bits
+  start at zero while the context field keeps its five bits. Complete paired
+  correction loses **22.024125 weighted bytes**,
+  **56.277420% → 52.090324%**. Neither half is integrated independently.
+
+### Bounded serialized-scene producer follow-up
+
+Read-only analysis of all **1,133 loose GSC/GHG roots** in both local saga
+archives finds **1,125 format-two** and **eight format-one** records. Root
+words `+1f8/+1fc/+200/+204` are registered nullable relative-pointer slots in
+every record, all NULL. `+208` is a registered nonnull pointer in all eight
+format-one records and an unregistered zero word in format two. Thus the
+fifth word is not a universal scalar. No semantic member name, pointee type,
+or individual allocation boundary is established; no canonical padding or
+loader implementation is proposed from these observations.
+
+All observed roots have at least **0x418 bytes** remaining in their decoded
+blob, so a 0x20c copy fits this observed input domain only. Decoded scene
+content agrees byte-for-byte between archives (sorted-name aggregate SHA-256
+`2be7909ec2a946f8785c6940e32172a18db6f36d0397c030b285de4a875121ff`).
+The backup requires retail TT block-kind interpretation, verified against
+`DecodeDeflated`; the scoped parser translates a single final block header
+in memory and checks decoded length and complete consumption. No asset is
+written or repacked. Nested PAKs and arbitrary accepted versions are not
+covered. Every observed scene's `+134` instance-tree pointer is NULL, so
+these assets do not resolve the missing tree-array capacity contract.
+
+The actual graphics reader supplies the tree via a generic relocated
+residual scene blob, not a recovered typed runtime builder. Generic fixup's
+relocation count is not a node count. The independently identified
+`DisplayListBeforeFrame.constprop.173` resets display-scene two-bit buffers,
+not Evaluate's separate scratch or one-bit occlusion buffer. Box-tree
+context ownership and nonnull supported instance-tree producer evidence
+remain prerequisites; no guessed buffer conversion or type expansion.
+
+### Checkpoint 18: allocator, Unicode and cutscene lifetime contracts
+
+**319, NuMemoryManager::_BlockReAlloc** restores actual address/allocation/end
+validation, fixed-width footer owner dispatch, quantized payload equality,
+original encoded alignment and the real `_BlockAlloc` fallback. Shrinking
+blocks now relocate when their quantized payload differs; copy spans use the
+smaller payload. Existing NULL-input, zero-size and replacement-failure guards
+remain. The sole unchanged O2 whole-owner gate gains **178.65577184 weighted
+original bytes**, target **29.346940% → 60.911564%** (318 → 590 bytes).
+All existing owner exacts and nonliteral names/types remain; the only new
+literal is the original-backed ReAlloc `__FUNCTION__` string.
+
+Root independently rebuilt and ran **432 host ASan/UBSan cases** with leak
+detection enabled, and **400 i386 cases linked against the full frozen NDK
+owner object**. Host tests execute the real constructor, flag/size calculation
+and ReAlloc body with declared typed allocation/free/validation doubles, not
+the host allocator. i386 tests use real pages, bins, allocation, free, validation,
+Mem1/Mem2 services and release, with Bionic pthread diagnostic adapters.
+Normal/extended manager indices 0/1/28/30/31/255 and modes 0/4/12 are covered,
+including bounded fallback/failure, ownership routing, alignment, flags and
+payload canaries. Both old-body controls independently confirm three old
+behavior witnesses; those observations are not retail-oracle successes.
+Index 29, nonzero debug context, destructor context cleanup and concurrency
+are excluded for separately documented helper debts. No rejected batch-322
+helper repair is smuggled into this unit; native64 full allocator correctness
+is not claimed.
+
+**323, UnicodeToIndexFast** restores initial midpoint, old-midpoint boundary
+updates, cached unsigned key and high-then-low adjacent termination. Original
+sorted duplicate-key ordinals are preserved, including `[65,65,65,66]` selecting
+ordinal two rather than the old body's ordinal one. Existing count/upper-key
+guards remain, with an explicit singleton equality/miss safeguard rather than
+restoring original stalls or out-of-bounds reads. No assertion is made that
+shipped fonts actually contain duplicate keys. Sole unchanged O2 whole-owner
+gain is **7.8658246 weighted bytes**, **11.886076% → 15.177216%**;
+all 29 owner exacts and nonliteral data identities/extents remain.
+
+Root rebuilt actual lookup, EncodeChar, UTF8toQCode, PrintLenU,
+EncodeUnicodeString and UTF8 decoder bodies under host sanitizers and their
+actual per-owner NDK O2/O3/default-O0 actions. **49,351 cases / 133,250 checks**
+pass on each ABI, including odd/even sorted maps of length 2–257, duplicate
+keys, exact-size singleton/pair allocations, canaries and 128 font helper cases.
+Host ASan/UBSan/float-cast-overflow and LeakSanitizer pass. Both old-body
+controls fail exactly five duplicate-key lookup/encoding/width oracle checks,
+without sanitizer errors. A fixture-only `word` name collision was corrected
+to `float_bits`; no production variant was introduced. Malformed UTF8,
+unsorted maps, enormous counts and device/GL execution are not covered.
+
+**326, instNuGCutSceneDestroy** restores optional character-data cleanup after
+real End and before list unlink. Owners are captured after End, live arrays are
+reloaded per record and the unsigned count is refreshed only after an actual
+callback return. Flag-two characters do not require a nonnull model for this
+callback. The sole unchanged O2 whole-owner gate gains **133.12512841 weighted
+bytes**, **25.921053% → 85.618420%** (115 → 231 bytes), retaining both exacts.
+The sole new undefined reference is the verified original
+`NuCutSceneCharacterDestroyData` callback object; all existing names/types and
+data extents remain. Current InitSystem does not register a concrete DestroyData
+service, so this restores the optional API contract, not a claimed active
+gameplay destructor.
+
+Root fully reviewed and independently ran **100,000 randomized + 13 directed
+cases** on host ASan/UBSan/LeakSanitizer and NDK-produced i386. Canonical records,
+actual callback storage/setter and complete actual End, EndButNotSystems and
+ResetCamLock bodies execute. Both old-body controls abort on the same missing
+cleanup event oracle. Typed Eval/Release/Destroy API recorders and six explicitly
+diagnostic callback mutations test capture/live reload, callback identity,
+bounded count changes and callbacks-before-unlink. They are not assertions
+about registered gameplay services. Rigid and locator finalizers are absent
+and guarded by abort seams; malformed capacities, geometry and Android hardware
+are excluded. The initial NDK diagnostic link failed only because fixture
+`fprintf(stderr)` referenced Bionic `__sF`; a frozen, historical-preserving
+test-only revision uses `printf` and enables leak detection. Both repaired
+diagnostic builds pass; production source and gated objects were unchanged.
+
+Combined linked matching is **68.584400%**, **+0.581940 percentage points**
+over current main. The whole-binary measure remains **6,292 exact functions**.
+All **6,291 exact ELF-mapped records** from checkpoint 17 remain, checked by
+original address/symbol including ambiguous and unassigned records; the ELF
+mapping omits five objdiff records and is not identical to the aggregate count.
+Target/native/WASM builds and all five repository checks
+pass. This remains below the **70.002460%** cycle merge threshold.

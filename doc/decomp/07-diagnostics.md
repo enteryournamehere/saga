@@ -138,6 +138,43 @@ A chained assignment `v.x = v.y = v.z = k` stores `z` first, while an
 aggregate initializer or separate statements store `x` first. Choose the form
 that reproduces the original store order.
 
+### A deleting destructor calls a different deallocator
+
+If the original `D0` destructor calls `BlockFree` (through
+`NuMemoryGet()->GetThreadMem()`) or `MemoryManager::FreePool` where the
+reconstruction calls the global `operator delete`, the class (or a base
+class) declares its own `static void operator delete(void *)`. Use the
+existing `NU_FREE` form or a pooled `FreePool(pointer, sizeof(Class))`; every
+derived class that does not declare its own delete inherits it.
+
+### A derived destructor calls a base destructor that the original inlines
+
+Compare symbol bindings with `nm`: a base destructor that is weak (`W`) in the
+original but strong (`T`) in the reconstruction was defined inline, so the
+original inlines it into derived destructors. Marking the existing definition
+`inline` (or moving it into the class) reproduces that. The reverse also
+happens: a class with only an implicit destructor gets an inline one, while
+the original defines it out of line and its `D0` calls `D1`.
+
+### Only the static initializer shape differs between `-O2` and `-O3`
+
+`_GLOBAL__sub_I_*` functions are a useful witness for a unit's optimization
+level. When a unit's static initializer only reproduces the original at the
+other level, and the unit's other functions are equal or closer there,
+change the level in `bazel/android_per_file_copts.bazelrc`. Check the whole
+binary afterwards: compiler-generated `-O0` helpers such as
+`__static_initialization_and_destruction_0` are paired by name, so removing
+one can unpair an unrelated original copy without any real regression.
+
+### A static callee uses register arguments in the original
+
+GCC gives a `static` function a local register calling convention (arguments
+in `eax`/`edx`, tail calls as `jmp`) when every caller is in the same unit.
+If the original passes arguments in registers but the reconstruction uses
+the stack, look for a caller in another file reaching the helper through an
+`__asm__` symbol name. Moving those callers back into the helper's unit and
+making the helper `static` again restores the convention.
+
 ### Stack realigns with `and $-16, %esp`
 
 Plain `-O2` functions do not realign the stack. A frame pointer plus

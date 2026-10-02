@@ -134,7 +134,7 @@ extern "C" {
         i32 offset = 0;
         i32 current = 0;
         while (current < entry && offset < bHaveErr) {
-            if (ErrMsg[offset++] == '\0') {
+            if (*(ErrMsg + offset++) == '\0') {
                 ++current;
             }
         }

@@ -47,9 +47,15 @@ static i32 GizMiniCut_GetOutput(GIZMO *gizmo, i32 output_index, i32) {
     if (gizmo == NULL || gizmo->object == NULL)
         return 0;
     MINICUT *minicut = static_cast<MINICUT *>(gizmo->object);
-    if ((output_index == 0 && MiniCutCam != 0) || (output_index != 0 && output_index != 1))
-        return 0;
-    return minicut->played;
+    switch (output_index) {
+        case 0:
+            if (MiniCutCam == 0)
+                return minicut->played;
+            break;
+        case 1:
+            return minicut->played;
+    }
+    return 0;
 }
 
 static char *GizMiniCut_GetOutputName(GIZMO *gizmo, i32 output_index) {

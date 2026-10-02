@@ -1676,8 +1676,8 @@ i32 NuStringTableLoadTXT(char *filepath, VARIPTR *buf, VARIPTR buf_end) {
 
 i32 NuStringTableLoad(char *filepath, VARIPTR *buf, VARIPTR buf_end) {
     i32 is_csv = 0;
-    char *extension = NuStrRChr(filepath, '.');
-    if (extension != NULL) {
+    char *extension;
+    if ((extension = NuStrRChr(filepath, '.')) != NULL) {
         if (NuStrICmp(extension, ".csv") == 0) {
             is_csv = 1;
         }

@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.00426,
+    "fuzzy_match_percent": 68.008125,
     "total_code": "4722419",
-    "matched_code": "526943",
-    "matched_code_percent": 11.158328,
+    "matched_code": "527905",
+    "matched_code_percent": 11.1786995,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6296,
-    "matched_functions_percent": 46.779106,
+    "matched_functions": 6308,
+    "matched_functions_percent": 46.868267,
     "total_units": 1
   },
   "text": {
@@ -26162,7 +26162,7 @@
           "address": 3824256,
           "offset": 2934288,
           "size": 322,
-          "match_percent": 89.48315
+          "match_percent": 89.65169
         },
         {
           "name": "_Z17EdFileFlushBufferv",
@@ -26178,7 +26178,7 @@
           "address": 3824720,
           "offset": 2934752,
           "size": 135,
-          "match_percent": 96.42424
+          "match_percent": 96.878784
         },
         {
           "name": "EdFileWrite",
@@ -26234,7 +26234,7 @@
           "address": 3825504,
           "offset": 2935536,
           "size": 50,
-          "match_percent": 99.84615
+          "match_percent": 100.0
         },
         {
           "name": "EdFileWriteUnsignedChar",
@@ -26242,7 +26242,7 @@
           "address": 3825568,
           "offset": 2935600,
           "size": 50,
-          "match_percent": 99.84615
+          "match_percent": 100.0
         },
         {
           "name": "EdFileWriteNuVec",
@@ -26266,7 +26266,7 @@
           "address": 3825872,
           "offset": 2935904,
           "size": 85,
-          "match_percent": 99.4
+          "match_percent": 100.0
         },
         {
           "name": "EdFileReadInt",
@@ -26282,7 +26282,7 @@
           "address": 3826064,
           "offset": 2936096,
           "size": 85,
-          "match_percent": 99.4
+          "match_percent": 100.0
         },
         {
           "name": "EdFileReadShort",
@@ -36618,7 +36618,7 @@
           "address": 3171277,
           "offset": 2281309,
           "size": 107,
-          "match_percent": 99.40741
+          "match_percent": 99.96296
         },
         {
           "name": "_Z17NuWindAllocateGrpv",
@@ -38625,7 +38625,7 @@
           "address": 5427792,
           "offset": 4537824,
           "size": 74,
-          "match_percent": 41.032257
+          "match_percent": 48.129032
         },
         {
           "name": "_ZN14NetTransporter19StatsReceiveMessageE10NetMessageh",
@@ -38633,7 +38633,7 @@
           "address": 5427872,
           "offset": 4537904,
           "size": 74,
-          "match_percent": 47.64516
+          "match_percent": 41.51613
         },
         {
           "name": "_ZN14NetTransporterD1Ev",
@@ -49933,7 +49933,7 @@
           "address": 5422784,
           "offset": 4532816,
           "size": 346,
-          "match_percent": 85.63367
+          "match_percent": 86.22772
         },
         {
           "name": "_ZN9TTNetwork17ReliableBroadcastE10NetMessageh",
@@ -49981,7 +49981,7 @@
           "address": 5424912,
           "offset": 4534944,
           "size": 254,
-          "match_percent": 93.28
+          "match_percent": 93.04
         },
         {
           "name": "_ZN9TTNetwork6ResumeEv",
@@ -50045,7 +50045,7 @@
           "address": 5425424,
           "offset": 4535456,
           "size": 126,
-          "match_percent": 99.5
+          "match_percent": 100.0
         },
         {
           "name": "_ZN9TTNetwork21ProcessEvenWhenPausedEP16ThingProcessData",
@@ -58623,7 +58623,7 @@
           "address": 1960960,
           "offset": 1070992,
           "size": 36,
-          "match_percent": 99.0
+          "match_percent": 100.0
         },
         {
           "name": "_ZL14Ledge_ActivateP7GIZMO_si",
@@ -58631,7 +58631,7 @@
           "address": 1961008,
           "offset": 1071040,
           "size": 34,
-          "match_percent": 98.92857
+          "match_percent": 100.0
         },
         {
           "name": "_ZL19Ledges_GetMaxGizmosPv",
@@ -60295,7 +60295,7 @@
           "address": 5082368,
           "offset": 4192400,
           "size": 65,
-          "match_percent": 97.69231
+          "match_percent": 100.0
         },
         {
           "name": "_ZL24GizMiniCut_GetNumOutputsP7GIZMO_s",
@@ -62142,7 +62142,7 @@
           "address": 1934272,
           "offset": 1044304,
           "size": 937,
-          "match_percent": 39.977375
+          "match_percent": 50.348415
         },
         {
           "name": "_Z23Batarangs_CheckLostDataPv",
@@ -62182,7 +62182,7 @@
           "address": 1936928,
           "offset": 1046960,
           "size": 159,
-          "match_percent": 89.5
+          "match_percent": 89.75
         },
         {
           "name": "_Z17Batarang_MoveCodeP12GameObject_s",
@@ -90312,7 +90312,7 @@
           "address": 2759732,
           "offset": 1869764,
           "size": 93,
-          "match_percent": 75.0
+          "match_percent": 100.0
         },
         {
           "name": "RndrStateResetGlobalState",
@@ -90423,7 +90423,7 @@
           "address": 3239609,
           "offset": 2349641,
           "size": 33,
-          "match_percent": 83.8
+          "match_percent": 99.8
         },
         {
           "name": "_GLOBAL__sub_I_nuscratch_android.c",
@@ -101817,7 +101817,7 @@
           "address": 2547817,
           "offset": 1657849,
           "size": 114,
-          "match_percent": 93.94118
+          "match_percent": 99.97059
         },
         {
           "name": "NuGetError",
@@ -102678,7 +102678,7 @@
           "address": 2456318,
           "offset": 1566350,
           "size": 63,
-          "match_percent": 99.90476
+          "match_percent": 100.0
         }
       ]
     },
@@ -104507,7 +104507,7 @@
           "address": 2500191,
           "offset": 1610223,
           "size": 150,
-          "match_percent": 85.28889
+          "match_percent": 100.0
         }
       ]
     },
@@ -105239,7 +105239,7 @@
           "address": 2513777,
           "offset": 1623809,
           "size": 181,
-          "match_percent": 96.01961
+          "match_percent": 99.94118
         },
         {
           "name": "NuStringTableUnload",
@@ -112844,7 +112844,7 @@
           "address": 3269312,
           "offset": 2379344,
           "size": 168,
-          "match_percent": 92.38182
+          "match_percent": 99.92727
         },
         {
           "name": "_ZNK13NuSoundBuffer17GetSegmentAddressEjjj",
@@ -112876,7 +112876,7 @@
           "address": 3269696,
           "offset": 2379728,
           "size": 125,
-          "match_percent": 99.85294
+          "match_percent": 100.0
         },
         {
           "name": "_ZN13NuSoundBuffer6UnlockEv",
@@ -112908,7 +112908,7 @@
           "address": 3269984,
           "offset": 2380016,
           "size": 253,
-          "match_percent": 45.014706
+          "match_percent": 45.088234
         },
         {
           "name": "_ZN22NuSoundCriticalSectionD1Ev",

@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.016266,
+    "fuzzy_match_percent": 68.01684,
     "total_code": "4722419",
-    "matched_code": "536330",
-    "matched_code_percent": 11.357103,
+    "matched_code": "536574",
+    "matched_code_percent": 11.36227,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6385,
-    "matched_functions_percent": 47.440372,
+    "matched_functions": 6389,
+    "matched_functions_percent": 47.470097,
     "total_units": 1
   },
   "text": {
@@ -51200,7 +51200,7 @@
           "address": 4412416,
           "offset": 3522448,
           "size": 46,
-          "match_percent": 98.75
+          "match_percent": 100.0
         },
         {
           "name": "instNuGCutSceneWaitAtEnd",
@@ -51208,7 +51208,7 @@
           "address": 4412464,
           "offset": 3522496,
           "size": 34,
-          "match_percent": 77.77778
+          "match_percent": 100.0
         },
         {
           "name": "instNuGCutSceneChain",
@@ -88032,7 +88032,7 @@
           "address": 2730989,
           "offset": 1841021,
           "size": 53,
-          "match_percent": 83.23529
+          "match_percent": 99.94118
         },
         {
           "name": "NuDisplayListDraw",
@@ -88732,7 +88732,7 @@
           "address": 2755118,
           "offset": 1865150,
           "size": 16,
-          "match_percent": 40.0
+          "match_percent": 100.0
         },
         {
           "name": "NuHGobjRndr",
@@ -112820,7 +112820,7 @@
           "address": 3269120,
           "offset": 2379152,
           "size": 148,
-          "match_percent": 99.77419
+          "match_percent": 100.0
         },
         {
           "name": "_ZNK13NuSoundBuffer10GetAddressEv",

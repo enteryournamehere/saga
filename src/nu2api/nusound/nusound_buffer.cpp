@@ -54,10 +54,10 @@ void NuSoundBuffer::Free() {
     this->size = 0;
     this->memory_buffer = NULL;
 
-    this->context.field5_0x20 = 0;
     this->context.read_size = 0;
     this->context.size2 = 0;
     this->context.size3 = 0;
+    this->context.field5_0x20 = 0;
 }
 
 void *NuSoundBuffer::GetAddress() const {

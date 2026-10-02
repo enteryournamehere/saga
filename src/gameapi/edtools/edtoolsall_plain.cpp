@@ -2662,31 +2662,7 @@ extern "C" {
             effect->last_render_time = 0.0f;
             effect->page = static_cast<u8>(page_index);
             debtab[index] = effect;
-            f32 elapsed_time = 0.0f;
-            f32 active_time = 0.0f;
-            while (effect->particle_lifetime > elapsed_time) {
-                f32 remaining_time = effect->particle_lifetime - elapsed_time;
-                f32 emission_time = effect->emission_period_random + effect->emission_pause;
-                f32 emitted = remaining_time < emission_time ? remaining_time : emission_time;
-                active_time += emitted;
-                elapsed_time += emitted;
-                remaining_time = effect->particle_lifetime - elapsed_time;
-                elapsed_time +=
-                    remaining_time < effect->emission_pause_random ? remaining_time : effect->emission_pause_random;
-            }
-            i16 particle_count = static_cast<i16>(static_cast<i32>(
-                static_cast<f32>(effect->frequency) * (active_time / elapsed_time) * effect->particle_lifetime));
-            if (particle_count < 1)
-                particle_count = 1;
-            effect->max_particles = static_cast<i16>(particle_count * (effect->trail_count + 1));
-            for (i32 particle_index = 0; particle_index < 512; ++particle_index) {
-                i32 instance_id = edpp_ptls[particle_index].instance_id;
-                if (instance_id == -1 || instance_id == 99999)
-                    continue;
-                debkeydatatype_s *key = &debkeydata[instance_id];
-                if (debtab[key->effect_index] == effect)
-                    DebReAlloc(key, effect->max_particles);
-            }
+            UpdateTotalPtls(debtab[index]);
             edpp_types_used++;
         }
 

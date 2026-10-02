@@ -11025,3 +11025,86 @@ Target/native/WebAssembly builds and the five repository tests pass. The
 normal commit hook will independently regenerate the report. Batch410 and
 411 are not part of this checkpoint. The70.002460% cycle threshold remains
 unmet; no merge follows from these gains.
+
+Checkpoint31's full normal format/tidy/symbol/report hook passes and its
+generated matching.json is byte-identical to the independent mapping. Root
+commits/pushes9f0c8a3c1c47b62413a4d9c57a96ba0573834a5d with Fabian's
+authorship and the verified Codex trailer, independently verifies the PR
+head identity and starts final-head CI monitoring. Current main remains
+a496c28beece66a24ccdf7336571b6836f45e6aa; no rebase is needed.
+
+Batch410's corrected sole O2 owner pair scores all570 original-backed rows
+and retains31 exacts: net+181.70018942 original-weighted bytes, including the
+neighbor callback gain and graph loss. edppLoadPage improves31.90372 to40.34792%,
+1917 to1678 emitted bytes. The strict capture initially stops only on27
+removed/27 added zero-extent LOCAL NOTYPE text labels. Root fully reviews and
+executes the additive same-object proof: all134 jump-table slots resolve to
+the same function/instruction endpoints, all nine complete containing bodies
+and their decoded control/relocation closures are byte-identical, and the
+entire560-byte rodata table/constant pool retains. Every changed label has
+only internal jump-table references. All other Counter/U identities retain.
+This qualifies those exact54 labels, not a blanket compiler-symbol exception
+or an invented score/owner for the eight unbacked emitted names. Frozen
+objects/reports and initial failed capture remain untouched. Lean changed-block
+diagnostics are pending; no410 production integration is claimed.
+Scoped proof result SHA256
+475166511949a16752763b62852397570c072029c3363b935979ba37ec0fa4cb.
+
+Batch411's fresh full NuSoundSystem destructor audit identifies the missing
+embedded routing-table name retirement before owning-list release. The
+minimal proposal adds only a nonvirtual ordinary inline destructor clearing
+name[0], capacity, length and pointer, with a null-name safety guard. Existing
+canonical data layout, matrix ownership, all other implicit member cleanup
+and allocator contracts remain unchanged. Root fully reads the audit/proposal
+and actual routing constructors/GetName/NuEList deletion, then approves PREP.
+The actual target dependency census finds28 header consumers among483 compile
+actions, so a positive primary-owner trial alone will not authorize integration.
+No411 compilation/report/runtime or shared-header production edit has run.
+
+Root subsequently stages411's exact frozen header-only System pair and runs
+the sole unchanged O3 gate. All110 original-backed rows and26 exacts qualify,
+including natural D0/D1/D2 variants, but the known alias-inclusive metric
+loses3.86532006 original-weighted bytes. D1 and D2 each change51.071663 to
+50.90228%,1157 to1173 emitted bytes; D0 is unchanged. Six removed/six added
+Counter identities and six unbacked emitted names remain explicit, unresolved
+qualification stops; neither their scores nor deltas are invented. The known
+negative already closes this proposal. No representation-proof expenditure,
+27-owner collateral pairs, runtime, variants or integration follows.
+Manifest SHA256959499b6f783412d8c5c6149f1284824bc37233ef97ff9c91b962d4023860f1e;
+capture SHA2564c85c2844eb0a9c80b26ebf5e3813c47917c612569bda333e61807a62d024fd9.
+
+Checkpoint31 subsequently passes all eleven GitHub checks on the independently
+verified exact pushed head9f0c8a3c1c47b62413a4d9c57a96ba0573834a5d.
+Final-head capture SHA256
+06bb4d7e937e43a2decd6687b91d97ee289338257f30eaaa87bac396074e057c.
+The merge threshold remains unmet; no squash or new-cycle PR is authorized
+by this checkpoint's matching result.
+
+Root fully reviews and executes410's lean exact-removed-block versus existing
+helper diagnostic. GNU64 and GNU i386 SSE each pass260 finite cases, respectively
+969212 and965056 checks, with genuine ASan/UBSan/float-cast sanitizing and
+leak detection enabled. Independent phase/count and stable typed DebReAlloc
+recorders verify all512 slots, repeated matching keys, publication/order,
+sentinels and untouched canonical storage. Trail count0..3 gives multipliers
+1..4. Canonical numemory.h enters the actual Android memory header once under
+explicit ANDROID; complete consumed GNU/canonical input closures are pinned
+before object compilation. This is changed-block validation, not a full
+loader/file/allocator/locking/GPU/concurrency/NDK/Bionic gameplay claim.
+Runtime result SHA256
+e326cd287475d1ff52f6db0dc8818b0e26993d315859d5be8d02085106876fbd.
+Root integrates only the exact frozen410 proposal. The measured owner gain
+still requires fresh linked checkpoint verification before being counted.
+
+### Checkpoint32 linked editor helper unit
+
+One fresh linked raw report and independent live Bazel mapping measure
+68.715110%,+0.003860 percentage points versus checkpoint31 and+0.712650
+versus current main. All6293 prior raw exact name/address/size identities,
+the4,722,419-byte original denominator and complete ownership counts retain.
+The only production change is410's existing particle-budget helper call.
+Target/native/WebAssembly builds and all five repository tests pass; the
+normal commit hook will independently regenerate its report. Future OGG,
+terrain and editor-save proposals are not integrated or counted here.
+Raw SHA25673521bcf404e29fcb69025c9ace92333bd3f442d6aa82f00168c332d176524bd;
+mapped SHA2564c17fa6f621601c23a6c1c4a4af2648db4d8399b2073c21fdff42fd346708674.
+The70.002460% cycle threshold is not reached.

@@ -179,10 +179,30 @@ void SetLevelSfxBits(WORLDINFO *world) {
     if (world->cutscene_sys != NULL) {
         for (i32 i = 0; i < world->cutscene_sys->count; ++i) {
             CUTINFO *cut = world->cutscene_sys->cuts[i];
-            for (CUTSCENESFX &sfx : cut->sfx) {
-                if (sfx.id != -1) {
-                    sfx_ids[sfx_count++] = sfx.id;
-                }
+            // The original visits the six cutscene cues as separate checks.
+            i32 sound_id = cut->sfx[0].id;
+            if (sound_id != -1) {
+                sfx_ids[sfx_count++] = sound_id;
+            }
+            sound_id = cut->sfx[1].id;
+            if (sound_id != -1) {
+                sfx_ids[sfx_count++] = sound_id;
+            }
+            sound_id = cut->sfx[2].id;
+            if (sound_id != -1) {
+                sfx_ids[sfx_count++] = sound_id;
+            }
+            sound_id = cut->sfx[3].id;
+            if (sound_id != -1) {
+                sfx_ids[sfx_count++] = sound_id;
+            }
+            sound_id = cut->sfx[4].id;
+            if (sound_id != -1) {
+                sfx_ids[sfx_count++] = sound_id;
+            }
+            sound_id = cut->sfx[5].id;
+            if (sound_id != -1) {
+                sfx_ids[sfx_count++] = sound_id;
             }
         }
     }
@@ -219,28 +239,25 @@ void SetLevelSfxBits(WORLDINFO *world) {
         if (level->unknown_0a2 != -1) {
             sfx_ids[sfx_count++] = level->unknown_0a2;
         }
-        if (level == STATUS_LDATA || (level->flags & LEVEL_STATUS) != 0) {
-            ADD_SFX("StatusAward");
-            ADD_SFX("Status_GoldBarDec");
-            ADD_SFX("TrueJedi_100pc");
-            ADD_SFX("TrueJedi_NOT");
-            ADD_SFX("MK-Panel");
-            ADD_SFX("Char_Icon_App");
-            ADD_SFX("Char_Icon_Slide");
-            ADD_SFX("LegoClicks");
-            ADD_SFX("Shop_BuyCheat");
-            ADD_SFX("Explode1");
-            ADD_SFX("Jp_Ana_Jump");
-            ADD_SFX("PickupCoin");
-        } else if (world->area != NULL && (world->area->flags & 4) != 0) {
-            ADD_SFX("Victory");
-            ADD_SFX("exp_debris");
-        } else if (level == CREDITS_LDATA) {
-            ADD_SFX("StatusAward");
-        }
+    }
+    if (level != NULL && (level == STATUS_LDATA || (level->flags & LEVEL_STATUS) != 0)) {
+        ADD_SFX("StatusAward");
+        ADD_SFX("Status_GoldBarDec");
+        ADD_SFX("TrueJedi_100pc");
+        ADD_SFX("TrueJedi_NOT");
+        ADD_SFX("MK-Panel");
+        ADD_SFX("Char_Icon_App");
+        ADD_SFX("Char_Icon_Slide");
+        ADD_SFX("LegoClicks");
+        ADD_SFX("Shop_BuyCheat");
+        ADD_SFX("Explode1");
+        ADD_SFX("Jp_Ana_Jump");
+        ADD_SFX("PickupCoin");
     } else if (world->area != NULL && (world->area->flags & 4) != 0) {
         ADD_SFX("Victory");
         ADD_SFX("exp_debris");
+    } else if (level != NULL && level == CREDITS_LDATA) {
+        ADD_SFX("StatusAward");
     }
 
     if (world->area != NULL) {
@@ -509,14 +526,15 @@ void SetLevelSfxBits(WORLDINFO *world) {
     if (Arcade != 0) {
         ADD_SFX("env_padLight_on");
     }
-    if (world->area == HOTHESCAPE_ADATA || world->area == JABBASPALACE_ADATA) {
-        ADD_SFX("fs_ice");
-    } else if (world->area == DAGOBAH_ADATA) {
-        ADD_SFX("fs_swamp");
+    if (world->area != NULL) {
+        if (world->area == HOTHESCAPE_ADATA || world->area == JABBASPALACE_ADATA) {
+            ADD_SFX("fs_ice");
+        } else if (world->area == DAGOBAH_ADATA) {
+            ADD_SFX("fs_swamp");
+        }
     }
-
-    level = world->current_level;
-    if (apicharsys->loaded_model_count > 0 && level != NULL && (level->flags & 2) != 0 && VehicleArea == 0) {
+    if (apicharsys->loaded_model_count > 0 && world->current_level != NULL && (world->current_level->flags & 2) != 0 &&
+        VehicleArea == 0) {
         ADD_GAME_SFX(0x14);
         ADD_GAME_SFX(0x15);
     }
@@ -635,13 +653,18 @@ void SetLevelSfxBits(WORLDINFO *world) {
         }
     }
 
-    level = world->current_level;
-    bool double_score_sfx = Arcade != 0 || (level != NULL && (level->flags & 0x800) != 0);
+    i32 double_score_sfx = Arcade != 0;
     if (!double_score_sfx) {
-        for (i32 portal = 0x13; portal <= 0x17; ++portal) {
+        level = world->current_level;
+        double_score_sfx = level != NULL && (level->flags & 0x800) != 0;
+    }
+    if (!double_score_sfx) {
+        i32 portal = 0x13;
+        while (!double_score_sfx && portal <= 0x17) {
             if (world->portal_places[portal] != NULL) {
-                double_score_sfx = true;
-                break;
+                double_score_sfx = 1;
+            } else {
+                ++portal;
             }
         }
     }

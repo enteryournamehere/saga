@@ -218,74 +218,100 @@ void GameCam_ResetLookRot(GAMECAMERA_s *camera) {
     camera->field_0x208 = 0.0f;
 }
 
-static bool GameCam_AddPlayerLookRot(GAMECAMERA_s *camera, GameObject_s *object) {
-    if (object == NULL || static_cast<i8>(object->apiobj.flags_low) >= 0 || object->pad_gamepad == NULL ||
-        object->pad_gamepad->pad == NULL) {
-        return false;
-    }
-
-    i32 look_source = 1;
-    if (GameCam_ObjLookingWithLeftStick != NULL) {
-        look_source = GameCam_ObjLookingWithLeftStick(object);
-    }
-    if (look_source != 1 && look_source != 2) {
-        return false;
-    }
-
-    GAMEPAD_s *gamepad = object->pad_gamepad;
-    constexpr f32 kLookPitch = 1820.0f;
-    constexpr f32 kLookYaw = 2730.0f;
-
-    if (gamepad->input_mode == 1) {
-        const u32 horizontal = gamepad->buttons_held & (GAMEPAD_DLEFT | GAMEPAD_DRIGHT);
-        const u32 vertical = gamepad->buttons_held & (GAMEPAD_DUP | GAMEPAD_DDOWN);
-        if (horizontal == GAMEPAD_DLEFT) {
-            camera->field_0x208 -= kLookYaw;
-        } else if (horizontal == GAMEPAD_DRIGHT) {
-            camera->field_0x208 += kLookYaw;
-        }
-        if (vertical == GAMEPAD_DUP) {
-            camera->field_0x204 -= kLookPitch;
-        } else if (vertical == GAMEPAD_DDOWN) {
-            camera->field_0x204 += kLookPitch;
-        }
-        return true;
-    }
-
-    nupad_s *pad = gamepad->pad;
-    const f32 analog_x = static_cast<f32>(look_source == 2 ? pad->analog_left_x : pad->analog_right_x);
-    const f32 analog_y = static_cast<f32>(look_source == 2 ? pad->analog_left_y : pad->analog_right_y);
-    constexpr f32 kAnalogCentre = 127.5f;
-    constexpr f32 kAnalogScale = 1.0f / kAnalogCentre;
-    camera->field_0x204 += (analog_y - kAnalogCentre) * kAnalogScale * kLookPitch;
-    camera->field_0x208 += (analog_x - kAnalogCentre) * kAnalogScale * kLookYaw;
-    return true;
-}
-
 void GameCam_UpdateLookRot(GAMECAMERA_s *camera) {
-    if (camera == NULL) {
+    // Retail handles each player separately, with directional buttons only for
+    // the left-stick mode and seek speeds proportional to the angular ranges.
+    if (camera == NULL)
         camera = GameCam;
-    }
-
+    f32 look_pitch = 1820.0f, look_yaw = 2730.0f;
     camera->field_0x204 = 0.0f;
     camera->field_0x208 = 0.0f;
-
-    i32 contributing_players = 0;
+    f32 contributing_players = 0.0f;
     if (MiniCutCam == 0) {
-        for (i32 i = 0; i < 2; ++i) {
-            if (GameCam_AddPlayerLookRot(camera, Player[i])) {
-                ++contributing_players;
+        if (Player[0] != NULL && static_cast<i8>(Player[0]->apiobj.flags_low) < 0 &&
+            Player[0]->pad_gamepad->pad != NULL) {
+            i32 look_source = 1;
+            if (GameCam_ObjLookingWithLeftStick != NULL)
+                look_source = GameCam_ObjLookingWithLeftStick(Player[0]);
+            if (look_source == 2) {
+                f32 horizontal = 0.0f, vertical = 0.0f;
+                if (Player[0]->pad_gamepad->input_mode == 1) {
+                    u32 buttons = Player[0]->pad_gamepad->buttons_held;
+                    u32 horizontal_buttons = buttons & (GAMEPAD_DLEFT | GAMEPAD_DRIGHT);
+                    if (horizontal_buttons == GAMEPAD_DLEFT)
+                        horizontal = -look_yaw;
+                    else if (horizontal_buttons == GAMEPAD_DRIGHT)
+                        horizontal = look_yaw;
+                    u32 vertical_buttons = buttons & (GAMEPAD_DUP | GAMEPAD_DDOWN);
+                    if (vertical_buttons == GAMEPAD_DUP)
+                        vertical = -look_pitch;
+                    else if (vertical_buttons == GAMEPAD_DDOWN)
+                        vertical = look_pitch;
+                } else {
+                    nupad_s *pad = Player[0]->pad_gamepad->pad;
+                    horizontal =
+                        (static_cast<f32>(static_cast<u32>(pad->analog_left_x)) - 127.5f) * (1.0f / 127.5f) * look_yaw;
+                    vertical = (static_cast<f32>(static_cast<u32>(pad->analog_left_y)) - 127.5f) * (1.0f / 127.5f) *
+                               look_pitch;
+                }
+                camera->field_0x204 += vertical;
+                camera->field_0x208 += horizontal;
+                contributing_players += 1.0f;
+            } else if (look_source == 1) {
+                nupad_s *pad = Player[0]->pad_gamepad->pad;
+                camera->field_0x208 +=
+                    (static_cast<f32>(static_cast<u32>(pad->analog_right_x)) - 127.5f) * (1.0f / 127.5f) * look_yaw;
+                camera->field_0x204 +=
+                    (static_cast<f32>(static_cast<u32>(pad->analog_right_y)) - 127.5f) * (1.0f / 127.5f) * look_pitch;
+                contributing_players += 1.0f;
+            }
+        }
+        if (Player[1] != NULL && static_cast<i8>(Player[1]->apiobj.flags_low) < 0 &&
+            Player[1]->pad_gamepad->pad != NULL) {
+            i32 look_source = 1;
+            if (GameCam_ObjLookingWithLeftStick != NULL)
+                look_source = GameCam_ObjLookingWithLeftStick(Player[1]);
+            if (look_source == 2) {
+                f32 horizontal = 0.0f, vertical = 0.0f;
+                if (Player[1]->pad_gamepad->input_mode == 1) {
+                    u32 buttons = Player[1]->pad_gamepad->buttons_held;
+                    u32 horizontal_buttons = buttons & (GAMEPAD_DLEFT | GAMEPAD_DRIGHT);
+                    if (horizontal_buttons == GAMEPAD_DLEFT)
+                        horizontal = -look_yaw;
+                    else if (horizontal_buttons == GAMEPAD_DRIGHT)
+                        horizontal = look_yaw;
+                    u32 vertical_buttons = buttons & (GAMEPAD_DUP | GAMEPAD_DDOWN);
+                    if (vertical_buttons == GAMEPAD_DUP)
+                        vertical = -look_pitch;
+                    else if (vertical_buttons == GAMEPAD_DDOWN)
+                        vertical = look_pitch;
+                } else {
+                    nupad_s *pad = Player[1]->pad_gamepad->pad;
+                    horizontal =
+                        (static_cast<f32>(static_cast<u32>(pad->analog_left_x)) - 127.5f) * (1.0f / 127.5f) * look_yaw;
+                    vertical = (static_cast<f32>(static_cast<u32>(pad->analog_left_y)) - 127.5f) * (1.0f / 127.5f) *
+                               look_pitch;
+                }
+                camera->field_0x204 += vertical;
+                camera->field_0x208 += horizontal;
+                contributing_players += 1.0f;
+            } else if (look_source == 1) {
+                nupad_s *pad = Player[1]->pad_gamepad->pad;
+                camera->field_0x208 +=
+                    (static_cast<f32>(static_cast<u32>(pad->analog_right_x)) - 127.5f) * (1.0f / 127.5f) * look_yaw;
+                camera->field_0x204 +=
+                    (static_cast<f32>(static_cast<u32>(pad->analog_right_y)) - 127.5f) * (1.0f / 127.5f) * look_pitch;
+                contributing_players += 1.0f;
             }
         }
     }
-    if (contributing_players > 1) {
-        const f32 inverse_count = 1.0f / static_cast<f32>(contributing_players);
+    if (contributing_players > 1.0f) {
+        f32 inverse_count = 1.0f / contributing_players;
         camera->field_0x204 *= inverse_count;
         camera->field_0x208 *= inverse_count;
     }
-
-    camera->field_0x20c = SeekLinearF(camera->field_0x20c, camera->field_0x204, FRAMETIME * 2.0f);
-    camera->field_0x210 = SeekLinearF(camera->field_0x210, camera->field_0x208, FRAMETIME * 2.0f);
+    camera->field_0x20c = SeekLinearF(camera->field_0x20c, camera->field_0x204, (FRAMETIME * look_pitch) * 2.0f);
+    camera->field_0x210 = SeekLinearF(camera->field_0x210, camera->field_0x208, (FRAMETIME * look_yaw) * 2.0f);
     camera->field_0x214 = SeekValF(camera->field_0x214, camera->field_0x20c, 3.0f);
     camera->field_0x218 = SeekValF(camera->field_0x218, camera->field_0x210, 3.0f);
 }
@@ -323,8 +349,8 @@ extern nugspline_s ObstacleCamCutSpline;
 extern i32 ObstacleCamTargetGuid;
 extern NUVEC ObstacleCamCutPts[2];
 
-void GameCameraMakeMiniCut2(nuvec_s *camera, nuvec_s *target, i32 target_guid, float start, float end,
-                            float blend_in, float blend_out, i32 follow_target, i32 follow_camera, i32 borders) {
+void GameCameraMakeMiniCut2(nuvec_s *camera, nuvec_s *target, i32 target_guid, float start, float end, float blend_in,
+                            float blend_out, i32 follow_target, i32 follow_camera, i32 borders) {
     ObstacleCamCutSpline.length = 2;
     ObstacleCamCutSpline.pt_size = 12;
     ObstacleCamCutSpline.pts = ObstacleCamCutPts;
@@ -365,8 +391,8 @@ void GameCameraMakeMiniCut3(u32 flags, float distance, i32 pitch, i32 yaw, i32 r
             MiniCam.focus_offset = v000;
             MiniCam.focus = &MiniCam.target;
             MiniCam.position = *position;
-            GameCameraMakeMiniCut2(&MiniCam.position, NULL, target_guid, start_time, 1000000000.0f,
-                                   blend_in_time, 0.0f, 0, 1, MiniCam.reserved_384);
+            GameCameraMakeMiniCut2(&MiniCam.position, NULL, target_guid, start_time, 1000000000.0f, blend_in_time, 0.0f,
+                                   0, 1, MiniCam.reserved_384);
         }
     }
 
@@ -384,15 +410,15 @@ void GameCameraMakeMiniCut3(u32 flags, float distance, i32 pitch, i32 yaw, i32 r
         Minicam_AddCommand(9, distance, 0, NULL, v000);
     if (flags & 0x10)
         Minicam_AddCommand(13, 0.0f, pitch, NULL, v000);
-    if (flags & 2)
+    else if (flags & 2)
         Minicam_AddCommand(10, 0.0f, pitch, NULL, v000);
     if (flags & 0x20)
         Minicam_AddCommand(14, 0.0f, yaw, NULL, v000);
-    if (flags & 4)
+    else if (flags & 4)
         Minicam_AddCommand(11, 0.0f, yaw, NULL, v000);
     if (flags & 0x40)
         Minicam_AddCommand(15, 0.0f, roll, NULL, v000);
-    if (flags & 8)
+    else if (flags & 8)
         Minicam_AddCommand(12, 0.0f, roll, NULL, v000);
     if (mode != -1)
         Minicam_AddCommand(6, 0.0f, mode, NULL, v000);
@@ -1854,14 +1880,14 @@ void KeepVehicleOnScreen(GameObject_s *object, i32 sides, i32 top, i32 bottom) {
     if (top != 0) {
         OnOrInsidePlane(&object->apiobj.collision_position, &PlayPlane[3].point, &PlayPlane[3].normal, NULL, 0.0f,
                         &distance);
-        if (distance != 1000000000.0f && distance < margin) {
-            f32 correction = -((distance - margin) / margin);
-            f32 speed = -object->apiobj.character_data->game_character->run_speed;
-            object->target_velocity.y += (speed + speed) * (correction + correction);
-            return;
-        }
     } else {
         distance = 1000000000.0f;
+    }
+    if (distance != 1000000000.0f && distance < margin) {
+        f32 correction = -((distance - margin) / margin);
+        f32 speed = -object->apiobj.character_data->game_character->run_speed;
+        object->target_velocity.y += (speed + speed) * (correction + correction);
+        return;
     }
     if (bottom != 0) {
         OnOrInsidePlane(&object->apiobj.collision_position, &PlayPlane[4].point, &PlayPlane[4].normal, NULL, 0.0f,

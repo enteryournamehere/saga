@@ -68,6 +68,7 @@ extern "C" i32 NuMain(i32 argc, char **argv) {
     nupad_s *rumblePad1;
     GameObject_s *pausePlayer;
     u32 pauseFlag;
+    i32 renderPaused;
     LEVELDATA_s *level;
     i32 currentEpisodeIndex;
     i32 previousEpisodeIndex;
@@ -515,8 +516,7 @@ giz_freeplay:
                     CutScenes_Start(world);
 
                     if (Paused != 0) {
-                        pauseFlag = IsGrabbingScreen();
-                        pauseFlag ^= 1;
+                        pauseFlag = (byte)(IsGrabbingScreen() ^ 1);
                     } else {
                         pauseFlag = 0;
                     }
@@ -814,9 +814,9 @@ giz_freeplay:
                 TBOPENFN("DrwCd", 5);
             }
 
-            world = WORLD;
             if ((pause_rndr_on == 0) || (FadeSys.pending_type == FADE_TYPE_WIPE)) {
                 if (MainRenderTime > 0.0f) {
+                    world = WORLD;
                     GameFog_Update(WORLD);
                     GameFog_Set();
                     SetLevelLights(world->rtl_set, 1.0f);
@@ -870,12 +870,12 @@ giz_freeplay:
                         CharShadows_Draw();
                     }
                     if (screendump == 0) {
-                        pauseFlag = Paused;
+                        renderPaused = Paused;
                     } else {
-                        pauseFlag = save_paused;
+                        renderPaused = save_paused;
                     }
                     c = IsGrabbingScreen();
-                    pauseFlag = (c == 0) ? pauseFlag : 0;
+                    renderPaused = (c == 0) ? renderPaused : 0;
 
                     if ((world->lev_objs[1].active != 0) && ((CUTSTOPGAME == 0) || (CUTDRAWWORLD != 0))) {
                         DrawParallax(&world->lev_objs[1].special);
@@ -911,7 +911,7 @@ giz_freeplay:
                     ((ThingManager *)theGameThings)->RenderThings((ThingRenderData *)0);
                     CutScenes_Draw(world);
                     NuRndrShadPolys(ShadowMat);
-                    NuLgtLaserDraw(pauseFlag);
+                    NuLgtLaserDraw(renderPaused);
 
                     level = world->current_level;
                     if ((((level == TITLES_LDATA) || ((level->flags & LEVEL_STATUS) != 0)) ||
@@ -929,7 +929,7 @@ giz_freeplay:
                     }
                     NuRndrLine3dDbgFlush();
                     DebrisSetCutSceneMode(CUTCAM);
-                    DebrisDraw(pauseFlag ^ editor_active, 1);
+                    DebrisDraw(renderPaused ^ editor_active, 1);
                     if ((TimingBarSet == 5) && (TBCLOSEFN("Deb", 5), TimingBarSet == 5)) {
                         TBOPENFN("Ripples", 5);
                     }
@@ -945,19 +945,19 @@ giz_freeplay:
                     SetDepthOfField();
 
                     if (BURNOUTON != 0) {
-                        BurnoutApply(pauseFlag);
+                        BurnoutApply(renderPaused);
                     }
 
                     UpdateDebrisRenderStackPriority();
                     SortDebrisRenderStack();
-                    DebrisDraw(pauseFlag ^ editor_active, 1);
-                    DebrisDraw(pauseFlag ^ editor_active, 0);
+                    DebrisDraw(renderPaused ^ editor_active, 1);
+                    DebrisDraw(renderPaused ^ editor_active, 0);
                     NuRndrEndScene();
 
                     if (TimingBarSet == 5) {
                         TBOPENFN("RndrFx", 5);
                     }
-                    NuRndrFx(pauseFlag, &plr_lastpos);
+                    NuRndrFx(renderPaused, &plr_lastpos);
                     if ((TimingBarSet == 5) && (TBCLOSEFN("RndrFx", 5), TimingBarSet == 5)) {
                         TBOPENFN("Deb", 5);
                     }
@@ -965,8 +965,8 @@ giz_freeplay:
                     NuRndrBeginScene(-1);
                     UpdateDebrisRenderStackPriority();
                     SortDebrisRenderStack();
-                    DebrisDraw(pauseFlag ^ editor_active, 1);
-                    DebrisDraw(pauseFlag ^ editor_active, 0);
+                    DebrisDraw(renderPaused ^ editor_active, 1);
+                    DebrisDraw(renderPaused ^ editor_active, 0);
                     NuRndrEndSceneEx(0);
                     DebrisDrawGlass();
 
@@ -1092,7 +1092,9 @@ giz_freeplay:
             if (shortestFrameIndex != 0) {
                 if (longestFrameIndex != 0) {
                     if (0.0f <= pastFrameTimes[0]) {
-                        frameTimeAccumulator = pastFrameTimes[0];
+                        // The original adds to +0.0f even for the first sample,
+                        // which also preserves its handling of signed zero.
+                        frameTimeAccumulator += pastFrameTimes[0];
                         averagedFrameCount = 1;
                     }
                 }
@@ -1322,7 +1324,8 @@ after_sound:
         FreePlay = 0;
     }
 
-    if ((StatusPacket.status_flags == 0) ||
+    c = StatusPacket.status_flags;
+    if ((c == 0) ||
         ((((STATUS_LDATA == NULL) || (STATUS_LDATA != LastLData)) && ((LastLData->flags & LEVEL_STATUS) == 0)) &&
          ((CREDITS_LDATA == NULL) || (CREDITS_LDATA != LastLData)))) {
     status_players:
@@ -1371,7 +1374,7 @@ after_sound:
     }
 
     if ((i == (u32)(byte)afterArea->index) && (i != last_area)) {
-        if ((CREDITS_LDATA != NULL) && ((CREDITS_LDATA == LastLData) && (StatusPacket.status_flags != 0))) {
+        if ((CREDITS_LDATA != NULL) && ((CREDITS_LDATA == LastLData) && (c != 0))) {
             RememberPlayerIDs(1, (i32)(i16)StatusPacket.player0_model, (i32)(i16)StatusPacket.player1_model);
         }
         Hub_MakeModelList();

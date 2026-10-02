@@ -2477,7 +2477,6 @@ void GameAIProcess() {
             ground_checks = (object->apiobj.character_data->model_flags >> 13) & 1;
         }
 
-        ai_update_flags = object->field_0xf00;
         if ((object->apiobj.field_0x1f4 & 0x400) != 0) {
             if ((object->apiobj.field_0x1f4 & 0x10000) != 0) {
                 ++baddy_count;
@@ -2535,6 +2534,9 @@ void GameAIProcess() {
             pad->unknown_20 = 0;
         }
         awareness |= object->apiobj.ai_awareness_mask;
+        // Network-controlled objects use the direct field test above. The
+        // scripted path snapshots its update flags after resetting the pad.
+        ai_update_flags = object->field_0xf00;
         if ((ai_update_flags & GAME_OBJECT_AI_UPDATE_PROCESS) != 0) {
             object->script_fire_target = NULL;
             shifted_flag = (object->field_0xef9 << 1) & 4;
@@ -7683,6 +7685,10 @@ void AddSurfaceDebris(GameObject_s *);
 void GameAntinode_Update(GAMEANTINODESYS_s *system);
 
 void UpdateGameObjects(WORLDINFO_s *world) {
+    // The three message paths reuse the same record in the original. Its
+    // text scratch starts at esp+0xd0 in the 0x150-byte reference frame.
+    char text[128];
+    ADDGAMEMSG message;
     Hub_PadSpeed[1] = 0.0f;
     Hub_PadSpeed[0] = 0.0f;
     SetPlayer();
@@ -8112,9 +8118,8 @@ void UpdateGameObjects(WORLDINFO_s *world) {
                 position.y += (0.75f * amplitude) * NuTrigTable[((angle + phase) >> 1) & 0x7fff];
                 angle = static_cast<u16>(NuFmod(GameTimer.time_elapsed, 1.259f) / 1.259f * 65536.0f);
                 position.z += amplitude * NuTrigTable[((angle + phase) >> 1) & 0x7fff];
-                char text[64];
                 NuStrCpy(text, ASCII_DOWN);
-                ADDGAMEMSG message = AddGameMsg_Default;
+                message = AddGameMsg_Default;
                 message.position = &position;
                 message.text = text;
                 message.scale = 1.0f;
@@ -8219,7 +8224,7 @@ void UpdateGameObjects(WORLDINFO_s *world) {
             position = object->apiobj.collision_position;                                                              \
             position.y += 1.5f * object->apiobj.field_0x1e0;                                                           \
         }                                                                                                              \
-        ADDGAMEMSG message = AddGameMsg_Default;                                                                       \
+        message = AddGameMsg_Default;                                                                                  \
         message.text = ASCII_DOWN;                                                                                     \
         message.position = &position;                                                                                  \
         message.scale = 0.666f;                                                                                        \

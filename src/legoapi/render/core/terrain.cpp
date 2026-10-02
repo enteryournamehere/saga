@@ -2390,10 +2390,11 @@ void TerrainPlayer(GameObject_s *object) {
                 (path_info.flags & (AIPATHINFO_FLAG_ON_PATH | AIPATHINFO_FLAG_NARROW_PATH)) ==
                     AIPATHINFO_FLAG_ON_PATH &&
                 Technos_FindControllingTechno(object) == NULL && (api.field_0x1fa & 4) == 0 &&
-                (path_connection == NULL ||
-                 ((path_connection->original_traversal_flags[0] & static_cast<u32>(LEGO_AIPATHCNX_BLOCKAGE)) == 0 &&
-                  (path_connection->traversal_flags[0] & static_cast<u32>(LEGO_AIPATHCNX_WALLSHUFFLE)) == 0 &&
-                  (path_connection->traversal_flags[0] & static_cast<u32>(LEGO_AIPATHCNX_FULLTERRAIN)) == 0)) &&
+                (path_info.connection == NULL ||
+                 ((path_info.connection->original_traversal_flags[0] & static_cast<u32>(LEGO_AIPATHCNX_BLOCKAGE)) ==
+                      0 &&
+                  (path_info.connection->traversal_flags[0] & static_cast<u32>(LEGO_AIPATHCNX_WALLSHUFFLE)) == 0 &&
+                  (path_info.connection->traversal_flags[0] & static_cast<u32>(LEGO_AIPATHCNX_FULLTERRAIN)) == 0)) &&
                 (object->character_context != 0x5a || object->field_0x7a3 != 0);
             if (ordinary_ai_path) {
                 shadow_grounding = true;
@@ -2785,13 +2786,26 @@ void TerrainPlayer(GameObject_s *object) {
 
         // Original 0x1029e6/0x103cb4 transfers vertical momentum only when
         // leaving or landing on the object's recorded character platform.
-        const bool left_platform = api.field_0x27d == 0 && entry_platform != -1 && api.supporting_platform_id == -1 &&
-                                   object->field_0x1078 == entry_platform;
-        const bool landed_platform = api.field_0x27d != 0 && entry_platform == -1 && api.supporting_platform_id != -1 &&
-                                     api.supporting_platform_id == object->field_0x1078 &&
-                                     entry_vertical_velocity < 0.0f;
-        if (left_platform || landed_platform) {
-            const i32 platform_id = left_platform ? entry_platform : api.supporting_platform_id;
+        if (api.field_0x27d == 0) {
+            if (entry_platform != -1 && api.supporting_platform_id == -1 && object->field_0x1078 == entry_platform) {
+                const i32 platform_id = entry_platform;
+                GRABBER_s *grabber = WORLD->grabber;
+                if (grabber != NULL && grabber->platform_id == platform_id) {
+                    if (grabber->platform_contact_timer <= 0.0f) {
+                        grabber->platform_contact_timer = 0.25f;
+                    }
+                } else {
+                    GameObject_s *platform_owner =
+                        CharPlatform_FindObjFromPlatID(WORLD->char_platform_sys, platform_id);
+                    if (platform_owner != NULL &&
+                        platform_owner->apiobj.character_data->game_character->field_0x28 > 0.0f) {
+                        platform_owner->apiobj.velocity.y -= entry_vertical_velocity * 0.5f;
+                    }
+                }
+            }
+        } else if (entry_platform == -1 && api.supporting_platform_id != -1 &&
+                   api.supporting_platform_id == object->field_0x1078 && entry_vertical_velocity < 0.0f) {
+            const i32 platform_id = api.supporting_platform_id;
             GRABBER_s *grabber = WORLD->grabber;
             if (grabber != NULL && grabber->platform_id == platform_id) {
                 if (grabber->platform_contact_timer <= 0.0f) {
@@ -2801,12 +2815,8 @@ void TerrainPlayer(GameObject_s *object) {
                 GameObject_s *platform_owner = CharPlatform_FindObjFromPlatID(WORLD->char_platform_sys, platform_id);
                 if (platform_owner != NULL &&
                     platform_owner->apiobj.character_data->game_character->field_0x28 > 0.0f) {
-                    if (left_platform) {
-                        platform_owner->apiobj.velocity.y -= entry_vertical_velocity * 0.5f;
-                    } else {
-                        platform_owner->apiobj.velocity.y =
-                            entry_vertical_velocity * 0.5f + platform_owner->apiobj.velocity.y;
-                    }
+                    platform_owner->apiobj.velocity.y =
+                        entry_vertical_velocity * 0.5f + platform_owner->apiobj.velocity.y;
                 }
             }
         }

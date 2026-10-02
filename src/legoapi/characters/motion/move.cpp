@@ -2538,9 +2538,7 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
         MoveInactiveVehicle(object, 0, &vehicle);
         if (vehicle != NULL) {
             object->field_0xdc8 = vehicle->field_0xdc8;
-            api.field_0x276 = vehicle->apiobj.field_0x276;
-            api.movement_facing_angle = vehicle->apiobj.field_0x276;
-            api.facing_angle = vehicle->apiobj.field_0x276;
+            api.facing_angle = api.movement_facing_angle = api.field_0x276 = vehicle->apiobj.field_0x276;
             api.velocity = vehicle->apiobj.velocity;
             object->movement_lean_angle = 0;
             object->tertiary_lean_angle = 0;
@@ -2654,170 +2652,203 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                 (api.character_data->game_character->flags_094[2] & 0x10) != 0) &&
                ((object->field_0xeff & 2) != 0 || CurrentAnim(&api.anim_packet) != 5) &&
                object->character_context != 0x35) {
-        switch (object->character_context) {
-            case 0:
-                if ((context_flags & 0x2000) == 0 && object->action_movement_state == 3) {
-                    FaceOpponent(object, NULL);
-                    break;
-                }
-                goto directional_common_heading;
-            case 0x46:
-                if (object->field_0x7a3 == 1 || GrappleSwingMode == 1)
-                    break;
-                goto directional_common_heading;
-            case 0x0a:
-                if ((context_flags & 0x2000) != 0 || static_cast<u16>(object->context_animation - 0x5a) > 2)
-                    goto directional_common_heading;
-                api.movement_facing_angle = NuAtan2D(object->attack_target_position.x - api.position.x,
-                                                     object->attack_target_position.z - api.position.z);
-                if (object->context_animation == 0x5a)
-                    api.movement_facing_angle += 0x4000;
-                else if (object->context_animation == 0x5b)
-                    api.movement_facing_angle -= 0x4000;
-                else
-                    api.movement_facing_angle += 0x8000;
-                break;
-            case 0x18: {
-                if ((context_flags & 0x2000) != 0)
-                    goto directional_common_heading;
-                NUVEC *position = NULL;
-                if (object->incoming_bolt != NULL) {
-                    if (object->incoming_bolt->active != 0)
-                        position = &object->incoming_bolt->position;
-                } else if (object->incoming_melee != NULL) {
-                    if ((object->incoming_melee->apiobj.field_0x1f8 & 0x1000) != 0 &&
-                        object->incoming_melee->apiobj.field_0x287 == 0)
-                        position = &object->incoming_melee->apiobj.position;
-                } else if (object->incoming_part != NULL && (object->incoming_part->active & 1) != 0) {
-                    position = &object->incoming_part->position;
-                }
-                if (position != NULL)
-                    api.movement_facing_angle = NuAtan2D(position->x - api.position.x, position->z - api.position.z);
-                break;
-            }
-            case 0x0c: {
-                if ((context_flags & 0x2000) != 0)
-                    goto directional_common_heading;
-                if (object->block_latch != 0)
-                    break;
-                NUVEC *position = NULL;
-                if (object->blocked_bolt != NULL) {
-                    if (object->blocked_bolt->active != 0)
-                        position = &object->blocked_bolt->position;
-                } else if (object->block_attacker != NULL) {
-                    if ((object->block_attacker->apiobj.field_0x1f8 & 0x1000) != 0 &&
-                        object->block_attacker->apiobj.field_0x287 == 0)
-                        position = &object->block_attacker->apiobj.position;
-                } else if (object->blocked_part != NULL && (object->blocked_part->active & 1) != 0) {
-                    position = &object->blocked_part->position;
-                }
-                if (position != NULL)
-                    api.movement_facing_angle = NuAtan2D(position->x - api.position.x, position->z - api.position.z);
-                break;
-            }
-            case 0x10:
-                if ((object->context_flags & 0x40) != 0)
-                    goto directional_common_heading;
-                if (FaceOpponent(object, NULL) != 0)
-                    api.movement_facing_angle += 0x8000;
-                break;
-            case 0x25:
-                if ((context_flags & 0x2000) == 0 && object->context_animation != 0x58) {
-                    FaceOpponent(object, NULL);
-                    break;
-                }
-                // The original falls through to the shared push/input heading path.
-                goto directional_common_heading;
-            case 0x22:
-                if (ForceBackPos != NULL)
-                    FaceOpponent(object, ForceBackPos);
-                break;
-            case 0x1d:
-                if (object->force_part != NULL && (object->force_part->active & 1) != 0)
-                    api.movement_facing_angle = NuAtan2D(object->force_part->position.x - api.collision_position.x,
-                                                         object->force_part->position.z - api.collision_position.z);
-                break;
-            case -1:
-            case 1:
-            case 0x13:
-            case 0x17:
-            case 0x29:
-            directional_common_heading:
-                if ((context_flags & 0x2000) != 0) {
-                    SetPushAngle(object);
-                } else if (object->context_target_position != NULL) {
-                    FaceOpponent(object, object->context_target_position);
-                    api.movement_facing_angle += 0x8000;
-                } else if (pad->operator_data != NULL && (context_flags & 1) == 0) {
-                    NUVEC *position = static_cast<NUVEC *>(pad->operator_data);
-                    api.movement_facing_angle = NuAtan2D(position->x - api.position.x, position->z - api.position.z);
-                } else if (api.field_0x27c != -1 && api.field_0x27c == BonusWinner) {
-                    api.movement_facing_angle =
-                        NuAtan2D(GameCam->pos.x - api.position.x, GameCam->pos.z - api.position.z);
-                } else if (pad->input_magnitude > 0.0f &&
-                           ((context_flags & 1) == 0 || SuperCarry_Carrying(object) ||
-                            (object->character_context == 0x20 && (object->field_0xef9 & 1) != 0)) &&
-                           object->delayed_turn_timer <= 0.0f && object->character_context != 0x13 &&
-                           (object->field_0xf01 & 2) == 0 &&
-                           (object->character_context != 0 || object->context_variant_flags < 0 ||
-                            object->action_movement_state == 0 || object->action_movement_state == 5 ||
-                            object->action_movement_state == 8)) {
-                    if ((api.flags_low & 0x80) != 0 || object->character_context != -1 || api.field_0x27d != 0 ||
-                        IsAFallAnim(CurrentAnim(&api.anim_packet)) == 0)
-                        api.movement_facing_angle = input_angle;
-                    if (object->character_context == 0x20 && (object->field_0xef9 & 1) != 0)
-                        api.movement_facing_angle += 0x8000;
-                }
-                break;
-            case 5:
-                if ((object->context_flags & 0x0c) == 0)
-                    FaceOpponent(object, NULL);
-                break;
-            case 0x26:
-                if (object->field_0x7a7 == -1 && FaceOpponent(object, NULL) != 0 && (object->context_flags & 0x80) != 0)
-                    api.movement_facing_angle += 0x8000;
-                break;
-            case 0x33:
-                if (api.velocity.x != 0.0f || api.velocity.z != 0.0f)
-                    api.movement_facing_angle = NuAtan2D(api.velocity.x, api.velocity.z);
-                break;
-            case 0x1c:
-                heading_handled = ForcePushed_YRotation(object);
-                break;
-            case 0x58:
-                heading_handled = SuperCarry_YRotation(object, input_angle);
-                break;
-            case 0x1b:
-                if ((api.flags_low & 0x80) != 0 && (object->field_0xe21 & 2) == 0) {
-                    if (object->field_0x7a3 == 1)
-                        api.movement_facing_angle = input_angle;
-                    else
-                        FaceOpponent(object, NULL);
-                    turn_override = 0.333f;
-                    break;
-                }
-                // Other actors and the alternate state use ordinary opponent-facing speed.
-            case 0x16:
+        // Retail uses ordered context tests here. The labels also retain the
+        // ordinary opponent-facing fallthrough from context 0x1b to 0x16.
+        do {
+            if (object->character_context == 0x46)
+                goto directional_heading_0x46;
+            if (object->character_context == 0x1b)
+                goto directional_heading_0x1b;
+            if (object->character_context == 0x1c)
+                goto directional_heading_0x1c;
+            if (object->character_context == 0x16)
+                goto directional_heading_0x16;
+            if (object->character_context == 0x22)
+                goto directional_heading_0x22;
+            if (object->character_context == 0x1d)
+                goto directional_heading_0x1d;
+            if (object->character_context == 0x12)
+                goto directional_heading_0x12;
+            if (object->character_context == 8)
+                goto directional_heading_8;
+            if (object->character_context == 0x2d)
+                goto directional_heading_0x2d;
+            if (object->character_context == 0x10)
+                goto directional_heading_0x10;
+            if (object->character_context == 0x33)
+                goto directional_heading_0x33;
+            if (object->character_context == 5)
+                goto directional_heading_5;
+            if (object->character_context == 0x26)
+                goto directional_heading_0x26;
+            if (object->character_context == 0x58)
+                goto directional_heading_0x58;
+            if (object->character_context == 0x0a)
+                goto directional_heading_0x0a;
+            if (object->character_context == 0x0c)
+                goto directional_heading_0x0c;
+            if (object->character_context == 0x18)
+                goto directional_heading_0x18;
+            if (object->character_context == 0x25)
+                goto directional_heading_0x25;
+            if (object->character_context == 0)
+                goto directional_heading_0;
+            goto directional_common_heading;
+        directional_heading_0:
+            if ((context_flags & 0x2000) == 0 && object->action_movement_state == 3) {
                 FaceOpponent(object, NULL);
                 break;
-            case 8:
-            case 0x12:
-                if ((api.field_0x1f4 & 0x40000) == 0)
-                    api.movement_facing_angle = object->force_heading;
+            }
+            goto directional_common_heading;
+        directional_heading_0x46:
+            if (object->field_0x7a3 == 1 || GrappleSwingMode == 1)
                 break;
-            case 0x2d:
-                if ((api.field_0x1f4 & 0x40000) == 0) {
-                    NUVEC centre;
-                    GizGetBuildItPlayerPos(object, NULL, &centre);
-                    GIZBUILDIT_s *buildit = static_cast<GIZBUILDIT_s *>(object->field_0x788);
-                    if ((buildit->state_flags & 0x20) != 0)
-                        GizBuildItPushAwayFromStart(object, buildit);
-                    api.movement_facing_angle = NuAtan2D(centre.x - api.position.x, centre.z - api.position.z);
-                }
-                break;
-            default:
+            goto directional_common_heading;
+        directional_heading_0x0a:
+            if ((context_flags & 0x2000) != 0 || static_cast<u16>(object->context_animation - 0x5a) > 2)
                 goto directional_common_heading;
+            api.movement_facing_angle = NuAtan2D(object->attack_target_position.x - api.position.x,
+                                                 object->attack_target_position.z - api.position.z);
+            if (object->context_animation == 0x5a)
+                api.movement_facing_angle += 0x4000;
+            else if (object->context_animation == 0x5b)
+                api.movement_facing_angle -= 0x4000;
+            else
+                api.movement_facing_angle += 0x8000;
+            break;
+        directional_heading_0x18: {
+            if ((context_flags & 0x2000) != 0)
+                goto directional_common_heading;
+            NUVEC *position = NULL;
+            if (object->incoming_bolt != NULL) {
+                if (object->incoming_bolt->active != 0)
+                    position = &object->incoming_bolt->position;
+            } else if (object->incoming_melee != NULL) {
+                if ((object->incoming_melee->apiobj.field_0x1f8 & 0x1000) != 0 &&
+                    object->incoming_melee->apiobj.field_0x287 == 0)
+                    position = &object->incoming_melee->apiobj.position;
+            } else if (object->incoming_part != NULL && (object->incoming_part->active & 1) != 0) {
+                position = &object->incoming_part->position;
+            }
+            if (position != NULL)
+                api.movement_facing_angle = NuAtan2D(position->x - api.position.x, position->z - api.position.z);
+            break;
         }
+        directional_heading_0x0c: {
+            if ((context_flags & 0x2000) != 0)
+                goto directional_common_heading;
+            if (object->block_latch != 0)
+                break;
+            NUVEC *position = NULL;
+            if (object->blocked_bolt != NULL) {
+                if (object->blocked_bolt->active != 0)
+                    position = &object->blocked_bolt->position;
+            } else if (object->block_attacker != NULL) {
+                if ((object->block_attacker->apiobj.field_0x1f8 & 0x1000) != 0 &&
+                    object->block_attacker->apiobj.field_0x287 == 0)
+                    position = &object->block_attacker->apiobj.position;
+            } else if (object->blocked_part != NULL && (object->blocked_part->active & 1) != 0) {
+                position = &object->blocked_part->position;
+            }
+            if (position != NULL)
+                api.movement_facing_angle = NuAtan2D(position->x - api.position.x, position->z - api.position.z);
+            break;
+        }
+        directional_heading_0x10:
+            if ((object->context_flags & 0x40) != 0)
+                goto directional_common_heading;
+            if (FaceOpponent(object, NULL) != 0)
+                api.movement_facing_angle += 0x8000;
+            break;
+        directional_heading_0x25:
+            if ((context_flags & 0x2000) == 0 && object->context_animation != 0x58) {
+                FaceOpponent(object, NULL);
+                break;
+            }
+            // The original falls through to the shared push/input heading path.
+            goto directional_common_heading;
+        directional_heading_0x22:
+            if (ForceBackPos != NULL)
+                FaceOpponent(object, ForceBackPos);
+            break;
+        directional_heading_0x1d:
+            if (object->force_part != NULL && (object->force_part->active & 1) != 0)
+                api.movement_facing_angle = NuAtan2D(object->force_part->position.x - api.collision_position.x,
+                                                     object->force_part->position.z - api.collision_position.z);
+            break;
+        directional_common_heading:
+            if ((context_flags & 0x2000) != 0) {
+                SetPushAngle(object);
+            } else if (object->context_target_position != NULL) {
+                FaceOpponent(object, object->context_target_position);
+                api.movement_facing_angle += 0x8000;
+            } else if (pad->operator_data != NULL && (context_flags & 1) == 0) {
+                NUVEC *position = static_cast<NUVEC *>(pad->operator_data);
+                api.movement_facing_angle = NuAtan2D(position->x - api.position.x, position->z - api.position.z);
+            } else if (api.field_0x27c != -1 && api.field_0x27c == BonusWinner) {
+                api.movement_facing_angle = NuAtan2D(GameCam->pos.x - api.position.x, GameCam->pos.z - api.position.z);
+            } else if (pad->input_magnitude > 0.0f &&
+                       ((context_flags & 1) == 0 || SuperCarry_Carrying(object) ||
+                        (object->character_context == 0x20 && (object->field_0xef9 & 1) != 0)) &&
+                       object->delayed_turn_timer <= 0.0f && object->character_context != 0x13 &&
+                       (object->field_0xf01 & 2) == 0 &&
+                       (object->character_context != 0 || object->context_variant_flags < 0 ||
+                        object->action_movement_state == 0 || object->action_movement_state == 5 ||
+                        object->action_movement_state == 8)) {
+                if ((api.flags_low & 0x80) != 0 || object->character_context != -1 || api.field_0x27d != 0 ||
+                    IsAFallAnim(CurrentAnim(&api.anim_packet)) == 0)
+                    api.movement_facing_angle = input_angle;
+                if (object->character_context == 0x20 && (object->field_0xef9 & 1) != 0)
+                    api.movement_facing_angle += 0x8000;
+            }
+            break;
+        directional_heading_5:
+            if ((object->context_flags & 0x0c) == 0)
+                FaceOpponent(object, NULL);
+            break;
+        directional_heading_0x26:
+            if (object->field_0x7a7 == -1 && FaceOpponent(object, NULL) != 0 && (object->context_flags & 0x80) != 0)
+                api.movement_facing_angle += 0x8000;
+            break;
+        directional_heading_0x33:
+            if (api.velocity.x != 0.0f || api.velocity.z != 0.0f)
+                api.movement_facing_angle = NuAtan2D(api.velocity.x, api.velocity.z);
+            break;
+        directional_heading_0x1c:
+            heading_handled = ForcePushed_YRotation(object);
+            break;
+        directional_heading_0x58:
+            heading_handled = SuperCarry_YRotation(object, input_angle);
+            break;
+        directional_heading_0x1b:
+            if ((api.flags_low & 0x80) != 0 && (object->field_0xe21 & 2) == 0) {
+                if (object->field_0x7a3 == 1)
+                    api.movement_facing_angle = input_angle;
+                else
+                    FaceOpponent(object, NULL);
+                turn_override = 0.333f;
+                break;
+            }
+            // Other actors and the alternate state use ordinary opponent-facing speed.
+        directional_heading_0x16:
+            FaceOpponent(object, NULL);
+            break;
+        directional_heading_8:
+        directional_heading_0x12:
+            if ((api.field_0x1f4 & 0x40000) == 0)
+                api.movement_facing_angle = object->force_heading;
+            break;
+        directional_heading_0x2d:
+            if ((api.field_0x1f4 & 0x40000) == 0) {
+                NUVEC centre;
+                GizGetBuildItPlayerPos(object, NULL, &centre);
+                GIZBUILDIT_s *buildit = static_cast<GIZBUILDIT_s *>(object->field_0x788);
+                if ((buildit->state_flags & 0x20) != 0)
+                    GizBuildItPushAwayFromStart(object, buildit);
+                api.movement_facing_angle = NuAtan2D(centre.x - api.position.x, centre.z - api.position.z);
+            }
+            break;
+        } while (false);
     }
     const i32 direct_turn = heading_handled != 0 ? 0 : (object->character_context == 0x33 ? 1 : object->snap_facing);
     if (heading_handled == 0) {

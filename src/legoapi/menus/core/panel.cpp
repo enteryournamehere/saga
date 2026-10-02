@@ -882,7 +882,7 @@ void DrawPanel() {
     const i32 paused = screendump ? save_paused : Paused;
     // The original loading shortcut reads this before initialization. Give that path a stable result.
     i32 removed_controller = -1;
-    char text[512], auxiliary[128], loading_text[128];
+    char text[512], auxiliary[128];
     // Original debug coordinates were never initialized by this port.
     NUVEC coordinate_positions[8] = {};
     f32 status_y = 0.0f;
@@ -892,18 +892,18 @@ void DrawPanel() {
         if (DRAWBGLOAD && bgGetProcActive()) {
             i32 red, green;
             if (abort_load) {
-                sprintf(loading_text, "Aborting ''%s''", LDataList[waiting_for_level].name);
+                sprintf(auxiliary, "Aborting ''%s''", LDataList[waiting_for_level].name);
                 red = 255;
                 green = 0;
             } else {
-                sprintf(loading_text, "Loading ''%s''", LDataList[waiting_for_level].name);
+                sprintf(auxiliary, "Loading ''%s''", LDataList[waiting_for_level].name);
                 red = 0;
                 green = 255;
             }
             f32 y = 0.035f * NU_SIN_LUT(static_cast<u16>(NuFmod(WaitingForLevelTime, 0.430f) / 0.430f * 65536.0f)) -
                     STATSPOSY;
             f32 x = 0.035f * NU_SIN_LUT(static_cast<u16>(NuFmod(WaitingForLevelTime, 0.479f) / 0.479f * 65536.0f));
-            Text3D(loading_text, x, y, 1.0f, 0.3f, 0.3f, 0.3f, 0, red, green, 0);
+            Text3D(auxiliary, x, y, 1.0f, 0.3f, 0.3f, 0.3f, 0, red, green, 0);
         }
         if (gone_through_door_to_new_level)
             goto draw_panel_menu;
@@ -947,7 +947,7 @@ void DrawPanel() {
             goto draw_panel_menu;
         if (!(menu >= 15 && menu <= 19) && !CUTSTOPGAME) {
             bool player_hud =
-                menu != 8 && menu != 14 && menu != 24 && (menu != 12 || customiser_quit) && (menu != 13 || shop_quit);
+                (menu != 12 || customiser_quit) && (menu != 13 || shop_quit) && menu != 8 && menu != 14 && menu != 24;
             if (player_hud && FadeSys.fade == 0.0f && (WORLD->current_level->flags & LEVEL_GAMEPLAY)) {
                 u32 arcade_flags;
                 i32 arcade_mode = Arcade_GetMode(&arcade_flags);
@@ -1205,8 +1205,9 @@ void DrawPanel() {
                 }
             } else if (ChallengeMode) {
                 f32 remaining =
-                    static_cast<f32>(ADataList[WORLD->level_sub_id].challenge_trial_time) - ChallengeTimer.time_elapsed;
-                if (!(remaining >= 0.0f))
+                    static_cast<f32>(static_cast<i32>(ADataList[WORLD->level_sub_id].challenge_trial_time)) -
+                    ChallengeTimer.time_elapsed;
+                if (remaining < 0.0f)
                     remaining = 0.0f;
                 Text_MakeTime(remaining, 0, 1, 1, text);
                 f32 y = NU_SIN_LUT(static_cast<i32>(statstime * 16384.0f)) * (STATSPOSY - STATSPOS2Y) + STATSPOS2Y;
@@ -1214,9 +1215,10 @@ void DrawPanel() {
             } else if (Mission_Active(NULL) != NULL) {
                 status_y = NU_SIN_LUT(static_cast<i32>(statstime * 16384.0f)) * (STATSPOSY - STATSPOS2Y) + STATSPOS2Y;
                 i32 mission_index = static_cast<i8>(MissionSys->mission->count);
-                f32 remaining = static_cast<f32>(static_cast<u16>(MissionSys->missions[mission_index].time)) -
-                                MissionSys->timer.time_elapsed;
-                if (!(remaining >= 0.0f))
+                f32 remaining =
+                    static_cast<f32>(static_cast<i32>(static_cast<u16>(MissionSys->missions[mission_index].time))) -
+                    MissionSys->timer.time_elapsed;
+                if (remaining < 0.0f)
                     remaining = 0.0f;
                 Text_MakeTime(remaining, 0, 1, 1, text);
                 Text3D(text, 0.0f, status_y, 1.0f, 0.6f, 0.6f, 0.6f, 0, 255, 191, 0);

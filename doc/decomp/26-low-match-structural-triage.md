@@ -11990,3 +11990,71 @@ authorized by this checkpoint. Raw report8fca470fc6904d9e2e727eb87deee8d24493b3f
 mapped report09c463e024ed06db3955c2f4da66868961d4a996399fce8a7c2644c4b23faedc.
 Exact pushed-head GitHub validation follows separately. Batch444 remains
 isolated and is not included in this linked gain.
+
+Batch445's sole unchanged-O2 whole-owner pair follows ROOT review of the full
+147-input actual preprocessing closure and exact three-line original traversal
+flag transfer. It loses49.68204704 original-weighted bytes: Enter42.672276% to
+41.613860%,4085 to4149 emitted bytes. All53 backed functions, original identities,
+fullCounter/U and zero prior exacts retain without pairing errors. Five unbacked
+private/compiler bodies remain unknown. This negative candidate closes without
+variants, compiler/report retries, representation qualification, runtime or
+production integration; the original quota-failed metadata packet is preserved.
+
+The initial444 same-object proof stops on the GameTimer ELF symbol-table index
+293 versus291 in an otherwise unchanged Level_Update instruction/relocation.
+Its failure and all original artifacts remain preserved. An additive specific
+proof checks exactly33 literal/undefined-symbol index permutations, retaining
+full symbol identities, complete raw tables and every actual relocation index;
+it does not change source, objects, matching reports or score policy.
+
+The additive444-r1 specific proof passes: all28 bodies,27 non-target
+representations,827 full symbols,27 sections and28 unwind records retain.
+The six zero-extent labels and all33 exact symbol-index permutations are
+individually qualified; unknown absolute scores remain unknown.
+Qualificationa0cc235f5e79399c6dae453f9dc8083da4ebcd2c1d263358dd53d1b26395eea6.
+Both initial444 GNU runtime preflights stop before objects because the dry-plan
+emits an already admitted side directory with a trailing slash. All partial
+metadata and failures are preserved; an additive exact-directory normalization
+repair is prepared separately. Runtime and production integration remain pending.
+MenuUpdateBonusMode remains OPEN: prior broad case/source nominations do not
+constitute a separate full-body/helper closure. This correction does not change
+Titles444's already frozen selection, candidate or matching evidence.
+
+All eleven GitHub checks are independently verified COMPLETED/SUCCESS on the
+exact checkpoint38 pushed head8c671d7829362398651314049045c05992a55d46.
+The below-threshold gain still does not authorize merging.
+
+Batch446's sole unchanged-O2 whole-owner pair measures368.390733 positive
+original-weighted bytes: ForcePushed_SetTargetMom46.503570% to74.625000%,
+1273 to1281 emitted bytes. All136 backed rows and4 exacts retain; it is the
+only score change. The full non-label Counter and undefined surface retain.
+Seventeen removed/added label names correspond to43 renamed symbol roles;
+specific qualification must check every role and all11 unbacked private/thunk
+bodies without assigning unknown scores zero. No source variation or matching
+retry follows. Capture9fbce899dc265da738ed8928fe9ef4fa1ca994ea702c8caed485e1eeeabb984f.
+
+The additive444-r1 runtime repair normalizes only the exact already-admitted
+header/side directory identities, preserving original scripts, failed metadata
+and logs. ROOT reviews the complete334-input two-ABI catalog, actual unchanged
+backend/link/runtime closures and all four compiled ELFs before execution.
+Old/new GNU64/i386 sanitizer/leak diagnostics pass92/94 cases and1828/1853
+checks per ABI. The two candidate-only quiet-NaN cases avoid old invalid
+float-to-i32 conversions; old UB/nonrepresentable inputs remain excluded.
+Actual timer/vector/special helper excerpts and canonical records are used;
+the stable full-signature renderer recorder and finite diagnostic trig table
+do not establish production GPU/NDK/full-engine equivalence.
+Result1e8f85c4e3af6d5aa7e055503b1254bb1eaddf7f2b942162a9125fb53136862f.
+The exact frozen444 candidate is now integrated pending linked verification.
+
+### Checkpoint39 linked validation
+
+The integrated444 ordered title comparisons pass native, WASM and Android
+target builds and all five repository checks. One independent linked report
+reaches68.793020% fuzzy matching, +0.028660pp over checkpoint38 and +0.790560pp
+over main. All6293 raw exacts, original identities,4722419-byte denominator
+and source ownership retain. The +2pp threshold70.002460% is not reached;
+no merge is authorized by this checkpoint.
+Raw reportd640bd581de7a74628eab5db133553e669cef5715f28e8f2f2b8848e5c0c2ba7;
+mapped reporta6e3b5c553e9aee8607e2c7cf552f28a184277551572c8dc39a4a09be4d75890.
+Exact pushed-head GitHub validation follows separately. Batch446 remains
+isolated and is not included in this linked gain.

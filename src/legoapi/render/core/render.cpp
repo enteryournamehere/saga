@@ -3525,10 +3525,10 @@ static void DrawWeapons(GameObject_s *object, i32 reflection, f32 weapon_scale) 
             i32 count = 0;
             for (i32 part = 0; part < 4; ++part) {
                 if (models[part] != -1) {
-                    reflected_models[part] = LevelObject_GetReflection(models[part]);
                     if (part != 3) {
                         ++count;
                     }
+                    reflected_models[part] = LevelObject_GetReflection(models[part]);
                 }
             }
             if (count != 0) {
@@ -3536,12 +3536,14 @@ static void DrawWeapons(GameObject_s *object, i32 reflection, f32 weapon_scale) 
                 NUMTX hilt_matrix;
                 NUVEC scale = {weapon_scale, weapon_scale, weapon_scale};
                 if (hilt != -1) {
-                    f32 hilt_scale = weapon_scale + weapon_scale;
-                    if (hilt_scale > 1.0f) {
-                        hilt_scale = 1.0f;
-                    }
-                    NUVEC hilt_scale_vec = {hilt_scale, hilt_scale, hilt_scale};
+                    NUVEC hilt_scale_vec;
+                    hilt_scale_vec.x = weapon_scale + weapon_scale;
                     hilt_matrix = blade_matrix;
+                    if (hilt_scale_vec.x > 1.0f) {
+                        hilt_scale_vec.x = 1.0f;
+                    }
+                    hilt_scale_vec.z = hilt_scale_vec.x;
+                    hilt_scale_vec.y = hilt_scale_vec.x;
                     NuMtxPreScale(&hilt_matrix, &hilt_scale_vec);
                 }
                 if (rotation != 0) {

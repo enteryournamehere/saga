@@ -780,7 +780,7 @@ mode_selected:
         MiniCutCam = 4;
     NUVEC position = *PlayerStart[0].pos;
     NUVEC target = v000;
-    NUVEC offset, direction;
+    NUVEC offset, direction, mode_scratch;
     // The per-mode camera blend duration starts afresh after transition selection.
     blend_duration = 0.5f;
     f32 position_seek = static_cast<u32>(static_cast<u8>(WORLD->current_level->cam_pos_seek));
@@ -871,10 +871,11 @@ mode_selected:
                 blend_duration *= 1.5f;
                 if (WORLD->current_level->cam_pullback_dist > 0.0f) {
                     i32 angle = NuAtan2D(target.x - position.x, target.z - position.z);
-                    NUVEC direction, offset;
-                    NuVecSub(&direction, &position, &target);
-                    direction.y = 0.0f;
-                    NuVecNorm(&direction, &direction);
+                    NUVEC &pullback_direction = offset;
+                    NUVEC &pullback_offset = mode_scratch;
+                    NuVecSub(&pullback_direction, &position, &target);
+                    pullback_direction.y = 0.0f;
+                    NuVecNorm(&pullback_direction, &pullback_direction);
                     f32 pullback = 0.0f;
                     if (vehicle_count) {
                         u16 heading;
@@ -892,9 +893,10 @@ mode_selected:
                     }
                     camera->field_0x1e8 = SeekLinearF(camera->field_0x1e8, pullback, FRAMETIME);
                     camera->field_0x1ec = SeekValF(camera->field_0x1ec, camera->field_0x1e8, 3.0f);
-                    NuVecScale(&offset, &direction, camera->field_0x1ec * WORLD->current_level->cam_pullback_dist);
-                    NuVecAdd(&position, &position, &offset);
-                    NuVecAdd(&target, &target, &offset);
+                    NuVecScale(&pullback_offset, &pullback_direction,
+                               camera->field_0x1ec * WORLD->current_level->cam_pullback_dist);
+                    NuVecAdd(&position, &position, &pullback_offset);
+                    NuVecAdd(&target, &target, &pullback_offset);
                     f32 lateral = 0.0f;
                     if (vehicle_count &&
                         (camera->sock_position.location.sock == -1 ||
@@ -905,10 +907,11 @@ mode_selected:
                     }
                     camera->field_0x1f0 = SeekLinearF(camera->field_0x1f0, lateral, FRAMETIME);
                     camera->field_0x1f4 = SeekValF(camera->field_0x1f4, camera->field_0x1f0, 3.0f);
-                    NuVecRotateY(&offset, &direction, 0x4000);
-                    NuVecScale(&offset, &offset, (0.5f * WORLD->current_level->cam_lateral_dist) * camera->field_0x1f4);
-                    NuVecSub(&position, &position, &offset);
-                    NuVecSub(&target, &target, &offset);
+                    NuVecRotateY(&pullback_offset, &pullback_direction, 0x4000);
+                    NuVecScale(&pullback_offset, &pullback_offset,
+                               (0.5f * WORLD->current_level->cam_lateral_dist) * camera->field_0x1f4);
+                    NuVecSub(&position, &position, &pullback_offset);
+                    NuVecSub(&target, &target, &pullback_offset);
                 }
                 // Original PODRACE_ADATA / PODSPRINT_ADATA branches after SockSysCamera.
                 if (WORLD->area != NULL && WORLD->area == PODRACE_ADATA) {
@@ -920,7 +923,10 @@ mode_selected:
                     else
                         distance = 2.0f;
                     PodCamDist = SeekLinearF(PodCamDist, distance, FRAMETIME);
-                    NUVEC average = {0.0f, 0.0f, 0.0f};
+                    NUVEC &average = mode_scratch;
+                    average.x = 0.0f;
+                    average.y = 0.0f;
+                    average.z = 0.0f;
                     for (i32 index = 0; index < player_count; ++index) {
                         GameObject_s *player = camera_players[index];
                         average.x += player->apiobj.pos_x - NU_SIN_LUT(player->apiobj.facing_angle) * PodCamDist;
@@ -949,7 +955,10 @@ mode_selected:
                     if (player_count == 2)
                         distance *= 1.5f;
                     PodCamDist = distance;
-                    NUVEC average = {0.0f, 0.0f, 0.0f};
+                    NUVEC &average = mode_scratch;
+                    average.x = 0.0f;
+                    average.y = 0.0f;
+                    average.z = 0.0f;
                     for (i32 index = 0; index < player_count; ++index) {
                         GameObject_s *player = camera_players[index];
                         average.x += player->apiobj.position.x;
@@ -973,7 +982,10 @@ mode_selected:
                         target.x = position.x + NU_SIN_LUT(yaw) * PodCamDist;
                         target.z = position.z + NU_COS_LUT(yaw) * PodCamDist;
                     }
-                    NUVEC floor_probe = {position.x, target.y - 0.65f, position.z};
+                    NUVEC &floor_probe = mode_scratch;
+                    floor_probe.x = position.x;
+                    floor_probe.y = target.y - 0.65f;
+                    floor_probe.z = position.z;
                     f32 floor = GameShadow(NULL, &floor_probe, 5.0f, -1);
                     if (floor != 2000000.0f) {
                         if (EShadY != 2000000.0f)
@@ -998,7 +1010,7 @@ mode_selected:
                     f32 opposite = static_cast<f32>(camera->yaw - 0x8000);
                     if (opposite < 0.0f)
                         opposite += 65536.0f;
-                    NUVEC offset;
+                    NUVEC &offset = mode_scratch;
                     NuVecSub(&offset, &position, &target);
                     NuVecNorm(&offset, &offset);
                     NuVecScale(&offset, &offset, landspeeder_lookahead);
@@ -1047,7 +1059,7 @@ mode_selected:
                             f32 distance = NuFsqrt(walker_distance_sq);
                             f32 factor = MAX(0.0f, 1.0f - distance / 5.0f);
                             factor = (1.0f + NU_SIN_LUT(static_cast<i32>(factor * 32768.0f + 16384.0f))) * 0.5f;
-                            NUVEC offset;
+                            NUVEC &offset = mode_scratch;
                             NuVecSub(&offset, &position, &target);
                             NuVecNorm(&offset, &offset);
                             f32 amount = landspeeder_lookahead * (1.0f - factor);
@@ -1062,7 +1074,7 @@ mode_selected:
                         if (FindNearestGameObject(&position, NULL, 0, 5.0f, 0.0f, -1, id_DEWBACK, -1,
                                                   &walker_distance_sq, 0, NULL, false) != NULL) {
                             f32 distance = NuFsqrt(walker_distance_sq);
-                            NUVEC offset;
+                            NUVEC &offset = mode_scratch;
                             NuVecSub(&offset, &position, &target);
                             NuVecNorm(&offset, &offset);
                             f32 amount = 1.5f * (1.0f - distance / 5.0f);
@@ -1075,7 +1087,8 @@ mode_selected:
                 }
                 if (TATOOINEE_LDATA != NULL && WORLD->current_level == TATOOINEE_LDATA &&
                     landspeeder_lookahead == 0.0f) {
-                    NUVEC average_position, offset;
+                    NUVEC average_position;
+                    NUVEC &offset = mode_scratch;
                     Players_AveragePos(&average_position, NULL);
                     NuVecSub(&offset, &rail_position, &average_position);
                     f32 magnitude = NuVecMagSqr(&offset);
@@ -1124,7 +1137,7 @@ mode_selected:
                     roll_override = -1;
                 }
                 if (BonusWinner != -1) {
-                    NUVEC offset;
+                    NUVEC &offset = mode_scratch;
                     f32 distance = NuVecDist(&position, &target, &offset);
                     NuVecNorm(&offset, &offset);
                     NuVecScale(&offset, &offset, distance * 0.666f);

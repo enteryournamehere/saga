@@ -3490,14 +3490,14 @@ void ScanTerrIDRemovePlat(i32 platform_index) {
     } while (remaining != 0);
 }
 i32 HitWallSpline() {
-    i32 hit = 0;
+    f32 hit = 0.0f;
     if (WallSplCount == 0)
         return hit;
     for (i32 i = 0; i < WallSplCount; i += 2) {
         const NUVEC &a = WallSplList[i].position;
         const NUVEC &b = WallSplList[i + 1].position;
         TerrainQuery_s *query = TerI;
-        if (fabsf(query->position.x - a.x) >= 64.0f || fabsf(query->position.z - a.z) >= 64.0f)
+        if (!(64.0f > fabsf(query->position.x - a.x) && 64.0f > fabsf(query->position.z - a.z)))
             continue;
         NUVEC normal = {b.z - a.z, 0.0f, a.x - b.x};
         NuVecNorm(&normal, &normal);
@@ -3532,14 +3532,14 @@ i32 HitWallSpline() {
                 TerrWallInfo = 1;
                 TerrWallTab[0] = WallSplList[i].material[0];
                 TerrWallTab[1] = WallSplList[i].material[1];
-                hit = 1;
+                hit = 1.0f;
             }
         }
         const f32 dx = a.x - px;
         const f32 dz = a.z - pz;
         const f32 reach = radius + 0.005f + query->horizontal_movement_length;
         const f32 distance_sq = dx * dx + dz * dz;
-        if (fabsf(dx) >= 64.0f || fabsf(dz) >= 64.0f || distance_sq >= reach * reach)
+        if (!(64.0f > fabsf(dx) && 64.0f > fabsf(dz) && reach * reach > distance_sq))
             continue;
         NUVEC direction = {mx, 0.0f, mz};
         NuVecNorm(&direction, &direction);
@@ -3594,7 +3594,7 @@ i32 HitWallSpline() {
         TerrWallInfo = 1;
         TerrWallTab[0] = WallSplList[i].material[0];
         TerrWallTab[1] = WallSplList[i].material[1];
-        hit = 1;
+        hit = 1.0f;
     }
     TerI->unclamped_hit_time = TerI->hit_time;
     if (TerI->hit_time < 0.0f)

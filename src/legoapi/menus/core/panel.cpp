@@ -747,29 +747,15 @@ void DrawMeleeTargetsNumber(i16 *targets, u8 *counts, i32 count, u8 reset, nuhsp
         return;
 
     if (reset != 0) {
-        meleeTarg_localCount[0] = 0;
-        meleeTarg_localCount[1] = 0;
-        meleeTarg_localCount[2] = 0;
-        meleeTarg_localCount[3] = 0;
-        meleeTarg_flashTime[0] = 0.0f;
-        meleeTarg_flashTime[1] = 0.0f;
-        meleeTarg_flashTime[2] = 0.0f;
-        meleeTarg_flashTime[3] = 0.0f;
-        meleeTarg_scaleSize[0] = 0.0f;
-        meleeTarg_scaleSize[1] = 0.0f;
-        meleeTarg_scaleSize[2] = 0.0f;
-        meleeTarg_scaleSize[3] = 0.0f;
-        meleeTarg_alpha[0] = 0.0f;
-        meleeTarg_alpha[1] = 0.0f;
-        meleeTarg_alpha[2] = 0.0f;
-        meleeTarg_alpha[3] = 0.0f;
-        meleeTarg_maxCount[0] = 0;
-        meleeTarg_maxCount[1] = 0;
-        meleeTarg_maxCount[2] = 0;
-        meleeTarg_maxCount[3] = 0;
+        memset(meleeTarg_localCount, 0, sizeof(meleeTarg_localCount));
+        memset(meleeTarg_flashTime, 0, sizeof(meleeTarg_flashTime));
+        memset(meleeTarg_scaleSize, 0, sizeof(meleeTarg_scaleSize));
+        memset(meleeTarg_alpha, 0, sizeof(meleeTarg_alpha));
+        memset(meleeTarg_maxCount, 0, sizeof(meleeTarg_maxCount));
         for (i32 i = 0; i < count; ++i) {
-            meleeTarg_localCount[i] = counts[i];
-            meleeTarg_maxCount[i] = counts[i];
+            const u8 target_count = counts[i];
+            meleeTarg_localCount[i] = target_count;
+            meleeTarg_maxCount[i] = target_count;
             meleeTarg_scaleSize[i] = 0.5f;
             meleeTarg_alpha[i] = 1.0f;
         }
@@ -822,7 +808,12 @@ void DrawMeleeTargetsNumber(i16 *targets, u8 *counts, i32 count, u8 reset, nuhsp
             const f32 alpha_target =
                 static_cast<f32>(meleeTarg_localCount[i]) / static_cast<f32>(meleeTarg_maxCount[i]) * 2.0f;
             meleeTarg_alpha[i] = SeekLinearF(meleeTarg_alpha[i], alpha_target, 0.005f);
-            DrawCharIcon(targets[i], x, 0.634f, 0.0f, 0.128f, 0xa7, meleeTarg_alpha[i], meleeTarg_alpha[i], 1, special);
+            if (special != NULL)
+                DrawCharIcon(targets[i], x, 0.634f, 0.0f, 0.128f, 0xa7, meleeTarg_alpha[i], meleeTarg_alpha[i], 1,
+                             special);
+            else
+                DrawCharIcon(targets[i], x, 0.634f, 0.0f, 0.128f, 0xa7, meleeTarg_alpha[i], meleeTarg_alpha[i], 1,
+                             NULL);
             x += 0.2400000095367431640625f;
         }
         return;

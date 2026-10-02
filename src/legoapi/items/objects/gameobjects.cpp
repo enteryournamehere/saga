@@ -2861,9 +2861,11 @@ void GameAIProcess() {
                 if ((object->ai.path_info.flags & 1) == 0 || object->ai.path_info.connection == NULL)
                     object->apiobj.collision_priority |= 0x400;
                 if (object->ai.movement_parameter == 0.0f) {
-                    direction.x = object->ai.fallback_destination.x - object->apiobj.position.x;
-                    direction.z = object->ai.fallback_destination.z - object->apiobj.position.z;
-                    f32 radius = object->ai.mover_height + 1.0f;
+                    const f32 delta_x = object->ai.fallback_destination.x - object->apiobj.position.x;
+                    const f32 delta_z = object->ai.fallback_destination.z - object->apiobj.position.z;
+                    const f32 radius = object->ai.mover_height + 1.0f;
+                    direction.x = delta_x;
+                    direction.z = delta_z;
                     if (direction.x * direction.x + direction.z * direction.z < radius * radius)
                         object->apiobj.collision_priority |= 0x200;
                 }

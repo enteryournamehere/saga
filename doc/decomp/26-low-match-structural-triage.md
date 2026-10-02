@@ -9190,3 +9190,187 @@ original address/symbol including ambiguous and unassigned records; the ELF
 mapping omits five objdiff records and is not identical to the aggregate count.
 Target/native/WASM builds and all five repository checks
 pass. This remains below the **70.002460%** cycle merge threshold.
+
+### Fresh bounded censuses after checkpoint 18
+
+Complete raw/current-body screens close the following fresh low-score units
+without compiler trials or runtime-fixture expenditure: CreateScaledEffect,
+terrainpickupinit, HitPoly, DebrisShift, edppDrawSpheres, Blowups_Reset,
+GizSpinner_UsingSpecial, Episodes_ConfigureList, GenerateTrooperTeamShape,
+ThingManager::ProcessThings, MovePlayer_GUNSHIPIN, Move_SPEEDERBIKE and
+Move_DROIDGENERIC. This is qualified source/raw closure, not exhaustive
+runtime or byte equivalence. Existing producer bounds and safety policy remain.
+
+CreateScaledEffect's bounded twelve-byte temporary copy is deliberately not
+replaced by retail's potentially overflowing strlen-plus-one copy. HitPoly's
+primary `<=` versus secondary `<` and integer return accumulator are genuine
+original contracts already present. Trooper formation-four copies the unrotated
+input despite the intervening rotation; current code preserves that oddity.
+Its arithmetic alternatives have no established difference under the actual
+fixed-depth/count-derived producer domain. ThingManager already reloads count,
+objects and profiling state across all three virtual passes.
+
+Speeder-bike pad reload and subtype recheck are raw-proven distinctions, but
+the actual intervening services do not establish a synchronous writer path;
+AwkwardShape's PushAway excludes the bike and changes other objects' velocities.
+Two unordered speed/timer predicates are likewise recorded without a valid
+nonfinite producer. No artificial service mutation or NaN gameplay witness
+qualifies a source trial. Droid self-destruct guards belong to its concrete
+helper and are already present. Low scores alone do not reopen these units.
+
+### Batches 324–325: save metadata and touch-effect display
+
+**324, loadsaveCallEachFrame** restores ASCall first, nonzero card-change
+latch, UpdateSaveSlots, then unconditional occupied-count reset and nonzero
+slot counting when save-present is nonzero. Negative occupied words count.
+Canonical six-slot capacity clamps oversized configuration; negative counts
+perform no reads. The original four-byte BSS `saveload_cardchanged` is restored
+in the framework owner with canonical C-linkage declaration, not an invented
+platform writer. Sole unchanged-action gain is **76.76789382 weighted bytes**,
+target **22.578947% → 79.868420%** (32 → 140 bytes). All fourteen config and
+eleven framework exacts retain; framework text scores are unchanged. Five
+existing BSS addresses shift by four bytes without changing types/extents.
+
+Root rebuilt and ran **385 nonmutating dispatch + 70 actual-helper cases per
+ABI**, with host ASan/UBSan/float-cast-overflow/LeakSanitizer. Actual ASCall,
+UpdateSaveSlots, initialization/info scanning, asynchronous save/load, file
+header writing, checksums, paths/strings and time bodies execute. All 64 file
+occupancy masks, bounded payload round trips, strict time completion, guarded
+malformed-buffer early returns, autosave postdelay and inter-call latch pass
+in a cleaned private temporary directory. Clock/documents-path/synchronous-lock
+services are declared diagnostics, not device/thread integration. Both old
+dispatch controls exit 17 on the bounded-occupancy oracle, not a crash.
+
+**325, MechSystems::Display** always renders TouchUI first, then only when
+initialized is nonzero renders nonnull swipe slots 0–3 and radar slots 0–3
+in separate ordinary loops. It does not initialize or render level UI/movers.
+Canonical offsets are swipes **0x290c**, radars **0x2928**, flag **0x2938**.
+Sole unchanged O2 gain is **11.964286 weighted bytes**, target
+**18.089285% → 24.071428%** (39 → 113 bytes); the prior exact and nonliteral
+surface/data extents retain. The two new Render references are original-backed.
+
+Root's **694 cases per ABI** cover all 256 effect masks off/on, noncanonical
+nonzero initialization, all 32 UI slots, menu/visibility gates, all 64 radar
+stage masks off/on, styles, quarter-turn geometry, colours and half/full UVs.
+Actual UI constructor/render, swipe/pulse render, pulse constructor, trig,
+rotation and inline primitive writers execute. Canonical polymorphic objects
+are normally constructed with declared lifecycle doubles and valid placement
+storage, not fabricated vptrs/memset. Primitive/singleton/aspect recorders do
+not claim full production constructors or hardware rendering. Arbitrary
+geometry and nonnull level-UI sentinels are excluded. Both old controls exit
+18 on missing swipe dispatch.
+
+NDK fixture helper excerpts use the wrapper's O2 action, not each helper's
+production optimization mode; separate whole-owner gates preserve all actual
+actions. A missing standalone host `__FILENAME__=__FILE__` definition was
+restored from the existing native build authority. Historical harness revisions
+and hashes remain, with no actual body changes.
+
+### Batch 327: original language IDs and pointer storage
+
+Text_GetLanguagePath now maps **2 → French, 3 → Spanish, 5 → Italian**;
+Japanese/German/Danish/default-English mappings remain. Seven original mutable
+`char *txtpath_*` globals replace private local arrays, with verified D/4-byte
+symbols, relocation addends and read-only initial literal pointees. No pointer
+writer or writable literal bytes are inferred. Canonical API declarations and
+C++ linkage remain. The sole unchanged O2 owner gate gains **80.83 weighted
+bytes**, **39.540540% → 98.540540%** (95 → original 137 bytes), retaining all
+exacts and 66/67 normalized bodies. The only surface changes are seven verified
+globals and seven individually identified private arrays, plus two zero-size
+LOCAL NOTYPE selector jump labels independently checked by raw/readelf.
+No general name/ABI normalization or source variant was used.
+
+Root rebuilt/reran **26,385 cases / 175,509 checks per ABI**, with host
+ASan/UBSan/LeakSanitizer, actual selector/LoadStrings/SetLanguage and real
+NuStrCpy/Cat. Bounded parser/intro/locale recorders verify paths, service order,
+buffer alignment and unchanged arena. Signed-ID boundaries, exhaustive
+[-4096,4096] and 4,096 representative bit patterns are not all 2^32 IDs.
+All 21×21 current/input language pairs run with optional callback present/NULL.
+Diagnostic replaced/NULL global pointer identities are selector-only; no
+invalid path is passed to LoadStrings. Six focused old controls plus the old
+full grid all assert against the same original mapping oracle. NDK text/string
+excerpts use the text owner's O2 action; typed recorder driver is host i386 SSE,
+not each helper's own production optimization or Android locale/file testing.
+
+### Batches 329–330: turret damage routing and fade edge conversion
+
+**329, GizTurrets_BoltHitPlat** keeps the original unconditional pure type
+lookup after a platform match. Owner restrictions now suppress **damage**,
+not owner attribution; every nonnull owner retains its signed player slot.
+The restricted path lazily avoids dereferencing the returned type, including
+a lookup miss. Unrestricted missing types remain outside the valid contract.
+Existing system/count, active/visible/exclusion and animation traversal gates
+remain. Sole unchanged O3 whole-owner gain is **108.143395548 weighted bytes**,
+**7.5283017% → 37.905660%**, retaining all six exacts and every emitted name,
+kind and data extent. Canonical source basename staging preserves the actual
+compiler-generated startup identity; it is not an option or source variant.
+
+Root independently compiled and ran **1,083 calls / 26,964 checks per ABI**,
+plus two directed candidate modes. Actual Plat, Hit, FindByID, qrand, trig,
+vector rotation/addition and set visibility execute. Canonical eight-slot
+Player storage is populated; slots -1/0/1/7, global/world type boundaries,
+three restricted NULL-type cases, health-byte wrapping, gates and first-match
+traversal are bounded. Typed camera/audio/visibility/pickup/hint/centre seams
+record order without mutating gameplay inputs. Both safe old-body controls
+abort on independent damage or attribution assertions, not NULL dereferences.
+Host ASan/UBSan/float-cast-overflow/LeakSanitizer pass; the NDK diagnostic uses
+the actual turret owner's O3 action for extracted helpers as well, not each
+helper's individual production action. Device/gameplay concurrency is excluded.
+
+**330, DrawFadeScreenWipe** reads the original FadeSys storage directly and
+retains reverse-edge float products through gradient-start conversion:
+`int(product - gradient_width)`, independently of the solid edge's truncation.
+The original negated ordered rate/fade predicates are restored in the same
+complete unit. Current startup aliases pFadeInfo to FadeSys; no ordinary
+pointer-reassignment or BeginScene mutation is claimed. Sole unchanged O3
+owner gain is **41.50131832 weighted bytes**, **18.094890% → 24.832117%**,
+retaining all thirteen exacts and all names/types/data extents. The only
+undefined-reference removal is pFadeInfo, with FadeSys already present.
+
+Root independently rebuilt/reran **9,225 cases / 571,180 checks per ABI**,
+using actual fade, BeginScene, EndScene, gradient/solid rectangle bodies and
+canonical colour/UV writers. Typed primitive capture checks coordinates,
+materials, order, packed/full UVs, stale-scene reset and actual scene-ring copy.
+Finite fades cover negative/zero/fractional/one/above-one, direction precedence
+and rates including unordered/infinite values. Eight no-edge NaN-fade cases
+avoid every integer conversion. Arbitrary nonfinite/out-of-range edge fades
+are excluded. A replaced pFadeInfo case is explicitly diagnostic only.
+The old body passes 192 stable cases and fails six separate expected oracle
+controls on each ABI. Host sanitizer/leak/float-conversion checks pass; NDK
+helpers use the fade owner's actual O3 action with fixture-only section GC,
+not their individual owner options or GPU execution. A Bionic-specific oracle
+isfinitef link dependency was replaced only in the test driver by an IEEE-bit
+finite check; historical harness inputs and the unchanged actual bodies remain.
+
+Checkpoint 18's exact head **e81fe6388a5a7ad1ac11fbcc2cc9156d459e6b93**
+passed all eleven GitHub checks. Its initial repository-check dependency fetch
+failed with GitHub HTTP 500 before tests; the failed-job retry passed.
+
+### Batch 327 bounded unfinished-frontier exhaustion
+
+The object/editor census does not identify three new unfinished >=500-byte
+units. ImplodeMakeTree and NuErrorSleep retain their prior structural blockers;
+scene/visibility prerequisites remain separate. Full raw/current checks close
+routeEditor_cbRenameRoute, pathEditor_QuickOnPathCheck and SpaceResetAudioPoint:
+the smaller bodies express retail expansion or private ABI, not missing
+ordinary behavior. Actual music setters do not mutate the door timer, so no
+artificial reload witness or compiler trial is introduced.
+
+The terrain/support screen covers 282 report functions, 76 >=500 bytes, with
+no explicit unfinished marker in its five direct owners. ReadTerrain has a
+complete current descriptor/spatial-bound path; pickup was already closed.
+rtlLoadSet was recovered earlier, edppLoadPage is a prior neutral reserve,
+and edbriLoadPage has a bounded current reader without a newly qualified
+omission. This is a bounded source/frontier screen, not full retail equivalence
+of every loader. Packed asset/native-pointer decoding remains preexisting
+debt; no guessed widening, scene-tail fields or allocation sizes are added.
+
+### Checkpoint 19 linked integration
+
+The combined batches **324/325/327/329/330** reach **68.591210%**, or
+**+0.588750 percentage points** over current main. Target/native/WASM builds
+and all five repository tests pass. Root independently compares the whole
+raw objdiff address/symbol exact set against checkpoint 18: **all 6,292 exact
+records remain**, including the exact thunk omitted by ELF function mapping.
+This full raw check supersedes relying only on the 6,291 mapped exact records.
+The cycle remains below its **70.002460%** merge threshold.

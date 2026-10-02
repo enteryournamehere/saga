@@ -540,16 +540,21 @@ static i32 GizTurrets_BoltHitPlat(void *world_ptr, void *system_ptr, BOLT *bolt,
             if (data->platform_id == bolt->hit_platform) {
                 BOLTTYPE_s *bolt_type = BoltType_FindByID(bolt->type_id, static_cast<WORLDINFO_s *>(world_ptr));
                 i32 player_index;
+                i32 damage;
                 if (bolt->owner == NULL) {
                     player_index = -1;
-                } else if (((turret->behavior_flags & 0x10000) != 0 && bolt->owner->field_0xcc0 == NULL) ||
-                           ((turret->behavior_flags & 0x20000) != 0 &&
-                            static_cast<i8>(bolt->owner->apiobj.field_0x1f8) >= 0)) {
-                    player_index = 0;
+                    damage = bolt_type->field_3c;
                 } else {
+                    if (((turret->behavior_flags & 0x10000) != 0 && bolt->owner->field_0xcc0 == NULL) ||
+                        ((turret->behavior_flags & 0x20000) != 0 &&
+                         static_cast<i8>(bolt->owner->apiobj.field_0x1f8) >= 0)) {
+                        damage = 0;
+                    } else {
+                        damage = bolt_type->field_3c;
+                    }
                     player_index = bolt->owner->apiobj.field_0x27c;
                 }
-                GizTurrets_Hit(world_ptr, turret, &bolt->position, player_index, bolt_type->field_3c);
+                GizTurrets_Hit(world_ptr, turret, &bolt->position, player_index, damage);
                 return 1;
             }
             object = object->next;

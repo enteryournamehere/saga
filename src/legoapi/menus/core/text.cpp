@@ -546,30 +546,30 @@ void Text_DecodeButtons(char *source, char *destination) {
         NuStrCpy(destination, "cross");
     }
 }
-char *Text_GetLanguagePath(i32 language) {
-    static char japanese[] = "japanese";
-    static char danish[] = "danish";
-    static char spanish[] = "spanish";
-    static char italian[] = "italian";
-    static char german[] = "german";
-    static char french[] = "french";
-    static char english[] = "english";
+char *txtpath_JAPANESE = const_cast<char *>("japanese");
+char *txtpath_DANISH = const_cast<char *>("danish");
+char *txtpath_SPANISH = const_cast<char *>("spanish");
+char *txtpath_ITALIAN = const_cast<char *>("italian");
+char *txtpath_GERMAN = const_cast<char *>("german");
+char *txtpath_FRENCH = const_cast<char *>("french");
+char *txtpath_ENGLISH = const_cast<char *>("english");
 
+char *Text_GetLanguagePath(i32 language) {
     switch (language) {
         case 0:
-            return japanese;
+            return txtpath_JAPANESE;
         case 2:
-            return spanish;
+            return txtpath_FRENCH;
         case 3:
-            return italian;
+            return txtpath_SPANISH;
         case 4:
-            return german;
+            return txtpath_GERMAN;
         case 5:
-            return french;
+            return txtpath_ITALIAN;
         case 8:
-            return danish;
+            return txtpath_DANISH;
         default:
-            return english;
+            return txtpath_ENGLISH;
     }
 }
 void Text_InitStringTable(i32 count, variptr_u *buf, variptr_u *) {

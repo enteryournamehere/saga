@@ -2349,8 +2349,19 @@ __used__ static i32 Action_CanAttack(AISYS *sys, AISCRIPTPROCESS *processor, AIP
     (void)processor;
     (void)param_6;
     if (param_5 != 0) {
-        bool enabled;
-        GameObject_s *object = ActionCharacterAndToggle(sys, packet, params, param_4, &enabled);
+        GameObject_s *object = packet != NULL && packet->owner != NULL ? packet->owner->apiobj.objptr : NULL;
+        bool enabled = true;
+        for (i32 index = 0; index < param_4; ++index) {
+            if (params[index] == NULL) {
+                continue;
+            }
+            char *name = NuStrIStr(params[index], "character=");
+            if (name != NULL) {
+                object = GetNamedGameObject(sys, name + 10);
+            } else if (NuStrICmp(params[index], "FALSE") == 0) {
+                enabled = false;
+            }
+        }
         if (object != NULL) {
             object->field_0xef9 = static_cast<u8>((object->field_0xef9 & ~2u) | (enabled ? 2u : 0u));
         }
@@ -3559,9 +3570,20 @@ __used__ static i32 Action_NoIdleSpeed(AISYS *sys, AISCRIPTPROCESS *processor, A
                                        i32 param_4, i32 param_5, f32 param_6) {
     (void)processor;
     (void)param_6;
-    if (param_5 != 0) {
-        bool enabled;
-        GameObject_s *object = ActionCharacterAndToggle(sys, packet, params, param_4, &enabled);
+    GameObject_s *object = packet != NULL && packet->owner != NULL ? packet->owner->apiobj.objptr : NULL;
+    if (object != NULL && param_5 != 0) {
+        bool enabled = true;
+        for (i32 index = 0; index < param_4; ++index) {
+            if (params[index] == NULL) {
+                continue;
+            }
+            char *name = NuStrIStr(params[index], "character=");
+            if (name != NULL) {
+                object = GetNamedGameObject(sys, name + 10);
+            } else if (NuStrICmp(params[index], "FALSE") == 0) {
+                enabled = false;
+            }
+        }
         if (object != NULL) {
             object->field_0xf03 = static_cast<u8>((object->field_0xf03 & ~2u) | (enabled ? 2u : 0u));
         }
@@ -3610,8 +3632,20 @@ __used__ static i32 Action_SetDontMove(AISYS *sys, AISCRIPTPROCESS *processor, A
     (void)processor;
     (void)param_6;
     if (param_5 != 0) {
-        bool enabled;
-        GameObject_s *object = ActionCharacterAndToggle(sys, packet, params, param_4, &enabled);
+        GameObject_s *object = packet != NULL && packet->owner != NULL ? packet->owner->apiobj.objptr : NULL;
+        bool enabled = true;
+        for (i32 index = 0; index < param_4; ++index) {
+            if (params[index] == NULL) {
+                continue;
+            }
+            char *name = NuStrIStr(params[index], "character");
+            if (name != NULL) {
+                object = GetNamedGameObject(sys, name + 10);
+            } else if (NuStrICmp("FALSE", params[0]) == 0) {
+                // This action's FALSE toggle uses the first parameter, not the current one.
+                enabled = false;
+            }
+        }
         if (object != NULL) {
             object->field_0xefc = static_cast<u8>((object->field_0xefc & ~0x10u) | (enabled ? 0x10u : 0u));
         }
@@ -4146,8 +4180,19 @@ __used__ static i32 Action_NotWithParty(AISYS *sys, AISCRIPTPROCESS *processor, 
     (void)processor;
     (void)param_6;
     if (param_5 != 0) {
-        bool enabled;
-        GameObject_s *object = ActionCharacterAndToggle(sys, packet, params, param_4, &enabled);
+        GameObject_s *object = packet != NULL && packet->owner != NULL ? packet->owner->apiobj.objptr : NULL;
+        bool enabled = true;
+        for (i32 index = 0; index < param_4; ++index) {
+            if (params[index] == NULL) {
+                continue;
+            }
+            char *name = NuStrIStr(params[index], "character=");
+            if (name != NULL) {
+                object = GetNamedGameObject(sys, name + 10);
+            } else if (NuStrICmp(params[index], "FALSE") == 0) {
+                enabled = false;
+            }
+        }
         if (object != NULL) {
             object->field_0xeff = static_cast<u8>((object->field_0xeff & ~1u) | (enabled ? 1u : 0u));
         }

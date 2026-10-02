@@ -596,11 +596,30 @@ void NuMemoryManager::SetBlockDebugCategory(void *ptr, u16 category) {
 }
 
 void NuMemoryManager::ReleaseUnreferencedPages() {
-    Page *page;
-
     pthread_mutex_lock(&this->mutex);
 
-    for (page = this->pages; page != NULL; page = page->next) {
+    Page *page = this->pages;
+    while (page != NULL) {
+        Header *header = page->first_header;
+        Page *next = page->next;
+        Page *prev = page->prev;
+        if ((header->value & ALLOC_MASK) == 0 &&
+            reinterpret_cast<u8 *>(header) + BLOCK_SIZE(header->value) == reinterpret_cast<u8 *>(page->end) &&
+            !page->is_external) {
+            FreeHeader *free_header = reinterpret_cast<FreeHeader *>(header);
+            BinUnlink(free_header);
+            if (event_handler->ReleasePage(this, page->original_ptr, page->size)) {
+                if (next != NULL)
+                    next->prev = prev;
+                if (prev != NULL)
+                    prev->next = next;
+                else
+                    this->pages = next;
+            } else {
+                BinLink(free_header, true);
+            }
+        }
+        page = next;
     }
 
     pthread_mutex_unlock(&this->mutex);

@@ -7827,9 +7827,10 @@ void SetHeadTarget(GameObject_s *object, NUVEC *position, i8 priority, f32 time,
         if (object->head_target == NULL ||
             (position != object->head_target && object->head_target_priority <= priority)) {
             i32 random = qrand();
+            f32 fraction = static_cast<f32>(random) * 1.5259022e-05f;
             object->head_target = position;
             object->head_target_priority = priority;
-            f32 delay = maximum_delay * random * 1.5259022e-05f + (1.0f - random * 1.5259022e-05f) * minimum_delay;
+            f32 delay = maximum_delay * fraction + (1.0f - fraction) * minimum_delay;
             object->head_target_delay = delay;
             object->head_target_timer = time + delay;
         }

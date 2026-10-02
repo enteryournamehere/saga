@@ -1111,9 +1111,10 @@ void Animate_ASTROMECH(GameObject_s *object) {
             if (object->apiobj.character_model->model_data_b[43] != NULL) {
                 packet.requested_animation = 43;
             } else {
-                const i32 target_state =
-                    *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(object->context_target_position) + 0x14);
-                packet.requested_animation = target_state == 0 ? CHARACTER_ANIMATION_IDLE : CHARACTER_ANIMATION_FALL;
+                packet.requested_animation =
+                    object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL
+                        ? CHARACTER_ANIMATION_IDLE
+                        : CHARACTER_ANIMATION_FALL;
             }
         } else {
             packet.requested_animation = CHARACTER_ANIMATION_FALL;
@@ -1123,7 +1124,7 @@ void Animate_ASTROMECH(GameObject_s *object) {
                 } else if (object->ground_contact_grace_timer > 0.0f) {
                     const GAMECHARACTERDATA *game_character =
                         static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-                    if (game_character->field_0x28 <= 0.0f ||
+                    if (!(game_character->field_0x28 > 0.0f) ||
                         object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL) {
                         packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
                     }
@@ -1132,7 +1133,7 @@ void Animate_ASTROMECH(GameObject_s *object) {
                             object->nearby_floor_distance < 0.25f && object->apiobj.velocity.y < 0.0f)) {
                     const GAMECHARACTERDATA *game_character =
                         static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
-                    if (game_character->field_0x28 <= 0.0f ||
+                    if (!(game_character->field_0x28 > 0.0f) ||
                         object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] == NULL) {
                         packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
                     }

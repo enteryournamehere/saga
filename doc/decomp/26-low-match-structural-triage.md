@@ -8907,3 +8907,136 @@ main, with all **6,292** mapped exacts retained from checkpoint 15. The current
 cycle still requires **70.002460%** and all eleven checks on its final head
 before a squash merge. Batches 305–309 form checkpoint 16; fresh GitHub CI
 verification is required after its push.
+
+### Checkpoint 17: batches 310–315
+
+All eleven GitHub checks passed on checkpoint 16's exact head `ad3413ac`.
+The following integrations retain the same main baseline, **68.002460%**;
+the merge threshold remains **70.002460%**, not a relative percentage gain.
+
+**310, `NuMemoryManager::ReleaseUnreferencedPages`** (`0x0f2ce0`, 283 bytes):
+restore the omitted empty, nonexternal page traversal under the existing
+mutex. Cache both neighbors before unlinking the free span and calling the
+live release handler: the actual Mem1 handler frees the allocation. On
+success repair neighbors/head without accessing the freed page; on rejection
+restore its bin membership. Advance using the cached next pointer. No
+unverified statistics subtraction or `AddPage` change. One unchanged O2
+whole-owner trial gains **159.731061 original-weighted bytes**, target
+**17.273810% → 72.726190%**; all exacts and original symbols remain.
+
+Root independently freshly compiles/runs canonical actual-body diagnostics
+with actual constructor, bin/stat helpers and Mem1/free and Mem2/rejection
+services: **3,906 exhaustive page sequences** pass on both host ASan/UBSan
+with LeakSanitizer enabled and production-action NDK i386. Sequences cover
+up to five pages, five page states and five allocation extents, including
+head/middle/tail and consecutive releases. Native typed page/header storage
+is supplied directly: the pre-existing host `AddPage` byte-20 first-header
+and four-byte-footer layout debt is excluded, not repaired or validated.
+The NDK diagnostic uses typed mutex recorders and verifies lock/unlock
+counts; no concurrent allocator or Android-device test is claimed.
+
+**311, `Animate_ASTROMECH`** (`0x16ca80`, 549 bytes): context-target fallback
+tests canonical clip-table slot 5, not a word in the target-position record.
+Both field-0x28 landing-idle comparisons admit unordered/nonpositive values
+as the original `ucomiss/jbe` does. Other predicates and scheduler reloads
+remain. One complete unchanged O2-owner trial gains **20.264551 weighted
+bytes**, **29.426470% → 33.117645%**; all 80 neighbors, nine owner exacts
+and the original symbol surface remain.
+
+Root independently reruns freshly compiled host sanitizer and NDK i386
+diagnostics: each passes **100,004 cases**, all eleven selection/scheduler
+route bits, and four baseline-failure controls. Actual idle scheduler,
+ResetCharacterIdle and pure UseFallAnim execute; NewCharacterIdle compiles
+but expiry is excluded. GetDefaultIdle uses a declared bounded typed pure
+1/25 query because its existing byte-100/472 pointer-table accesses have
+wider-host debt. RNG/duration are bounded recorders, not actual services.
+Nonfinite inputs exercise comparisons only; no NaN arithmetic/conversion
+or full scheduler, helper-layout, game/device validation is claimed.
+
+**312, `SetHeadTarget`** (`0x46fab0`, 263 bytes): round the RNG fraction once
+before multiplying either delay endpoint, preserving the retail finite
+arithmetic association and exact literal. Whole unchanged O2-owner gain
+**41.618598 weighted bytes**, **28.017544% → 43.842106%**; existing exacts
+and canonical text/data surface remain. Root's fresh host sanitizer and
+NDK-action extracted-body/i386 diagnostics each pass **463,753 cases /
+4,173,780 checks**, including all RNG states and signed priority pairs.
+There are **59,071 finite grouping witnesses**; the freshly compiled old
+body fails 120,824 checks. Actual pure qrand executes. All guards, alias
+cache behavior and full object bytes are checked; no device test or
+full-owner-object fixture link is claimed.
+
+**313, `GizmoBlowupTypeRemove`** (`0x4b8930`, 428 bytes): remap references
+through allocated type capacity, while compacting only active records.
+Keep active-removal validation and explicit upstream fallback for absent
+or undersized level capacity outside the valid retail domain. The tiny
+positive unchanged O3 whole-owner gain is **0.178330 weighted bytes**,
+**10.600000% → 10.641666%**; all neighbors/exacts/original symbols remain.
+Root freshly reruns host sanitizer and production-action extracted-body
+NDK i386 diagnostics: **2,436 checks / 84 calls** each, comprising 72 valid
+retail calls and twelve separately labelled safety cases. Canonical typed
+records and independent index/compaction oracle verify entire arrays;
+the old body fails the allocated-tail-reference control. No observed
+production caller or demonstrated gameplay defect is claimed.
+
+**314 reserve, `ShaderMtlDescFilter::internalInit`** (`0x309240`, 374 bytes):
+the complete base-variant/bit-0x10 field-18 predicate and canonical material
+attribute-byte anchor are raw/type/producer/consumer supported. The sole
+unchanged O3-owner trial nevertheless loses **100.256130 weighted bytes**,
+**26.806452% → 0%**. All other bodies/exacts/symbols remain. Do not integrate,
+split or retry the unit; no runtime fixtures were run. Generate3's separate
+raw material-byte wider-host debt is not repaired by this proposal.
+
+Each positive integration passed full target/native builds and all five
+repository checks, with **6,292 exacts retained**. Combined linked matching
+is **68.567780%**, **+0.565320 percentage points** over main. These local
+changes require their own pushed-head GitHub checks before any merge.
+
+**315, four AI toggle actions**: restore complete `CanAttack`, `NoIdleSpeed`,
+`SetDontMove` and `NotWithParty` caller contracts in the existing AI owner.
+Default target is the owner's canonical `apiobj.objptr`; character queries
+use the original case-insensitive substring and passed-system lookup,
+including `myself`, and replace the target even when lookup fails. NoIdle
+requires an initial target before parsing. DontMove's FALSE rule reads the
+first parameter. Shared parser and UseOne source remain unchanged; existing
+NULL-entry safety is retained outside the original string-helper domain.
+
+One unchanged O3 whole-owner gate gains **459.899672 weighted bytes**, with
+no lost exacts or original/exported symbols. Ordinary compiler elimination
+of the synthetic, non-retail shared helper and generated `.part`/startup-name
+differences do not justify forced retention or a compiler variant. UseOne's
+natural inlining score loss is included in the reported net gain. Root
+verifies exact extraction of all four bodies, five actual string helpers
+and actual named lookup, then freshly rebuilds host sanitizer and each
+helper's own production-action NDK object/i386 diagnostics: **24,784 ordinary
+cases + 5,520 separately marked NULL-entry safety cases / 202,741 checks**
+pass on each. Host LeakSanitizer passes. A typed named-object callback records
+only real query/return effects; no fabricated mutations or gameplay test.
+Target/native builds and all five repository checks pass. Combined linked
+matching is **68.577610%**, **+0.575150 points** over main, retaining all
+**6,292 exacts**. New pushed-head GitHub checks remain required.
+
+### Closed frontiers and structural prerequisites after checkpoint 16
+
+Fresh bounded raw/body censuses do not reopen previously complete hint/input,
+Origin/FindGameObject/NearestBreak, Huffman/Implode, line/circle rendering,
+RGB/font/save UI, shader-transpose, TerrainImpactNorm, PodCollision,
+WallShuffle, CCsfxmisc, JumpAnimCode or RigidUpdate units. Prior neutral and
+negative whole-unit trials remain reserved. These are bounded read-only
+contract checks, not exhaustive runtime-equivalence claims; unchanged bytes
+alone are not evidence that a low matching score is fixable by another trial.
+
+`NuGScnReadForMultiRender` remains a genuine loader stub with a structural
+prerequisite: retail shallow-copies **0x20c** bytes, but canonical `NUGSCN`
+ends at **0x1f8**. Generic serialized-size allocation/relocation does not
+name or qualify the missing five words. The grouped private graphics reader,
+GHG fixup/readers and multi-render callers also require verified local call
+ownership; neither original filename nor forged register ABI is justified.
+Recover supported-version tail fields, producers and allocation bounds before
+implementation. No padding clone, invented ownership or option change.
+
+Visibility-tree restoration likewise still needs producer-qualified node
+storage and bounds. Raw box-node **32-byte** and instance-node **12-byte**
+field accesses do not establish tree-array capacities or the missing retail
+`myvisi` storage. Original two-bit output at context byte-20 is not the
+one-bit occlusion result at byte-24. Camera-plane helper availability alone
+does not justify a wrapper-only restoration or guessed format conversion.

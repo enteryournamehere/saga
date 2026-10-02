@@ -560,9 +560,16 @@ void GizmoBlowupTypeRemove(GIZMOBLOWUPTYPE_s *type, WORLDINFO_s *world) {
         return;
     }
 
+    i32 capacity =
+        world->current_level != NULL ? world->current_level->max_gizmo_blowup_types : world->gizmo_blowup_type_count;
+    // Preserve active-only handling when the level capacity is missing or inconsistent.
+    if (capacity < world->gizmo_blowup_type_count) {
+        capacity = world->gizmo_blowup_type_count;
+    }
+    GIZMOBLOWUPTYPE_s *last_allocated_type = types + capacity - 1;
     GIZMOBLOWUPTYPE_s *last_type = active_end - 1;
-    if (type < last_type) {
-        for (GIZMOBLOWUPTYPE_s *moved_type = type + 1; moved_type <= last_type; ++moved_type) {
+    if (type < last_allocated_type) {
+        for (GIZMOBLOWUPTYPE_s *moved_type = type + 1; moved_type <= last_allocated_type; ++moved_type) {
             for (i32 index = 0; index < world->gizmo_blowup_count; ++index) {
                 if (world->gizmo_blowups[index].type == moved_type) {
                     world->gizmo_blowups[index].type = moved_type - 1;

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.56305,
+    "fuzzy_match_percent": 68.57761,
     "total_code": "4722419",
     "matched_code": "526195",
     "matched_code_percent": 11.1424885,
@@ -23357,7 +23357,7 @@
           "address": 1597904,
           "offset": 707936,
           "size": 358,
-          "match_percent": 99.792076
+          "match_percent": 99.64356
         },
         {
           "name": "_ZL29Condition_GizmoVisibilityInitP7AISYS_sPcP10AISCRIPT_s",
@@ -23925,7 +23925,7 @@
           "address": 1638160,
           "offset": 748192,
           "size": 222,
-          "match_percent": 92.39683
+          "match_percent": 92.01588
         },
         {
           "name": "_ZL19Action_TurnOnPickupP7AISYS_sP17AISCRIPTPROCESS_sP10AIPACKET_sPPciif",
@@ -24021,7 +24021,7 @@
           "address": 1641712,
           "offset": 751744,
           "size": 144,
-          "match_percent": 34.31818
+          "match_percent": 34.43182
         },
         {
           "name": "_ZL25Action_AddScriptProcessorP7AISYS_sP17AISCRIPTPROCESS_sP10AIPACKET_sPPciif",
@@ -24221,7 +24221,7 @@
           "address": 1660512,
           "offset": 770544,
           "size": 486,
-          "match_percent": 94.28125
+          "match_percent": 94.16406
         },
         {
           "name": "_ZL22Action_SetUseOneAtOnceP7AISYS_sP17AISCRIPTPROCESS_sP10AIPACKET_sPPciif",
@@ -24229,7 +24229,7 @@
           "address": 1661008,
           "offset": 771040,
           "size": 471,
-          "match_percent": 13.621429
+          "match_percent": 12.05
         },
         {
           "name": "_ZL15Action_SetLayerP7AISYS_sP17AISCRIPTPROCESS_sP10AIPACKET_sPPciif",
@@ -24381,7 +24381,7 @@
           "address": 1669552,
           "offset": 779584,
           "size": 277,
-          "match_percent": 22.185184
+          "match_percent": 58.753086
         },
         {
           "name": "_ZL20Action_AddPartDebrisP7AISYS_sP17AISCRIPTPROCESS_sP10AIPACKET_sPPciif",
@@ -24445,7 +24445,7 @@
           "address": 1677056,
           "offset": 787088,
           "size": 279,
-          "match_percent": 23.012346
+          "match_percent": 68.666664
         },
         {
           "name": "_ZL11Action_KillP7AISYS_sP17AISCRIPTPROCESS_sP10AIPACKET_sPPciif",
@@ -24533,7 +24533,7 @@
           "address": 1691840,
           "offset": 801872,
           "size": 279,
-          "match_percent": 24.725
+          "match_percent": 68.5
         },
         {
           "name": "_ZL16Action_CanAttackP7AISYS_sP17AISCRIPTPROCESS_sP10AIPACKET_sPPciif",
@@ -24541,7 +24541,7 @@
           "address": 1692128,
           "offset": 802160,
           "size": 279,
-          "match_percent": 22.950617
+          "match_percent": 68.18519
         },
         {
           "name": "_ZL19Action_CannotDropInP7AISYS_sP17AISCRIPTPROCESS_sP10AIPACKET_sPPciif",
@@ -24581,7 +24581,7 @@
           "address": 1693728,
           "offset": 803760,
           "size": 469,
-          "match_percent": 69.35878
+          "match_percent": 68.900764
         },
         {
           "name": "_ZL20Action_KeepWeaponOutP7AISYS_sP17AISCRIPTPROCESS_sP10AIPACKET_sPPciif",
@@ -24589,7 +24589,7 @@
           "address": 1694208,
           "offset": 804240,
           "size": 277,
-          "match_percent": 77.725
+          "match_percent": 77.9125
         },
         {
           "name": "_ZL29Action_SetDoomedEscapeLocatorP7AISYS_sP17AISCRIPTPROCESS_sP10AIPACKET_sPPciif",
@@ -47335,7 +47335,7 @@
           "address": 1493632,
           "offset": 603664,
           "size": 549,
-          "match_percent": 29.647058
+          "match_percent": 33.44853
         },
         {
           "name": "_Z16Animate_PROTOCOLP12GameObject_s",
@@ -48734,7 +48734,7 @@
           "address": 4651696,
           "offset": 3761728,
           "size": 263,
-          "match_percent": 28.192982
+          "match_percent": 44.2807
         },
         {
           "name": "_Z18SetObjAsHeadTargetP12GameObject_sS0_afff",
@@ -55424,7 +55424,7 @@
           "address": 4950320,
           "offset": 4060352,
           "size": 428,
-          "match_percent": 10.6
+          "match_percent": 10.641666
         },
         {
           "name": "_Z30GizmoBlowup_SetAutoSetReflectYP13GIZMOBLOWUP_sP7nuvec_s",
@@ -95413,7 +95413,7 @@
           "address": 994528,
           "offset": 104560,
           "size": 283,
-          "match_percent": 17.452381
+          "match_percent": 73.02381
         },
         {
           "name": "_ZN15NuMemoryManager19ReleaseExternalPageEPv",
@@ -95613,7 +95613,7 @@
           "address": 1000752,
           "offset": 110784,
           "size": 899,
-          "match_percent": 57.024292
+          "match_percent": 57.085022
         },
         {
           "name": "_ZN15NuMemoryManager28ValidateBlockDeferredContentEPNS_6HeaderEPKc",
@@ -95669,7 +95669,7 @@
           "address": 1003712,
           "offset": 113744,
           "size": 1383,
-          "match_percent": 17.654892
+          "match_percent": 17.817934
         },
         {
           "name": "_ZN15NuMemoryManager20DumpBlocksForContextEjP13NuSymbolQueryPNS_7ContextEj",
@@ -119060,7 +119060,7 @@
       "address": 1657184,
       "offset": 767216,
       "size": 1003,
-      "match_percent": 3.804255,
+      "match_percent": 3.570213,
       "candidate_units": [
         "gameapi/ai/aisys/aisys.cpp.o"
       ]

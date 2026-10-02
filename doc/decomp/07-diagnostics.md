@@ -88,6 +88,56 @@ is usually correct; the mismatch comes from an earlier function in the
 translation unit that differs, is missing, or is emitted in a different order.
 Do not rewrite the function to chase the register.
 
+The usual cause of that mismatch is function order. This compiler emits a
+translation unit's definitions in source order, including at `-O2`/`-O3`, so
+the original binary's address order within a unit is the original source
+order. Reordering definitions to that order (with no body changes) has
+repaired many single-register mismatches, for example in `edfile.cpp` and
+`ledges.cpp`. Measure the whole unit afterwards: some Bazel units combine
+functions from more than one original unit and get worse when reordered.
+
+### Only PIC-relative displacements differ
+
+When every remaining difference is a `GOTOFF` displacement (`[ebx-0x9b2c0]`
+versus `[ebx-0xb4648]`, a renumbered `.LC` label, or a `.data`/`.bss` static
+at `[ecx+0x86a0]`), the function body is already correct. Those displacements
+encode the distance from the GOT to the referenced `.rodata`/`.data`/`.bss`
+item, so they only match when the data layout of the whole binary matches.
+No per-function source change can fix them; move on to another function.
+
+### `setcc; test %al, %al; jcc` in a plain `-O0` condition
+
+A straight-line `-O0` `if` normally compiles to a fused `cmp`/`jcc`. The
+`setcc`/`test` form appears when the condition is gimplified into a temporary:
+
+- an assignment inside the condition, `if ((p = f()) != NULL)`; or
+- a `volatile` operand, `if (shared_size == decoded_size)`. A `volatile`
+  object that is tested with an empty body also keeps its otherwise dead
+  load and `test`.
+
+Check the variable's other uses before declaring it `volatile`; data shared
+with another thread (for example the file decode buffers) is the expected case.
+
+### `-O0` call frame is 16 bytes larger than the original
+
+At `-O0`, a call to a `static` function that is already defined earlier in
+the unit does not reserve the usual 16-byte-aligned outgoing area: a
+one-argument wrapper uses `lea -0x8(%esp),%esp` instead of `-0x28`. If the
+original frame is smaller, define the static callee before its callers rather
+than forward-declaring it (`NuSinApprox3` in `nutrig.cpp`).
+
+### Two `-O0` locals share one stack slot in the original
+
+If two of the reconstruction's locals live in one slot in the original, the
+original source reused a single variable for both purposes. Merge them;
+renaming alone does not change the slot.
+
+### Two or three stores appear in reverse order
+
+A chained assignment `v.x = v.y = v.z = k` stores `z` first, while an
+aggregate initializer or separate statements store `x` first. Choose the form
+that reproduces the original store order.
+
 ### Stack realigns with `and $-16, %esp`
 
 Plain `-O2` functions do not realign the stack. A frame pointer plus

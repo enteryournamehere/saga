@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.01188,
+    "fuzzy_match_percent": 68.01414,
     "total_code": "4722419",
-    "matched_code": "534060",
-    "matched_code_percent": 11.309034,
+    "matched_code": "536108",
+    "matched_code_percent": 11.352402,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6363,
-    "matched_functions_percent": 47.276913,
+    "matched_functions": 6379,
+    "matched_functions_percent": 47.395794,
     "total_units": 1
   },
   "text": {
@@ -15628,7 +15628,7 @@
           "address": 4466704,
           "offset": 3576736,
           "size": 571,
-          "match_percent": 83.104164
+          "match_percent": 85.388885
         },
         {
           "name": "_ZN24MechTouchTaskPlannedGoToD2Ev",
@@ -15636,7 +15636,7 @@
           "address": 4466704,
           "offset": 3576736,
           "size": 571,
-          "match_percent": 83.104164
+          "match_percent": 85.388885
         },
         {
           "name": "_ZN24MechTouchTaskPlannedGoToD0Ev",
@@ -43445,7 +43445,7 @@
           "address": 4486752,
           "offset": 3596784,
           "size": 130,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN24CharacterObjectInterfaceD2Ev",
@@ -43453,7 +43453,7 @@
           "address": 4486752,
           "offset": 3596784,
           "size": 130,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN24CharacterObjectInterfaceD0Ev",
@@ -53145,7 +53145,7 @@
           "address": 4486144,
           "offset": 3596176,
           "size": 130,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN23GizPanelObjectInterfaceD2Ev",
@@ -53153,7 +53153,7 @@
           "address": 4486144,
           "offset": 3596176,
           "size": 130,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN23GizPanelObjectInterfaceD0Ev",
@@ -53169,7 +53169,7 @@
           "address": 4486352,
           "offset": 3596384,
           "size": 122,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN23GizLeverObjectInterfaceD2Ev",
@@ -53177,7 +53177,7 @@
           "address": 4486352,
           "offset": 3596384,
           "size": 122,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN23GizLeverObjectInterfaceD0Ev",
@@ -53217,7 +53217,7 @@
           "address": 4486960,
           "offset": 3596992,
           "size": 122,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN25GizBuildItObjectInterfaceD2Ev",
@@ -53225,7 +53225,7 @@
           "address": 4486960,
           "offset": 3596992,
           "size": 122,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN25GizBuildItObjectInterfaceD0Ev",
@@ -53241,7 +53241,7 @@
           "address": 4487152,
           "offset": 3597184,
           "size": 130,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN23TeleportObjectInterfaceD2Ev",
@@ -53249,7 +53249,7 @@
           "address": 4487152,
           "offset": 3597184,
           "size": 130,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN23TeleportObjectInterfaceD0Ev",
@@ -53265,7 +53265,7 @@
           "address": 4487360,
           "offset": 3597392,
           "size": 130,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN25HatMachineObjectInterfaceD2Ev",
@@ -53273,7 +53273,7 @@
           "address": 4487360,
           "offset": 3597392,
           "size": 130,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN25HatMachineObjectInterfaceD0Ev",
@@ -53337,7 +53337,7 @@
           "address": 4487968,
           "offset": 3598000,
           "size": 130,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN26GizObstacleObjectInterfaceD2Ev",
@@ -53345,7 +53345,7 @@
           "address": 4487968,
           "offset": 3598000,
           "size": 130,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN26GizObstacleObjectInterfaceD0Ev",
@@ -53361,7 +53361,7 @@
           "address": 4488176,
           "offset": 3598208,
           "size": 130,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN24GizTurretObjectInterfaceD2Ev",
@@ -53369,7 +53369,7 @@
           "address": 4488176,
           "offset": 3598208,
           "size": 130,
-          "match_percent": 96.030304
+          "match_percent": 100.0
         },
         {
           "name": "_ZN24GizTurretObjectInterfaceD0Ev",

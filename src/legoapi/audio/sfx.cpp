@@ -1743,134 +1743,116 @@ struct SoundTrackData {
     u8 flags_88;
 };
 
+static inline bool UpdateSecondaryMusicStream() {
+    if (NuSound3GetStereoStreamStatus(Music.secondary_stream) == NUSOUND_STEREO_STREAM_FINISHED)
+        return false;
+    if (Music.transition_frames <= 0x7f)
+        ++Music.transition_frames;
+    if (Music.transition_frames > 0x40 && Music.pause_requested)
+        MusicPreSeek(Music.requested_track);
+    return true;
+}
+
 extern "C" void SoundUpdate(float frame_time) {
-    if (Music.update_delay != 0 || frame_time == 0.0f || static_cast<u16>(Music.state - 4) >= 10) {
+    if (Music.update_delay != 0 || frame_time == 0.0f) {
         return;
     }
 
-    switch (Music.state) {
-        case MUSIC_PLAYBACK_ACTIVE:
-            goto active_music;
-        case 5:
+    // Playback states 4 through 13 form the active update range.
+    switch (static_cast<u16>(Music.state - MUSIC_PLAYBACK_ACTIVE)) {
+        case 4:
         case 6:
-        case 7:
-        case 9:
-            goto transition_music;
-        case 8:
-        case 10:
-            if (NuSound3GetStereoStreamStatus(Music.primary_stream) != NUSOUND_STEREO_STREAM_FINISHED) {
+            if (NuSound3GetStereoStreamStatus(Music.primary_stream) != NUSOUND_STEREO_STREAM_FINISHED)
                 Music.state = static_cast<MusicPlaybackState>(7);
+            return;
+        case 1:
+        case 2:
+        case 3:
+        case 5: {
+            if (Music.state == 9 || Music.state == 6) {
+                Music.transition = (frame_time + frame_time) + Music.transition;
+            } else {
+                Music.transition = frame_time * 0.2f + Music.transition;
+            }
+            if (Music.transition >= 1.0f) {
+                Music.transition = 1.0f;
+                if (static_cast<u16>(Music.state - 5) <= 1) {
+                    NuSound3PauseStereoStream(1 - Music.primary_stream);
+                } else {
+                    NuSound3StopStereoStream(1 - Music.primary_stream);
+                }
+                Music.state = MUSIC_PLAYBACK_ACTIVE;
+                Music.transition_frames = 0;
+            }
+
+            if (Music.current_track != -1) {
+                NuSound3SetStereoStreamVolume(Music.primary_stream,
+                                              static_cast<i32>(static_cast<f32>(g_music[Music.current_track].index) *
+                                                               Music.transition * MusicVolume));
+            }
+            if (Music.queued_track != -1) {
+                NuSound3SetStereoStreamVolume(
+                    1 - Music.primary_stream,
+                    static_cast<i32>((1.0f - Music.transition) * static_cast<f32>(g_music[Music.queued_track].index) *
+                                     MusicVolume));
             }
             return;
-        case MUSIC_PLAYBACK_DUAL_STREAM:
-        case 12:
-        case MUSIC_PLAYBACK_DUAL_STREAM_PENDING:
-            goto linked_music;
+        }
+        case 0: {
+            if (!UpdateSecondaryMusicStream())
+                return;
+            if (Music.transition_frames <= 0x18) {
+                return;
+            }
+            if (Music.restore_requested) {
+                RestoreGameMusic();
+                Music.restore_requested = false;
+            }
+            return;
+        }
+        case 7:
+        case 8:
+        case 9: {
+            SoundTrackData *track_data = static_cast<SoundTrackData *>(Music.track_data);
+            if (track_data != NULL && (track_data->flags_88 & 2) != 0) {
+                Music.resume_frames = 0;
+            } else {
+                if (NuSound3GetStereoStreamStatus(1 - Music.primary_stream) == NUSOUND_STEREO_STREAM_FINISHED) {
+                    Music.resume_frames = 0;
+                } else {
+                    if (Music.resume_frames <= 0x3f) {
+                        ++Music.resume_frames;
+                        if (Music.resume_frames <= 8) {
+                            goto update_secondary_stream;
+                        }
+                    }
+                    if (Music.current_track != -1 && Music.state != MUSIC_PLAYBACK_DUAL_STREAM_PENDING &&
+                        NuSound3GetStereoStreamStatus(Music.primary_stream) != NUSOUND_STEREO_STREAM_FINISHED &&
+                        !Music.pause_requested) {
+                        if (Music.state == 12) {
+                            Music.state = MUSIC_PLAYBACK_STOPPED;
+                            NuSound3StopStereoStream(1 - Music.primary_stream);
+                            NuSound3StopStereoStream(Music.primary_stream);
+                        } else {
+                            Music.state = MUSIC_PLAYBACK_ACTIVE;
+                            NuSound3StopStereoStream(1 - Music.primary_stream);
+                            NuSound3ResumeStereoStream(Music.primary_stream);
+                        }
+                        Music.transition = 1.0f;
+                        NuSound3SetStereoStreamVolume(
+                            Music.primary_stream,
+                            static_cast<i32>(static_cast<f32>(g_music[Music.current_track].index) * MusicVolume));
+                        Music.transition_frames = 0;
+                        Music.requested_track = -1;
+                    }
+                }
+            }
+
+        update_secondary_stream:
+            UpdateSecondaryMusicStream();
+            return;
+        }
         default:
             return;
-    }
-
-transition_music:
-    if (Music.state == 6 || Music.state == 9) {
-        frame_time += frame_time;
-    } else {
-        frame_time *= 0.2f;
-    }
-    Music.transition += frame_time;
-    if (Music.transition >= 1.0f) {
-        Music.transition = 1.0f;
-        const i32 other_stream = 1 - Music.primary_stream;
-        if (static_cast<u16>(Music.state - 5) <= 1) {
-            NuSound3PauseStereoStream(other_stream);
-        } else {
-            NuSound3StopStereoStream(other_stream);
-        }
-        Music.state = MUSIC_PLAYBACK_ACTIVE;
-        Music.transition_frames = 0;
-    }
-
-    if (Music.current_track != -1) {
-        NuSound3SetStereoStreamVolume(
-            Music.primary_stream,
-            static_cast<i32>(static_cast<f32>(g_music[Music.current_track].index) * Music.transition * MusicVolume));
-    }
-    if (Music.queued_track != -1) {
-        NuSound3SetStereoStreamVolume(1 - Music.primary_stream,
-                                      static_cast<i32>(static_cast<f32>(g_music[Music.queued_track].index) *
-                                                       (1.0f - Music.transition) * MusicVolume));
-    }
-    return;
-
-active_music:
-    if (NuSound3GetStereoStreamStatus(Music.secondary_stream) == NUSOUND_STEREO_STREAM_FINISHED) {
-        return;
-    }
-    if (Music.transition_frames <= 0x7f) {
-        ++Music.transition_frames;
-        if (Music.transition_frames <= 0x40) {
-            return;
-        }
-    }
-    if (Music.pause_requested) {
-        MusicPreSeek(Music.requested_track);
-    }
-    if (Music.transition_frames <= 0x18) {
-        return;
-    }
-    if (Music.restore_requested) {
-        RestoreGameMusic();
-        Music.restore_requested = false;
-    }
-    return;
-
-linked_music:
-    SoundTrackData *track_data = static_cast<SoundTrackData *>(Music.track_data);
-    if (track_data != NULL && (track_data->flags_88 & 2) != 0) {
-        Music.resume_frames = 0;
-    } else {
-        const i32 other_stream = 1 - Music.primary_stream;
-        if (NuSound3GetStereoStreamStatus(other_stream) == NUSOUND_STEREO_STREAM_FINISHED) {
-            Music.resume_frames = 0;
-        } else {
-            if (Music.resume_frames <= 0x3f) {
-                ++Music.resume_frames;
-                if (Music.resume_frames <= 8) {
-                    goto update_secondary_stream;
-                }
-            }
-            if (Music.current_track != -1 && Music.state != MUSIC_PLAYBACK_DUAL_STREAM_PENDING &&
-                NuSound3GetStereoStreamStatus(Music.primary_stream) != NUSOUND_STEREO_STREAM_FINISHED &&
-                !Music.pause_requested) {
-                if (Music.state == 12) {
-                    Music.state = MUSIC_PLAYBACK_STOPPED;
-                    NuSound3StopStereoStream(other_stream);
-                    NuSound3StopStereoStream(Music.primary_stream);
-                } else {
-                    Music.state = MUSIC_PLAYBACK_ACTIVE;
-                    NuSound3StopStereoStream(other_stream);
-                    NuSound3ResumeStereoStream(Music.primary_stream);
-                }
-                Music.transition = 1.0f;
-                NuSound3SetStereoStreamVolume(
-                    Music.primary_stream,
-                    static_cast<i32>(static_cast<f32>(g_music[Music.current_track].index) * MusicVolume));
-                Music.transition_frames = 0;
-                Music.requested_track = -1;
-            }
-        }
-    }
-
-update_secondary_stream:
-    if (NuSound3GetStereoStreamStatus(Music.secondary_stream) == NUSOUND_STEREO_STREAM_FINISHED) {
-        return;
-    }
-    if (Music.transition_frames <= 0x7f) {
-        ++Music.transition_frames;
-        if (Music.transition_frames <= 0x40) {
-            return;
-        }
-    }
-    if (Music.pause_requested) {
-        MusicPreSeek(Music.requested_track);
     }
 }

@@ -2700,8 +2700,9 @@ void TerrainPlayer(GameObject_s *object) {
                 }
                 NuVecScale(&api.velocity, &movement, 1.0f / FRAMETIME);
                 api.position.x = collision_position.x;
+                const f32 updated_y = collision_position.y - object->character_bottom * api.field_0xa8;
                 api.position.z = collision_position.z;
-                api.position.y = collision_position.y - object->character_bottom * api.field_0xa8;
+                api.position.y = updated_y;
                 // Original 0x104eb0..0x10501a carries all three headings with the
                 // rotation of the supporting platform.
                 if (api.field_0x287 == 0 && api.supporting_platform_id != -1) {

@@ -1634,6 +1634,7 @@ void Hub_DrawMiniKits(WORLDINFO_s *world) {
         }
     }
     for (i32 index = 0; index < count; ++index) {
+        HUBMINIKIT_s *kit = world->hub_minikits;
         const i32 area = areas[index];
         HUBMINIKITPIECES_s *pieces = world->minikit_pieces_buf[area];
         if (pieces == NULL || ADataList[area].minikit_id == -1)
@@ -1657,7 +1658,7 @@ void Hub_DrawMiniKits(WORLDINFO_s *world) {
             x += (1.0f - (1.0f + NU_SIN_LUT((i32)(hub_minikitviewer_movewait * 32768.0f + 16384.0f))) * 0.5f) * 2.0f *
                  hub_minikitviewer_move;
         }
-        HUBMINIKIT_s *kit = &world->hub_minikits[area];
+        kit += area;
         const f32 scale = kit->scale;
         f32 lift = 1.0f - (1.0f + NU_SIN_LUT((i32)(scale * 32768.0f + 16384.0f))) * 0.5f;
         const u16 phase_x = (i32)(NU_SIN_LUT(kit->phase_x) * 910.0f);

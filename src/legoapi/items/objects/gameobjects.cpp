@@ -5049,8 +5049,14 @@ void GameObjectStuffAfterAnimation() {
             object->apiobj.field_0x288 == 0)
             continue;
         ADDPART_s part;
-        const bool drawn = object->apiobj.model_draw_result != 0;
-        if (drawn || (object->field_0x1050 & 4) != 0) {
+        NUMTX matrix;
+        bool drawn = true;
+        if (object->apiobj.model_draw_result == 0) {
+            drawn = false;
+            if ((object->field_0x1050 & 4) == 0)
+                goto after_shooting_and_streaks;
+        }
+        {
             if (object->script_fire_target != NULL && (object->script_fire_target->apiobj.field_0x1f8 & 1) == 0)
                 object->script_fire_target = NULL;
             if (static_cast<i8>(object->quick_shoot_bolt_id) != -1) {
@@ -5058,7 +5064,6 @@ void GameObjectStuffAfterAnimation() {
                     GameAudio_PlaySfxById(
                         static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->sfx_shoot,
                         &object->apiobj.collision_position, 0, 0);
-                    NUMTX matrix;
                     // The original reacquires the locator after the audio callback.
                     i32 joint = drawn ? static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)
                                             ->weapon_shoot_joints[0]
@@ -5172,6 +5177,7 @@ void GameObjectStuffAfterAnimation() {
             } else
                 LightSabreStreakCode(object, 0, effect);
         }
+    after_shooting_and_streaks:
         const i32 debris_joint = static_cast<i8>(object->pad_e3c[1]);
         if (debris_joint != -1)
             AddGameDebris(WORLD->debris_sys, (object->movement_runtime_flags & 1) != 0 ? 139 : 138,
@@ -5196,7 +5202,6 @@ void GameObjectStuffAfterAnimation() {
         if (static_cast<i8>(object->field_0xe22) < 0)
             SuperCarry_Throw(object, 0);
         if ((object->field_0xe20 & 0x10) != 0) {
-            NUMTX matrix;
             i32 joint =
                 drawn ? static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->rocket_locator
                       : -1;
@@ -5393,7 +5398,7 @@ void GameObjectStuffAfterAnimation() {
                 if (*key == -1)
                     AddDebrisEffect(key, WORLD->debris_sys->entries[136].effect, 0.0f, 0.0f, 0.0f);
                 else {
-                    NUMTX matrix = object->joint_matrices[2];
+                    matrix = object->joint_matrices[2];
                     NuMtxPreRotateX(&matrix, 0x4000);
                     DebrisPosOrientationMtx(*key, &matrix);
                 }

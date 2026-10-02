@@ -851,7 +851,7 @@ mode_selected:
                     if (techno_position != NULL)
                         source_position = techno_position;
                 }
-                player_positions[player_count] = *source_position;
+                memcpy(&player_positions[player_count], source_position, sizeof(NUVEC));
                 if ((object->apiobj.character_data->model_flags & 0x2000) != 0) {
                     if (PODRACE_ADATA != NULL && WORLD->area == PODRACE_ADATA)
                         player_roll[player_count] = static_cast<i32>(getPodRoll(i) * 8192.0f);

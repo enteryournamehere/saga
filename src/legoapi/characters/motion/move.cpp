@@ -2603,8 +2603,8 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
                 pitch = object->magnet_surface_angle;
                 ZIPUP *zipup = static_cast<ZIPUP *>(object->field_0x788);
                 if (zipup != NULL && (zipup->flags & 1) != 0) {
-                    pitch -= static_cast<i32>(static_cast<f32>(zipup->pitch_adjustment) *
-                                              (object->context_animation_timer / 1.5f));
+                    pitch -= static_cast<u16>(static_cast<i32>(static_cast<f32>(zipup->pitch_adjustment) *
+                                                               (object->context_animation_timer / 1.5f)));
                 }
             }
             api.pitch_angle = SeekRot(api.pitch_angle, pitch, 8.0f);

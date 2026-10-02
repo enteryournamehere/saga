@@ -262,12 +262,13 @@ char *GameObj_GetName(i32 model, GameObject_s *object, char *buffer) {
             return TTab[CDataList[model].name_id];
         NuStrCpy(buffer,
                  reinterpret_cast<char *>(&Game.customizer) + offsetof(CUSTOMISESAVE_s, primary_name) + index * 0x38);
-        for (i32 i = 14; i >= 0; --i) {
-            if (buffer[i] != ' ')
-                return buffer;
+        i32 i = 14;
+        while (i >= 0 && buffer[i] == ' ') {
             buffer[i] = '\0';
+            --i;
         }
-        NuStrCpy(buffer, "?");
+        if (i < 0)
+            NuStrCpy(buffer, "?");
         return buffer;
     }
     return TTab[CDataList[model].name_id];

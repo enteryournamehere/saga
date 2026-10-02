@@ -1155,26 +1155,44 @@ extern "C" {
 void PlayDieSfx(GameObject_s *object) {
     CHARACTERDATA *character = object->apiobj.character_data;
     GAMECHARACTERDATA_s *config = character->game_character;
-    i32 sfx = config->sfx_die;
-    if (sfx == -1) {
-        const u32 flags = character->model_flags;
-        if ((config->flags_090 & 0x800) != 0 || (flags & 0x2000) != 0) {
+    i32 sfx;
+    {
+        const i16 configured_sfx = config->sfx_die;
+        if (configured_sfx != -1) {
+            sfx = configured_sfx;
+            goto play;
+        }
+    }
+    {
+        sfx = -1;
+        if ((config->flags_090 & 0x800) != 0) {
             sfx = GameAudio->sfx_ids[0x18];
-        } else if ((flags & 0x04000000) != 0) {
-            sfx = GameAudio->sfx_ids[0x19];
-        } else if ((flags & 0x10) != 0) {
-            sfx = GameAudio->sfx_ids[0x1a];
-        } else if ((flags & 0x40000000) == 0) {
-            sfx = GameAudio->sfx_ids[(object->field_0xf01 & 8) != 0 ? 0x1b : 0x1c];
+        } else {
+            const u32 flags = character->model_flags;
+            if ((flags & 0x2000) != 0) {
+                sfx = GameAudio->sfx_ids[0x18];
+            } else if ((flags & 0x04000000) != 0) {
+                sfx = GameAudio->sfx_ids[0x19];
+            } else if ((flags & 0x10) != 0) {
+                sfx = GameAudio->sfx_ids[0x1a];
+            } else if ((flags & 0x40000000) == 0) {
+                if ((object->field_0xf01 & 8) != 0) {
+                    sfx = GameAudio->sfx_ids[0x1b];
+                } else {
+                    sfx = GameAudio->sfx_ids[0x1c];
+                }
+            }
         }
         if (sfx == -1) {
             goto extra;
         }
     }
+play:
     GameAudio_PlaySfxById(sfx, &object->apiobj.collision_position, 0, 0);
 extra:
-    if (ExtraDieSfxFn != NULL) {
-        ExtraDieSfxFn(object);
+    auto extra_sfx = ExtraDieSfxFn;
+    if (extra_sfx != NULL) {
+        extra_sfx(object);
     }
 }
 

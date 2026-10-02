@@ -3109,7 +3109,7 @@ void DrawStatusTextFraction(i32 current, i32 total, float x, float y, u16 angle,
     u16 encoded[64];
     NUMTX matrix;
     NUVEC origin = {0.0f, 0.0f, 800.0f};
-    NUVEC position = {x * 350.0f, y * 300.0f, 0.0f};
+    NUVEC position = {x * 400.0f, y * 250.0f, 0.0f};
     NuQFntSetJustifiedTolerances(1.2f, 1.2f);
     NuMtxSetIdentity(&matrix);
     NuMtxSetRotationX(&matrix, 0);
@@ -3129,35 +3129,43 @@ void DrawStatusTextFraction(i32 current, i32 total, float x, float y, u16 angle,
     const f32 full_width = NuQFntPrintLenW(QFont3DZ, encoded);
     const f32 height = NuQFntHeight(QFont3DZ);
     NuQFntMove(QFont3DZ, -full_width * 0.5f, -height * 0.5f, 0.0f);
-    if (animation <= 0.0f) {
-        sprintf(text, "%i", current);
-        Text3DStringEncode(text, encoded);
-        NuQFntPrintW(QFont3DZ, encoded);
-        sprintf(text, "/%i", total);
-        Text3DStringEncode(text, encoded);
-        NuQFntPrintW(QFont3DZ, encoded);
-    } else {
+    if (animation > 0.0f) {
         const i32 wave_angle = static_cast<i32>((animation / animation_duration) * 32768.0f + 16384.0f);
-        const f32 wave = (NuTrigTable[(wave_angle >> 1) & 0x7fff] + 1.0f) * 0.5f;
+        const f32 blend = 1.0f - (NuTrigTable[(wave_angle >> 1) & 0x7fff] + 1.0f) * 0.5f;
+        const f32 wave = 1.0f - blend;
         const f32 small_scale = scale - 0.5f + wave * 0.5f;
-        const f32 large_scale = scale + 0.5f - wave * 0.5f;
+        const f32 large_scale = 0.5f + scale - wave * 0.5f;
         sprintf(text, "/%i", total);
         Text3DStringEncode(text, encoded);
         const f32 suffix_width = NuQFntPrintLenW(QFont3DZ, encoded);
-        NuQFntMove(QFont3DZ, full_width * 0.5f - suffix_width, -height * 0.5f, 0.0f);
+        const f32 suffix_offset = full_width - suffix_width;
+        const f32 half_full_width = 0.5f * full_width;
+        const f32 suffix_x = suffix_offset - half_full_width;
+        const f32 suffix_height = NuQFntHeight(QFont3DZ);
+        NuQFntMove(QFont3DZ, suffix_x, -suffix_height * 0.5f, 0.0f);
         NuQFntPrintW(QFont3DZ, encoded);
         sprintf(text, "%i", current);
         Text3DStringEncode(text, encoded);
         const f32 current_width = NuQFntPrintLenW(QFont3DZ, encoded);
         NuQFntSetScale(QFont3DZ, large_scale, large_scale);
         const f32 large_width = NuQFntPrintLenW(QFont3DZ, encoded);
+        const f32 current_center = current_width * 0.5f - half_full_width;
+        const f32 large_x = current_center - large_width * 0.5f;
         const f32 large_height = NuQFntHeight(QFont3DZ);
-        NuQFntMove(QFont3DZ, current_width * 0.5f - full_width * 0.5f - large_width * 0.5f, -large_height * 0.5f, 0.0f);
+        NuQFntMove(QFont3DZ, large_x, -large_height * 0.5f, 0.0f);
         NuQFntPrintW(QFont3DZ, encoded);
         NuQFntSetScale(QFont3DZ, small_scale, small_scale);
         const f32 small_width = NuQFntPrintLenW(QFont3DZ, encoded);
+        const f32 small_x = current_center - small_width * 0.5f;
         const f32 small_height = NuQFntHeight(QFont3DZ);
-        NuQFntMove(QFont3DZ, current_width * 0.5f - full_width * 0.5f - small_width * 0.5f, -small_height * 0.5f, 0.0f);
+        NuQFntMove(QFont3DZ, small_x, -small_height * 0.5f, 0.0f);
+        NuQFntPrintW(QFont3DZ, encoded);
+    } else {
+        sprintf(text, "%i", current);
+        Text3DStringEncode(text, encoded);
+        NuQFntPrintW(QFont3DZ, encoded);
+        sprintf(text, "/%i", total);
+        Text3DStringEncode(text, encoded);
         NuQFntPrintW(QFont3DZ, encoded);
     }
     NuQFntPopPrintMode();

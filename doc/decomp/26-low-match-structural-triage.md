@@ -9837,5 +9837,127 @@ set retains all **6,292** records with no losses. After formatting, all four
 production owners byte-equal their sole frozen positive candidates. The WASM
 link retains the previously observed SceneObjectHelper destructor-signature
 warning; its build succeeds, and this batch does not change that owner.
-Final-head GitHub checks are pending the checkpoint push. The cycle remains
-below **70.002460%** and is not eligible for merging.
+Checkpoint head `e215b86eac9b861093e7af3775ae4fa8582c97c0` has all eleven
+GitHub checks successful, independently verified against that exact head.
+The macOS target job initially failed before compilation while fetching
+`platforms`: the hosted runner could not resolve `github.com`. Only that job
+was retried after inspecting its failure log; the retry passes. No code change
+or broad workflow rerun was necessary. The cycle remains below **70.002460%**
+and is not eligible for merging.
+
+### Batches 366/367/369: economical exclusions
+
+The complete `HatMachineProcess` hint-radius correction (squared threshold
+1.0 → 2.25) has **zero measured whole-owner gain** in the sole unchanged O3
+comparison. All 26 original scores and seven exacts retain, but the complete
+local literal-symbol Counter changes. No production integration, source
+variant or runtime fixture follows. An initial proposed sound-position hunk
+was retracted during preparation, before either compilation, because the
+live source already contained the original position.
+
+`Tag_UpdateTransfers`' six scalar beam-input blocks lose target matching.
+The strict initial gate stops on unscored zero-extent thunks; a separate
+root-reviewed diagnostic reuses the same two objects and original reports.
+It covers all nine emitted functions, proves the two complete 12-byte thunks
+have unchanged representation/dependency references, and pairs all six
+scored records by unique original raw address and extent. The remaining
+unscored initializer is original raw `0xe2220`, 93 bytes. Known weighted delta
+is **−156.33633245 bytes**; allowing the initializer its entire possible
+**[−93, +93]** delta gives **[−249.33633245, −63.33633245]** whole-owner net.
+Even the upper bound is negative. No missing absolute score, initializer
+invariance or complete exact-retention claim is fabricated, and no further
+compile, matching report, runtime fixture or source variant is needed.
+
+The complete `PooCode` literal/audio/pickup-contract correction produces both
+unchanged-action O2 objects and both original reports. The gate stops on an
+unscored `MoveToMarker::Render` record; literal storage-label differences
+also fail its strict surface check. Its observed target-only improvement is
+not a qualified whole-owner gain. Keep the complete unit frozen without
+integration or an expensive runtime/invariance proof.
+
+### Compiler-artifact checks versus the fuzzy-matching objective
+
+The user's objective is fuzzy instruction matching, not identical incidental
+compiler artifact spelling. A strict complete ELF Counter remains a useful
+diagnostic, but a renamed zero-size LOCAL/NOTYPE `.text` compiler label is not
+automatically a changed public/private function ABI or data object. Any such
+exception requires a specific reviewed identity/storage/reference proof with
+all other symbols retained; it must not become a blanket `.L`/`.LC` exemption
+or conceal literal payload, initialization, linkage or function-coverage
+changes. Keep initial strict results and both sole objects/reports immutable.
+Whole-owner scores and unknown coverage still require independent evidence.
+
+### Batches 368/371: screen-grab conversion and hub object cursor
+
+`NuRndrHighResScreenGrab` explicitly promotes its unsigned sixteen-bit width
+through the canonical signed integer before converting to float. All 65,536
+widths have exactly the same finite value; the original uses zero-extension
+and signed `CVTSI2SS`. Its sole unchanged O3 comparison gains **129.59161574
+weighted bytes**,57.789074% → 61.904400%,3154 → 3138 bytes (original3149).
+All scored owner records and two exacts retain. A separate complete startup,
+constant-storage, initialization-array and thunk proof establishes zero delta
+for the remaining unscored physical records, without inventing absolute scores.
+
+Root executes both old/new conversions on host sanitizers and production-NDK32
+diagnostics: **65,536 widths, 2,051,035 admitted products and 10,760,014 checks
+per ABI**. Another439,303 products are excluded before narrowing outside the
+declared finite unsigned-conversion domain. Ordered SSE arithmetic and an
+independent integer binary32 oracle agree. This tests the changed arithmetic,
+not full renderer/GPU behavior or allocation capacity. All thirty actual NDK
+fixture dependencies are explicitly qualified. A metadata-only supplement
+records four previously unlisted standard headers; existing objects, binaries
+and successful runs are reused, with no recompilation or matching-report retry.
+
+`Hub_GoneThroughDoor` traverses the stable object pool with a typed cursor while
+retaining the live high-water bound and actual removal services. The sole
+unchanged O3 comparison gains **272.2004073 weighted bytes**,42.122643% →
+51.878930%,2756 → 2772 bytes (original2790). Complete symbol/U Counters retain;
+only the target score changes, with no exact loss. Root executes the actual
+changed loop, removal/API lifecycle and torpedo helpers: **260 cases / 136,184
+checks per ABI**, both old/new passing host sanitizer/leak and NDK32 diagnostics.
+Counts0..64, sparse pools, live shrink, masks/LOS/pads, packet exhaustion and
+release/readmission are covered. Four declared empty lifecycle seams assert
+their null-state admission; this is not arbitrary gameplay callback validation.
+An isolated fixture identifier collision is repaired only in the harness; four
+already compiled baseline helper objects are reused. Original failure artifacts
+and both metadata repair histories remain frozen.
+
+### Batches 370/372/374: bounded qualifications and exclusions
+
+The frozen `NuLgtLaserDraw` typed-array cursor proposal has a known scored-owner
+gain of201.44141238 weighted bytes. Its first strict gate stops on eight renamed
+zero-size LOCAL text labels. A specific same-object proof resolves all42 switch
+table slots in two byte-identical dynamic-light functions, complete decoded
+branches, storage and relocation targets; all other symbols and forty known
+exacts retain. An unscored93-byte initializer leaves a conservative whole-owner
+interval **[108.44141238, 294.44141238]**, strictly positive. This is a qualified
+bound, not an exact whole-owner score. The candidate is not integrated at this
+checkpoint: its bounded source-form runtime diagnostic is still in preparation.
+
+The complete obstacle nearest-distance sentinel correction has **zero known
+gain** across47 scored records and ten retained known exacts. One unscored
+1,768-byte proximity function leaves full net unknown; six removed/five added
+literal-storage labels also fail the complete Counter. No expensive invariance
+proof, runtime fixture, source variant or production integration follows.
+
+The dormant Batman icon red-channel correction gains only **20.29759615 known
+weighted bytes**. All six scored physical records are uniquely paired and its
+two complete12-byte thunks retain representation. The unscored93-byte
+initializer leaves **[−72.70240385, +113.29759615]** whole-owner net, which cannot
+qualify positive integration. Keep the sole pair frozen without expensive
+initializer/runtime work. No Batman asset or OBB work is involved. The separate
+bolt helper and two animation-joint censuses reveal no supported missing unit;
+manual loop unrolling or fanout solely for compiler shape is not pursued.
+
+### Checkpoint 24 verification
+
+The two integrated units (368/371) pass target, native and WASM builds, all
+five repository tests and complete formatting, forward-declaration, tidy,
+symbol and report checks. Fresh raw and mapped linked reports agree at
+**68.648230%**, **+0.645770 percentage points** from current main and
+**+0.008510 points** from checkpoint23. All **6,292** raw address/symbol exact
+records retain with no losses. Both formatted production owners byte-equal
+their sole frozen candidates. The known unrelated WASM destructor-signature
+warning remains non-fatal. GitHub checks for this new checkpoint are pending;
+its predecessor e215b86e has all eleven successful. The cycle remains below
+70.002460% and is not eligible for merging.

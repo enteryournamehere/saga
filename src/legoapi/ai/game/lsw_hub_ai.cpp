@@ -161,8 +161,8 @@ static void Hub_GoneThroughDoor(WORLDINFO_s *world) {
     i16 available_characters[HUB_CHARACTER_CAPACITY];
     Hub_MakeListCharactersAvailable(available_characters);
 
-    for (i32 object_index = 0; object_index < HIGHGAMEOBJECT; ++object_index) {
-        GameObject_s *object = &Obj[object_index];
+    GameObject_s *object = Obj;
+    for (i32 object_index = 0; object_index < HIGHGAMEOBJECT; ++object_index, ++object) {
         if ((object->apiobj.field_0x1f8 & APIOBJECT_FLAG_IN_USE) == 0 || object->apiobj.field_0x27c != -1 ||
             object->ai.field_0x134 != 0xff) {
             continue;

@@ -1000,11 +1000,12 @@ extern "C" {
     }
 
     void RegisterSounds(SoundTable *table) {
+        const char **names = table->names;
         memset(table->bits, 0, sizeof(table->bits));
-        if (table->names == NULL) {
+        if (names == NULL) {
             return;
         }
-        for (const char **name = table->names; *name != NULL; ++name) {
+        for (const char **name = names; *name != NULL; ++name) {
             i32 id = GetSfxId(*name);
             table->bits[id >> 4] |= static_cast<u16>(1 << (id & 0xf));
         }

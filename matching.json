@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.68121,
+    "fuzzy_match_percent": 68.68792,
     "total_code": "4722419",
     "matched_code": "527098",
     "matched_code_percent": 11.161611,
@@ -42783,7 +42783,7 @@
           "address": 3440784,
           "offset": 2550816,
           "size": 171,
-          "match_percent": 74.05085
+          "match_percent": 82.10169
         },
         {
           "name": "GetSfxIdN",
@@ -63914,7 +63914,7 @@
           "address": 1351008,
           "offset": 461040,
           "size": 5689,
-          "match_percent": 52.47507
+          "match_percent": 53.079964
         },
         {
           "name": "_Z29GameObjectStuffAfterAnimationv",
@@ -68032,7 +68032,7 @@
           "address": 1301680,
           "offset": 411712,
           "size": 3254,
-          "match_percent": 61.7027
+          "match_percent": 64.2473
         },
         {
           "name": "_Z21DrawPlayerIconPromptsiifiiiiiifiiii",
@@ -75566,7 +75566,7 @@
           "address": 4762576,
           "offset": 3872608,
           "size": 1259,
-          "match_percent": 65.6755
+          "match_percent": 80.483444
         },
         {
           "name": "_Z13BackDrop_Dumpv",

@@ -687,7 +687,7 @@ void InitStatusScreen(WORLDINFO_s *world) {
     if (area != -1 && ((p.area->flags & 0x136) == 0x10 || (p.area->flags & 0x4000) != 0)) {
         AREASAVE_s &save = Game.area_save[area];
         if (BOTHTRUEJEDIGOLDBRICKS != 0) {
-            u8 &complete = (p.field_0xb0 & 0x40) != 0 ? save.freeplay_buildup_complete : save.story_buildup_complete;
+            u8 &complete = (p.field_0xb0 & 0x40) != 0 ? save.true_hero_complete[1] : save.true_hero_complete[0];
             if (complete == 0) {
                 if ((p.field_0xb0 & 4) != 0) {
                     complete = 1;
@@ -696,9 +696,9 @@ void InitStatusScreen(WORLDINFO_s *world) {
                 } else if (p.collected_score > 0.0f)
                     AddStatusStage(&p, 2, 0);
             }
-        } else if (save.story_buildup_complete == 0 && save.freeplay_buildup_complete == 0) {
+        } else if (save.true_hero_complete[0] == 0 && save.true_hero_complete[1] == 0) {
             if ((p.field_0xb0 & 4) != 0) {
-                save.story_buildup_complete = save.freeplay_buildup_complete = 1;
+                save.true_hero_complete[0] = save.true_hero_complete[1] = 1;
                 AddToCompletionPoints(POINTS_PER_TRUEJEDI);
                 AddStatusStage(&p, 1, AddGoldBrickMessage(&p, tTRUEHERO));
                 if (p.episode_id == -1 || p.chapter == -1)

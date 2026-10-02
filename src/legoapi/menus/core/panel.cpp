@@ -462,11 +462,13 @@ void UpdateStats() {
             const i32 freeplay = GAMEDEMO != 0 ? 0 : FreePlay;
             if (WORLD->area != NULL && (WORLD->area->flags & 0x4010) != 0) {
                 AREASAVE_s &save = Game.area_save[WORLD->level_sub_id];
-                const bool complete = BOTHTRUEJEDIGOLDBRICKS == 0
-                                          ? save.story_buildup_complete != 0 || save.freeplay_buildup_complete != 0
-                                      : freeplay != 0 ? save.freeplay_buildup_complete != 0
-                                                      : save.story_buildup_complete != 0;
-                if (!complete) {
+                if (BOTHTRUEJEDIGOLDBRICKS == 0) {
+                    if (save.true_hero_complete[0] != 0 || save.true_hero_complete[1] != 0)
+                        goto buildup_finished;
+                } else if (save.true_hero_complete[freeplay] != 0) {
+                    goto buildup_finished;
+                }
+                {
                     const u32 maximum = static_cast<u32>(freeplay != 0 ? WORLD->area->true_hero_targets[1]
                                                                        : WORLD->area->true_hero_targets[0]);
                     if (maximum != 0) {
@@ -486,6 +488,7 @@ void UpdateStats() {
                     }
                 }
             }
+        buildup_finished:;
         }
     }
     if (SuperStory != 0 && (WORLD->current_level->flags & LEVEL_SHOW_COIN_TOTAL) != 0)
@@ -1129,7 +1132,7 @@ void DrawPanel() {
                                 f32 y = status_y + PANEL_COINY;
                                 AREASAVE_s *save = &Game.area_save[WORLD->level_sub_id];
                                 i32 amount;
-                                if (save->story_buildup_complete || save->freeplay_buildup_complete)
+                                if (save->true_hero_complete[0] || save->true_hero_complete[1])
                                     maximum = amount = BuildUpTotal;
                                 else
                                     amount = BuildUpDone ? maximum : BuildUpTotal;

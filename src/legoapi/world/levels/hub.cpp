@@ -1170,7 +1170,7 @@ void Hub_DrawPanel(WORLDINFO_s *) {
                 if (area->flags & 0x4000) {
                     ++gold_total;
                     ++buildup_total;
-                    if (save->story_buildup_complete || save->freeplay_buildup_complete) {
+                    if (save->true_hero_complete[0] || save->true_hero_complete[1]) {
                         ++gold_count;
                         ++buildup_count;
                     }
@@ -1803,13 +1803,13 @@ void Hub_DrawAreaStats(f32 phase, i32 area_index, i32 mode) {
             if (BOTHTRUEJEDIGOLDBRICKS == 0) {
                 DrawBuildUpBar(HUB_AREAPANELX[1], HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
                                icon_phase, 1.0f, 1.0f, 0);
-                NuStrCpy(text, (save->story_buildup_complete || save->freeplay_buildup_complete) ? "$" : "X");
+                NuStrCpy(text, (save->true_hero_complete[0] || save->true_hero_complete[1]) ? "$" : "X");
                 Text3DEx(text, HUB_AREAPANELX[1], HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE,
                          PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
             } else {
                 DrawBuildUpBar(HUB_AREAPANELX[1], HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
                                icon_phase, 1.0f, 1.0f, 0);
-                NuStrCpy(text, save->story_buildup_complete ? "$" : "X");
+                NuStrCpy(text, save->true_hero_complete[0] ? "$" : "X");
                 Text3DEx(text, HUB_AREAPANELX[1], HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE,
                          PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
                 SmartTextEx(TTab[tSTORY], HUB_AREAPANELX[1], HUB_EPISODETITLEY + 0.235f, 1.0f, 0.45f, 0.45f, 0.45f, 0,
@@ -1817,7 +1817,7 @@ void Hub_DrawAreaStats(f32 phase, i32 area_index, i32 mode) {
 
                 DrawBuildUpBar(HUB_AREAPANELX[4], HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
                                icon_phase, 1.0f, 1.0f, 0);
-                NuStrCpy(text, save->freeplay_buildup_complete ? "$" : "X");
+                NuStrCpy(text, save->true_hero_complete[1] ? "$" : "X");
                 Text3DEx(text, HUB_AREAPANELX[4], HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE,
                          PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
                 SmartTextEx(TTab[tFREEPLAY], HUB_AREAPANELX[4], HUB_EPISODETITLEY + 0.235f, 1.0f, 0.45f, 0.45f, 0.45f,
@@ -1853,7 +1853,7 @@ void Hub_DrawAreaStats(f32 phase, i32 area_index, i32 mode) {
     if ((flags & 0x4000) != 0) {
         build_x = 0.20100002f;
         if ((flags & 0x800) == 0) {
-            const i32 gold_count = 1 + (save->story_buildup_complete || save->freeplay_buildup_complete);
+            const i32 gold_count = 1 + (save->true_hero_complete[0] || save->true_hero_complete[1]);
             Hub_DrawImportantBrick(211, -0.20100002f, HUB_EPISODETITLEY, phase, gold_count, 2);
         }
     } else if ((flags & 0x800) == 0) {
@@ -1866,7 +1866,7 @@ void Hub_DrawAreaStats(f32 phase, i32 area_index, i32 mode) {
     if ((area->flags & 0x4000) != 0) {
         DrawBuildUpBar(build_x, HUB_EPISODETITLEY + PANEL_MINIKITY - PANEL_MINIKITCOUNTY, 100, 100,
                        NU_SIN_LUT(static_cast<i32>(16384.0f * phase)), 1.0f, 1.0f, 0);
-        NuStrCpy(text, (save->story_buildup_complete || save->freeplay_buildup_complete) ? "$" : "X");
+        NuStrCpy(text, (save->true_hero_complete[0] || save->true_hero_complete[1]) ? "$" : "X");
         Text3DEx(text, build_x, HUB_EPISODETITLEY, 1.0f, PANEL_MINIKITCOUNTSCALE, PANEL_MINIKITCOUNTSCALE,
                  PANEL_MINIKITCOUNTSCALE, 0, 255, 0, 127, static_cast<u8>(alpha));
     }

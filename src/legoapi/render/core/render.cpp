@@ -4309,7 +4309,7 @@ void BackDrop_Draw(float alpha, i32 flags) {
     if (flags == 0 && BackDrop_AlphaFn != NULL) {
         BackDrop_AlphaFn(&alpha);
     }
-    if (alpha <= 0.0f) {
+    if (!(alpha > 0.0f)) {
         return;
     }
 
@@ -4319,6 +4319,7 @@ void BackDrop_Draw(float alpha, i32 flags) {
             continue;
         }
         NUMTX mtx = *NuSpecialGetDrawMtx(special);
+        NuSpecialDrawAtAlpha(special, &mtx, alpha);
         f32 x = mtx.m30;
         f32 y = mtx.m31;
         f32 z = mtx.m32;

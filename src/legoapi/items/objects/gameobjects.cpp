@@ -4861,9 +4861,8 @@ static void LightSabreStreakCode(GameObject_s *object, i32 blade, i32 effect) {
                 f32 plane = object->field_0x1020;
                 if (WORLD->current_level->unknown_0cc != 2000000.0f)
                     plane = WORLD->current_level->unknown_0cc;
-                NUVEC reflected[2] = {points[0], points[1]};
-                reflected[0].y = plane - (reflected[0].y - plane);
-                reflected[1].y = plane - (reflected[1].y - plane);
+                NUVEC reflected[2] = {{points[0].x, plane - (points[0].y - plane), points[0].z},
+                                      {points[1].x, plane - (points[1].y - plane), points[1].z}};
                 AddStreakPoints(reflected, 0.25f, packed, &object->sabre_streaks[blade][1], 1, object);
             }
         }

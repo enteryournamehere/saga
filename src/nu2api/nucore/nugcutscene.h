@@ -311,7 +311,14 @@ struct instNUGCUTSCENE_s {
             u8 flags_88_high : 5;
         };
     };
-    u8 flags_89;
+    union {
+        u8 flags_89;
+        struct {
+            u8 flags_89_low : 4;
+            i8 finished : 1; // signed: reads as 0 or -1
+            u8 flags_89_high : 3;
+        };
+    };
     u8 flags_8a;
     u8 flags_8b;
     u8 flags_8c;

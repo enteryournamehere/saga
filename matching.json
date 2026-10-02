@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.01414,
+    "fuzzy_match_percent": 68.016266,
     "total_code": "4722419",
-    "matched_code": "536108",
-    "matched_code_percent": 11.352402,
+    "matched_code": "536330",
+    "matched_code_percent": 11.357103,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6379,
-    "matched_functions_percent": 47.395794,
+    "matched_functions": 6385,
+    "matched_functions_percent": 47.440372,
     "total_units": 1
   },
   "text": {
@@ -46930,7 +46930,7 @@
           "address": 2309392,
           "offset": 1419424,
           "size": 2796,
-          "match_percent": 54.866325
+          "match_percent": 55.609253
         },
         {
           "name": "_Z18ChrisAnakinCUpdatev",
@@ -47042,7 +47042,7 @@
           "address": 2338592,
           "offset": 1448624,
           "size": 15,
-          "match_percent": 0.0
+          "match_percent": 100.0
         },
         {
           "name": "_Z18ChrisAnakinAUpdateP11WORLDINFO_s",
@@ -47066,7 +47066,7 @@
           "address": 2338672,
           "offset": 1448704,
           "size": 15,
-          "match_percent": 0.0
+          "match_percent": 100.0
         },
         {
           "name": "_Z16ChrisAnakinBInitv",
@@ -47074,7 +47074,7 @@
           "address": 2338688,
           "offset": 1448720,
           "size": 216,
-          "match_percent": 99.04348
+          "match_percent": 96.434784
         },
         {
           "name": "_Z18ChrisAnakinBUpdatev",
@@ -47114,7 +47114,7 @@
           "address": 2338992,
           "offset": 1449024,
           "size": 15,
-          "match_percent": 0.0
+          "match_percent": 100.0
         },
         {
           "name": "_Z16ChrisAnakinDInitP11WORLDINFO_s",
@@ -47122,7 +47122,7 @@
           "address": 2339008,
           "offset": 1449040,
           "size": 15,
-          "match_percent": 0.0
+          "match_percent": 100.0
         },
         {
           "name": "_Z18ChrisAnakinDUpdateP11WORLDINFO_s",
@@ -47149,6 +47149,22 @@
           "match_percent": 100.0
         },
         {
+          "name": "_Z19ChrisDogFightAResetP11WORLDINFO_s",
+          "demangled_name": "ChrisDogFightAReset(WORLDINFO_s*)",
+          "address": 2339216,
+          "offset": 1449248,
+          "size": 141,
+          "match_percent": 100.0
+        },
+        {
+          "name": "_Z19ChrisDogFightAPanelP11WORLDINFO_s",
+          "demangled_name": "ChrisDogFightAPanel(WORLDINFO_s*)",
+          "address": 2339360,
+          "offset": 1449392,
+          "size": 9,
+          "match_percent": 100.0
+        },
+        {
           "name": "_Z17ChrisAnakinAPanelP11WORLDINFO_s",
           "demangled_name": "ChrisAnakinAPanel(WORLDINFO_s*)",
           "address": 2339376,
@@ -47163,6 +47179,14 @@
           "offset": 1449424,
           "size": 322,
           "match_percent": 99.970146
+        },
+        {
+          "name": "_Z18ChrisDogFightAInitP11WORLDINFO_s",
+          "demangled_name": "ChrisDogFightAInit(WORLDINFO_s*)",
+          "address": 2339728,
+          "offset": 1449760,
+          "size": 435,
+          "match_percent": 96.797874
         },
         {
           "name": "_Z13ShipDropCoinsP13starfighter_s",
@@ -51096,7 +51120,7 @@
           "address": 4409392,
           "offset": 3519424,
           "size": 21,
-          "match_percent": 82.166664
+          "match_percent": 100.0
         },
         {
           "name": "instNuGCutSceneTimeLeft",
@@ -84776,7 +84800,7 @@
           "address": 2159840,
           "offset": 1269872,
           "size": 110,
-          "match_percent": 99.916664
+          "match_percent": 99.5
         },
         {
           "name": "_Z16KashyyykA_UpdateP11WORLDINFO_s",
@@ -84888,7 +84912,7 @@
           "address": 2163184,
           "offset": 1273216,
           "size": 258,
-          "match_percent": 99.67796
+          "match_percent": 99.50848
         },
         {
           "name": "_Z12VaderA_ResetP11WORLDINFO_s",
@@ -84993,30 +85017,6 @@
           "offset": 1293024,
           "size": 308,
           "match_percent": 99.60811
-        },
-        {
-          "name": "_Z19ChrisDogFightAResetP11WORLDINFO_s",
-          "demangled_name": "ChrisDogFightAReset(WORLDINFO_s*)",
-          "address": 2339216,
-          "offset": 1449248,
-          "size": 141,
-          "match_percent": 92.14286
-        },
-        {
-          "name": "_Z19ChrisDogFightAPanelP11WORLDINFO_s",
-          "demangled_name": "ChrisDogFightAPanel(WORLDINFO_s*)",
-          "address": 2339360,
-          "offset": 1449392,
-          "size": 9,
-          "match_percent": 100.0
-        },
-        {
-          "name": "_Z18ChrisDogFightAInitP11WORLDINFO_s",
-          "demangled_name": "ChrisDogFightAInit(WORLDINFO_s*)",
-          "address": 2339728,
-          "offset": 1449760,
-          "size": 435,
-          "match_percent": 94.085106
         }
       ]
     },

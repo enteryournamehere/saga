@@ -12277,3 +12277,71 @@ summary retain. The70.002460% merge threshold remains unmet.
 Raw reportc0e4aba394674ea40af81b67c1428b5fc7703a5987ef1c23839cd6d472f26226;
 mapped report54f428413ef97ac10833c23448a11a5c84b8a1bf415fbae2e235a24a49b85429.
 Exact pushed-head GitHub checks are still pending; no merge is claimed.
+
+### Isolated DPad454 closure and over-gap452 fixture prerequisite
+
+DPad454's sole O2 pair replaces only the raw-backed complete strength
+expression. Both owner compiles and consumed dependency closures pass; the
+candidate report's initial serialization fails EDQUOT. All original objects,
+the complete baseline report, partial candidate report and failure log remain
+frozen. Additive r1 reuses the baseline and serializes only the same candidate
+object once to a fresh path, with unchanged strict comparison logic.
+The completed comparison loses37.91062407 original-weighted bytes:
+30.287823%→26.959410%,1109 bytes unchanged. All27 original-backed names,
+complete symbol/undefined surfaces retain; three unbacked emitted names remain
+unknown. This candidate is closed without further variants, representation
+proof, runtime or production integration.
+
+Over-gap452's original diagnostic stage and both212-input metadata preflights
+pass. Both sole old ABI fixture compiles stop because the fixture names
+unrelated CHARACTERDATA_s rather than APIOBJECT's actual characterdata_s
+pointee. No runtime has run. Failed evidence remains intact; only an additive
+canonical fixture-type correction is being prepared, with target/helper bodies
+and all runtime assertions unchanged. No linked gain or runtime PASS is claimed.
+
+### Over-gap452 additive fixture qualification and integration
+
+The additive runtime452-r1 changes only four exact fixture/common type tokens
+to the canonical characterdata_s pointee. The complete failed original packet
+remains hash-pinned and unchanged. Both fresh dependency preflights retain212
+inputs per side; all329 catalog inputs independently pass SHA verification.
+Actual commands, backend dry plans, library/ELF closure and helper bodies
+equal the fully reviewed original apart from these type tokens, exclusive
+output paths and compiler-generated temporary names.
+Catalog03be941c69954eb23b159663d6a1b94d342baa0e23a9d61f6fb039d83312e48d.
+
+Both GNU O2/SSE host64 and i386 old/new builds pass. Each actual binary passes
+8448 cases:768 admitted and7680 rejected, including2816 null-global cases.
+Old diagnostics pass128650 checks each; new diagnostics pass128394 checks each
+including256 distinct-global rollback cases. All four runs return0 with empty
+ASan/UBSan/LSan stderr. Actual task-denial, canonical terrain casting and
+separate old/new recipient oracles are bounded source diagnostics, not retail
+execution, successful-task, dynamic-terrain, asset or whole-engine certification.
+Result2311094a9387f535cf1632454615434c67036deb60ec51b8e68419a419876426.
+The sole previously qualified candidate is integrated byte-exactly as whole
+ownere4be9371c05331e8fcc1275acfd69894a09b5604cdba6286ecf88c374aa63539,
+pending linked validation; no isolated matching pair/report/proof is repeated.
+
+Checkpoint42's exact pushed headed932080a833a2bf0366d38c11e35a5979ef424a
+has all11 GitHub checks COMPLETED/SUCCESS. Its +0.812110pp main-relative gain
+still does not satisfy the +2pp merge threshold, so the PR remains open.
+
+### Checkpoint43 linked validation
+
+Android target, native and WASM builds and all five repository checks pass.
+The independent linked report reaches68.819084%: +0.004514pp over checkpoint42
+and +0.816624pp over main. Only ProcessAutoJumpOverGap changes,
+37.981308%→60.140186%, with all6293 raw exacts, original identity multiset,
+4722419-byte denominator and complete ownership summary retained.
+Raw report5a02cf011619045384929193cd7e1eee472a02e529216e27bdd4d8bd29a000cf;
+mapped report1c15dc105ca11f7b38e8f7332680396479462eaf60e63aa7c79f05bc012b7cb3.
+An initial report command stopped before comparison because a diagnostic
+build changed Bazel's convenience symlink. Resolving the actual target output
+through cquery restores reporting without another matching build or variant.
+The70.002460% merge threshold remains unmet; no merge is claimed.
+
+The fresh Batarang manual-character distance suspicion closes without a trial:
+the full original2439-byte body restores64.0 before the merge and deliberately
+retains that limit for subsequent categories. Batch122 already documents this
+recovered behavior. A broader family-name history search is required before
+promoting an exact private-helper name whose older prose uses its public caller.

@@ -612,6 +612,11 @@ void MechInputTouchGestureBasedController::ProcessAutoJumpOverGap(GameObject_s *
     if (holder == NULL) {
         return;
     }
+    JumpTriggerPacket packet = {};
+    packet.type = 1;
+    packet.player = object;
+    packet.touch_holder = holder;
+    packet.velocity = VuVec(object->apiobj.velocity.x, object->apiobj.velocity.y, object->apiobj.velocity.z, 1.0f);
     if (object->apiobj.field_0x27d == 0 && !ObjLandReady(object)) {
         return;
     }
@@ -623,18 +628,11 @@ void MechInputTouchGestureBasedController::ProcessAutoJumpOverGap(GameObject_s *
     if (!danger && !TouchHacks::CheckForAboutToRunOffAnEdge(*object, 0.3f)) {
         return;
     }
-    JumpTriggerPacket packet = {};
-    packet.type = 1;
-    packet.player = object;
-    packet.touch_holder = holder;
-    packet.velocity = VuVec(object->apiobj.velocity.x, object->apiobj.velocity.y, object->apiobj.velocity.z, 1.0f);
     if ((object->apiobj.character_data->model_flags & 0x40) == 0 && object->id != id_WATTO &&
         MechAutoJumpGetBest(packet, object->apiobj.facing_angle) == NULL &&
         !TouchHacks::CheckJumpForLandingSpot(*object, danger ? 2.0f : 0.05f)) {
         return;
     }
-    NUVEC previous_velocity = object->apiobj.velocity;
-    NUVEC previous_target_velocity = object->target_velocity;
     f32 speed =
         object->apiobj.character_data->player_config != NULL
             ? *reinterpret_cast<f32 *>(reinterpret_cast<u8 *>(object->apiobj.character_data->player_config) + 0x1c)
@@ -644,15 +642,23 @@ void MechInputTouchGestureBasedController::ProcessAutoJumpOverGap(GameObject_s *
                        boosted_velocity.z * boosted_velocity.z;
     if (magnitude_sq < speed * speed) {
         NuVecNorm(&boosted_velocity, &boosted_velocity);
+        speed =
+            object->apiobj.character_data->player_config != NULL
+                ? *reinterpret_cast<f32 *>(reinterpret_cast<u8 *>(object->apiobj.character_data->player_config) + 0x1c)
+                : 0.0f;
         boosted_velocity.x *= speed;
         boosted_velocity.y *= speed;
         boosted_velocity.z *= speed;
     }
+    GameObject_s *backup_recipient = player != NULL ? player : object;
+    NUVEC previous_velocity = backup_recipient->apiobj.velocity;
+    NUVEC previous_target_velocity = backup_recipient->target_velocity;
     object->apiobj.velocity = boosted_velocity;
     object->target_velocity = boosted_velocity;
     if (!TriggerJumpTask(packet, false, true, true)) {
-        object->apiobj.velocity = previous_velocity;
-        object->target_velocity = previous_target_velocity;
+        GameObject_s *restore_recipient = player != NULL ? player : object;
+        restore_recipient->apiobj.velocity = previous_velocity;
+        restore_recipient->target_velocity = previous_target_velocity;
     }
 }
 

@@ -86,10 +86,16 @@ build:target --per_file_copt=^src/gamelib/util/Utilities\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/misc/legoapi_misc\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/misc/memory\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/misc/utilities\.cpp$@-O2
+# Holding files for functions whose original code is optimized (no frame pointer);
+# their levels follow the neighbouring original functions.
+build:target --per_file_copt=^src/legoapi/misc/stream\.cpp$@-O3
+build:target --per_file_copt=^src/legoapi/misc/legoapi_status\.cpp$@-O3
+build:target --per_file_copt=^src/legoapi/misc/supportall_stubs\.cpp$@-O2
 build:target --per_file_copt=^src/legoapi/misc/androidbatman\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/render/core/terrain\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/render/core/terrain_stubs\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/actions/character/transform\.cpp$@-O3
+build:target --per_file_copt=^src/legoapi/actions/character/starwars\.cpp$@-O3
 # The original static initializer and array maintenance require -O3.
 build:target --per_file_copt=^src/legoapi/actions/character/simpletons\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/actions/character/specialmoves\.cpp$@-O3
@@ -144,6 +150,7 @@ build:target --per_file_copt=^src/legoapi/characters/motion/gameanim\.cpp$@-O2
 build:target --per_file_copt=^src/legoapi/characters/motion/animation\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/characters/motion/contexts\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/characters/motion/chris\.cpp$@-O2
+build:target --per_file_copt=^src/legoapi/characters/motion/chris_stubs\.cpp$@-O2
 # The original keeps ResetSpaceLevel's full local symbol and passes its two
 # pointer arguments in eax/edx; disabling IPA-SRA reproduces that exact shape.
 build:target --per_file_copt=^src/legoapi/characters/motion/chris\.cpp$@-fno-ipa-sra
@@ -171,6 +178,7 @@ build:target --per_file_copt=^src/legoapi/items/collect/bolts\.cpp$@-O3
 # The original Shard gizmo and collection TU is optimized in the target.
 build:target --per_file_copt=^src/legoapi/items/collect/shard\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/items/objects/gameobjects\.cpp$@-O3
+build:target --per_file_copt=^src/legoapi/items/objects/things\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/items/objects/objectsall\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/props/doors/doors\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/actions/character/speederchase\.cpp$@-O3

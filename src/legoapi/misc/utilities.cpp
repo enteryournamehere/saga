@@ -92,14 +92,9 @@ void FindAnglesZX(nuvec_s *normal, u16 *x_rotation, u16 *z_rotation) {
 }
 
 i32 getNumDigits(i32 value) {
-    if (__builtin_expect(value <= 9, 0))
-        return 1;
-    i32 threshold = 10;
     i32 digits = 1;
-    do {
-        threshold *= 10;
-        ++digits;
-    } while (value >= threshold);
+    for (i32 threshold = 10; value >= threshold; threshold *= 10)
+        digits++;
     return digits;
 }
 

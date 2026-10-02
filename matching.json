@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.0303,
+    "fuzzy_match_percent": 67.99743,
     "total_code": "4722419",
-    "matched_code": "531160",
-    "matched_code_percent": 11.247625,
+    "matched_code": "531743",
+    "matched_code_percent": 11.259971,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6331,
-    "matched_functions_percent": 47.039158,
+    "matched_functions": 6347,
+    "matched_functions_percent": 47.158035,
     "total_units": 1
   },
   "text": {
@@ -39758,7 +39758,7 @@
           "address": 4173536,
           "offset": 3283568,
           "size": 24,
-          "match_percent": 49.0
+          "match_percent": 100.0
         },
         {
           "name": "InitFn_MidSpecialMove",
@@ -39766,7 +39766,7 @@
           "address": 4173568,
           "offset": 3283600,
           "size": 24,
-          "match_percent": 49.0
+          "match_percent": 100.0
         }
       ]
     },
@@ -47201,7 +47201,7 @@
           "address": 2340176,
           "offset": 1450208,
           "size": 47,
-          "match_percent": 28.25
+          "match_percent": 100.0
         }
       ]
     },
@@ -52761,7 +52761,7 @@
           "address": 2114624,
           "offset": 1224656,
           "size": 206,
-          "match_percent": 96.796875
+          "match_percent": 100.0
         },
         {
           "name": "_Z15InitPaintPuzzleP11WORLDINFO_s",
@@ -67206,7 +67206,7 @@
           "address": 925184,
           "offset": 35216,
           "size": 93,
-          "match_percent": 29.411764
+          "match_percent": 99.35294
         },
         {
           "name": "_Z18CreateThingManagerv",
@@ -67214,7 +67214,7 @@
           "address": 5147472,
           "offset": 4257504,
           "size": 92,
-          "match_percent": 24.95
+          "match_percent": 45.85
         }
       ]
     },
@@ -71569,7 +71569,7 @@
           "address": 901152,
           "offset": 11184,
           "size": 93,
-          "match_percent": 29.411764
+          "match_percent": 99.35294
         },
         {
           "name": "DEVCDDVDROM_Interrogate",
@@ -71577,7 +71577,7 @@
           "address": 2575408,
           "offset": 1685440,
           "size": 19,
-          "match_percent": 39.0
+          "match_percent": 100.0
         },
         {
           "name": "DEVMEMORYCARD_Interrogate",
@@ -71585,7 +71585,7 @@
           "address": 2575440,
           "offset": 1685472,
           "size": 19,
-          "match_percent": 39.0
+          "match_percent": 100.0
         },
         {
           "name": "DebugLog",
@@ -71593,7 +71593,7 @@
           "address": 2744096,
           "offset": 1854128,
           "size": 9,
-          "match_percent": 24.444445
+          "match_percent": 100.0
         },
         {
           "name": "Debug_Print",
@@ -71601,7 +71601,7 @@
           "address": 4398896,
           "offset": 3508928,
           "size": 9,
-          "match_percent": 24.444445
+          "match_percent": 100.0
         }
       ]
     },
@@ -71695,7 +71695,7 @@
           "address": 3221792,
           "offset": 2331824,
           "size": 9,
-          "match_percent": 32.5
+          "match_percent": 100.0
         },
         {
           "name": "StreamSeek",
@@ -71703,7 +71703,7 @@
           "address": 3221808,
           "offset": 2331840,
           "size": 9,
-          "match_percent": 24.444445
+          "match_percent": 100.0
         },
         {
           "name": "StreamCache",
@@ -71711,7 +71711,7 @@
           "address": 3221824,
           "offset": 2331856,
           "size": 9,
-          "match_percent": 24.444445
+          "match_percent": 100.0
         },
         {
           "name": "StreamCacheCheckComplete",
@@ -71719,7 +71719,7 @@
           "address": 3221840,
           "offset": 2331872,
           "size": 9,
-          "match_percent": 32.5
+          "match_percent": 100.0
         }
       ]
     },
@@ -72125,7 +72125,7 @@
           "address": 2573696,
           "offset": 1683728,
           "size": 22,
-          "match_percent": 48.57143
+          "match_percent": 100.0
         }
       ]
     },
@@ -72482,7 +72482,7 @@
           "address": 5420544,
           "offset": 4530576,
           "size": 51,
-          "match_percent": 79.666664
+          "match_percent": 100.0
         },
         {
           "name": "_Z10HashStringPh",
@@ -102869,7 +102869,7 @@
           "address": 2495652,
           "offset": 1605684,
           "size": 108,
-          "match_percent": 94.44444
+          "match_percent": 100.0
         },
         {
           "name": "NuMemBlkFree",
@@ -103989,7 +103989,7 @@
           "address": 976576,
           "offset": 86608,
           "size": 9,
-          "match_percent": 62.5
+          "match_percent": 100.0
         },
         {
           "name": "NuPad_Interface_InputManagerInitialise",
@@ -119114,13 +119114,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -119153,13 +119148,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -119192,13 +119182,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -119247,13 +119232,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -119322,13 +119302,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -119377,13 +119352,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -119432,13 +119402,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -119487,13 +119452,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -119542,13 +119502,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -119597,13 +119552,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -119862,13 +119812,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -119917,13 +119862,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -119972,13 +119912,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -120076,13 +120011,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -120143,13 +120073,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -120299,13 +120224,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -120406,13 +120326,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -120513,13 +120428,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -120568,13 +120478,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -120623,13 +120528,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -120678,13 +120578,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -120759,13 +120654,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -120814,13 +120704,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -120881,13 +120766,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -120936,13 +120816,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -121004,13 +120879,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -121055,17 +120925,12 @@
       "address": 3148253,
       "offset": 2258285,
       "size": 373,
-      "match_percent": 99.7,
+      "match_percent": 0.0,
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -121130,17 +120995,12 @@
       "address": 3166151,
       "offset": 2276183,
       "size": 373,
-      "match_percent": 99.7,
+      "match_percent": 0.0,
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -121185,17 +121045,12 @@
       "address": 3170831,
       "offset": 2280863,
       "size": 373,
-      "match_percent": 99.7,
+      "match_percent": 0.0,
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -121240,17 +121095,12 @@
       "address": 3178119,
       "offset": 2288151,
       "size": 373,
-      "match_percent": 99.7,
+      "match_percent": 0.0,
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -121295,17 +121145,12 @@
       "address": 3181127,
       "offset": 2291159,
       "size": 373,
-      "match_percent": 99.7,
+      "match_percent": 0.0,
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -121417,13 +121262,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -121472,13 +121312,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -121527,13 +121362,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -121929,13 +121759,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -122032,13 +121857,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -122134,13 +121954,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -122787,13 +122602,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",
@@ -122842,13 +122652,8 @@
       "candidate_units": [
         "editor/creature_editor.cpp.o",
         "globals.cpp.o",
-        "legoapi/characters/motion/chris_stubs.cpp.o",
         "legoapi/items/base/apiobject.cpp.o",
-        "legoapi/items/objects/things.cpp.o",
         "legoapi/misc/buffers.cpp.o",
-        "legoapi/misc/legoapi_status.cpp.o",
-        "legoapi/misc/stream.cpp.o",
-        "legoapi/misc/supportall_stubs.cpp.o",
         "legoapi/render/core/nugraph.cpp.o",
         "legoapi/render/core/render_stubs.cpp.o",
         "legoapi/render/core/rtl.c.o",

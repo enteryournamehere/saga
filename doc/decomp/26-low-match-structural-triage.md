@@ -10920,3 +10920,108 @@ mapped report SHA256
 97fded975eb54b82752736ba760146069473beddafdb8562f5ff398e661b9208.
 407/408 remain separately pending, not part of this linked checkpoint. The
 70.002460% cycle threshold remains unmet; no merge is authorized by this gain.
+
+Checkpoint30 commits and pushes as db8b08c815faa04d8cada0e37ffffa4434ef4d06,
+retaining Fabian's authorship and the verified Codex co-author trailer. The
+full normal hook passes; generated matching.json is byte-identical to the
+independent checkpoint30 mapping. All eleven GitHub checks complete SUCCESS
+on this independently verified exact pushed head; the cycle threshold remains
+unmet.
+
+Batch407's additive scoped literal proof passes without changing its failed
+first gate, objects or reports: the only symbol delta is one zero-sized local
+.LC7 backed by a complete4-byte positive-zero cell. The entire old16-byte
+scalar pool and all existing cells/uses retain at+4; vector and string pools
+are byte-identical. Exactly two R_386_GOTOFF references are scalar UCOMISS
+zero comparisons inside Doors_Check, replacing register-zero comparisons.
+This qualifies this literal only, not a blanket compiler-label exception or
+an invented original score. Result SHA256
+ae89d5e3c6376e150f2b857ba34b3372c986a98cc8a064541d400d4f4ad2bce2.
+The separate pure control-flow proof passes2304 finite single-door cases and
+233 bounded record arrays, checking unchanged admission, short circuit,
+terminal outcomes, exact helper/math expressions and cursor/count traversal
+under the actual nonterminal helpers' immutable-list/count contract. It is
+not compiled gamebody, numeric/nonfinite geometry, threading or gameplay
+verification. Result SHA256
+9da12a11bb76297c6087a9f904cb1ada642daa2329dfb68ce9b584fe645ac1de.
+Root integrates the exact frozen407 candidate for a subsequent checkpoint;
+the measured205.7272704 owner bytes are not yet a linked gain.
+
+The fresh full NuDynamicLight::computeShadowClippingPlanes census
+(raw0x2b8890,2734 bytes,26.31962%) finds all six face tests/publications,
+both actual edge tables, twelve-edge silhouette traversal and plane-count
+bound already present. Root reads its complete audit
+`/tmp/saga-shadowclip-cp28.nsZD5c/audit.md`,SHA256
+7515d81e52886866551d038c5218d11bf4c9793c6309f47ad26e19e55ae1cffb.
+No export, candidate, compiler/report or runtime follows. The widened37-row
+gizmo/props/action history screen is only named-history triage, not a blanket
+equivalence conclusion. The proposed UpdatePushBlocks captured-base cursor
+does not restore retail's base reload and is withdrawn before any trial.
+
+Batch409 prepares only the AIRetreatFromDestination ordered range-clamp
+predicates parameter>1 and parameter<0, preserving every other body byte.
+Root reads the full audit/current body and independently checks the three
+original branch blocks. The actual owner is O3; raw0x3f72e0/3422 bytes and
+mapped42.38976% are not measured candidate gains. Normal new_retreat defaults
+to1 and bypasses this legacy body. Finite endpoint/order behavior is unchanged;
+raw unordered retention is disclosed without a valid-NaN gameplay claim.
+No compile/report has run yet. Audit SHA256
+30b4c886d2c6f1c03bb4a3c6701c46f63d9d31f733ee0c67b1576672b74bd8ca;
+patch SHA256386bf6c5575eee0fd2c854d554b71aa489c31994e1d7dc8a705a981900686ba9.
+
+Root stages409 from the actual unchanged O3 action and90 identical canonical
+inputs per side, then runs the sole complete owner pair. All16 original rows,
+complete symbol Counter and undefined identities qualify, but the candidate
+loses44.92901212 original-weighted bytes:42.352776 to41.03983%, both3195
+emitted bytes. No exacts are lost (none in this owner). The mapped linked
+baseline42.38976% is not substituted for the isolated owner baseline. The
+negative trial is reserved without source integration, variants, compiler/report
+retry or runtime-fixture work. Initial objects and gate capture are preserved
+under `/tmp/saga-retreat-clamp409.qNCZRP`.
+
+The first408 diagnostic stops at host64 baseline compilation, before any
+runtime: canonical numemory.h requires NuMemoryPS declarations missing from
+the extracted fixture's include order. Its build log and failed outer capture
+remain immutable. An additive packaging-only repair must use the actual
+canonical header, not invented declarations or altered candidate/oracle code.
+
+Root fully reviews and executes408's additive canonical-header wrapper,
+preserving the initial packet/failure capture. Both host64 and GNU i386 SSE
+candidate diagnostics pass all14 named cases and1165 checks with ASan/UBSan
+and leak detection enabled. On each ABI, the five safe old-body controls fail
+exactly their named fade/pulse/slot/completion assertions; paused, absent
+pacemaker and absent-cut controls pass. Original state0 present-cut controls
+are excluded because their scene-as-instance access exceeds the canonical
+scene extent; no padding fabricates validity. Actual cutscene lookup, NuFmod,
+special setters and pacemaker-display body execute, while mandatory update
+calls and message allocation failure are typed diagnostic seams. This is
+bounded state/helper validation, not NDK/Bionic, rendering, concurrency or
+full gameplay validation. Results SHA256
+da38c28e481e0be613c8b5c2698d841cb3821d1ee95f98ef942ebb5023fc0ede.
+Root integrates the exact frozen408 candidate; its isolated owner gain is
+not yet a linked checkpoint gain.
+
+Batch410 proposes only replacing edppLoadPage's duplicated particle-budget
+block with the actual existing same-owner static UpdateTotalPtls(debtab[index])
+call. Retail0x36c801 directly calls raw0x34d810 after table publication; the
+current static helper already emits its natural compiler-private ABI without
+attributes. Source ownership, O2 action, guards, helper and counters stay
+unchanged. Root rejects the initial gate's stale explicit-score-only parser
+before compiler/report execution and requests an additive qualified-v2
+decoder repair. No source variant or measured gain is claimed.
+
+### Checkpoint31 linked door/podrace unit
+
+The qualified407 door traversal and408 podrace changes, with only canonical
+formatting after frozen-candidate integration, measure68.711250% in one fresh
+linked raw report and live Bazel mapping: +0.013960 percentage points versus
+checkpoint30 and+0.708790 versus current main. All6293 prior raw
+name/address/size exact identities, the4,722,419-byte original denominator
+and all452 mapped owners/assignment counts retain. Raw SHA256
+f37417128deb7bfc44adf7c8e6e91ffea75452f44f9bc16589357b02fff5a3aa;
+mapped SHA256
+09ac9e59353eb3ea13a5987b7ad3266f39bdde8cfef471e668bc79c2f69aa228.
+Target/native/WebAssembly builds and the five repository tests pass. The
+normal commit hook will independently regenerate the report. Batch410 and
+411 are not part of this checkpoint. The70.002460% cycle threshold remains
+unmet; no merge follows from these gains.

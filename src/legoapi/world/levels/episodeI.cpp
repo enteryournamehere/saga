@@ -37,6 +37,7 @@
 #include "nu2api/nu3d/nuspline.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/nustring.h"
+#include "nu2api/nucore/nugcutscene.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nurand.h"
@@ -1193,10 +1194,10 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
 
 void PodRaceCUpdate(WORLDINFO_s *world) {
     if (pod_pacemaker != 0) {
-        if (FadeSys.fade != 0.0f && pause_rndr_on == 0) {
-            float t = pod_pacemaker_alpha + FRAMETIME * 2.0f;
-            pod_pacemaker_alpha = t < 1.0f ? t : 1.0f;
-            if (NuFmod(GameTimer.time_elapsed_mod_seconds, 0.2f) > 0.1f)
+        if (FadeSys.fade == 0.0f && pause_rndr_on == 0) {
+            float t = FRAMETIME + FRAMETIME + pod_pacemaker_alpha;
+            pod_pacemaker_alpha = 1.0f < t ? 1.0f : t;
+            if (NuFmod(GameTimer.time_elapsed_mod_seconds, 0.2f) < 0.1f)
                 UpdatePacemakerDisplay(world->lev_objs);
         } else {
             pod_pacemaker_alpha = 0.0f;
@@ -1205,28 +1206,19 @@ void PodRaceCUpdate(WORLDINFO_s *world) {
     UpdatePodRaceLapDisplay(FRAMETIME);
     PodRaceUpdate(world, FRAMETIME);
     PodRaceSnipersUpdate();
-    switch (LevFlag.podrace_state) {
-        case 0: {
-            CUTINFO *cs = CutScene_Find(world->cutscene_sys, "Ep1_Podrace_TuskenRaiders");
-            if (cs != NULL && (((CUTSCENEDATA_s *)((CUTINFO *)cs)->scene)->flags & 0x10))
-                LevFlag.podrace_state = 1;
-            break;
+    if (LevFlag.podrace_state == 0) {
+        CUTINFO *cs = CutScene_Find(world->cutscene_sys, "Ep1_Podrace_TuskenRaiders");
+        if (cs != NULL && cs->instance != NULL &&
+            (static_cast<instNUGCUTSCENE_s *>(cs->instance)->flags_89 & 0x10) != 0)
+            LevFlag.podrace_state = 1;
+    }
+    if (LevFlag.podrace_state == 1) {
+        nuhspecial_s *slots = LevHSpecial;
+        for (i32 i = 0; i < 10; i++) {
+            if (NuSpecialExistsFn(&slots[i]) != 0)
+                NuSpecialSetVisibility(&slots[i], 1);
         }
-        case 1: {
-            i32 none = 1;
-            nuhspecial_s *slots = LevHSpecial;
-            for (i32 i = 1; i <= 9; i++) {
-                if (NuSpecialExistsFn(&slots[i]) != 0) {
-                    NuSpecialSetVisibility(&slots[i], 1);
-                    none = 0;
-                }
-            }
-            if (none)
-                LevFlag.podrace_state = 2;
-            break;
-        }
-        default:
-            break;
+        LevFlag.podrace_state = 2;
     }
 }
 

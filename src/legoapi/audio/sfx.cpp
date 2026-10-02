@@ -969,7 +969,9 @@ extern "C" {
     }
 
     void PrepareAllSounds(void) {
-        memset(SfxBits, 0xff, sizeof(SfxBits));
+        for (i32 i = 0; i < 100; ++i) {
+            SfxBits[i] = 0xffff;
+        }
     }
 
     void RegisterSounds(SoundTable *table) {

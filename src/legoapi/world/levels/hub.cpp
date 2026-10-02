@@ -1638,9 +1638,9 @@ void Hub_DrawMiniKits(WORLDINFO_s *world) {
         if (info->area_name == NULL)
             info = NULL;
         f32 x;
-        if (area == areas[(selected + count - 2) % count])
+        if (area == areas[(selected + (count - 2)) % count])
             x = -4.0f;
-        else if (area == areas[(selected + count - 1) % count])
+        else if (area == areas[(selected + (count - 1)) % count])
             x = -2.0f;
         else if (area == areas[selected])
             x = 0.0f;

@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.28196,
+    "fuzzy_match_percent": 68.29938,
     "total_code": "4722419",
-    "matched_code": "526846",
-    "matched_code_percent": 11.156274,
+    "matched_code": "526979",
+    "matched_code_percent": 11.15909,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6294,
-    "matched_functions_percent": 46.764244,
+    "matched_functions": 6295,
+    "matched_functions_percent": 46.77168,
     "total_units": 1
   },
   "text": {
@@ -42767,7 +42767,7 @@
           "address": 3438176,
           "offset": 2548208,
           "size": 133,
-          "match_percent": 26.875
+          "match_percent": 100.0
         },
         {
           "name": "MaskSounds",
@@ -46758,7 +46758,7 @@
           "address": 5090672,
           "offset": 4200704,
           "size": 2412,
-          "match_percent": 69.86892
+          "match_percent": 93.53488
         }
       ]
     },
@@ -75286,7 +75286,7 @@
           "address": 3105712,
           "offset": 2215744,
           "size": 4540,
-          "match_percent": 69.54608
+          "match_percent": 71.89977
         },
         {
           "name": "NuGHGFixup",
@@ -75742,7 +75742,7 @@
           "address": 5578176,
           "offset": 4688208,
           "size": 975,
-          "match_percent": 44.691917
+          "match_percent": 44.99495
         }
       ]
     },
@@ -86516,7 +86516,7 @@
           "address": 1744512,
           "offset": 854544,
           "size": 2959,
-          "match_percent": 87.71383
+          "match_percent": 89.231514
         },
         {
           "name": "_Z19Hub_LockUnlockDoorsP11WORLDINFO_s",

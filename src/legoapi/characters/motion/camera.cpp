@@ -404,9 +404,9 @@ void GameCameraMakeMiniCut3(u32 flags, float distance, i32 pitch, i32 yaw, i32 r
         Minicam_AddCommand(8, 0.0f, 0, focus, v000);
     if (flags & 0x100)
         Minicam_AddCommand(16, 0.0f, 0, NULL, *position);
-    if (flags & 0x2000)
+    else if (flags & 0x2000)
         Minicam_AddCommand(17, 0.0f, 0, spline, v000);
-    if (flags & 1)
+    else if (flags & 1)
         Minicam_AddCommand(9, distance, 0, NULL, v000);
     if (flags & 0x10)
         Minicam_AddCommand(13, 0.0f, pitch, NULL, v000);
@@ -441,14 +441,18 @@ void GameCameraMakeMiniCut3(u32 flags, float distance, i32 pitch, i32 yaw, i32 r
         Minicam_AddCommand(5, hold_time, 0, NULL, v000);
     }
     if (flags & 0x400) {
-        float elapsed = 0.0f;
-        if ((flags & 0x1800) == 0x1800)
-            elapsed = hold_time > blend_time ? hold_time : blend_time;
-        else if (flags & 0x800)
-            elapsed = blend_time;
-        else if (flags & 0x1000)
-            elapsed = hold_time;
-        Minicam_AddCommand(3, MAX(0.0f, end_time - elapsed), 0, NULL, v000);
+        float remaining = end_time;
+        if ((flags & 0x1800) == 0x1800) {
+            if (hold_time > blend_time)
+                remaining = end_time - hold_time;
+            else
+                remaining = end_time - blend_time;
+        } else if (flags & 0x800) {
+            remaining = end_time - blend_time;
+        } else if (flags & 0x1000) {
+            remaining = end_time - hold_time;
+        }
+        Minicam_AddCommand(3, MAX(0.0f, remaining), 0, NULL, v000);
         ObstacleCamBlendOutTime = blend_out_time;
     }
     if (borders != 0)

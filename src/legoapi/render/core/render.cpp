@@ -35,6 +35,7 @@
 #include "legoapi/cutscenes/cutscenes.h"
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 
 void DrawSubItems();
 
@@ -1566,7 +1567,9 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
 
     NUCAMERA camera;
     NuCameraGet(&camera);
-    if (*reinterpret_cast<i32 *>(&parameters->unknown_18) != 0)
+    u32 clear_screen;
+    memcpy(&clear_screen, &parameters->unknown_18, sizeof(clear_screen));
+    if (clear_screen != 0)
         ClearScreen();
     if (parameters->directional)
         NuVecNorm(&parameters->direction, &parameters->direction);
@@ -1613,10 +1616,10 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
             NuVecNorm(&direction, &direction);
 
             f32 brightness = direction.y;
-            u8 alpha;
+            u32 colour;
             if (cache_row > 0) {
-                alpha = cacheValues[col];
-                NuRndrPrimSetColour((static_cast<u32>(alpha) << 24) | 0x808080);
+                colour = (static_cast<u32>(cacheValues[col]) << 24) | 0x808080;
+                NuRndrPrimSetColour(colour);
             } else {
                 brightness = brightness * 0.5f + 0.5f;
                 if (brightness <= near_angle)
@@ -1645,8 +1648,8 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
                              parameters->direction_near_scale);
                     }
                 }
-                alpha = static_cast<u8>(MIN(255.0f, MAX(0.0f, brightness)));
-                NuRndrPrimSetColour((static_cast<u32>(alpha) << 24) | 0x808080);
+                colour = (static_cast<u32>(static_cast<u8>(MIN(255.0f, MAX(0.0f, brightness)))) << 24) | 0x808080;
+                NuRndrPrimSetColour(colour);
             }
             AlphaImagePrimUV(static_cast<f32>(row) * inv_row + pixelOffsetX,
                              (static_cast<f32>(col) * inv_col + pixelOffsetY) * 0.9f);
@@ -1684,9 +1687,10 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
                                             parameters->direction_near_scale);
                 }
             }
-            alpha = static_cast<u8>(MIN(255.0f, MAX(0.0f, brightness)));
+            const u8 alpha = static_cast<u8>(MIN(255.0f, MAX(0.0f, brightness)));
             cacheValues[col] = alpha;
-            NuRndrPrimSetColour((static_cast<u32>(alpha) << 24) | 0x808080);
+            colour = (static_cast<u32>(alpha) << 24) | 0x808080;
+            NuRndrPrimSetColour(colour);
             AlphaImagePrimUV(static_cast<f32>(row + 1) * inv_row + pixelOffsetX,
                              (static_cast<f32>(col) * inv_col + pixelOffsetY) * 0.9f);
             NuPrim2DAddXYZ(x1, y0, 0.0f);

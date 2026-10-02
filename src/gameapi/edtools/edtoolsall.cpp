@@ -5434,9 +5434,6 @@ void EdStringControl::AddMenuItem(eduimenu_s *menu, EdRef *member, void *target)
 EdStringControl::EdStringControl() {
 }
 
-inline EdStringControl::~EdStringControl() {
-}
-
 inline void EdStringControl::operator delete(void *memory) {
     theMemoryManager.FreePool(memory, sizeof(EdStringControl));
 }
@@ -5470,14 +5467,15 @@ void EdStringControl::cbPress(eduimenu_s *menu, eduiitem_s *item, u32) {
 
 template <> f32 EdValueControl<f32>::MouseScale = 100.0f;
 
-template <> inline EdValueControl<f32>::~EdValueControl() {
+template <> SAGA_HOST_LINKABLE_DTOR EdValueControl<f32>::~EdValueControl() {
 }
 
 template <> inline void EdValueControl<f32>::operator delete(void *memory) {
     theMemoryManager.FreePool(memory, sizeof(EdValueControl<f32>));
 }
 
-inline EdFloatControl::~EdFloatControl() {
+SAGA_HOST_LINKABLE_DTOR
+EdFloatControl::~EdFloatControl() {
 }
 
 inline void EdFloatControl::operator delete(void *memory) {

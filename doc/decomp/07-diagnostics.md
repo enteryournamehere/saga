@@ -156,6 +156,18 @@ original inlines it into derived destructors. Marking the existing definition
 happens: a class with only an implicit destructor gets an inline one, while
 the original defines it out of line and its `D0` calls `D1`.
 
+An `inline` definition in a `.cpp` file is only visible to that unit. If
+another unit calls the destructor out of line (a derived class, or an
+explicit destructor call), host builds fail to link with an undefined
+reference. Move the definition into the header so every user can inline it,
+as the original's weak copies imply. This is only safe when the destructor
+is not the class's key function: when it is the first declared virtual,
+making it inline turns the vtable and typeinfo into vague-linkage symbols
+that GCC 4.7 emits in unrelated units, which the `-fno-rtti` target cannot
+link. Such a destructor keeps its `inline` definition in its unit (or takes
+`SAGA_HOST_LINKABLE_DTOR` from `decomp.h`) so the matching target preserves
+the original's inlining while host builds get a strong, linkable definition.
+
 ### Only the static initializer shape differs between `-O2` and `-O3`
 
 `_GLOBAL__sub_I_*` functions are a useful witness for a unit's optimization

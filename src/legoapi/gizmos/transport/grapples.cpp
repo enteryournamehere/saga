@@ -39,7 +39,7 @@ extern NUMTL *SolidMtl3D;
 
 i32 grapple_gizmotype_id = -1;
 i32 Grapple_RopeSwingsAvailable;
-i16 Grapple_RopeSwingRotate;
+i16 Grapple_RopeSwingRotate = 0x5555;
 extern i32 GrappleSwingMode;
 
 struct GRAPPLEPROGRESS {

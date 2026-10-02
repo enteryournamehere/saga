@@ -368,9 +368,8 @@ i32 MatrixReflection(numtx_s *matrix, i32 axis, f32 plane, f32 override_plane, n
             return 1;
 
         case 2:
-            if (override_plane != 2000000.0f) {
-                if (MatrixReflection_CanOverrideFn != NULL && MatrixReflection_CanOverrideFn(plane) == 0)
-                    return 0;
+            if (override_plane != 2000000.0f &&
+                (MatrixReflection_CanOverrideFn == NULL || MatrixReflection_CanOverrideFn(plane) != 0)) {
                 plane = override_plane;
             }
             *result = *matrix;

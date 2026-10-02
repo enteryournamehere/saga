@@ -12481,3 +12481,67 @@ The initial metadata verifier stopped on a string-versus-integer size assertion;
 an additive verifier decodes the existing report's numeric size without another
 comparison, build or source variant. Both the failed verifier and partial output
 are preserved. The70.002460% merge threshold remains unmet; no merge is claimed.
+
+### Checkpoint46: idle selection and BuildIt reflections
+
+Batches458–460 are integrated as their exact qualified owner bytes. Idle
+selection draws from the raw repetition range before publishing/clamping, then
+subtracts AnimDuration's actual blend-out publication rather than FRAMETIME.
+BuildIt drawing restores the local matrix copy/scratch reuse and current-global
+level override, retaining the captured-world fallback outside the valid original
+global domain. MatrixReflection's zero-result hook vetoes the override selection,
+not reflection itself. The separate VU0 helper and ResetCharacterIdle remain
+unchanged; no calling-convention, compiler-option or source-placement shortcut
+is introduced.
+
+The separate same-object proofs qualify all emitted representations, including
+unbacked clone/destructor/thunk deltas, without inventing their absolute scores.
+Batch458 result3ff042461dfd2d5d0d29088f7f1e93ad15edfbbc3cc6021684167723044830ce;
+batch459 additive resultfacc320839ea6d9963e934d86edd69054c832b757c5bc749de0b110035c2f45f;
+batch460 additive resultc38b70189185dbab81dffd4ccc7bb5358a4bb6be7aa2dd64ff3d9f02cfec8b2f.
+The original459 proof rejected a defined weak destructor GOT address load;
+the additive proof admits only that exact startup registration row. The
+original460 proof rejected unequal incoming thunk coordinates; its additive
+schema2 proof qualifies the exact PIC call/add role with the coordinates still
+explicitly unequal. Original failures and objects/reports remain preserved;
+neither repair repeats code generation or matching comparisons.
+
+All twelve old/new GNU host64/i386 sanitizer runs pass with leak detection
+enabled and empty stderr. Idle passes974 finite cases/10875 checks per run,
+using actual RNG/animation helpers and three explicit old-policy controls.
+BuildIt passes83 cases/3286 checks per run with actual reset/object-pool/list/
+matrix helpers. Three context diagnostics and the nonmutating frustum/GPU trace
+seams are explicitly limited; there is no manufactured matrix-mutation witness.
+Reflection passes40 cases per run,1729 old/1793 new checks and four zero-hook
+controls. Its typed diagnostic callback is not the installed private game hook.
+No full renderer/gameplay, shipped-asset range, Android runtime or universal
+floating-environment equivalence is certified.
+
+The first BuildIt diagnostic fixture compilation stopped before linking on
+three globals incorrectly defined with C rather than canonical C++ linkage.
+A fresh additive fixture repairs only those declarations; all target/helper/
+oracle/options bytes and failed evidence are preserved. Its fresh full consumed
+dependency/backend/link catalogs precede all objects and runtime. Final runtime
+results: idle1726e00837aaead824832066759fc04e9afffa427954280417e4d3ae305c5dcd;
+BuildIta33baf7abeb798eca3fc9a4dc7e6876b45809e623d1265b1e9b1b2995ceb5f2f;
+reflection5223e72e92486f8012b11f781cc8df3520b807018639a28cafce67505774b3e1.
+
+Android target, native and WASM builds and all five repository checks pass.
+The independent linked score reaches68.825820%, +0.002470pp over checkpoint45
+and +0.823360pp over main. Only NewCharacterIdle33.114582%→33.312500%,
+GizBuildIts_Draw44.626440%→56.459770% and
+MatrixReflection88.451920%→92.750000% change. All6293 raw exacts, original
+identity multiset,4722419-byte denominator and full ownership summary retain.
+Raw report69f601fb4f6e1ab41e2ad34b94ec83dfa1894ed32a38d700a54a5c3bbe62853c;
+mapped report8364335d7d888e9b82be6c0eb7901b3a5dd466f1adc4d578891e7f9b30048fac.
+Checkpoint44's infrastructure retry and checkpoint45's exact pushed head now
+have all11 checks COMPLETED/SUCCESS. The new checkpoint requires its own
+exact-head CI; the70.002460% merge threshold remains unmet.
+
+The sole batch461 OnClick two-getter/canonical obstacle-mode pair has a known
+38.24376024-byte gain,43.050420%→44.160866%,2884→2899 emitted bytes.
+All42 original-backed names and12 exacts retain, but the full symbol Counter
+changes one local text label.L466→.L548. This is not automatically exempted;
+exact label/reference, symbol-string permutation, adjusting-thunk and unknown
+PC-thunk qualification remains separate pending work. No runtime or integration
+is claimed, and no source variant or object/report retry is authorized.

@@ -85,6 +85,7 @@ extern "C" {
     void NuTexAnimProgSysInit(void);
     void terrainpickupinit(char *, void **);
 
+    extern f32 animduration_blendouttime;
     extern i32 Grass_Available;
     extern i32 DEBPAGE_GENERAL;
     extern i32 DEBPAGE_CHARACTER;
@@ -1184,18 +1185,19 @@ static void NewCharacterIdle(GameObject_s *object, i32 default_idle) {
     CHARACTERANIM_s *info = static_cast<CHARACTERANIM_s *>(model->model_data_a[animation]);
     i32 repetitions = static_cast<u8>(info->minimum_repetitions);
     const u8 maximum = static_cast<u8>(info->maximum_repetitions);
-    object->previous_idle_animation = static_cast<i16>(animation);
-    if (repetitions > 1 && (info->flags & 2) == 0) {
-        repetitions = 1;
-    }
     if (repetitions == 0) {
         repetitions = 1;
     } else if (maximum > repetitions) {
         repetitions = IdleRepetitionCount(static_cast<u8>(repetitions), maximum);
     }
+    object->previous_idle_animation = static_cast<i16>(animation);
+    if (repetitions > 1 && (info->flags & 2) == 0) {
+        repetitions = 1;
+    }
 
     object->idle_animation_time = 0.0f;
-    object->idle_animation_limit = AnimDuration(object->id, animation, 0.0f, 0.0f, 0) * repetitions - FRAMETIME;
+    const f32 duration = AnimDuration(object->id, animation, 0.0f, 0.0f, 0);
+    object->idle_animation_limit = duration * repetitions - animduration_blendouttime;
 }
 
 void UpdateCharacterIdle(GameObject_s *object) {

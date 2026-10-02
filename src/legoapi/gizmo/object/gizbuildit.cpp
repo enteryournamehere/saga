@@ -269,13 +269,15 @@ static void GizBuildIts_Draw(void *world_ptr, void *data, float) {
 
         while (object != NULL) {
             GIZBUILDITANIMDATA_s *object_data = static_cast<GIZBUILDITANIMDATA_s *>(object->object_data);
-            object_data->was_drawn = static_cast<u8>(NuSpecialDrawAt(&object->special, &object_data->draw_mtx));
+            NUMTX draw_mtx = object_data->draw_mtx;
+            object_data->was_drawn = static_cast<u8>(NuSpecialDrawAt(&object->special, &draw_mtx));
 
             if ((buildit.state_flags & GIZBUILDIT_STATE_DRAW_REFLECTION) != 0 && (object->flags & 2) == 0) {
-                NUMTX reflection_mtx;
-                if (MatrixReflection(&object_data->draw_mtx, 2, reflection_plane, world->current_level->unknown_0cc,
-                                     &reflection_mtx) != 0) {
-                    NuSpecialDrawAt(&object->special, &reflection_mtx);
+                const f32 override_plane = WORLD != NULL && WORLD->current_level != NULL
+                                               ? WORLD->current_level->unknown_0cc
+                                               : world->current_level->unknown_0cc;
+                if (MatrixReflection(&object_data->draw_mtx, 2, reflection_plane, override_plane, &draw_mtx) != 0) {
+                    NuSpecialDrawAt(&object->special, &draw_mtx);
                 }
             }
             object = object->next;

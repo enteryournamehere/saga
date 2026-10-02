@@ -11108,3 +11108,169 @@ terrain and editor-save proposals are not integrated or counted here.
 Raw SHA25673521bcf404e29fcb69025c9ace92333bd3f442d6aa82f00168c332d176524bd;
 mapped SHA2564c17fa6f621601c23a6c1c4a4af2648db4d8399b2073c21fdff42fd346708674.
 The70.002460% cycle threshold is not reached.
+
+Checkpoint32's full normal format/tidy/symbol/report hook passes and its
+generated matching.json is byte-identical to the independent mapping. Root
+commits and pushes8a40b80f5e67cad3cee9f87f63581e91b10d8847 with Fabian's
+authorship and verified Codex attribution. Final-head PR checks are being
+monitored; no pending checks or threshold status are represented as a merge.
+
+All eleven checks subsequently pass on independently verified exact head
+8a40b80f5e67cad3cee9f87f63581e91b10d8847. Final-head capture SHA256
+1df8d2b27d5ffa3f4c5ff32b08690d7b3a31b09ec89a28f2f24716c7f0636510.
+The +2 percentage-point merge threshold is still unmet.
+
+### Batches412–414 source-backed reserve qualification
+
+412 freezes only DecodeOggChunk's output-only bitstream variable lifetime and
+six-channel stores as the original direct three-element rotation. Actual
+ov_read_filter/wrapper source never reads or retains that output pointer.
+The unchanged O2 full-owner pair gains8.5771194 original-weighted bytes across
+30 original-backed rows, retaining ten exacts and the complete Counter/U
+surface. The target changes56.00901 to57.193695%; emitted size639 to657 bytes.
+Gate manifest SHA25694dfa92a0c025a5e990f43e7790e7f09a48cf3c403f5ac1ef75819ec20e267d9;
+capture SHA25657c89302e9e47c5258a614440f92325b390dfc91fb041d6d85de33c59bb51529.
+The two explicitly unbacked PC thunks receive no invented original score,
+extent or weight. Root's same-object proof verifies their actual12-byte code,
+COMDAT membership, normalized unwind and complete direct-call closure.
+Proof SHA256deb875a98c2eac548d58a355848fdb9a7393e0a2f64fdacb366a5e95dd52dbf8.
+
+Root fully reviews and executes the lean exact-old/new PCM excerpts using
+canonical integer types, independent channel-order oracle, real aligned
+arrays and sentinels. GNU64 and genuine GNUi386 each pass397312 cases and
+1191936 checks with ASan/UBSan and leak detection enabled, empty runtime
+stderr and ELF32 sanitizer linkage verified. The393216 coordinate-basis
+cases cover every16-bit value in each coordinate, plus4096 bounded
+multiframe cases; neither all2^96 frames nor every offset/pattern combination
+is claimed. This is PCM fragment validation, not codec/bitstream execution,
+decoder lifecycle, concurrent store observation or NDK/Bionic gameplay.
+Host result SHA2563fb7111c4bc3f38b2dd628e1f045ed7bb207b78f8295250f07590aaf438e9aba;
+i386 result SHA2561a1b62c0aae565fc063a69b38670b10c2f43f5220dcfe844250699d6746e6971.
+Root integrates only the byte-identical frozen412 candidate; linked gain is
+not counted until the next independent checkpoint.
+
+413 freezes only the first64-slot terrain aging loop's canonical captured
+cursor/count form, still after CurTerr's null guard. Signed positive-only
+decrements, all remaining terrain logic, canonical24-byte record and actual
+O3 owner options remain unchanged. The sole pair gains10.4366936
+original-weighted bytes across103 backed rows, retaining two exacts and the
+complete Counter/U surface. Target59.88802 to60.533855%, same1528-byte size.
+Manifest SHA256cb7a6c0fd442ec39fda73ff82e613bcf04af65d2860afa83422a32b00b58e937;
+capture SHA25647c79b84fd789ececef589a888608ef01df95bf62ff626efb1f0a7dc52b37804.
+Root separately qualifies the exact unbacked93-byte startup and both12-byte
+PC thunks: whole code, outgoing REL targets/addends, actual constant storage,
+BSS layout, init-array publication, normalized unwind and incoming calls
+retain. Proof SHA25680ccd82df4020ccfc02bce66f9fca7befbba49017b46f3787036b4e7b182934c.
+No original metric is invented for them. Root fully reads and executes the
+lean exact-old/new guarded-loop diagnostic using genuine TERRSET storage and
+canonical records, with no terrain-engine scaffolding. GNU64 and genuine
+GNUi386-SSE each pass131456 cases,1314566 checks and262914 loop calls under
+ASan/UBSan/leak detection, empty stderr. Both signed fields exhaust all65536
+i16 values with all-null/all-nonnull IDs;384 mixed-ID boundary cases verify
+every slot, whole records, guards and untouched storage. Actual159-header
+inventories are reviewed as observed GNU provenance, not pre-frozen NDK
+authority. ELF32 and sanitizer linkage retain. No full terrain remainder,
+physics/GPU/concurrency or gameplay-bug claim is made; both source forms pass.
+Host result SHA256f7fece21ed27ecd17c78878ea89419fae17717b83b6bb5d9a02e742c5686fbf9;
+i386 result SHA256b0c6dbe1d64a96257573103372b8f4391080e3021e8eff1aacabc5e2980f526e.
+Root integrates only the byte-identical frozen413 candidate; linked gain
+remains pending the next independent checkpoint.
+
+414's sole unchanged-O2 editor-save pair gains510.085188 original-weighted
+bytes across232 backed rows, retaining41 exacts and the complete Counter/U
+surface. Save changes53.309677 to67.47871%,3689 to3651 emitted bytes.
+Only the existing ten-scene macro captures the canonical buffer after
+PreSave/name preparation and editable admission; all invocations and existing
+function attributes remain byte-identical. No new optimization authority is
+introduced. Manifest SHA256ac36d1d148a51334e2a043cfb82f5ea94f335b6875ea351571d56feb31e2a3a0;
+capture SHA256ea2e7ab73d21e363fde23790b4daaf1826704375df56bf4684e3bc1dfacc573b.
+Both explicit unbacked PC thunks pass the same scoped representation proof,
+SHA2567fed42dba4bec78789c9c4f84111ae983d06b436de1211d526a7498a62c3288e.
+Root fully reviews the complete unchanged old/new Save, actual canonical
+lifetimes and32 helper definitions, explicit stable two-method ClassEditor,
+WriteStream and device seams, and independent ten-scene output/order oracle.
+The first metadata extraction's missing KHR membership is repaired using
+individually named prior actual377/378 dependency catalogs. Root also catches
+and corrects the diagnostic-only first block-size oracle to23 before any
+preprocessing/build; prior artifacts remain immutable. All four finite
+dependency preflights qualify before any fixture builds (162 GNU/115 NDK
+files), and all four objects compile. The first link then stops on the
+omitted real EditorSettings constructor, with no runtime yet executed.
+
+Additive r2 extracts that exact canonical constructor as the33rd lifetime
+helper, qualifies both new closures before its two builds and reuses all
+four already-frozen fixture objects without recompilation. The full Save,
+32 prior helpers, scene inputs, oracle, options and failed-run history retain.
+GNU64 ASan/UBSan/LSan and actual-action NDK32 Linux-libc old/candidate each
+pass240 cases and25877 checks, identical trace91ac7b51 and empty stderr.
+Real memory-file helpers and stream headers run; registered serialization,
+disk/device services, DAT/card/APK alternatives and full Android/Bionic
+gameplay are not claimed. Helper excerpts use diagnostic owner O2, not
+each helper's production optimization. No artificial pointer-mutation or
+expected baseline-failure witness is introduced. ELF classes and host
+sanitizer linkage verify. Root integrates only the byte-identical frozen414
+candidate; linked gain remains pending the next checkpoint.
+r1 manifest SHA256f29e82fc465c9fecfe60aacb874fee80c5ee504da59f7596048f72603ccaba26;
+r2 manifest SHA256ecd34114318f943f5fbb9b48a1a36a80a41093064d56fb620abe3bc966577470;
+runtime result SHA2563bbf23937a6e524e932a3d22fb80054af696ea2ad1d338579880dfd5a25947b5.
+
+The fresh cp32 animation/cutscene history screen finds no new proposal:
+all16 mapped >=1500-byte/<=60% rows lead to already complete audits, measured
+reserves or integrated units. No repeated raw exports, compiler or runtime
+expenditure follows. The unique existing v2 DrawCharacter original row has
+6588-byte extent and omitted scalar, which decodes to report-metric0 under
+the established protocol; it is not an absent-row unknown. This correction
+does not qualify its unresolved private-ABI/codegen comparison or reopen it.
+
+A separate new ForceThrowCode audit finds a raw-backed fifth GizForce_Throw
+literal1 versus source0, but both actual helpers ignore that argument. The
+original LOCAL .isra.13 and emitted .isra.15 have no exact-name pairing;
+unchanged exact-name callers alone do not establish the changed private
+body's score or delta. Root reads the complete audit and preserves the sole
+literal proposal at /tmp/saga-force-throw-cp32.651qfy without compiler/report,
+runtime, production changes or invented clone mapping. It remains reserved
+pending independent comparison/identity evidence, not a measured losing
+trial or claimed gameplay fix. Audit SHA25679df8d2a8da7011cc804754dbcc105ce61649ea828f9c2c96f5fa368eb95b1fb;
+patch SHA25623307de28fbb4e6eec825cd1d590599439d60377647cf0c1d8e0443054e4c52a.
+
+### Batch415 matching-neutral additive world-loading correction
+
+A fresh complete raw/export/current/type/producer audit identifies the actual
+WorldInfo_Load omission: optional vehicle+bonus CharacterMiniKits_Load must
+be followed by LoadTerrainFile, LoadGrassFile and LoadBridgeFile unless a
+service requests abort. Raw12b1be jumps back to12ad8b, with calls at12ad8e,
+12ada0 and12adb1 and each existing abort check. The actual minikit helper
+does not perform those environment loads; real loaders initialize/publish
+terrain and page handles even when assets are absent. Canonical area keywords
+admit flags5 and level defaults admit the nonexcluded0x4e0 path. No deployed
+asset usage, deep parser execution or native64 loader safety is claimed.
+
+Root fully reviews the sole remove-else proposal and actual unchanged O3
+owner/dependency gate. The two original reports are byte-identical: all22
+original-backed rows, zero existing owner exacts and full Counter/U surface
+retain with no qualification errors; known net0. WorldInfo_Load remains
+79.80697% and3193 emitted bytes in the object comparison. Explicit unbacked
+startup/thunks remain unresolved and receive no fabricated metric. The known
+neutral already closes this matching trial without representation proofs,
+runtime fixtures, source variants or integration. Its concrete behavior
+correction is preserved separately, not mislabeled as already fixed.
+Manifest SHA2561284aec4fdbc7f23ee1246a970d5e708280ab6f85afb3ad632abeaa9c0475c9f;
+patch SHA256fa1a84327c3dea6c9a5c41ccc65116a64686457866703aa843c6ceea701620af;
+capture SHA2566afb588248e763565e4cfd6744e23d1230726e7aecc9d4e0535fdc30de67f5bf;
+both report SHA256249b39eb9a7a0f05b1c76ac8cd511f3c39e3232737f2d5ed7b9ecb43b17b9c5d.
+Initial metadata proof-path and subsequent documentation call-address repairs
+are preserved before the sole compiler gate; neither changes the candidate.
+
+### Checkpoint33 linked Ogg, terrain and editor-save unit
+
+One fresh raw linked report and independent live Bazel mapping measure
+68.726395%,+0.011285 percentage points versus checkpoint32 and+0.723935
+versus current main. All6293 prior raw exact name/address/size identities,
+the4,722,419-byte original denominator and complete ownership counts retain.
+Only the frozen412/413/414 candidates are integrated; neutral415 and the
+unpaired ForceThrow literal remain reserved. Target/native/WebAssembly
+builds and all five repository tests pass. The normal commit hook will
+independently regenerate its report before commit/push. The70.002460%
+cycle threshold is not reached; no merge or replacement PR follows yet.
+Raw SHA256dee4b2500c1b74f2d6d02cb28f16bf1ef3d5128c3b96d2d853094e2c049c77fa;
+mapped SHA25621380097802225bcbabc768432890e49a7da8d8bfdb9962d44c8eae4e421ffa1.

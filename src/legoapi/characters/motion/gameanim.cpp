@@ -2245,32 +2245,30 @@ extern "C" {
             current = 0;
         }
         char old_value = state->values[current];
-        if (frame >= state->times[current]) {
-            goto advance_state;
-        }
-        if (current == 0) {
-            goto state_resolved;
-        }
-        --current;
-        while (!(frame >= state->times[current])) {
-            if (current == 0) {
-                goto state_resolved;
+        if (!(frame >= state->times[current])) {
+            if (current != 0) {
+                i32 previous = current - 1;
+                current = previous;
+                while (!(frame >= state->times[previous])) {
+                    if (previous == 0) {
+                        break;
+                    }
+                    --previous;
+                    current = previous;
+                }
             }
-            --current;
-        }
-        goto state_resolved;
-    advance_state:
-        while (true) {
-            if (current >= count - 1) {
-                break;
+        } else {
+            while (true) {
+                if (current >= count - 1) {
+                    break;
+                }
+                const i32 next = current + 1;
+                if (state->times[next] > frame) {
+                    break;
+                }
+                current = next;
             }
-            const i32 next = current + 1;
-            if (state->times[next] > frame) {
-                break;
-            }
-            current = next;
         }
-    state_resolved:
         char new_value = state->values[current];
         *value = new_value;
         *index = static_cast<u8>(current);

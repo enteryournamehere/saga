@@ -2324,20 +2324,20 @@ void TerrainImpact(NUVEC *position, NUVEC *movement, u8 *hit_flags) {
 }
 static i32 TerrainKillPlayer(GameObject_s *object, i32 surface, NUVEC *normal) {
     const u32 flags = TerSurface[surface].flags;
-    if ((flags & 1) == 0 &&
-        ((flags & 0x4000) == 0 || (object->apiobj.character_data->model_flags & 0x10) != 0 ||
-         (object->apiobj.character_data->game_character->flags_090 & 0x8000) != 0) &&
-        ((flags & 0x8000) == 0 || (object->apiobj.field_0x27c != -1 && !(normal->y > 0.0f)))) {
-        return 0;
+    if ((flags & 1) != 0 ||
+        ((flags & 0x4000) != 0 && (object->apiobj.character_data->model_flags & 0x10) == 0 &&
+         (object->apiobj.character_data->game_character->flags_090 & 0x8000) == 0) ||
+        ((flags & 0x8000) != 0 && (object->apiobj.field_0x27c == -1 || normal->y > 0.0f))) {
+        InstantKillParts(object, 1, 0.0f);
+        if (object->apiobj.player_controlled && BonusWinner == -1) {
+            const i32 coins = LoseCoins(object, 1);
+            AddPickups(coins, 0, 0, 0, &object->apiobj.collision_position, NULL, 2.0f, -1, 1.0f, 2000000.0f, object, 1,
+                       0, false);
+        }
+        KillPlayer(object, 2, 1, NULL);
+        return 1;
     }
-    InstantKillParts(object, 1, 0.0f);
-    if (object->apiobj.player_controlled && BonusWinner == -1) {
-        const i32 coins = LoseCoins(object, 1);
-        AddPickups(coins, 0, 0, 0, &object->apiobj.collision_position, NULL, 2.0f, -1, 1.0f, 2000000.0f, object, 1, 0,
-                   false);
-    }
-    KillPlayer(object, 2, 1, NULL);
-    return 1;
+    return 0;
 }
 
 void TerrainPlayer(GameObject_s *object) {
@@ -2471,7 +2471,7 @@ void TerrainPlayer(GameObject_s *object) {
         // Original 0x102952/0x102bfb carries this byte through the call-free
         // integration selection before setting its terrain-update bit.
         const u8 integration_flags = object->field_0xe20;
-        const bool direct_integration = (api.field_0x1f8 & 0x20) != 0 || (integration_flags & 0x20) != 0 ||
+        const bool direct_integration = (api.flags_low & 0x20) != 0 || (integration_flags & 0x20) != 0 ||
                                         object->movement_spline != NULL || object->move_override != NULL ||
                                         (object->character_context == 0x0f && object->field_0x7a3 <= 1) ||
                                         (object->character_context == 0x2c && object->field_0x7a3 == 0) ||
@@ -2725,7 +2725,7 @@ void TerrainPlayer(GameObject_s *object) {
                 }
                 if (api.field_0x287 == 0) {
                     bool wall_impact = false;
-                    if (object->field_0x1084 != 0 && (api.field_0x1f8 & 0x84) == 0 && object->character_context != 0 &&
+                    if (object->field_0x1084 != 0 && (api.flags_low & 0x84) == 0 && object->character_context != 0 &&
                         object->character_context != 0x43 && object->character_context != 0x45 &&
                         (object->field_0xf02 & 1) == 0) {
                         for (i32 i = 0; i < impact_count; ++i) {
@@ -2745,7 +2745,7 @@ void TerrainPlayer(GameObject_s *object) {
                     }
                 }
             }
-            const f32 floor_height = (api.field_0x1f8 & 4) != 0
+            const f32 floor_height = (api.flags_low & 4) != 0
                                          ? api.field_0x218
                                          : GameShadow(object, &api.position, 5.0f, terrain_mask | 0x1f);
             bool stopped_without_terrain = false;
@@ -2770,7 +2770,7 @@ void TerrainPlayer(GameObject_s *object) {
                     stopped_without_terrain = true;
                 }
             }
-            if (!stopped_without_terrain && (api.field_0x1f8 & 4) == 0) {
+            if (!stopped_without_terrain && (api.flags_low & 4) == 0) {
                 api.field_0x218 = floor_height;
                 GetSurfaceInfo(object, floor_height != 2000000.0f ? 1 : 0, floor_height);
                 if (api.supporting_platform_id == -1 && api.field_0x27d != 0 && object->field_0x1078 != -1) {
@@ -2850,15 +2850,15 @@ void TerrainPlayer(GameObject_s *object) {
         if (api.field_0x287 != 0) {
             if (api.field_0x27d != 0) {
                 api.velocity.y = 0.0f;
-                api.field_0x1f8 |= 4;
+                api.flags_low |= 4;
             }
-            if ((api.field_0x1f8 & 4) == 0) {
+            if ((api.flags_low & 4) == 0) {
                 ApplyGravity(object, NULL, 0.0f, 0.0f, NULL);
             }
         } else {
             // Original 0x1032a0 checks swept contacts or the standing surface.
             const i32 check_terrain_hazards =
-                object->character_context != 0x2b && (api.field_0x1f8 & 4) == 0 && gone_through_door_to_new_level == 0;
+                object->character_context != 0x2b && (api.flags_low & 4) == 0 && gone_through_door_to_new_level == 0;
             // Original 0x1038b0 completes the doomed state on contact, timeout,
             // or a collision during the falling variant.
             if (object->character_context == 0x2b &&

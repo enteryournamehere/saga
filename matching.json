@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.238106,
+    "fuzzy_match_percent": 68.28196,
     "total_code": "4722419",
-    "matched_code": "526729",
-    "matched_code_percent": 11.153796,
+    "matched_code": "526846",
+    "matched_code_percent": 11.156274,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6292,
-    "matched_functions_percent": 46.749386,
+    "matched_functions": 6294,
+    "matched_functions_percent": 46.764244,
     "total_units": 1
   },
   "text": {
@@ -18951,7 +18951,7 @@
           "address": 1015456,
           "offset": 125488,
           "size": 13465,
-          "match_percent": 81.78666
+          "match_percent": 82.44869
         }
       ]
     },
@@ -42639,7 +42639,7 @@
           "address": 3436512,
           "offset": 2546544,
           "size": 63,
-          "match_percent": 57.75
+          "match_percent": 100.0
         },
         {
           "name": "SetSfxBit_On",
@@ -42687,7 +42687,7 @@
           "address": 3436912,
           "offset": 2546944,
           "size": 54,
-          "match_percent": 53.125
+          "match_percent": 100.0
         },
         {
           "name": "SetSfxBitTab_On",
@@ -43231,7 +43231,7 @@
           "address": 5107040,
           "offset": 4217072,
           "size": 108,
-          "match_percent": 97.08696
+          "match_percent": 99.86957
         },
         {
           "name": "_Z14ResetRepeatSfxv",
@@ -74982,7 +74982,7 @@
           "address": 1091424,
           "offset": 201456,
           "size": 4100,
-          "match_percent": 45.720722
+          "match_percent": 45.705276
         },
         {
           "name": "_ZL17DrawParaphernaliaP12GameObject_s",
@@ -75286,7 +75286,7 @@
           "address": 3105712,
           "offset": 2215744,
           "size": 4540,
-          "match_percent": 28.12212
+          "match_percent": 69.54608
         },
         {
           "name": "NuGHGFixup",
@@ -75526,7 +75526,7 @@
           "address": 4589216,
           "offset": 3699248,
           "size": 989,
-          "match_percent": 87.71707
+          "match_percent": 87.643906
         },
         {
           "name": "_Z21BackDrop_ResetColoursv",
@@ -77737,7 +77737,7 @@
           "address": 1058464,
           "offset": 168496,
           "size": 12323,
-          "match_percent": 24.618797
+          "match_percent": 24.651876
         },
         {
           "name": "TerrainSetImpactData",
@@ -78417,7 +78417,7 @@
           "address": 3694496,
           "offset": 2804528,
           "size": 2403,
-          "match_percent": 16.585463
+          "match_percent": 17.223969
         },
         {
           "name": "NewRayCastGetTOFI",
@@ -86516,7 +86516,7 @@
           "address": 1744512,
           "offset": 854544,
           "size": 2959,
-          "match_percent": 86.78135
+          "match_percent": 87.71383
         },
         {
           "name": "_Z19Hub_LockUnlockDoorsP11WORLDINFO_s",

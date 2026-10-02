@@ -1536,6 +1536,17 @@ static u8 cacheValues[256];
 
 void ClearScreen();
 
+static inline void AlphaImagePrimUV(f32 u, f32 v) {
+    PrimVertexRaw *vertex = static_cast<PrimVertexRaw *>(g_NuPrim_StreamBufferPtr->void_ptr);
+    if (!g_NuPrim_NeedsHalfUVs) {
+        vertex->float_uv[0] = u;
+        vertex->float_uv[1] = v;
+    } else {
+        vertex->half_uv[0] = NuRndrFloatToHalf(u);
+        vertex->half_uv[1] = NuRndrFloatToHalf(v);
+    }
+}
+
 void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets, NuBloomParameters *parameters) {
     f32 inv_col = 1.0f / (cols - 1);
     f32 inv_row = 1.0f / (rows - 1);
@@ -1588,38 +1599,46 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
     ++NuPrimCSPos;
     NuPrimSetCoordinateSystem(NUPRIM_SCALEMODE_NORMALISED);
     for (row = 0; row < rows - 1; ++row) {
+        const i32 cache_row = row;
         NuPrim2DBegin(1, 7, material);
         f32 y0 = y_start;
         for (col = 0; col < cols; ++col) {
             NUVEC direction;
-            direction.x = x0;
-            direction.y = -y0 * camera.aspect;
+            const f32 direction_y = ((y0 + 1.0f) - 1.0f) * -camera.aspect;
+            direction.x = (x0 + 1.0f) - 1.0f;
+            direction.y = direction_y;
             direction.z = adjacent;
             NuVecNorm(&direction, &direction);
             NuVecMtxTransform(&direction, &direction, &camera.mtx);
             NuVecNorm(&direction, &direction);
 
+            f32 brightness = direction.y;
             u8 alpha;
-            if (row > 0) {
+            if (cache_row > 0) {
                 alpha = cacheValues[col];
+                NuRndrPrimSetColour((static_cast<u32>(alpha) << 24) | 0x808080);
             } else {
-                f32 brightness = direction.y * 0.5f + 0.5f;
+                brightness = brightness * 0.5f + 0.5f;
                 if (brightness <= near_angle)
-                    brightness = near_scale;
+                    brightness = near_scale * parameters->intensity;
                 else if (brightness >= far_angle)
-                    brightness = far_scale;
+                    brightness = far_scale * parameters->intensity;
                 else
-                    brightness = (brightness - near_angle) * scale_delta / angle_delta + near_scale;
-                brightness *= parameters->intensity;
+                    brightness =
+                        ((brightness - near_angle) * scale_delta / angle_delta + near_scale) * parameters->intensity;
                 if (parameters->directional) {
                     f32 angle = (i16)(0x4000 - NuASin(NuVecDot(&parameters->direction, &direction))) * 0.0054931640625f;
                     if (angle < parameters->direction_near_angle) {
                         brightness += 128.0f * parameters->direction_far_scale;
                     } else if (!(angle > parameters->direction_far_angle)) {
-                        f32 blend = (angle - parameters->direction_near_angle) /
+                        f32 blend;
+                        if (parameters->direction_bias == 1.0f)
+                            blend = (angle - parameters->direction_near_angle) /
                                     (parameters->direction_far_angle - parameters->direction_near_angle);
-                        if (parameters->direction_bias != 1.0f)
-                            blend = NuPowFast(blend, parameters->direction_bias);
+                        else
+                            blend = NuPowFast((angle - parameters->direction_near_angle) /
+                                                  (parameters->direction_far_angle - parameters->direction_near_angle),
+                                              parameters->direction_bias);
                         brightness +=
                             128.0f *
                             ((1.0f - blend) * (parameters->direction_far_scale - parameters->direction_near_scale) +
@@ -1627,35 +1646,39 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
                     }
                 }
                 alpha = static_cast<u8>(MIN(255.0f, MAX(0.0f, brightness)));
+                NuRndrPrimSetColour((static_cast<u32>(alpha) << 24) | 0x808080);
             }
-            NuRndrPrimSetColour((static_cast<u32>(alpha) << 24) | 0x808080);
-            NuRndrPrimUV(static_cast<f32>(row) * inv_row + pixelOffsetX,
-                         (static_cast<f32>(col) * inv_col + pixelOffsetY) * 0.9f);
+            AlphaImagePrimUV(static_cast<f32>(row) * inv_row + pixelOffsetX,
+                             (static_cast<f32>(col) * inv_col + pixelOffsetY) * 0.9f);
             NuPrim2DAddXYZ(x0, y0, 0.0f);
 
-            direction.x = x1;
-            direction.y = -y0 * camera.aspect;
+            direction.x = (x1 + 1.0f) - 1.0f;
+            direction.y = direction_y;
             direction.z = adjacent;
             NuVecNorm(&direction, &direction);
             NuVecMtxTransform(&direction, &direction, &camera.mtx);
             NuVecNorm(&direction, &direction);
-            f32 brightness = direction.y * 0.5f + 0.5f;
+            brightness = direction.y * 0.5f + 0.5f;
             if (brightness <= near_angle)
-                brightness = near_scale;
+                brightness = near_scale * parameters->intensity;
             else if (brightness >= far_angle)
-                brightness = far_scale;
+                brightness = far_scale * parameters->intensity;
             else
-                brightness = (brightness - near_angle) * scale_delta / angle_delta + near_scale;
-            brightness *= parameters->intensity;
+                brightness =
+                    ((brightness - near_angle) * scale_delta / angle_delta + near_scale) * parameters->intensity;
             if (parameters->directional) {
                 f32 angle = (i16)(0x4000 - NuASin(NuVecDot(&parameters->direction, &direction))) * 0.0054931640625f;
                 if (angle < parameters->direction_near_angle) {
                     brightness += 128.0f * parameters->direction_far_scale;
                 } else if (!(angle > parameters->direction_far_angle)) {
-                    f32 blend = (angle - parameters->direction_near_angle) /
+                    f32 blend;
+                    if (parameters->direction_bias == 1.0f)
+                        blend = (angle - parameters->direction_near_angle) /
                                 (parameters->direction_far_angle - parameters->direction_near_angle);
-                    if (parameters->direction_bias != 1.0f)
-                        blend = NuPowFast(blend, parameters->direction_bias);
+                    else
+                        blend = NuPowFast((angle - parameters->direction_near_angle) /
+                                              (parameters->direction_far_angle - parameters->direction_near_angle),
+                                          parameters->direction_bias);
                     brightness += 128.0f * ((1.0f - blend) *
                                                 (parameters->direction_far_scale - parameters->direction_near_scale) +
                                             parameters->direction_near_scale);
@@ -1664,8 +1687,8 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
             alpha = static_cast<u8>(MIN(255.0f, MAX(0.0f, brightness)));
             cacheValues[col] = alpha;
             NuRndrPrimSetColour((static_cast<u32>(alpha) << 24) | 0x808080);
-            NuRndrPrimUV(static_cast<f32>(row + 1) * inv_row + pixelOffsetX,
-                         (static_cast<f32>(col) * inv_col + pixelOffsetY) * 0.9f);
+            AlphaImagePrimUV(static_cast<f32>(row + 1) * inv_row + pixelOffsetX,
+                             (static_cast<f32>(col) * inv_col + pixelOffsetY) * 0.9f);
             NuPrim2DAddXYZ(x1, y0, 0.0f);
             y0 += step_y;
         }

@@ -1251,16 +1251,17 @@ i32 SfxBitTabEx(SoundTable const *table, i32 sound) {
     if (static_cast<u32>(sound) >= 1600) {
         return -1;
     }
-    return (table->bits[sound >> 4] & (1 << (sound & 15))) != 0;
+    const u16 mask = static_cast<u16>(1u << (sound & 15));
+    return (table->bits[sound >> 4] & mask) != 0;
 }
 
 void TickTockSfx() {
-    if (ticktock == 0) {
-        GameAudio_PlaySfx(0x1e, NULL, 0, 0);
-        ticktock = 1;
-    } else {
+    if (ticktock != 0) {
         GameAudio_PlaySfx(0x1d, NULL, 0, 0);
         ticktock = 0;
+    } else {
+        GameAudio_PlaySfx(0x1e, NULL, 0, 0);
+        ticktock = 1;
     }
 }
 
@@ -1586,7 +1587,8 @@ i32 SfxBitEx(i32 sound) {
     if (static_cast<u32>(sound) >= 1600) {
         return -1;
     }
-    return (SfxBits[sound >> 4] & (1 << (sound & 15))) != 0;
+    const u16 mask = static_cast<u16>(1u << (sound & 15));
+    return (SfxBits[sound >> 4] & mask) != 0;
 }
 
 void AddLevSfx(WORLDINFO_s *world, nuvec_s *position, char *name, i32 sfx) {

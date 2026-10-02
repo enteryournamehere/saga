@@ -869,10 +869,10 @@ giz_freeplay:
                     if (CUTSTOPGAME == 0) {
                         CharShadows_Draw();
                     }
-                    if (screendump == 0) {
-                        renderPaused = Paused;
-                    } else {
+                    if (screendump != 0) {
                         renderPaused = save_paused;
+                    } else {
+                        renderPaused = Paused;
                     }
                     c = IsGrabbingScreen();
                     renderPaused = (c == 0) ? renderPaused : 0;
@@ -1037,18 +1037,12 @@ giz_freeplay:
             savedFrametime = FRAMETIME;
             pastFrameTimes[frameCount % 5] = FRAMETIME;
 
-            longestFrameIndex = -1;
-            shortestFrameIndex = -1;
             frameTimeAccumulator = -1.0f;
-            shortestFrameTime = 999.0f;
-
-            if (frameTimeAccumulator < pastFrameTimes[0]) {
-                longestFrameIndex = 0;
-            }
-            if (pastFrameTimes[0] < shortestFrameTime) {
-                shortestFrameIndex = 0;
-            }
+            longestFrameIndex = frameTimeAccumulator < pastFrameTimes[0] ? 0 : -1;
             frameTimeAccumulator = MAX(pastFrameTimes[0], frameTimeAccumulator);
+
+            shortestFrameTime = 999.0f;
+            shortestFrameIndex = pastFrameTimes[0] < shortestFrameTime ? 0 : -1;
             shortestFrameTime = MIN(pastFrameTimes[0], shortestFrameTime);
 
             if (frameTimeAccumulator < pastFrameTimes[1]) {
@@ -1235,29 +1229,24 @@ giz_freeplay:
         }
     }
 
-    if (NOSOUND != 0) {
-        if ((HUB_ADATA == NULL) || (Arcade == 0)) {
-            goto after_sound;
-        }
-        if ((u32)(byte)HUB_ADATA->index == (u32)last_area) {
-            goto after_sound;
-        }
-        if ((u32)(byte)HUB_ADATA->index == (u32)Area) {
-            hub_from_arcade = last_area;
-        }
-    } else {
+    if (NOSOUND == 0) {
         music_man.StopAll(0);
         MusicClearAll();
         SoundKillAll();
-        if (HUB_ADATA != NULL) {
-            if (((u32)(byte)HUB_ADATA->index != (u32)last_area) && (Arcade != 0)) {
-                if ((u32)(byte)HUB_ADATA->index == (u32)Area) {
-                    hub_from_arcade = last_area;
-                }
-            }
-        } else if (Arcade != 0) {
-            // falls through to Arcade = 0
+    }
+    if (HUB_ADATA != NULL) {
+        i = (u32)(byte)HUB_ADATA->index;
+        if (i == last_area) {
+            goto after_sound;
         }
+        if (Arcade == 0) {
+            goto after_sound;
+        }
+        if (i == Area) {
+            hub_from_arcade = last_area;
+        }
+    } else if (Arcade == 0) {
+        goto after_sound;
     }
     Arcade = 0;
 

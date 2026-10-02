@@ -1657,14 +1657,15 @@ void Hub_DrawMiniKits(WORLDINFO_s *world) {
         }
         HUBMINIKIT_s *kit = &world->hub_minikits[area];
         const f32 scale = kit->scale;
-        const f32 lift = (1.0f - (1.0f + NU_SIN_LUT((i32)(scale * 32768.0f + 16384.0f))) * 0.5f) * 0.333f;
+        f32 lift = 1.0f - (1.0f + NU_SIN_LUT((i32)(scale * 32768.0f + 16384.0f))) * 0.5f;
         const u16 phase_x = (i32)(NU_SIN_LUT(kit->phase_x) * 910.0f);
         const u16 phase_z = (i32)(NU_SIN_LUT(kit->phase_z) * 910.0f);
         const u16 phase_y = (i32)(NU_SIN_LUT(kit->phase_y) * 910.0f);
+        lift *= 0.333f;
         const u16 rotation = (i32)(RotDiff(0, phase_y) * scale) + kit->rotation;
         const f32 bob = NU_SIN_LUT(kit->phase_rotation) * 0.025f * scale;
         const f32 tilt_scale = (info ? info->panel_scale : 1.0f) * scale;
-        NUMTX matrix, piece_matrix, reflected;
+        NUMTX matrix;
         MiniKitSetRotationX(&matrix, (i32)(RotDiff(0, kit->tilt) * tilt_scale));
         MiniKitRotateX(&matrix, (i32)(RotDiff(0, phase_x) * scale));
         MiniKitRotateZ(&matrix, (i32)(RotDiff(0, phase_z) * scale));
@@ -1678,8 +1679,9 @@ void Hub_DrawMiniKits(WORLDINFO_s *world) {
         for (i32 piece = 0; piece < pieces->piece_count; ++piece) {
             if (pieces->pieces[piece].enabled && NuSpecialExistsFn(&pieces->pieces[piece].special) &&
                 piece < kit->displayed_piece_count) {
-                piece_matrix = pieces->pieces[piece].matrix;
+                NUMTX piece_matrix = pieces->pieces[piece].matrix;
                 NuMtxMulVU0(&piece_matrix, &piece_matrix, &matrix);
+                NUMTX reflected;
                 const i32 drawn = NuSpecialDrawAt(&pieces->pieces[piece].special, &piece_matrix);
                 if (HUB_MINIKITVIEWER_REFLECTY != 2000000.0f &&
                     MatrixReflection(&piece_matrix, 2, HUB_MINIKITVIEWER_REFLECTY, 2000000.0f, &reflected)) {
@@ -1690,11 +1692,12 @@ void Hub_DrawMiniKits(WORLDINFO_s *world) {
             }
         }
         if (NuSpecialExistsFn(&pieces->base.special)) {
-            NuMtxSetRotationY(&piece_matrix, rotation);
-            piece_matrix.m30 = x;
-            piece_matrix.m31 = 0.143f;
-            piece_matrix.m32 = hub_minikitviewer_pos.z;
-            NuSpecialDrawAtAlpha(&pieces->base.special, &piece_matrix, 1.0f - 0.5f * kit->scale);
+            NUMTX base_matrix;
+            NuMtxSetRotationY(&base_matrix, rotation);
+            base_matrix.m30 = x;
+            base_matrix.m31 = 0.143f;
+            base_matrix.m32 = hub_minikitviewer_pos.z;
+            NuSpecialDrawAtAlpha(&pieces->base.special, &base_matrix, 1.0f - 0.5f * kit->scale);
         }
     }
     SetLevelLights(world->rtl_set, 1.0f);

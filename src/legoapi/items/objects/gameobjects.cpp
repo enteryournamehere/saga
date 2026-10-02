@@ -2460,6 +2460,7 @@ void GameAIProcess() {
     APIOBJECT **interactive_cursor = interactive_objects;
     APIOBJECT **baddy_cursor = baddies + baddy_count;
     for (i32 index = 0; index < HIGHGAMEOBJECT; ++index, ++object) {
+        NUVEC direction;
         i32 ground_checks;
         u8 ai_update_flags;
         GAMEPAD_s *pad;
@@ -2562,7 +2563,7 @@ void GameAIProcess() {
             if ((object->field_0xef8 & 0x80) != 0 && object->ai.opponent_object != NULL) {
                 BOLTTYPE_s *bolt = BoltType_FindByID(0, WORLD);
                 if (bolt->field_10 * bolt->field_14 > object->ai.opponent_metric) {
-                    NUVEC direction, forward;
+                    NUVEC forward;
                     NuVecSub(&direction, &object->ai.opponent_object->collision_position,
                              &object->apiobj.collision_position);
                     f32 scale = object->ai.opponent_metric == 0.0f ? 0.0f : 1.0f / object->ai.opponent_metric;
@@ -2655,9 +2656,9 @@ void GameAIProcess() {
             if (connection != NULL && (connection->traversal_flags[object->ai.path_info.direction] &
                                        object->ai.capabilities & LEGO_AIPATHCNX_WALLSHUFFLE) != 0)
                 goto ai_wall_shuffle;
-            if (!(object->apiobj.movement_stuck_time > jump_stuck_time && (object->ai.path_info.flags & 1) != 0 &&
-                  object->ai.path_connection_state == 0))
-                goto ai_after_wall_shuffle;
+            if (!(object->ai.path_connection_state == 0 && (object->ai.path_info.flags & 1) != 0 &&
+                  object->apiobj.movement_stuck_time > jump_stuck_time))
+                goto ai_route;
             if (object->apiobj.supporting_platform_id != -1 && connection != NULL &&
                 (connection->original_traversal_flags[0] & LEGO_AIPATHCNX_BLOCKAGE) != 0) {
                 if ((object->apiobj.character_data->model_flags & 0x88) != 0) {
@@ -2683,7 +2684,7 @@ void GameAIProcess() {
             } else {
                 object->ai.field_0x1e6 |= AIPACKET_RUNTIME_USING_PATH_WAYPOINT;
             }
-            goto ai_after_wall_shuffle;
+            goto ai_route;
         ai_wall_shuffle: {
             NUVEC lateral, ray, movement;
             object->field_0xf02 |= 1;
@@ -2754,8 +2755,8 @@ void GameAIProcess() {
             object->ai.movement_position.y = object->apiobj.position.y;
             object->ai.movement_position.z = object->apiobj.position.z + movement.z;
         }
-        ai_after_wall_shuffle:;
         }
+    ai_route:
         if (FreePlay != 0 && (object->apiobj.field_0x1f4 & 0x400) == 0) {
             if ((object->apiobj.flags_low & 0x80) == 0 && object->character_context != 0x0b) {
                 if (drop_in_teleport == 1 && VehicleArea == 0 && (Arcade != 0 || teleport_all_freeplay_modes != 0) &&
@@ -2860,10 +2861,10 @@ void GameAIProcess() {
                 if ((object->ai.path_info.flags & 1) == 0 || object->ai.path_info.connection == NULL)
                     object->apiobj.collision_priority |= 0x400;
                 if (object->ai.movement_parameter == 0.0f) {
-                    f32 x = object->ai.fallback_destination.x - object->apiobj.position.x;
-                    f32 z = object->ai.fallback_destination.z - object->apiobj.position.z;
+                    direction.x = object->ai.fallback_destination.x - object->apiobj.position.x;
+                    direction.z = object->ai.fallback_destination.z - object->apiobj.position.z;
                     f32 radius = object->ai.mover_height + 1.0f;
-                    if (x * x + z * z < radius * radius)
+                    if (direction.x * direction.x + direction.z * direction.z < radius * radius)
                         object->apiobj.collision_priority |= 0x200;
                 }
             }

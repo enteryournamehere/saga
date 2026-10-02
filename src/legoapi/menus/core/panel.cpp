@@ -310,15 +310,18 @@ static void DrawHitPoints(GameObject_s *object, float x, float y, float scale, f
         current_hp = static_cast<i8>(object->current_hp);
     }
 
-    if (PLAYERHITPOINTS_2HEARTSIN1 != 0 && object->apiobj.player_controlled) {
-        hitpoints = (hitpoints + 1) / 2;
-        current_hp = (current_hp + 1) / 2;
+    if ((PLAYERHITPOINTS_2HEARTSIN1 != 0 && object->apiobj.player_controlled) ||
+        WORLD->current_level == BOUNTYHUNTERPURSUITE_LDATA || WORLD->current_level == VADERC_LDATA) {
+        hitpoints = hitpoints / 2 + (hitpoints & 1);
+        current_hp = current_hp / 2 + (current_hp & 1);
     }
+    if (hitpoints <= 1)
+        two_rows = 0;
 
     i32 transitioning = 0;
     if (static_cast<u8>(object->apiobj.field_0x27c) <= 1 && hitpoints > 1 && object->apiobj.field_0x287 != 0 &&
         object->field_0x101c > 0.0f && object->field_0x101c < 1.0f) {
-        current_hp = static_cast<i32>(static_cast<float>(hitpoints) * (1.0f - object->field_0x101c));
+        current_hp = static_cast<i32>(static_cast<float>(object->hitpoints) * (1.0f - object->field_0x101c));
         transitioning = 1;
     }
 
@@ -346,7 +349,7 @@ static void DrawHitPoints(GameObject_s *object, float x, float y, float scale, f
         }
 
         float draw_alpha = 0.5f;
-        float scale_xy = scale;
+        NUVEC object_scale = {scale, scale, scale};
         float z = 1.001f;
         if (i < current_hp) {
             draw_alpha = 1.0f;
@@ -357,18 +360,18 @@ static void DrawHitPoints(GameObject_s *object, float x, float y, float scale, f
 
             if (transitioning == 0 && current_hp > 0 && i == current_hp - 1) {
                 const float pulse = i == 0 && current_hp == 1 ? 0.5f : 0.2f;
-                const float pulse_scale = 1.0f + pulse - NuFmod(GlobalTimer.time_elapsed, 0.5f) * (pulse * 2.0f);
-                scale_xy *= pulse_scale;
+                const float pulse_scale = pulse - (NuFmod(GlobalTimer.time_elapsed, 0.5f) * 2.0f) * pulse + 1.0f;
+                object_scale.x *= pulse_scale;
+                object_scale.y *= pulse_scale;
                 z = 0.999f;
             }
         }
 
-        NUVEC object_scale = {scale_xy, scale_xy, scale};
         NUMTX matrix;
         NuMtxSetScale(&matrix, &object_scale);
         NUVEC translation = {draw_x * PANEL3DMULX, draw_y, z};
         NuMtxTranslate(&matrix, &translation);
-        DrawPanel3DObjectMtx(&heart.special, &matrix, draw_alpha * alpha);
+        DrawPanel3DObjectMtx(&WORLD->lev_objs[heart_object].special, &matrix, draw_alpha * alpha);
         draw_x += spacing;
     }
 }
@@ -564,20 +567,22 @@ void DrawSuperStoryTime(f32 y, f32 timer, f32 target, i32 target_above, i32 show
 
     i32 green = 191;
     if (!(target <= 0.0f)) {
-        if (target <= timer) {
+        if (!(target > timer)) {
             green = 31;
         }
     }
     Text3DEx(time, 0.0f, y, 1.0f, 0.5f, 0.5f, 0.5f, 0, 255, green, 0, 128);
 
-    if (!(target <= 0.0f)) {
+    if (target > 0.0f) {
         char target_time[256];
         Text_MakeTime(target, show_hours, 1, 1, time);
         NuStrCpy(target_time, const_cast<char *>("("));
         NuStrCat(target_time, time);
         NuStrCat(target_time, const_cast<char *>(")"));
-        Text3DEx(target_time, 0.0f, y + (target_above != 0 ? -0.1f : 0.1f), 1.0f, 0.35f, 0.35f, 0.35f, 0, 255, 255, 255,
-                 48);
+        f32 offset = -0.1f;
+        if (target_above == 0)
+            offset = 0.1f;
+        Text3DEx(target_time, 0.0f, offset + y, 1.0f, 0.35f, 0.35f, 0.35f, 0, 255, 255, 255, 48);
     }
 }
 
@@ -888,15 +893,16 @@ void DrawPanel() {
     f32 status_y = 0.0f;
     if (PANELOFF && !paused && (WORLD->current_level->flags & LEVEL_GAMEPLAY))
         return;
-    if (waiting_for_level != -1) {
+    const i32 loading_level = waiting_for_level;
+    if (loading_level != -1) {
         if (DRAWBGLOAD && bgGetProcActive()) {
             i32 red, green;
             if (abort_load) {
-                sprintf(auxiliary, "Aborting ''%s''", LDataList[waiting_for_level].name);
+                sprintf(auxiliary, "Aborting ''%s''", LDataList[loading_level].name);
                 red = 255;
                 green = 0;
             } else {
-                sprintf(auxiliary, "Loading ''%s''", LDataList[waiting_for_level].name);
+                sprintf(auxiliary, "Loading ''%s''", LDataList[loading_level].name);
                 red = 0;
                 green = 255;
             }
@@ -1176,8 +1182,9 @@ void DrawPanel() {
             GameObject_s *boss = drawbosshitpoints;
             if (boss != NULL && boss->apiobj.field_0x287 == 0 && !boss->apiobj.player_controlled) {
                 if (FadeSys.fade == 0.0f) {
-                    DrawCharIcon(boss->id, 0.0f, BOSSICONY, 0.0f, 0.16f, 0xa7, statstime, statstime, 1, NULL);
-                    DrawHitPoints(boss, 0.0f, 0.47f, 0.2f, statstime, 0, 0.0f, 0);
+                    f32 boss_alpha = statstime;
+                    DrawCharIcon(boss->id, 0.0f, BOSSICONY, 0.0f, 0.16f, 0xa7, boss_alpha, boss_alpha, 1, NULL);
+                    DrawHitPoints(boss, 0.0f, 0.47f, 0.2f, boss_alpha, 0, 0.0f, 0);
                     hide_target = 1;
                 } else
                     drawbosshitpoints_2rows = 0;
@@ -1310,12 +1317,14 @@ draw_panel_menu:
     if (removed_controller == -1 && !editor_active)
         DrawMenu(paused);
     if (drawautosaveicon && WORLD->lev_objs[0].active) {
-        f32 scale = AUTOSAVEICONSIZE *
-                    (0.9f + 0.1f * NU_SIN_LUT(static_cast<u16>(NuFmod(GlobalTimer.time_elapsed, 1.0f) * 65536.0f)));
+        f32 scale = AUTOSAVEICONSIZE;
+        scale = (0.9f + 0.1f * NU_SIN_LUT(static_cast<u16>(NuFmod(GlobalTimer.time_elapsed, 1.0f) * 65536.0f))) * scale;
         DrawPanel3DObject(AUTOSAVEICONX, AUTOSAVEICONY, 1.0f, scale, scale, scale, 0, 0, 0, &WORLD->lev_objs[0].special,
                           0, 1.0f);
         if (memcard_autosavepredelay == 1.0f || memcard_saveneeded || memcard_loadneeded) {
-            VuVec position(AUTOSAVEICONX, AUTOSAVEICONY, 0.0f, 0.0f);
+            VuVec position = VuVec_Zero;
+            position.x = AUTOSAVEICONX;
+            position.y = AUTOSAVEICONY;
             MechSystems::Get()->NewRadarPulse(position, true);
         }
     }

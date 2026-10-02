@@ -796,7 +796,7 @@ extern "C" {
         Music.transition_frames = 0;
 
         const i32 stream = 1 - Music.primary_stream;
-        reinterpret_cast<u8 *>(&Music)[0x12 + stream] = 6;
+        Music.stream_status_delay[stream] = 6;
         NuSound3CancelCheckStereo();
         NuSound3PauseStereoStream(Music.primary_stream);
 
@@ -834,16 +834,12 @@ extern "C" {
             return;
         }
 
-        i16 previous_state = Music.state;
-        i16 previous_stream = Music.primary_stream;
-        i16 previous_track = Music.current_track;
-
         if (track < 0 || track >= SFX_MUSIC_COUNT) {
-            Music.state = static_cast<MusicPlaybackState>((mode == 3) * 2 + 7);
             Music.primary_stream = 1 - Music.primary_stream;
-            Music.current_track = static_cast<i16>(track);
-            Music.queued_track = previous_track;
             Music.restore_requested = false;
+            Music.state = static_cast<MusicPlaybackState>((mode == 3) * 2 + 7);
+            Music.queued_track = Music.current_track;
+            Music.current_track = static_cast<i16>(track);
             Music.transition = 0.0f;
             return;
         }
@@ -857,35 +853,32 @@ extern "C" {
         if (Music.state == MUSIC_PLAYBACK_STOPPED) {
             requested = Music.requested_track;
             stream = Music.primary_stream;
-            reinterpret_cast<u8 *>(&Music)[0x12 + stream] = 0;
+            Music.stream_status_delay[stream] = 0;
             if (requested == track) {
-                Music.primary_stream = 1 - previous_stream;
+                Music.primary_stream = 1 - Music.primary_stream;
                 stream = Music.primary_stream;
             }
         } else if (mode != 1 && NUSOUND_STREAM_3 != -1) {
             requested = Music.requested_track;
             Music.primary_stream = 1 - Music.primary_stream;
             stream = Music.primary_stream;
-            reinterpret_cast<u8 *>(&Music)[0x12 + stream] = 0;
+            Music.stream_status_delay[stream] = 0;
             if (requested == track && !Music.pause_requested) {
                 Music.state = static_cast<MusicPlaybackState>((mode == 3) * 2 + 7);
                 NuSound3ResumeStereoStream(stream);
-                NuSound3SetStereoStreamVolume(stream, 0);
+                NuSound3SetStereoStreamVolume(Music.primary_stream, 0);
             } else {
                 Music.state = static_cast<MusicPlaybackState>((mode == 3) * 2 + 8);
                 PlayAMusic(stream, track, 0, 0);
             }
-            Music.requested_track = -1;
-            Music.pause_requested = false;
-            Music.restore_requested = false;
             Music.transition = 0.0f;
-            return;
+            goto clear_music_flags;
         } else {
             requested = Music.requested_track;
             stream = Music.primary_stream;
-            reinterpret_cast<u8 *>(&Music)[0x12 + stream] = 0;
-            if (requested == track && previous_state != MUSIC_PLAYBACK_DUAL_STREAM) {
-                Music.primary_stream = 1 - previous_stream;
+            Music.stream_status_delay[stream] = 0;
+            if (requested == track && Music.state != MUSIC_PLAYBACK_DUAL_STREAM) {
+                Music.primary_stream = 1 - Music.primary_stream;
                 stream = Music.primary_stream;
             }
         }
@@ -899,10 +892,11 @@ extern "C" {
             PlayAMusic(Music.primary_stream, track, static_cast<i32>(g_music[track].index * MusicVolume), 0);
         }
         Music.transition = 1.0f;
-        Music.restore_requested = false;
-        Music.pause_requested = false;
-        Music.requested_track = -1;
         Music.state = MUSIC_PLAYBACK_ACTIVE;
+    clear_music_flags:
+        Music.requested_track = -1;
+        Music.pause_requested = false;
+        Music.restore_requested = false;
     }
 
     void PlaySfx(char *name, struct nuvec_s *position) {
@@ -951,7 +945,7 @@ extern "C" {
 
     i32 PlayingCutMusic(void) {
         const i32 stream = 1 - Music.primary_stream;
-        u8 &delay = reinterpret_cast<u8 *>(&Music)[0x12 + stream];
+        u8 &delay = Music.stream_status_delay[stream];
         if (delay != 0) {
             --delay;
             return 0;

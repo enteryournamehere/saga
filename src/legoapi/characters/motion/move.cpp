@@ -2586,7 +2586,8 @@ void MovePlayer_DIRECTIONAL(GameObject_s *object) {
         }
     }
 
-    const f32 desired_speed = run_speed * (input_speed / operator_run_speed);
+    f32 desired_speed = run_speed;
+    desired_speed *= input_speed / operator_run_speed;
     if (object->character_context == 0x33 && (api.character_data->game_character->flags_090 & 0x200) != 0) {
         object->field_0x1086 = 2;
     } else if ((object->movement_context_state & 0xffff00) == 0x54300) {

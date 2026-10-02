@@ -3779,10 +3779,10 @@ static void DrawParaphernalia(GameObject_s *object) {
             i32 locator = shield_config->shield_locator;
             NUVEC scaling = {scale, scale, scale};
             NuMtxSetScale(&shield_matrix, &scaling);
-            NUVEC *position = &object->apiobj.collision_position;
             if (locator != -1 && object->apiobj.character_model->points_of_interest[locator] != NULL)
-                position = reinterpret_cast<NUVEC *>(&joints[locator].m30);
-            NuMtxTranslate(&shield_matrix, position);
+                NuMtxTranslate(&shield_matrix, reinterpret_cast<NUVEC *>(&joints[locator].m30));
+            else
+                NuMtxTranslate(&shield_matrix, &object->apiobj.collision_position);
             Draw3DObjectMtx(NULL, 0x6f + (object->timer_d28 > 0.0f), &shield_matrix);
             if (render_reflection && MatrixReflection(&shield_matrix, object->field_0x1087, object->field_0x1020,
                                                       WORLD->current_level->unknown_0cc, &shield_reflected)) {
@@ -3868,33 +3868,38 @@ static void DrawParaphernalia(GameObject_s *object) {
                               object->field_0x1088, object->field_0x1054, NULL, NULL, 1.0f, 1.0f);
     }
     if (object->apiobj.model_draw_result && object->apiobj.character_data->game_character->thrust_locators &&
-        object->thrust_effect_scale > 0.0f && WORLD->lev_objs[0x77].active && WORLD->lev_objs[0x78].active) {
+        object->thrust_effect_scale > 0.0f) {
         const u8 render_reflection = object->field_0x1088;
-        i32 effect_index = 0;
-        for (i32 locator = 0; locator < 16; ++locator) {
-            if ((object->apiobj.character_data->game_character->thrust_locators & (1 << locator)) == 0 ||
-                object->apiobj.character_model->points_of_interest[locator] == NULL)
-                continue;
-            f32 scale = object->thrust_effect_scale +
-                        ((object->reserved_e27[effect_index++] / 255.0f - 0.5f) * 0.5f) * object->thrust_effect_scale;
-            if (!(scale <= 0.0f)) {
-                thrust_matrix = joints[locator];
-                NUVEC scaling = {scale, scale, scale};
-                NuMtxPreScale(&thrust_matrix, &scaling);
-                Draw3DObjectMtx(NULL, 0x77, &thrust_matrix);
-                Draw3DObjectMtx(NULL, 0x78, &thrust_matrix);
-                if (render_reflection && MatrixReflection(&thrust_matrix, object->field_0x1087, object->field_0x1020,
-                                                          WORLD->current_level->unknown_0cc, &thrust_reflected)) {
-                    i32 first = LevelObject_GetReflection(0x77);
-                    if (!WORLD->lev_objs[first].active)
-                        first = 0x77;
-                    i32 second = LevelObject_GetReflection(0x78);
-                    if (!WORLD->lev_objs[second].active)
-                        second = 0x77;
-                    NuRndrStartReflectionRender(0);
-                    Draw3DObjectMtx(NULL, first, &thrust_matrix);
-                    Draw3DObjectMtx(NULL, second, &thrust_matrix);
-                    NuRndrEndReflectionRender();
+        if (WORLD->lev_objs[0x77].active && WORLD->lev_objs[0x78].active) {
+            i32 effect_index = 0;
+            for (i32 locator = 0; locator < 16; ++locator) {
+                if ((object->apiobj.character_data->game_character->thrust_locators & (1 << locator)) == 0 ||
+                    object->apiobj.character_model->points_of_interest[locator] == NULL)
+                    continue;
+                NUVEC scaling;
+                scaling.x =
+                    object->thrust_effect_scale +
+                    ((object->reserved_e27[effect_index++] / 255.0f - 0.5f) * 0.5f) * object->thrust_effect_scale;
+                if (!(scaling.x <= 0.0f)) {
+                    scaling.y = scaling.z = scaling.x;
+                    thrust_matrix = joints[locator];
+                    NuMtxPreScale(&thrust_matrix, &scaling);
+                    Draw3DObjectMtx(NULL, 0x77, &thrust_matrix);
+                    Draw3DObjectMtx(NULL, 0x78, &thrust_matrix);
+                    if (render_reflection &&
+                        MatrixReflection(&thrust_matrix, object->field_0x1087, object->field_0x1020,
+                                         WORLD->current_level->unknown_0cc, &thrust_reflected)) {
+                        i32 first = LevelObject_GetReflection(0x77);
+                        if (!WORLD->lev_objs[first].active)
+                            first = 0x77;
+                        i32 second = LevelObject_GetReflection(0x78);
+                        if (!WORLD->lev_objs[second].active)
+                            second = 0x77;
+                        NuRndrStartReflectionRender(0);
+                        Draw3DObjectMtx(NULL, first, &thrust_matrix);
+                        Draw3DObjectMtx(NULL, second, &thrust_matrix);
+                        NuRndrEndReflectionRender();
+                    }
                 }
             }
         }
@@ -3924,9 +3929,9 @@ static void DrawParaphernalia(GameObject_s *object) {
                                 animation_end = finish;
                             if (animation_end > *placement_time)
                                 scale = (*placement_time - start) / (animation_end - start);
+                            NUVEC scaling = {scale, scale, scale};
                             placement_matrix = joints[locator];
                             NuMtxPreRotateY(&placement_matrix, object->takeover_start_angle);
-                            NUVEC scaling = {scale, scale, scale};
                             NuMtxPreScale(&placement_matrix, &scaling);
                             NuSpecialDrawAt(&WORLD->lev_objs[0xec].special, &placement_matrix);
                             if (WORLD->lev_objs[0xed].active)
@@ -3975,9 +3980,9 @@ static void DrawParaphernalia(GameObject_s *object) {
                                     show = false;
                             }
                             if (show) {
+                                NUVEC scaling = {scale, scale, scale};
                                 removal_matrix = joints[locator];
                                 NuMtxPreRotateY(&removal_matrix, object->takeover_start_angle);
-                                NUVEC scaling = {scale, scale, scale};
                                 NuMtxPreScale(&removal_matrix, &scaling);
                                 NuSpecialDrawAt(&WORLD->lev_objs[0xec].special, &removal_matrix);
                                 if (WORLD->lev_objs[0xed].active)
@@ -3998,9 +4003,12 @@ static void DrawParaphernalia(GameObject_s *object) {
     }
     if (object->field_0xe22 & 0x40) {
         dco_prerotatez = 0x4000;
+        const u8 render_reflection = object->field_0x1088;
+        const u32 layers = object->field_0x1054;
         const i32 locator = object->apiobj.character_data->game_character->throw_locator;
-        DrawObjectOnCharacter(WORLD, object, Batarang_GetObjectFromCharID(object->id), NULL, locator, -1, joints,
-                              object->field_0x1088, object->field_0x1054, NULL, NULL, 1.0f, 1.0f);
+        const i32 model_id = Batarang_GetObjectFromCharID(object->id);
+        DrawObjectOnCharacter(WORLD, object, model_id, NULL, locator, -1, joints, render_reflection, layers, NULL, NULL,
+                              1.0f, 1.0f);
     }
     if (object->field_0x7a5 == 0x46)
         Grapple_DrawLine(object);

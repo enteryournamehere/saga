@@ -179,29 +179,34 @@ void GameCam_UpdateShake(GAMECAMERA_s *camera, float ambient_amount) {
     if (camera->shake_time > 0.0f) {
         camera->shake_time -= FRAMETIME;
     }
-    const f32 target_amount = camera->shake_time > 0.0f ? camera->shake_target_amount : MAX(ambient_amount, 0.0f);
+    f32 target_amount = 0.0f;
+    if (camera->shake_time > 0.0f)
+        target_amount = camera->shake_target_amount;
+    else if (ambient_amount > 0.0f)
+        target_amount = ambient_amount;
     camera->shake_amplitude = SeekLinearF(camera->shake_amplitude, target_amount, FRAMETIME * 2.0f);
 
     constexpr f32 kShakeRadius = 0.1f;
-    constexpr f32 kShakeRetargetDistanceSquared = 0.000625f;
+    constexpr f32 kShakeRetargetDistanceSquared = 0.025f * 0.025f;
     if (NuVecDistSqr(&camera->shake_direction, &camera->shake_target, NULL) < kShakeRetargetDistanceSquared) {
-        camera->shake_target = {0.0f, static_cast<f32>(qrand()) * (1.0f / 65535.0f) * kShakeRadius, 0.0f};
+        camera->shake_target.x = 0.0f;
+        camera->shake_target.y = static_cast<f32>(qrand()) * (1.0f / 65535.0f) * kShakeRadius;
+        camera->shake_target.z = 0.0f;
         NuVecRotateZ(&camera->shake_target, &camera->shake_target, static_cast<NUANG>(qrand()));
         camera->shake_target.x *= 4.0f / 3.0f;
     }
 
-    const bool forced_shake = camera->shake_time > 0.0f;
     SeekVec(&camera->shake_direction, &camera->shake_direction, &camera->shake_target,
-            forced_shake ? camera->shake_speed * 10.0f : 2.0f);
+            camera->shake_time > 0.0f ? camera->shake_speed * 10.0f : 10.0f);
     SeekVec(&camera->shake_offset, &camera->shake_offset, &camera->shake_direction,
-            forced_shake ? camera->shake_speed * 2.0f : 2.0f);
+            camera->shake_time > 0.0f ? camera->shake_speed * 2.0f : 2.0f);
 
     NUVEC scaled_offset;
     NuVecScale(&scaled_offset, &camera->shake_offset, camera->shake_amplitude);
-    constexpr f32 kShakeAngleScale = 75.0f;
+    constexpr f32 kShakeAngleScale = 910.0f;
     const i32 pitch = static_cast<i32>(kShakeAngleScale * camera->shake_amplitude * (scaled_offset.y / kShakeRadius));
-    const i32 yaw = static_cast<i32>(kShakeAngleScale * camera->shake_amplitude * (scaled_offset.x / kShakeRadius));
     NuMtxPreRotateX(&camera->render_mtx, pitch);
+    const i32 yaw = static_cast<i32>(kShakeAngleScale * camera->shake_amplitude * (scaled_offset.x / kShakeRadius));
     NuMtxPreRotateY(&camera->render_mtx, yaw);
 }
 
@@ -781,13 +786,13 @@ mode_selected:
     f32 position_seek = static_cast<u32>(static_cast<u8>(WORLD->current_level->cam_pos_seek));
     f32 angle_seek = static_cast<u32>(static_cast<u8>(WORLD->current_level->cam_angle_seek));
     GAMEPAD_s *selected_pad = camera->mode == 5 ? ViewCam.gamepad : &GamePad[0];
-    f32 left_y = static_cast<f32>(selected_pad->pad->analog_left_y) - 127.5f;
-    f32 left_x = static_cast<f32>(selected_pad->pad->analog_left_x) - 127.5f;
-    f32 right_y = static_cast<f32>(selected_pad->pad->analog_right_y) - 127.5f;
-    f32 right_x = static_cast<f32>(selected_pad->pad->analog_right_x) - 127.5f;
+    f32 left_y = static_cast<f32>(static_cast<i32>(selected_pad->pad->analog_left_y)) - 127.5f;
     left_y = NuFabs(left_y) < 34.0f ? 0.0f : left_y / 127.5f;
+    f32 left_x = static_cast<f32>(static_cast<i32>(selected_pad->pad->analog_left_x)) - 127.5f;
     left_x = NuFabs(left_x) < 34.0f ? 0.0f : left_x / 127.5f;
+    f32 right_y = static_cast<f32>(static_cast<i32>(selected_pad->pad->analog_right_y)) - 127.5f;
     right_y = NuFabs(right_y) < 34.0f ? 0.0f : right_y / 127.5f;
+    f32 right_x = static_cast<f32>(static_cast<i32>(selected_pad->pad->analog_right_x)) - 127.5f;
     right_x = NuFabs(right_x) < 34.0f ? 0.0f : right_x / 127.5f;
     i32 pitch_override = -1, yaw_override = -1, roll_override = 0;
     i32 roll_hint_valid = 0;
@@ -940,9 +945,10 @@ mode_selected:
                 }
                 if (WORLD->area != NULL && WORLD->area == PODSPRINT_ADATA) {
                     f32 countdown = PodSprint_InStartCountdown(WORLD);
-                    PodCamDist = countdown > 0.0f ? countdown / 3.0f * 10.0f + 2.0f : 2.0f;
+                    f32 distance = countdown > 0.0f ? countdown / 3.0f * 10.0f + 2.0f : 2.0f;
                     if (player_count == 2)
-                        PodCamDist *= 1.5f;
+                        distance *= 1.5f;
+                    PodCamDist = distance;
                     NUVEC average = {0.0f, 0.0f, 0.0f};
                     for (i32 index = 0; index < player_count; ++index) {
                         GameObject_s *player = camera_players[index];
@@ -1086,15 +1092,12 @@ mode_selected:
                 }
                 stop_blend_rate = 0.1f;
                 if (WORLD->current_level == PLATFORM_LDATA) {
-                    position.x +=
-                        0.2f *
-                        NU_SIN_LUT(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 13.9815f) / 13.9815f * 65536.0f));
-                    position.y +=
-                        stop_blend_rate *
-                        NU_SIN_LUT(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 8.688f) / 8.688f * 65536.0f));
-                    position.z +=
-                        0.2f *
-                        NU_SIN_LUT(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 11.7745f) / 11.7745f * 65536.0f));
+                    position.x += 0.2f * NU_SIN_LUT(static_cast<u16>(static_cast<i32>(
+                                             NuFmod(GameTimer.time_elapsed, 13.9815f) / 13.9815f * 65536.0f)));
+                    position.y += stop_blend_rate * NU_SIN_LUT(static_cast<u16>(static_cast<i32>(
+                                                        NuFmod(GameTimer.time_elapsed, 8.688f) / 8.688f * 65536.0f)));
+                    position.z += 0.2f * NU_SIN_LUT(static_cast<u16>(static_cast<i32>(
+                                             NuFmod(GameTimer.time_elapsed, 11.7745f) / 11.7745f * 65536.0f)));
                 }
                 if (WORLD->area != NULL && WORLD->area == HUB_ADATA && camera->sock_position.location.sock != -1)
                     position.y = WORLD->sock_sys->sock[camera->sock_position.location.sock].camera_height_above_ground;
@@ -1218,7 +1221,7 @@ mode_selected:
                 NuVecRotateY(&offset, &offset, camera->yaw);
                 NuVecAdd(&ViewCam.target, &ViewCam.target, &offset);
                 ViewCam.pitch = static_cast<i16>(ViewCam.pitch + static_cast<i32>(right_y * 16384.0f * FRAMETIME));
-                ViewCam.pitch = MAX(-0x4000, MIN(0x4000, ViewCam.pitch));
+                ViewCam.pitch = MIN(0x4000, MAX(-0x4000, ViewCam.pitch));
                 ViewCam.yaw -= static_cast<i16>(right_x * 16384.0f * FRAMETIME);
                 if ((ViewCam.gamepad->pad->digital_buttons & GAMEPAD_SELECT) == 0) {
                     f32 zoom_step = 0.1f / ViewCam.zoom_scale;
@@ -1277,9 +1280,14 @@ mode_selected:
                 target.y -= 0.075f;
             }
         customiser_camera_sway:
-            position.x += NU_SIN_LUT((i32)(NuFmod(GameTimer.time_elapsed, 9.321f) / 9.321f * 65536.0f)) * 0.05f;
-            position.y += NU_SIN_LUT((i32)(NuFmod(GameTimer.time_elapsed, 5.792f) / 5.792f * 65536.0f)) * 0.025f;
-            position.z += NU_SIN_LUT((i32)(NuFmod(GameTimer.time_elapsed, 7.183f) / 7.183f * 65536.0f)) * 0.025f;
+            position.x +=
+                NU_SIN_LUT(static_cast<u16>((i32)(NuFmod(GameTimer.time_elapsed, 9.321f) / 9.321f * 65536.0f))) * 0.05f;
+            position.y +=
+                NU_SIN_LUT(static_cast<u16>((i32)(NuFmod(GameTimer.time_elapsed, 5.792f) / 5.792f * 65536.0f))) *
+                0.025f;
+            position.z +=
+                NU_SIN_LUT(static_cast<u16>((i32)(NuFmod(GameTimer.time_elapsed, 7.183f) / 7.183f * 65536.0f))) *
+                0.025f;
             roll_hint_valid = 0;
             roll_hint = 0;
             roll_seek_override = 0.0f;
@@ -1291,12 +1299,12 @@ mode_selected:
         case 8:
             position = *shopcampos;
             GetShopCamLookPos(&target);
-            position.x +=
-                0.1f * NU_SIN_LUT(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 9.321f) / 9.321f * 65536.0f));
-            position.y +=
-                0.05f * NU_SIN_LUT(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 5.792f) / 5.792f * 65536.0f));
-            position.z +=
-                0.05f * NU_SIN_LUT(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 7.183f) / 7.183f * 65536.0f));
+            position.x += 0.1f * NU_SIN_LUT(static_cast<u16>(
+                                     static_cast<i32>(NuFmod(GameTimer.time_elapsed, 9.321f) / 9.321f * 65536.0f)));
+            position.y += 0.05f * NU_SIN_LUT(static_cast<u16>(
+                                      static_cast<i32>(NuFmod(GameTimer.time_elapsed, 5.792f) / 5.792f * 65536.0f)));
+            position.z += 0.05f * NU_SIN_LUT(static_cast<u16>(
+                                      static_cast<i32>(NuFmod(GameTimer.time_elapsed, 7.183f) / 7.183f * 65536.0f)));
             break;
         case 9:
             position = hub_minikitviewer_camspl->pts[0];
@@ -1365,9 +1373,14 @@ mode_selected:
     }
     if (WORLD->current_level == SARLACCPITA_LDATA || WORLD->current_level == SARLACCPITC_LDATA) {
         position.x +=
-            stop_blend_rate * NU_SIN_LUT(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 9.321f) / 9.321f * 65536.0f));
-        position.y += 0.05f * NU_SIN_LUT(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 5.792f) / 5.792f * 65536.0f));
-        position.z += 0.05f * NU_SIN_LUT(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 7.183f) / 7.183f * 65536.0f));
+            stop_blend_rate *
+            NU_SIN_LUT(static_cast<u16>(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 9.321f) / 9.321f * 65536.0f)));
+        position.y +=
+            0.05f *
+            NU_SIN_LUT(static_cast<u16>(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 5.792f) / 5.792f * 65536.0f)));
+        position.z +=
+            0.05f *
+            NU_SIN_LUT(static_cast<u16>(static_cast<i32>(NuFmod(GameTimer.time_elapsed, 7.183f) / 7.183f * 65536.0f)));
     }
     // Entry locals: position, target, previous_sock, previous_candidate_count,
     // blend_duration=.5f, position_seek, angle_seek, pitch_override/yaw_override=-1,
@@ -1469,7 +1482,8 @@ mode_selected:
                 if (CamStopBlend > 1.0f)
                     CamStopBlend = 1.0f;
             }
-            camera->pitch = SeekRot(camera->pitch, pitch, NuFsqrt(CamStopBlend) * camera->angle_seek);
+            f32 pitch_seek = camera->angle_seek;
+            camera->pitch = SeekRot(camera->pitch, pitch, NuFsqrt(CamStopBlend) * pitch_seek);
         } else
             camera->pitch = pitch_override;
         if (yaw_override == -1)

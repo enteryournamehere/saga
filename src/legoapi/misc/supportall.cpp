@@ -446,7 +446,8 @@ apply_weights:
 }
 
 static inline void TexQuadSubmit3D(f32 x, f32 y, i32 colour, i32 u, i32 v) {
-    TexQuadVertex *vertex = static_cast<TexQuadVertex *>(g_NuPrim_StreamBufferPtr->void_ptr);
+    VARIPTR *stream = g_NuPrim_StreamBufferPtr;
+    TexQuadVertex *vertex = static_cast<TexQuadVertex *>(stream->void_ptr);
     if (g_NuPrim_NeedsOverbrightening != 0) {
         vertex->colour = colour;
     } else {
@@ -462,7 +463,7 @@ static inline void TexQuadSubmit3D(f32 x, f32 y, i32 colour, i32 u, i32 v) {
     vertex->x = x;
     vertex->y = y;
     vertex->z = 0.0f;
-    g_NuPrim_StreamBufferPtr->u8_ptr += sizeof(TexQuadVertex);
+    stream->u8_ptr += sizeof(TexQuadVertex);
     ++g_NuPrim_VertexCount;
 }
 

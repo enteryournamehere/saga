@@ -232,16 +232,18 @@ void MechInputTouchGestureTrackingSystem::ReadData(GameObject_s &object, NuInput
 void MechInputTouchGestureTrackingSystem::RegisterGestureTracker(MechInputTouchGestureTracker &tracker, i32 priority) {
     GestureTrackerRegistration *entries = trackers;
 
-    bool has_vacancy = (entries[0].tracker == NULL) | (entries[1].tracker == NULL) | (entries[2].tracker == NULL) |
-                       (entries[3].tracker == NULL) | (entries[4].tracker == NULL) | (entries[5].tracker == NULL) |
-                       (entries[6].tracker == NULL) | (entries[7].tracker == NULL) | (entries[8].tracker == NULL);
+    bool vacancies[9];
+    bool has_vacancy = false;
+    for (i32 index = 0; index < 9; ++index) {
+        vacancies[index] = entries[index].tracker == NULL;
+        has_vacancy |= vacancies[index];
+    }
     if (entries[9].tracker != NULL && !has_vacancy) {
         return;
     }
 
     i32 insertion_index = 0;
-    while (insertion_index < 9 && entries[insertion_index].tracker != NULL &&
-           entries[insertion_index].priority <= priority) {
+    while (insertion_index < 9 && !vacancies[insertion_index] && entries[insertion_index].priority <= priority) {
         ++insertion_index;
     }
     if (insertion_index == 9) {

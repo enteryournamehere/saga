@@ -11274,3 +11274,147 @@ independently regenerate its report before commit/push. The70.002460%
 cycle threshold is not reached; no merge or replacement PR follows yet.
 Raw SHA256dee4b2500c1b74f2d6d02cb28f16bf1ef3d5128c3b96d2d853094e2c049c77fa;
 mapped SHA25621380097802225bcbabc768432890e49a7da8d8bfdb9962d44c8eae4e421ffa1.
+
+Checkpoint33's full normal format/tidy/symbol/report hook passes; its generated
+matching.json is byte-identical to the independent mapping. Root commits and
+pushes946ccdc2a9be6cd768fbc66a0b1b2058688a7bb2 with Fabian's authorship
+and verified Codex attribution. Final-head checks are being monitored;
+neither pending CI nor the unmet threshold is represented as a merge.
+
+All eleven GitHub checks subsequently complete successfully on that exact
+946ccdc2 head. Independent final-head capture SHA256
+42a184a2fad9a7fd54ec3cd678fe3c91d5648e9007234d40ea4bf42ab97039e7
+qualifies the identity and all COMPLETED/SUCCESS conclusions. Main remains
+a496c28beece66a24ccdf7336571b6836f45e6aa after a fresh fetch; the unmet
+70.002460% cycle threshold still prevents a merge.
+
+Bounded history-first cp33 screens exclude all twelve highest-weight item/
+object opportunities and the already complete TerrainPlayer census plus five
+negative source forms. Its current body is byte-identical to the prior owner
+snapshots. A single genuinely new full raw/current/helper rendering census
+closes blur7x7Separate without a supported omission; work-texture creation is
+a retail no-op, so initialized rendering inputs or gameplay are not certified.
+No repeat compiler, report or runtime expense follows these closures.
+
+### Batches416/417/419 bounded rejected trials
+
+Root reviews each complete original body, canonical types/helpers and one
+frozen full-owner production-action pair before measurement. Bolt_Find's
+original million-unit nearest-distance sentinel replaces0.49, but both full
+reports are identical:63 backed rows/five exacts, full Counter/U and known
+net0. Batch416 closes without representation proofs, runtime or integration.
+Its capture SHA256e055aa79e27a52232e56cabda788649522b8a98460ac03d7b42f6181dd7f4a5f.
+The actual torpedo callers supply no position; no gameplay correction is claimed.
+
+Batch417 restores the locator callback's original two guarded insertion
+operations. The sole pair adds one112-byte generated LOCAL helper, so the
+strict gate stops. An additive read-only capture of those existing objects
+and reports qualifies30 backed rows and+148.82818422 weighted bytes, but the
+83-byte AddLocatorToSet wrapper falls100→99.46429%. Exact retention closes
+the candidate immediately: no clone proof, runtime, variants or integration.
+Unbacked helper/startup/thunk metrics remain unknown. Additive capture SHA256
+242384fdcdcb100cf33155a41974dd25acd5ff5885fc243a18cb48cbc0bfe2f2;
+capture script1590ef6c63c9c9ce0b68de00681c5075b89095f674def31955d736a496e0fe11.
+
+Batch419 restores the two original short-circuit slot5 fall-animation loads
+instead of an eager cached boolean. The unchanged O2 owner pair measures
+−48.28124002 weighted bytes; only Animate_BATTLEDROID changes37.802920→
+28.744526%,534→581 emitted bytes. All79 backed rows/nine exacts and full
+Counter/U retain. It closes negative without thunk proof, runtime, variants
+or integration. Capture SHA2564f91d07019dc9c408aa07dd034c37aa3b68f7632274c65e6b96cfcae79216e13.
+Original caller registers/stack disprove Ghidra's MoveAnimManage argument
+cast; no private ABI attributes or fake mutating helper witness are added.
+
+### Batches420/421 captured registration and rendering state
+
+The complete602-byte RegisterGestureTracker raw body snapshots slots0..8
+before admission and insertion. One ordinary nine-element bool snapshot loop
+replaces the source's repeated vacancy reads, retaining all ten typed records,
+signed priority ordering, slot9 rejection and the existing pair-copy loop.
+The sole unchanged O3 owner pair gains49.71354528 weighted bytes across28
+backed rows, preserving nine exacts and complete Counter/U. Target19.025806→
+27.283870%,524→586 emitted bytes. Independently reviewed PC-thunk code,
+COMDAT, unwind and complete direct-call closure retain; their original absolute
+scores remain unknown. Manifest SHA2569f398c6d3de9777bcb6d300eeef3738c961c15b5b1c9ccef2d75ff49a9a47df4;
+capture18e05fd51479bfbb4b88391674e31f023252da16c82e510e5fbc55b7bc7f7d72;
+thunk proofbbdf7f9518a6c14f1b3800c58300f49508123da120c2a763c29a4b3d57307fc2.
+
+Root runs the exact old/new full member bodies with canonical class lifetime,
+real constructors/destructors and ten-record/canary/other-state checks. Each
+GNU O3 host64/i386 SSE ASan/UBSan/LSan binary passes31,744 occupancy/priority
+cases and984,115 checks; all12 preprocessing closures are approved before
+compilation and actual build dependencies retain. This is stable-table
+equivalence, not an invented callback/concurrency/gameplay witness. The only
+unrelated Update vtable dependency is an uncalled fail-fast diagnostic seam.
+Runtime capture SHA256bcaf2f593baa94f04c7839b87a23ca28c99c3c4f86d1f9c191066d443d8e6b7e.
+
+Batch421 captures the existing TexQuadSubmit3D helper's typed VARIPTR cell
+once and advances that same cell, as all four original vertex publications
+do. No wrapper expansion, new helper, ABI/options/ownership change occurs.
+The sole O2 pair gains21.34508688 weighted bytes;48 backed rows/five exacts
+and complete Counter/U retain. Target39.217392→42.422360%,620→620 bytes.
+Its two unbacked PC-thunks receive the same explicit representation/edge
+qualification, never invented original scores. Manifest SHA256
+e147b0bfc6d650b580bedc8a1cb4dd832f3e1fe57ca9251710ca7204d0247618;
+capturef054529c570a67833fe1651ca895367b465e09b8c9ece5be3a892eb37a30f40c;
+thunk proof9223ae457c0291a530fe5ee33e790866e99df14f84475a971508e459ab5b5acb.
+
+Both exact full helper/wrapper versions pass GNU O2 host64/i386 SSE sanitizer
+and leak checks:16,992 cases/2,310,243 checks per ABI, all char flag modes,
+signed colours, half-UV untouched bytes, finite count boundaries and complete
+typed storage/canaries. Observed actual system-header inventories are reviewed,
+not mislabeled pre-frozen NDK dependencies. Begin/End admit valid vertex state
+and record count/cursor; material/transform/packet/GPU fidelity is not claimed.
+Runtime result SHA256a05bbe07efd4897b5fa0fa67e8144a3b22e259d19f548b7072b6847adfccfe01
+andf1d26a277915357dd179ddde3f1af1fd339abac5c7f1e2d608a525633ff072ea.
+Root integrates only the byte-identical frozen420/421 candidate owners so far.
+
+### Batch418 lever cursor and original frame publication
+
+The full509-byte original Update captures its typed lever base and publishes
+negative32768-scaled animation frames in both branches. One ordinary live-count
+cursor loop and float-to-i32-to-u16 conversion restore these operations without
+negative float-to-unsigned undefined behavior. The sole unchanged O3 owner pair
+gains194.09842954 weighted bytes across29 backed rows; nine exacts retain with
+no qualification errors and unchanged undefined symbols. Update13.805555→
+51.814816%,504→504 bytes; no additional candidate or report pair is attempted.
+Strict Counter changes stop the historical gate until additive read-only
+qualification maps every44 old literal/label identities and their consumers.
+The sole genuinely new four-byte negative32768 constant matches original
+PT_LOAD bytes and has exactly two Update references. Numeric Reset jump-table
+labels retain exact locations/storage/edges; all other storage is unchanged.
+Three backed functions' small register-byte changes are explicitly inventoried,
+not mislabeled invariant. Two unbacked thunks retain code/COMDAT/unwind and
+complete direct-call closure, without fabricated original absolute metrics.
+Manifest SHA256127f960262154de17be73c42a24dacd64c8cd90042b0d86886a40ccd24e6ebb4;
+capturecba1dc01e88121c31ea8fd68532d25a1d30bd5def8be743b929bffe040f1638d;
+storage proof02f9b280efc11dbabcf2ecacc6f4fd52ef81bffec895b797fc2bf11457220d2c;
+thunk proofee5f451ebea1fb2d73cfaa4d1c02e963e038e1856896805103d869c9866a30da.
+
+Root runs both full actual bodies using canonical typed allocated pools and
+finite state/timer/progress admission. GNU O3 host64 and i386 SSE ASan/UBSan/LSan
+each pass276 cases/8,834 checks; the old body has8,818 expected intermediate
+retail deviations and its separate control exits2 cleanly. The independent
+modulo-frame oracle avoids the changed cast expression. Exact state, canaries,
+unprocessed tails and nonmutating audio-call position/order retain; full audio,
+engine or malformed/nonfinite inputs are not certified. Both explicit finite
+dependency closures qualify before either build, with no prefix exemptions.
+Runtime manifest90a39c4596ec4e3a37a5c1f19fa30a1b27b8b10eb055f594b6c9200447c94084;
+closure434222009eef4b12e41dbc607ffb7c4336af6233b91ee91d22c21a2eef6c9644;
+both run logsbfe8f0abc0ebc0f56036ee33b69e22e9b6647af745972fdc1b0e5313277ffa7c.
+Root catches a patch-context mistake before any linked report, restores the
+untouched AddGizmos loop and verifies the entire integrated owner byte-identical
+to the frozen candidate. The initial build log is retained; the corrected
+target is rebuilt before measurement. Only validated418/420/421 enter this unit.
+
+### Checkpoint34 linked lever, gesture and rendering unit
+
+One fresh whole-linked report and independent live Bazel mapping measure
+68.732025%,+0.005630 percentage points versus checkpoint33 and+0.729565
+versus current main. All6293 prior raw exact name/address/size identities,
+the4,722,419-byte original denominator and complete ownership counts retain.
+Corrected target/native/WebAssembly builds and all five repository tests pass.
+Raw SHA2564c2ed110e620ce412e1f452aa75c8f5e4e9b8ae55645ef4a1adabf13a1e4ca4f;
+mapped1c721045fb28f503b07df9d73277c0aa47e72d2af34d20caaa18242d620ee203.
+The normal commit hook will independently regenerate the report before push.
+The70.002460% cycle threshold remains unmet; queued422–426 are not counted.

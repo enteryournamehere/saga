@@ -219,8 +219,9 @@ static void Levers_Update(void *world_ptr, void *, float) {
         return;
     }
 
-    for (i32 index = 0; index < world->nlevers; ++index) {
-        LEVER_s &lever = world->levers[index];
+    LEVER_s *cursor = world->levers;
+    for (i32 index = 0; index < world->nlevers; ++index, ++cursor) {
+        LEVER_s &lever = *cursor;
         if ((lever.flags & (LEVER_FLAG_BEING_PULLED | LEVER_FLAG_INTERACTION_FINISHED | LEVER_FLAG_PULLED_DOWN)) == 0) {
             lever.animation_frame = 0;
             continue;
@@ -236,7 +237,7 @@ static void Levers_Update(void *world_ptr, void *, float) {
                 lever.auto_reset_timer = 0.0f;
                 lever.pull_progress = 0.6f;
             } else {
-                lever.animation_frame = static_cast<u16>(lever.pull_progress * 32768.0f);
+                lever.animation_frame = static_cast<u16>(static_cast<i32>(lever.pull_progress * -32768.0f));
             }
             continue;
         }
@@ -265,7 +266,7 @@ static void Levers_Update(void *world_ptr, void *, float) {
             }
         }
 
-        lever.animation_frame = static_cast<u16>(lever.pull_progress * 32768.0f);
+        lever.animation_frame = static_cast<u16>(static_cast<i32>(lever.pull_progress * -32768.0f));
     }
 }
 

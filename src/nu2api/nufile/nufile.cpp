@@ -141,6 +141,15 @@ i32 NuFileRefreshDevices(NUFILE_DEVICE **result) {
     return numdevices;
 }
 
+NUFILE_DEVICE *AddDevice(NUFILE_DEVICE *device) {
+    devices[numdevices] = *device;
+    NuStrCpy(devices[numdevices].cur_dir, default_device->cur_dir);
+    NuStrCpy(devices[numdevices].sys_dir, default_device->sys_dir);
+    NuStrCpy(devices[numdevices].dll_dir, default_device->dll_dir);
+    ++numdevices;
+    return &devices[numdevices - 1];
+}
+
 NUFILE_DEVICE *NuFileFindDevice(i32 id, i32 unit) {
     if (id == -3) {
         return default_device;

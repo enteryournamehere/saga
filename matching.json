@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 67.99743,
+    "fuzzy_match_percent": 68.00246,
     "total_code": "4722419",
-    "matched_code": "531743",
-    "matched_code_percent": 11.259971,
+    "matched_code": "532110",
+    "matched_code_percent": 11.267742,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6347,
-    "matched_functions_percent": 47.158035,
+    "matched_functions": 6349,
+    "matched_functions_percent": 47.172894,
     "total_units": 1
   },
   "text": {
@@ -66795,14 +66795,6 @@
           "match_percent": 99.75
         },
         {
-          "name": "_Z9AddDeviceP15nufile_device_s",
-          "demangled_name": "AddDevice(nufile_device_s*)",
-          "address": 2460710,
-          "offset": 1570742,
-          "size": 297,
-          "match_percent": 31.036585
-        },
-        {
           "name": "_Z13FindNextBreakPhi",
           "demangled_name": "FindNextBreak(unsigned char*, int)",
           "address": 4378816,
@@ -72155,14 +72147,6 @@
           "offset": 534336,
           "size": 631,
           "match_percent": 99.99248
-        },
-        {
-          "name": "_Z13ScaleAndClampi",
-          "demangled_name": "ScaleAndClamp(int)",
-          "address": 2556718,
-          "offset": 1666750,
-          "size": 70,
-          "match_percent": 53.52174
         },
         {
           "name": "_Z4IToXPci",
@@ -96935,6 +96919,14 @@
           "match_percent": 100.0
         },
         {
+          "name": "_Z13ScaleAndClampi",
+          "demangled_name": "ScaleAndClamp(int)",
+          "address": 2556718,
+          "offset": 1666750,
+          "size": 70,
+          "match_percent": 100.0
+        },
+        {
           "name": "_Z18UCStretchToCornersPsS_",
           "demangled_name": "UCStretchToCorners(short*, short*)",
           "address": 2556788,
@@ -106468,6 +106460,14 @@
           "offset": 1570720,
           "size": 22,
           "match_percent": 99.85714
+        },
+        {
+          "name": "_Z9AddDeviceP15nufile_device_s",
+          "demangled_name": "AddDevice(nufile_device_s*)",
+          "address": 2460710,
+          "offset": 1570742,
+          "size": 297,
+          "match_percent": 100.0
         },
         {
           "name": "NuFileFindDevice",

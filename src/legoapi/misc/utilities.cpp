@@ -117,17 +117,6 @@ i32 LineCrossedXZ(f32 ax, f32 az, f32 bx, f32 bz, f32 cx, f32 cz, f32 dx, f32 dz
     return 1;
 }
 
-i32 ScaleAndClamp(volatile i32 value) {
-    i32 scaled = value << 7;
-    scaled += scaled << 5;
-    value = scaled / 1048576;
-    if (value < -128)
-        value = -128;
-    if (value > 127)
-        value = 127;
-    return value + 128;
-}
-
 void VecRotateAxis(nuvec_s *vector, u16 angle, nuvec_s *axis) {
     NuVecNorm(axis, axis);
     const f32 cosine = NuTrigTable[((static_cast<u32>(angle) + 0x4000) >> 1) & 0x7fff];

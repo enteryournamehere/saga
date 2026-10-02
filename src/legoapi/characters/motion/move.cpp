@@ -3777,9 +3777,9 @@ void MovePlayer_VEHICLEDIRECTIONAL(GameObject_s *object) {
                             if (object->field_0xddc > 0.0f &&
                                 RotDiff(object->previous_boundary_angle, normal_yaw) > 0x2aaa &&
                                 abs(RotDiff(api.field_0x276, normal_yaw)) > 0x3fff) {
-                                api.movement_facing_angle =
-                                    (u16)(object->previous_boundary_angle +
-                                          0.5f * RotDiff(object->previous_boundary_angle, normal_yaw) + 32768.0f);
+                                api.movement_facing_angle = static_cast<i32>(
+                                    object->previous_boundary_angle +
+                                    0.5f * RotDiff(object->previous_boundary_angle, normal_yaw) + 32768.0f);
                                 object->field_0xe24 |= 2;
                                 object->field_0xddc = 0.1f;
                             } else {
@@ -3839,7 +3839,7 @@ void MovePlayer_VEHICLEDIRECTIONAL(GameObject_s *object) {
             else if (object->character_context == 0x2a) {
                 f32 half = 0.5f * object->airborne_action_duration;
                 object->field_0xdc8 =
-                    object->context_animation_timer < half
+                    !(object->context_animation_timer >= half)
                         ? -(1.0f - object->context_animation_timer / half)
                         : 1.0f - (object->airborne_action_duration - object->context_animation_timer) / half;
             } else if (api.field_0x27c != -1 && FadeSys.fade > 0.0f && (MiniCutCam == 0 || (api.flags_high & 1) == 0))

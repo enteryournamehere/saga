@@ -1448,29 +1448,42 @@ enable_reverb:
 
 void PlayFootStepSfx(GameObject_s *object) {
     i32 on_platform = 1;
-    const i8 surface = static_cast<i8>(object->apiobj.field_0x281);
-    if (object->field_0x1078 == -1 && object->apiobj.supporting_platform_id == -1 &&
-        (surface == -1 || (TerSurface[surface].flags & 2) == 0)) {
-        on_platform = 0;
+    if (object->field_0x1078 == -1 && object->apiobj.supporting_platform_id == -1) {
+        const i8 surface = static_cast<i8>(object->apiobj.field_0x281);
+        if (surface == -1 || (TerSurface[surface].flags & 2) == 0) {
+            on_platform = 0;
+        }
     }
 
     i32 sfx = object->apiobj.character_data->game_character->sfx_footstep;
-    if (sfx == -1 && (GameAudio->override_footstep_fn == NULL ||
-                      (sfx = GameAudio->override_footstep_fn(object, on_platform)) == -1)) {
-        if (object->apiobj.is_underwater == 0 && object->apiobj.intersects_water == 0) {
-            const bool alternate = (WorldInfo_CurrentlyActive()->current_level->flags & 0x1000) != 0;
-            if ((object->apiobj.character_data->model_flags & 0x10) == 0) {
-                sfx = GameAudio->sfx_ids[alternate ? 0x10 : 0xf];
+    if (sfx == -1) {
+        if (GameAudio->override_footstep_fn != NULL) {
+            sfx = GameAudio->override_footstep_fn(object, on_platform);
+        }
+        if (sfx == -1) {
+            if (object->apiobj.is_underwater == 0 && object->apiobj.intersects_water == 0) {
+                const i32 alternate = WorldInfo_CurrentlyActive()->current_level->flags & 0x1000;
+                if ((object->apiobj.character_data->model_flags & 0x10) != 0) {
+                    if (alternate != 0) {
+                        sfx = GameAudio->sfx_ids[0x12];
+                    } else {
+                        sfx = GameAudio->sfx_ids[0x11];
+                    }
+                } else {
+                    if (alternate != 0) {
+                        sfx = GameAudio->sfx_ids[0x10];
+                    } else {
+                        sfx = GameAudio->sfx_ids[0xf];
+                    }
+                }
             } else {
-                sfx = GameAudio->sfx_ids[alternate ? 0x12 : 0x11];
+                sfx = GameAudio->sfx_ids[0x13];
             }
-        } else {
-            sfx = GameAudio->sfx_ids[0x13];
         }
     }
 
     if (sfx != -1) {
-        if (static_cast<i8>(object->apiobj.flags_high) < 0 || (object->field_0xefb & 8) != 0) {
+        if (static_cast<i8>(object->apiobj.flags_low) < 0 || (object->field_0xefb & 8) != 0) {
             GameAudio_PlaySfxById(sfx, &object->apiobj.lower_position, 0, 0);
         } else {
             PlaySfxByIdAndSetVolume(sfx, &object->apiobj.lower_position, 0.5f);
@@ -1478,18 +1491,18 @@ void PlayFootStepSfx(GameObject_s *object) {
     }
 
     ANIMPACKET_s &packet = object->apiobj.anim_packet;
-    if (packet.blending == 0 && packet.animation_index != -1) {
-        CHARACTERANIM_s *config =
-            static_cast<CHARACTERANIM_s *>(object->apiobj.character_model->model_data_a[packet.animation_index]);
-        if (config != NULL) {
-            if ((config->flags & 0x20000) != 0) {
-                GameCam_Judder(GameCam, -0.25f, 0, &object->apiobj.collision_position);
-                NewRumbleAllPlayers(0.6f, 0.0f, 0, 0);
-            } else if ((config->flags & 0x40000) != 0 && VehicleArea == 0) {
-                GameCam_NewShake(GameCam, 0.5f, 0.5f, 1.0f);
-                NewRumbleAllPlayers(0.5f, 0.0f, 0, 0);
-            }
-        }
+    if (packet.blending != 0 || packet.animation_index == -1)
+        return;
+    CHARACTERANIM_s *config =
+        static_cast<CHARACTERANIM_s *>(object->apiobj.character_model->model_data_a[packet.animation_index]);
+    if (config == NULL)
+        return;
+    if ((config->flags & 0x20000) != 0) {
+        GameCam_Judder(GameCam, -0.25f, 0, &object->apiobj.collision_position);
+        NewRumbleAllPlayers(0.6f, 0.0f, 0, 0);
+    } else if ((config->flags & 0x40000) != 0 && VehicleArea == 0) {
+        GameCam_NewShake(GameCam, 0.5f, 0.5f, 1.0f);
+        NewRumbleAllPlayers(0.5f, 0.0f, 0, 0);
     }
 }
 

@@ -818,22 +818,16 @@ void DrawMeleeTargetsNumber(i16 *targets, u8 *counts, i32 count, u8 reset, nuhsp
 void DrawMeleeTargets(i16 *targets, char *dimmed, f32 *values, i32 count) {
     if (FadeSys.fade != 0.0f || count <= 0)
         return;
-
-    f32 x = (1 - count) * 0.06f * 0.5f;
-    if (values != NULL) {
-        for (i32 i = 0; i < count; ++i) {
-            const f32 y = (i & 1) != 0 ? 0.22f : 0.405f;
-            DrawCharIcon(targets[i], x, y, 0.0f, 0.128f, 0xa7, values[i], values[i], 1, NULL);
-            x += 0.06f;
-        }
-        return;
-    }
-
+    f32 x = (1 - count) * 0.060000002384185791015625f * 0.5f;
     for (i32 i = 0; i < count; ++i) {
-        const f32 y = (i & 1) != 0 ? 0.22f : 0.405f;
-        const f32 alpha = dimmed[i] != 0 ? 0.25f : 1.0f;
-        DrawCharIcon(targets[i], x, y, 0.0f, 0.128f, 0xa7, alpha, alpha, 1, NULL);
-        x += 0.06f;
+        const f32 y = (i & 1) != 0 ? 0.405f : 0.545f;
+        if (values != NULL)
+            DrawCharIcon(targets[i], x, y, 0.0f, 0.128f, 0xa7, values[i], values[i], 1, NULL);
+        else {
+            const f32 alpha = dimmed[i] != 0 ? 0.25f : 1.0f;
+            DrawCharIcon(targets[i], x, y, 0.0f, 0.128f, 0xa7, alpha, alpha, 1, NULL);
+        }
+        x += 0.060000002384185791015625f;
     }
 }
 

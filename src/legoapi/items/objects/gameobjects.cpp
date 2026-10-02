@@ -4568,7 +4568,7 @@ void GameCreatureOpponentSelection(AISYS_s *system, i32 count, APIOBJECT_s **obj
             }
         }
         alert_timer -= FRAMETIME;
-        if (!(alert_timer > 0.0f))
+        if (alert_timer <= 0.0f)
             alert_obj = NULL;
     }
     if (system->goody_idx >= goody_count)

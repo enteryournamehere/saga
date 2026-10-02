@@ -12340,6 +12340,55 @@ build changed Bazel's convenience symlink. Resolving the actual target output
 through cquery restores reporting without another matching build or variant.
 The70.002460% merge threshold remains unmet; no merge is claimed.
 
+### Checkpoint45: batarang unordered rejection
+
+Batch455's frozen candidate passes all four GNU O3/SSE host64/i386 old/new
+ASan/UBSan diagnostics, with leak detection enabled and empty stderr. Each run
+covers10589 bounded cases: finite automatic/manual selection, tick/ray ordering,
+ranking, full canonical batarang and target storage, canaries and actual target
+position consumption. Old manual unordered-screen diagnostics select360 cases;
+the recovered rejection selects none. Actual vector, distance, rotation,
+GameRayCast, TerrainPlatId and GetTargetPos bodies are retained. The deep terrain
+raycast uses a typed, validated stable-miss boundary; the four-angle LUT is not
+asset or exhaustive-angle coverage. Automatic NaN distance independently rejects
+in both versions; no fake forward-test witness or full Android/gameplay claim is
+made. Runtime result
+5be2f30d9422306deddaa1a9be52714e6b8b1e6291f13d16a5aee8ab015f10d9;
+both-ABI input catalog
+79efbaaacabe09413c43e8729e42885e06e3532a379dd4e7b67e4984cad22fc7.
+The integrated owner is byte-exactly
+b8aed289507ac1749556b27253507d3b8e03cdc3dd4ede2a29000fcc7da223b0.
+
+Android target, native and WASM builds and all five repository checks pass.
+The independent linked report reaches68.823350%: +0.000340pp over checkpoint44
+and +0.820890pp over main. Only Batarang_FindTarget's .isra.0 body changes,
+39.060220%→39.729927%, with all6293 exacts, original identity multiset,
+4722419-byte denominator and ownership summary retained.
+Raw report1f5b2f4e7d4c2b35a7a53a97b5498afb7ee9963f4db60df522f7dabc30920b12;
+mapped report8a12728e638445c2dd15260f6eeeb6b243279102bd544e7f52a6cc26816edae1.
+The first ownership-mapping invocation lacked permission to use Bazel's output
+base; the same existing raw report was mapped with authorized access, without
+another matching comparison. Both logs are preserved.
+
+Checkpoint44's Linux CI initially stopped before compilation on a GitHub HTTP500
+fetching apple_support1.24.2. The failed job is retried after workflow completion;
+the other ten exact-head checks passed. This is not a source diagnostic, and no
+build configuration workaround is introduced. The +2pp merge threshold remains
+unmet.
+
+The sole batch458 idle repetition/blend-out candidate has a provisional
+1.1171875-byte gain,33.088543%→33.260418%,584→612 emitted bytes. All48
+original-backed names and three exacts retain. Exactly one original-backed
+animduration_blendouttime undefined reference is separately qualified; all
+existing references retain. The unbacked SetLayers private clone and PC thunks
+remain unknown. Batch459's draw-matrix/current-global-level candidate has a
+provisional85.88137232-byte gain,44.597702%→56.459770%,600→776 bytes.
+All49 backed names, ten exacts and full symbol/undefined surfaces retain; its
+NuMechPtr destructor aliases and thunks remain unknown. These are isolated
+whole-owner results, not production integration or runtime certification. Both
+require separate same-object qualification and bounded canonical diagnostics;
+neither authorizes another source variant or matching comparison.
+
 The fresh Batarang manual-character distance suspicion closes without a trial:
 the full original2439-byte body restores64.0 before the merge and deliberately
 retains that limit for subsequent categories. Batch122 already documents this

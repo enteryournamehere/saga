@@ -11620,3 +11620,145 @@ the specifically proved removed0.0f literal .LC1 and original-backed typed Game
 reference; no prior undefined symbol is lost or absolute unknown score invented.
 Proof09861bb75cd95d4236dc04f3a6940b5f56d8c45c0f0b7c2594ce31112028dcb0.
 Runtime preparation is authorized, but423 is not integrated at checkpoint35.
+
+Checkpoint35's normal commit hook passes all checks, target/native/WASM tidy,
+symbol inventory and report regeneration. Its mapped report is byte-identical
+to the independent capture. Commitbc155affde47bb962a2b1113c7cf314cfdf010a6
+preserves Fabian's authorship and the verified Codex co-author trailer; pushed
+toPR121. All eleven checks are independently verified COMPLETED/SUCCESS on
+that exact pushed head. The merge threshold still remains unmet.
+The hook formats only line wrapping in422's allocation expression;424/426
+remain byte-identical to their frozen candidates, and the complete mapped
+report stays byte-identical to the independent pre-hook linked capture.
+
+### Batch431 rejected touch-layout admission trial
+
+Root reviews all508 original bytes, actual menu/controller helpers, pause/frame
+producers and canonical level/area/control-mode fields. One minimal correction
+uses retail's global Paused admission and conditional second GetMenuID call,
+retaining the bool signature and all existing guards. Actual producer stability
+is explicit; no fictitious divergence/mutation or gameplay defect is claimed.
+After both complete actual O3 preprocess closures/commands receive root review,
+the sole frozen owner pair yields a negative32-backed-row subtotal:
+−63.00033374 weighted bytes; target17.327870→4.9262295%,481→517 bytes.
+All five exacts retain; no comparison qualification error. Full symbol Counter
+differs only by added UND Paused; unbacked bx/cx absolute scores remain unknown.
+This is not a qualified whole-owner negative total or an automatic U exemption.
+Negative closes without representation proof, runtime, retries or integration.
+Manifest61f2eb3c570995e723332a6df6f4e9a4e8ecd5f0db415906a75b7aa36d4e6b51;
+capture8772129d9ff1d3e989a315153fe7bb60528dee82e2a8fb5c85d5de831966b3ab.
+
+### Batch433 rejected deflate cursor trial
+
+Root reviews all1059 original bytes, complete decoder/Huffman helpers, original
+constant tables and actual file-reader storage/callers. One guarded source-end
+cursor retains forward overlapping byte expansion and each current_pos store;
+invalid table/history/capacity domains remain excluded, not claimed repaired.
+Both complete actual O3 preprocessing commands and14-input consumed closures
+receive root review before the sole frozen owner pair and two bulk reports.
+The eight-backed-row subtotal falls34.06913136 weighted bytes; target
+46.282894→43.065790%,1035→1035 bytes. One isolated exact retains, complete
+Counter/U agree and no original comparison qualification error occurs.
+Unbacked bx/cx absolute scores remain unknown; this is not a qualified whole-
+owner total. Negative closes without further proof/runtime/variants/integration.
+Manifested31aceb55fae2f7807668084f8767c56d1ce604d5c587d9486cb09ad3f35876;
+capture22008f3e85c23be2f02e056b8290f427d84507bf7fb75b2f9730ff05fb775b9a.
+
+### Batch432 rejected AI-reset count trial
+
+Root reviews all589 original bytes, canonical64-object/AI records and actual
+script/state/string/object-reset/count producers. One carried signed count with
+five existing admitted-tail refreshes retains all guards and service order;
+stable rejected paths are not a fabricated callback/gameplay defect witness.
+A metadata-only external .d path resolver failure is preserved and explicitly
+repaired additively; a root-created log inside the strict partial inventory also
+stops before writes, then is preserved outside that inventory. No source,
+compiler command or comparison pair is repeated for these metadata stops.
+Actual live aquery confirms unchanged O2, not root's earlier O3 assumption.
+Both149-input actual preprocessing closures/commands receive full root review
+before the sole pair/two bulk reports. The13-backed-row subtotal falls
+20.94220717 weighted bytes; target55.111110→51.555557%,541→588 bytes.
+One isolated exact retains, full Counter/U agree, no qualification errors.
+Unbacked bx/cx absolute scores remain unknown, not a whole-owner total.
+Negative closes without proof/runtime/variants/integration.
+Manifest2bb27326b3a96de667641f6713f23c10d196f154956932972149e3a6350cce78;
+capturef29a8d083e7f48e06759b257f35b966a683368ca275680a3a7d090386446073a.
+
+### Batch434 provisional editor-path dataflow trial
+
+Root reviews the complete2656-byte original target, private helper, canonical
+editor records, actual index/import producers and all five actual callers.
+One captured signed-promoted node index and post-helper connection-slot reload
+retain existing fanout/guards; stable helpers are not a fabricated mutation
+witness. Retail's private register ABI remains an untouched limitation.
+Fresh Android aquery confirms actual O2. Both147-input actual preprocessing
+closures and commands receive root review before the sole owner pair and two
+bulk reports. The53-backed-row subtotal rises118.93271210 weighted bytes;
+target67.710710→72.162730%,2720→2848 bytes. No baseline exact or comparison
+qualification errors; complete Counter/U retain. The render row also changes
+53.318386→53.352016% at unchanged1928 bytes, not yet proved incidental.
+Five private/startup/thunk absolute scores remain unknown. This provisional
+subtotal is not a qualified whole-owner gain or integration authority: an
+additive same-object representation proof is prepared before any runtime.
+Manifest96173988d01af861c9c8ce9a9be34a71dbc0ba309c001d55485ae71444da7e1e.
+
+### Batch423 runtime-qualified PodRaceB integration
+
+Root reviews both actual GNU O3 host64/i386 preprocessing, complete individually
+pinned363-input union and exact backend/link/runtime closures before objects.
+Both old/new builds retain the reviewed dependencies and actual ELF interpreters
+and sanitizer DSOs. Thirty candidate cases pass400 checks per ABI; thirteen
+safe old controls pass158, and eight named old failures return ordinary failure
+without sanitizer errors. Actual thirteen extracted helpers are retained;
+stable lap/race/audio-allocation boundaries are disclosed, not fabricated
+gameplay mutation. No NDK/full-engine runtime claim or invalid domain admission.
+Runtime resultsdd4e1385d345fdc840baa6c6bb407fd946d1d62c70f4896e5feb4c29067f4bd4.
+Root integrates only the byte-identical frozen episodeI.cpp candidate: original
+instance readiness, negative countdown boundary, add-then-cap, unfaded pulse/
+alpha logic and original-backed area completion/hint threshold. The qualified
+isolated gain232.00716485 weighted bytes is not the linked-project result;
+checkpoint36's independent linked report and all6293 prior raw exacts follow.
+
+### Batch435 rejected tube-motion unit
+
+Root reviews the complete536-byte original target, canonical context flags,
+actual pool/count producers, pure cylinder helper, final audio route and caller.
+One frozen context-mask/typed cursor/split flags unit retains service order;
+invalid pool capacity and context domains remain excluded. Fresh Android aquery
+confirms O3; both142-input actual preprocessing closures and commands receive
+root review before the sole owner pair/two bulk reports. The27-backed-row
+subtotal falls12.22229808 weighted bytes: target39.107693→36.738460%,573→592
+bytes. Eleven exacts retain; full Counter/U agree and no qualification errors.
+The ObjInTube row changes98.928570→99.464290%; unbacked bx/cx absolute scores
+remain unknown, not a whole-owner total. Negative closes the entire candidate
+without representation proof, runtime, variants, retries or integration.
+Manifestc6c1db58b819ac518b5c876d659eb944deb9ee2ec480d3da032877121813fc25.
+
+### Batch436 provisional quadtree indexed-entry trial
+
+Root reviews the complete2134-byte original LOCAL AddElementR, canonical union/
+header, actual allocation/storage helpers and only actual tree producers.
+One frozen indexed-entry/first-child predicate unit retains original helper
+behavior; NULL-copy/capacity, initialization, overflow and cyclic-tree debt stay
+excluded, not repaired or fabricated as gameplay evidence. Fresh Android aquery
+has NO optimization argument; the compiler default remains unchanged, with no
+added-O0. Both15-input actual preprocessing closures and full commands receive
+root review before the sole pair/two bulk reports. The11-backed-row subtotal
+rises603.85926040 weighted bytes; target66.505880→94.802940%,1693→2166 bytes.
+Two existing exacts and full Counter/U retain; no qualification errors. Unknown
+bx remains unscored; this is provisional, not a qualified whole-owner total.
+Separate additive same-object proof precedes any runtime or integration.
+Manifest4f1952179d8e6096be43a7936e553afc03e48f202f497d58bdaad328fdd610c1.
+
+### Checkpoint36 independent linked validation
+
+Only423 is integrated;434/436 remain provisional and435 is closed negative.
+Target/native/WASM builds and all five repository checks pass. Independent
+original/linked measurement is68.744510%, +0.004955 points from checkpoint35
+and +0.742050 from main68.002460%. All6293 prior raw exacts, original raw
+name/VA/extent multiplicities,4722419-byte denominator and452-unit ownership
+inventory retain. Whole-project progress is not extrapolated from isolated
+owner gains. Raw18ffc003b0ab1aff57a844d465bf77cb43b8258cfe5e6e5c78b1720a9aec50e9;
+mappedadfeea2d27b493d64977a5f489757e6fc35cd7afcbc619c5f26534159f9d468b.
+The70.002460% merge threshold remains unmet. Normal commit-hook regeneration,
+Codex attribution, push and exact pushed-head CI validation follow.

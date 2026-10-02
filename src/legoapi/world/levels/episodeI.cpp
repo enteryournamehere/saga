@@ -4,6 +4,7 @@
 #include "decomp.h"
 #include "gameapi/ai/aisys/aisys.h"
 #include "legoapi/world/level.h"
+#include "legoapi/world/area.h"
 #include "globals.h"
 #include "legoapi/menus/screens/gamestructure.h"
 #include "legoapi/ai/core/ai_sys_stubs.h"
@@ -1137,7 +1138,8 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
                     }
                     break;
                 case 1:
-                    if (cut != NULL && (((CUTSCENEDATA_s *)cut->scene)->flags & 0x10)) {
+                    if (cut != NULL && cut->instance != NULL &&
+                        (static_cast<instNUGCUTSCENE_s *>(cut->instance)->flags_89 & 0x10)) {
                         NewCutScene(NULL, world->cutscene_sys, "EP1_PODRACE_MUSHROOM1", 1);
                         mushroom_countdown = mushroom_time_available;
                         LevFlag.mushroom_state = 2;
@@ -1145,20 +1147,18 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
                     break;
                 case 2:
                     mushroom_countdown -= FRAMETIME;
-                    if (mushroom_countdown > 0.0f) {
-                        if (gamcam->sock_position.distance > mushroom2_along)
-                            LevFlag.mushroom_state = 3;
-                    } else {
+                    if (mushroom_countdown < 0.0f) {
                         NewCutScene(NULL, world->cutscene_sys, "EP1_PODRACE_MUSHROOM2", 1);
                         mushroom_n_attempts++;
                         if (mushroom_nattempts_per_increment > 0 &&
                             mushroom_n_attempts % mushroom_nattempts_per_increment == 0) {
-                            mushroom_time_available =
-                                mushroom_time_available + mushroom_time_increment < mushroom_max_time_available
-                                    ? mushroom_time_available + mushroom_time_increment
-                                    : mushroom_max_time_available;
+                            mushroom_time_available += mushroom_time_increment;
+                            if (mushroom_time_available > mushroom_max_time_available)
+                                mushroom_time_available = mushroom_max_time_available;
                         }
                         LevFlag.mushroom_state = 4;
+                    } else if (gamcam->sock_position.distance > mushroom2_along) {
+                        LevFlag.mushroom_state = 3;
                     }
                     break;
                 case 3:
@@ -1170,11 +1170,10 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
         }
     }
     if (pod_pacemaker != 0) {
-        if (FadeSys.fade != 0.0f && pause_rndr_on == 0) {
-            float t = GameTimer.time_elapsed_mod_seconds;
-            pod_pacemaker_alpha =
-                pod_pacemaker_alpha + FRAMETIME * 2.0f < 1.0f ? pod_pacemaker_alpha + FRAMETIME * 2.0f : 1.0f;
-            if (NuFmod(t, 0.2f) > 0.1f)
+        if (FadeSys.fade == 0.0f && pause_rndr_on == 0) {
+            float t = FRAMETIME + FRAMETIME + pod_pacemaker_alpha;
+            pod_pacemaker_alpha = 1.0f < t ? 1.0f : t;
+            if (NuFmod(GameTimer.time_elapsed_mod_seconds, 0.2f) < 0.1f)
                 UpdatePacemakerDisplay(world->lev_objs);
         } else {
             pod_pacemaker_alpha = 0.0f;
@@ -1183,8 +1182,8 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
     UpdatePodRaceLapDisplay(FRAMETIME);
     PodRaceUpdate(world, FRAMETIME);
     if (Lap == 1) {
-        if (LevFlag.podrace_state == 0) {
-            if (GameTimer.time_elapsed > 10.0f) {
+        if (LevFlag.podrace_state == 0 && PODRACE_ADATA != NULL) {
+            if (Game.area_save[PODRACE_ADATA->index].area_complete == 0 && GameTimer.time_elapsed >= 3.0f) {
                 Hint_SetComplete(0x27e);
                 LevFlag.podrace_state = 1;
             }

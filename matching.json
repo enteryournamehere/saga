@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.01684,
+    "fuzzy_match_percent": 68.02242,
     "total_code": "4722419",
-    "matched_code": "536574",
-    "matched_code_percent": 11.36227,
+    "matched_code": "537520",
+    "matched_code_percent": 11.382302,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6389,
-    "matched_functions_percent": 47.470097,
+    "matched_functions": 6400,
+    "matched_functions_percent": 47.551823,
     "total_units": 1
   },
   "text": {
@@ -17558,7 +17558,7 @@
           "address": 4581728,
           "offset": 3691760,
           "size": 81,
-          "match_percent": 70.52631
+          "match_percent": 100.0
         },
         {
           "name": "_ZN31MechInputTouchPodraceController10DeactivateEv",
@@ -112693,7 +112693,7 @@
           "address": 3321952,
           "offset": 2431984,
           "size": 81,
-          "match_percent": 76.57895
+          "match_percent": 81.052635
         },
         {
           "name": "_ZN14NuSoundAndroidC1Ev",
@@ -113735,7 +113735,7 @@
           "address": 3263552,
           "offset": 2373584,
           "size": 92,
-          "match_percent": 74.545456
+          "match_percent": 100.0
         },
         {
           "name": "_ZN24NuSoundEffectAttenuationD0Ev",
@@ -113743,7 +113743,7 @@
           "address": 3263936,
           "offset": 2373968,
           "size": 92,
-          "match_percent": 74.545456
+          "match_percent": 100.0
         },
         {
           "name": "_ZN13NuSoundEffectD1Ev",
@@ -113767,7 +113767,7 @@
           "address": 3277616,
           "offset": 2387648,
           "size": 81,
-          "match_percent": 70.52631
+          "match_percent": 100.0
         }
       ]
     },
@@ -113806,7 +113806,7 @@
           "address": 3277760,
           "offset": 2387792,
           "size": 81,
-          "match_percent": 70.52631
+          "match_percent": 100.0
         },
         {
           "name": "_ZN20NuSoundEffectDoppler12ProcessVoiceEP12NuSoundVoicef",
@@ -113917,7 +113917,7 @@
           "address": 3278640,
           "offset": 2388672,
           "size": 81,
-          "match_percent": 70.52631
+          "match_percent": 100.0
         },
         {
           "name": "_ZN18NuSoundEffectFader12ProcessVoiceEP12NuSoundVoicef",
@@ -114012,7 +114012,7 @@
           "address": 3279712,
           "offset": 2389744,
           "size": 81,
-          "match_percent": 70.52631
+          "match_percent": 100.0
         },
         {
           "name": "_ZN22NuSoundEffectPitchRamp7ProcessEf",
@@ -117607,7 +117607,7 @@
           "address": 3262256,
           "offset": 2372288,
           "size": 81,
-          "match_percent": 70.52631
+          "match_percent": 100.0
         },
         {
           "name": "_ZN13NuSoundSystem18IsUserPlayingMusicEv",
@@ -117711,7 +117711,7 @@
           "address": 3263648,
           "offset": 2373680,
           "size": 92,
-          "match_percent": 74.545456
+          "match_percent": 100.0
         },
         {
           "name": "_ZN25NuSoundEffectRandomVolumeD0Ev",
@@ -117719,7 +117719,7 @@
           "address": 3263744,
           "offset": 2373776,
           "size": 92,
-          "match_percent": 74.545456
+          "match_percent": 100.0
         },
         {
           "name": "_ZN18NuSoundEffectPitchD0Ev",
@@ -117727,7 +117727,7 @@
           "address": 3263840,
           "offset": 2373872,
           "size": 92,
-          "match_percent": 74.545456
+          "match_percent": 100.0
         },
         {
           "name": "_ZN13NuSoundMemory14PushNuListNodeIP13NuSoundEffectEEvR6NuListIT_ERKS4_",

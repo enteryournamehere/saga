@@ -6470,7 +6470,8 @@ __attribute__((weak)) void EdSubSystem::SubProcess(float) {
 __attribute__((weak)) void EdSubSystem::SubRender() {
 }
 
-inline EdControl::~EdControl() {
+SAGA_HOST_LINKABLE_DTOR
+EdControl::~EdControl() {
 }
 
 inline void EdControl::operator delete(void *memory) {

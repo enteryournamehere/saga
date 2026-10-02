@@ -1087,17 +1087,14 @@ giz_freeplay:
             frameTimeAccumulator = MAX(pastFrameTimes[4], frameTimeAccumulator);
             shortestFrameTime = MIN(pastFrameTimes[4], shortestFrameTime);
 
-            frameTimeAccumulator = 0.0f;
-            averagedFrameCount = 0;
-            if (shortestFrameIndex != 0) {
-                if (longestFrameIndex != 0) {
-                    if (0.0f <= pastFrameTimes[0]) {
-                        // The original adds to +0.0f even for the first sample,
-                        // which also preserves its handling of signed zero.
-                        frameTimeAccumulator += pastFrameTimes[0];
-                        averagedFrameCount = 1;
-                    }
-                }
+            if ((shortestFrameIndex != 0) && (longestFrameIndex != 0) && (0.0f <= pastFrameTimes[0])) {
+                // The original adds +0.0f to the first accepted sample,
+                // preserving signed-zero behavior after rejecting NaNs.
+                frameTimeAccumulator = 0.0f + pastFrameTimes[0];
+                averagedFrameCount = 1;
+            } else {
+                frameTimeAccumulator = 0.0f;
+                averagedFrameCount = 0;
             }
 
             if (shortestFrameIndex != 1) {

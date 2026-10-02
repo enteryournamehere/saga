@@ -2575,11 +2575,11 @@ void TerrainPlayer(GameObject_s *object) {
                 const i32 object_index =
                     static_cast<u32>(reinterpret_cast<uintptr_t>(object) - reinterpret_cast<uintptr_t>(Obj)) /
                     sizeof(GameObject_s);
-                NUVEC incoming_velocity = api.velocity;
                 NUVEC collision_position = api.position;
                 collision_position.y += lower_bound;
 
                 NUVEC movement;
+                NUVEC incoming_velocity = api.velocity;
                 NuVecScale(&movement, &api.velocity, FRAMETIME);
 
                 // Original 0x1048e9 clears the complete contact metadata word.
@@ -2751,13 +2751,14 @@ void TerrainPlayer(GameObject_s *object) {
             bool stopped_without_terrain = false;
             if (floor_height != 2000000.0f) {
                 object->field_0xe20 |= 2;
-                const f32 bottom_offset = api.field_0xa8 * object->character_bottom;
-                const f32 top = object->character_top * api.field_0xa8 + api.position.y;
-                const f32 bottom = api.position.y + bottom_offset;
-                const f32 height = top - bottom;
-                if (!skip_motion && floor_height > 0.1f * height + bottom &&
-                    height + 0.01f >= (floor_height + height) - top) {
-                    api.position.y = floor_height - bottom_offset;
+                if (!skip_motion) {
+                    const f32 bottom_offset = api.field_0xa8 * object->character_bottom;
+                    const f32 top = object->character_top * api.field_0xa8 + api.position.y;
+                    const f32 bottom = api.position.y + bottom_offset;
+                    const f32 height = top - bottom;
+                    if (floor_height > 0.1f * height + bottom && height + 0.01f >= (floor_height + height) - top) {
+                        api.position.y = floor_height - bottom_offset;
+                    }
                 }
             } else {
                 object->field_0xe20 &= static_cast<u8>(~2u);
@@ -3035,7 +3036,7 @@ void TerrainPlayer(GameObject_s *object) {
             }
             Tag_Check(object);
             PreResetCode(object);
-            if (api.character_data != NULL && api.character_data->move_fn != NULL) {
+            if (api.character_data->move_fn != NULL) {
                 api.character_data->move_fn(object);
             }
             PostResetCode(object);

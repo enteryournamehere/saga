@@ -1338,7 +1338,6 @@ void DrawAlphaGrid(i32 rows, i32 cols, NuBloomParameters *parameters) {
     f32 angle_delta = far_angle - near_angle;
     f32 scale_delta = far_scale - near_scale;
     NUCAMERA camera;
-    NUVEC direction;
     f32 brightness;
     NuCameraGet(&camera);
     static i32 first = 1;
@@ -1366,6 +1365,7 @@ void DrawAlphaGrid(i32 rows, i32 cols, NuBloomParameters *parameters) {
         f32 y0 = y_start;
         f32 y1 = y_next;
         for (col = 0; col < cols; ++col) {
+            NUVEC direction;
             ALPHA_GRID_VERTEX(x0, y0);
             ALPHA_GRID_VERTEX(x1, y0);
             if (col != cols - 1) {
@@ -2798,8 +2798,8 @@ void DrawObjectOnCharacter(WORLDINFO_s *world, GameObject_s *object, i32 object_
         id = object->id;
         model = object->apiobj.character_model;
         axis = object->field_0x1087;
-        plane = object->field_0x1020;
         hat = object->field_0x108e;
+        plane = object->field_0x1020;
     } else {
         id = dco_id;
         if (id == -1 || dco_gcdata == NULL || dco_cmodel == NULL)
@@ -2825,7 +2825,7 @@ void DrawObjectOnCharacter(WORLDINFO_s *world, GameObject_s *object, i32 object_
     }
     if (locator == -1 || model->points_of_interest[locator] == NULL)
         return;
-    NUMTX matrix;
+    NUMTX matrix, reflected, first, second;
     if (position_only)
         NuMtxSetTranslation(&matrix, reinterpret_cast<NUVEC *>(&joints[locator].m30));
     else
@@ -2833,9 +2833,9 @@ void DrawObjectOnCharacter(WORLDINFO_s *world, GameObject_s *object, i32 object_
     if (second_locator != -1 && model->points_of_interest[second_locator] != NULL) {
         NUVEC position = {matrix.m30, matrix.m31, matrix.m32};
         if (!position_only) {
-            NUMTX first = matrix;
-            NUMTX second = joints[second_locator];
+            first = matrix;
             first.m30 = first.m31 = first.m32 = 0.0f;
+            second = joints[second_locator];
             second.m30 = second.m31 = second.m32 = 0.0f;
             QuatInterpolateRotationMatrix(&matrix, &first, &second, 0.5f);
         }
@@ -2870,11 +2870,10 @@ void DrawObjectOnCharacter(WORLDINFO_s *world, GameObject_s *object, i32 object_
     }
     if (scale != 1.0f)
         NuMtxPreScaleU(&matrix, scale);
-    if (use_alpha)
-        NuSpecialDrawAtAlpha(special, &matrix, alpha);
-    else
+    if (!use_alpha)
         NuSpecialDrawAt(special, &matrix);
-    NUMTX reflected;
+    else
+        NuSpecialDrawAtAlpha(special, &matrix, alpha);
     if (reflect && MatrixReflection(&matrix, axis, plane, world->current_level->unknown_0cc, &reflected)) {
         NuRndrStartReflectionRender(0);
         if (use_alpha)

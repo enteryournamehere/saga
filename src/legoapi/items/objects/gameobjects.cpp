@@ -6976,7 +6976,7 @@ static void DrawPackButton(GAMEMESSAGE_s *message, nuvec_s *position, float scal
         u8 field_0x0[0x300];
         f32 price;
     } product;
-    char text[144];
+    char text[128];
 
     const f32 phase = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f);
     const i32 angle = static_cast<i32>(phase * 2.0f * 65536.0f);
@@ -6990,48 +6990,36 @@ static void DrawPackButton(GAMEMESSAGE_s *message, nuvec_s *position, float scal
         goto purchases_disabled;
     {
         product.price = 0.0f;
-        NuIOS_GetInAppProductByID(
-            *reinterpret_cast<char **>(&StorePack[static_cast<i8>(message->field_0xfe)].field1_0x4),
-            reinterpret_cast<NuIOS_InAppProduct *>(&product));
+        NuIOS_GetInAppProductByID(StorePack[static_cast<i8>(message->field_0xfe)].product_id,
+                                  reinterpret_cast<NuIOS_InAppProduct *>(&product));
         sprintf(text, "%s ~0%.2f~~", TTab[StorePack[static_cast<i8>(message->field_0xfe)].message_text_index],
                 static_cast<double>(product.price));
         Text3DEx(text, position->x, label_y, position->z, scale, scale, scale, 4, message->red, message->green,
                  message->blue, alpha & 0xff);
 
         const f32 savings_height = text3d_height;
-        for (u32 *bundle_mask = &StoreBundle[0].pack_mask; bundle_mask != &StoreBundle[3].pack_mask; bundle_mask += 3) {
+        uintptr_t cursor = reinterpret_cast<uintptr_t>(&StoreBundle[0].pack_mask);
+        for (i32 count = 3; count != 0; --count, cursor += sizeof(STOREBUNDLE)) {
+            u32 *bundle_mask = reinterpret_cast<u32 *>(cursor);
             if ((*bundle_mask & (1 << static_cast<i8>(message->field_0xfe))) == 0)
                 continue;
             product.price = 0.0f;
-            NuIOS_GetInAppProductByID(*reinterpret_cast<char **>(bundle_mask - 1),
+            NuIOS_GetInAppProductByID(reinterpret_cast<STOREBUNDLE *>(cursor - offsetof(STOREBUNDLE, pack_mask))->name,
                                       reinterpret_cast<NuIOS_InAppProduct *>(&product));
             const f32 bundle_price = product.price;
             f32 pack_total = 0.0f;
-#define ADD_PACK_PRICE(index)                                                                                          \
-    if (__builtin_expect(Store_IsPackUnlocked(index), 0) == 0) {                                                       \
-        if (__builtin_expect((*bundle_mask & (1u << (index))) != 0, 1)) {                                              \
-            if (NuIOS_GetInAppProductByID(*reinterpret_cast<char **>(&StorePack[index].field1_0x4),                    \
-                                          reinterpret_cast<NuIOS_InAppProduct *>(&product)))                           \
-                pack_total += product.price;                                                                           \
-        }                                                                                                              \
-    }
-            ADD_PACK_PRICE(0);
-            ADD_PACK_PRICE(1);
-            ADD_PACK_PRICE(2);
-            ADD_PACK_PRICE(3);
-            ADD_PACK_PRICE(4);
-            ADD_PACK_PRICE(5);
-            ADD_PACK_PRICE(6);
-            ADD_PACK_PRICE(7);
-            ADD_PACK_PRICE(8);
-            ADD_PACK_PRICE(9);
-            ADD_PACK_PRICE(10);
-#undef ADD_PACK_PRICE
-            if (pack_total > bundle_price) {
-                Text3DEx(TTab[tBUNDLESAVINGSAVAILABLE], position->x, label_y - savings_height, position->z, scale,
-                         scale, scale, 4, 0, 191, 255, alpha & 0xff);
-                break;
+            for (i32 index = 0; index < 11; ++index) {
+                if (__builtin_expect(Store_IsPackUnlocked(index), 0) == 0 &&
+                    __builtin_expect((*bundle_mask & (1u << index)) != 0, 1) &&
+                    NuIOS_GetInAppProductByID(StorePack[index].product_id,
+                                              reinterpret_cast<NuIOS_InAppProduct *>(&product)))
+                    pack_total += product.price;
             }
+            if (!(pack_total > bundle_price))
+                continue;
+            Text3DEx(TTab[tBUNDLESAVINGSAVAILABLE], position->x, label_y - savings_height, position->z, scale, scale,
+                     scale, 4, 0, 191, 255, alpha & 0xff);
+            break;
         }
     }
 

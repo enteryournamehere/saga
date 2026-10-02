@@ -418,7 +418,7 @@ void GameCameraMakeMiniCut3(u32 flags, float distance, i32 pitch, i32 yaw, i32 r
         Minicam_AddCommand(11, 0.0f, yaw, NULL, v000);
     if (flags & 0x40)
         Minicam_AddCommand(15, 0.0f, roll, NULL, v000);
-    else if (flags & 8)
+    if (flags & 8)
         Minicam_AddCommand(12, 0.0f, roll, NULL, v000);
     if (mode != -1)
         Minicam_AddCommand(6, 0.0f, mode, NULL, v000);
@@ -428,9 +428,13 @@ void GameCameraMakeMiniCut3(u32 flags, float distance, i32 pitch, i32 yaw, i32 r
     if ((flags & 5) == 5 && blend_in_time > 0.0f && blend_time == 0.0f)
         blend_time = 0.01f;
     if ((flags & 0x1800) == 0x1800) {
-        Minicam_AddCommand(4, blend_time, 0, NULL, v000);
-        if (hold_time > blend_time)
-            Minicam_AddCommand(5, hold_time - blend_time, 0, NULL, v000);
+        if (hold_time > blend_time) {
+            const f32 remainder = hold_time - blend_time;
+            Minicam_AddCommand(4, blend_time, 0, NULL, v000);
+            Minicam_AddCommand(5, remainder, 0, NULL, v000);
+        } else {
+            Minicam_AddCommand(4, blend_time, 0, NULL, v000);
+        }
     } else if (flags & 0x800) {
         Minicam_AddCommand(4, blend_time, 0, NULL, v000);
     } else if (flags & 0x1000) {
@@ -1788,8 +1792,8 @@ void SpeedBlur_Update() {
     static NUMTX cameraMtxs[2];
     static i32 lastCameraMtx = -1;
     if (lastCameraMtx < 0) {
-        cameraMtxs[0] = GameCam->render_mtx;
         cameraMtxs[1] = GameCam->render_mtx;
+        cameraMtxs[0] = GameCam->render_mtx;
         lastCameraMtx = 0;
     }
     NuLightSpeedBlurOldCameraPos(&cameraMtxs[lastCameraMtx]);

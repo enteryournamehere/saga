@@ -10290,3 +10290,261 @@ tests, formatting, canonical forward declarations, target/native/WASM tidy,
 symbol checks and generated matching refresh. Both formatted production owners
 still byte-equal their frozen candidates. Pushed-head CI is not inferred from
 these local successes.
+
+### Batch390: debris predicate comparison excluded
+
+The sole unchanged O3 whole-owner comparison loses222.7832232 known weighted
+bytes. `DebrisFindAllOfType` falls45.814816% → 21.386831%,979 → 995 bytes
+(original912). All103 finite original-backed rows, both exacts and complete
+symbol/U Counters retain; three unbacked compiler rows remain separately
+unscored. The retail-backed effect-before-activity predicate does not establish
+a positive matching unit. No variants, additional reports, runtime fixture or
+production integration follows. The finite history screen remains immutable
+and distinguishes full target closure from source-only neighboring screens.
+
+### Batch391: staged menu captures excluded
+
+The sole unchanged O2 complete editor-owner comparison loses114.83465067 known
+weighted bytes. `cbPtlStartVelMenu` falls49.674770% → 42.583588%,1317 → 1261
+bytes (original1539), with two additional finite collateral changes included.
+All31 known exacts retain across568 finite original pairs. Two original-backed
+gradient callbacks remain unscored, totaling2171 alias-inclusive original bytes;
+eight additional unbacked compiler/helper names also remain unknown. Complete
+undefined Counters retain, but eleven local compiler-label/string entries are
+removed and eleven added. The strict qualification stop preserves all unknown
+rows and storage evidence; no generic-label exemption, further comparison,
+representation proof, runtime or production integration follows. This is a
+negative known subtotal and failed qualification, not an invented absolute
+score for the unknown functions.
+
+Checkpoint27's pushed head`6b6df8a2dbc6e3bd46a11803dbeee78137c27a7d`
+subsequently passes all eleven GitHub checks. Exact head identity, check count
+and completed SUCCESS conclusions are independently verified. The +2-point
+merge threshold remains unmet; this success does not qualify a later head.
+
+### Post-checkpoint27 world/status census
+
+The frozen twelve-name history screen promotes only`CalculateWorldSize` to a
+fresh complete raw/current/helper-layout audit. Its legacy min/max and display
+center/extent bounds formats, extrema selection and six canonical output
+components are already represented; no grounded missing contract or candidate
+is promoted. Eleven other names retain their explicit historical dispositions,
+including`UpdatePodRaceMines`, whose prior typed-storage collateral work is not
+a full-body closure. No compiler comparison, runtime fixture or production
+change follows this census. Parent review reads the complete audit record,
+not an independent reproduction of every child helper/raw read.
+
+### Batches392/393: cutscene prerequisites and dispatch reserve
+
+The fixed twelve-name animation/cutscene census reveals a genuinely missing
+trigger-name binding tail in`NuGCutSceneFixUp`. Its52-byte definition-name rows
+cannot be conflated with the independently proven four-byte runtime trigger
+state records. Retail loader calls pass a null definition owner; no canonical
+name-table producer is resolved. The missing tail remains a typed-owner
+prerequisite reserve, without a guessed pointer signature or raw overlay.
+
+The separate sole O2 rigid-render candidate restores the existing typed
+collision callback after optional post-render and before locator traversal.
+It gains28.3007709 known weighted bytes; target35.056180% → 39.230335%,
+698 → 730 bytes (original678). All81 finite original pairs and both known
+exacts retain. Complete Counters record only the explicitly reviewed addition
+of one undefined`NuCutSceneRigidCollisionCheck` reference, backed by actual
+GLOBAL4-byte storage, GOT resolution and canonical setter/typedef; there is no
+generic service/label exemption. The original2100-byte camera-update row and
+six unbacked helper/compiler rows remain unknown. The conditional original-row
+lower bound is−2071.6992291 bytes before unbacked-representation qualification,
+so whole-owner improvement is not established. No further comparison,
+expensive closure proof, runtime or production integration follows. Missing
+absolute scores and deltas are not assigned zero.
+
+### Post-checkpoint27 object and renderer censuses
+
+Two separately frozen twelve-name screens promote only `GameFog_Update`
+(1877 original bytes, finite64.705260%) and `DebrisSetup2` (2413 original
+bytes, finite64.560760%) to complete child raw/current/helper-layout audits.
+The fog state transitions, finite interpolation and publication contracts
+are already present. Its unordered timer difference and existing signed
+colour-shift debt are explicitly outside the admitted finite census, not
+silently qualified as runtime-safe. Debris setup's allocation sequence,
+deliberate partial scale clear, material flags, effect packing and rotation
+also retain their actual contracts; optimized scalar fanout does not justify
+manual unrolling. Neither census promotes a candidate, export, comparison,
+runtime fixture or production edit. Each other eleven-name set remains a
+metadata/history screen, not a claimed complete closure. Parent review reads
+both complete audit records without claiming to reproduce every child raw
+or helper read.
+
+### Batch395: capacity-backed minikit construction excluded
+
+The sole unchanged O3 complete-owner comparison loses308.1114741 known
+weighted bytes. `SpecialMiniKits_Configure` falls46.715908% → 17.287878%,
+1122 → 1143 emitted bytes (original1047). All33 original-backed rows have
+unique finite scores, all eleven known exacts retain and complete Counter/U
+surfaces retain. Canonical current world endpoints, reset/rearrangement and
+the preceding traffic loader establish the capacity authority, but rejected
+records still need the local fallback at a short tail. That safeguard is not
+removed to chase the retail shape. The negative unit closes without variants,
+further comparisons, runtime fixtures or production integration; unknown
+unbacked compiler rows are not assigned absolute scores.
+
+### Batch396: grass device-tier correction remains unqualified
+
+The complete retail455-byte `LoadGrassFile` body reads the existing signed
+device tier <=2 after its unconditional SpeederChase filter. The cached
+mid-range flag covers only tier1; canonical actual renderer/device producers
+also admit tier2. The sole unchanged O3 candidate restores that predicate and
+filter order, retaining the current missing-singleton fallback and the exact
+loader arguments. Its sole complete-owner comparison gains20.98300295 known
+weighted bytes: target51.106796% → 55.718445%,449 → 459 emitted bytes.
+All125 original-backed rows have unique finite scores and all four known
+exacts retain. The canonical existing declaration adds exactly one consumed
+header, separately verified against each side's actual dependency closure.
+
+Complete Counters nevertheless remove four local compiler labels and add
+four others plus the independently reviewed singleton reference. The sole
+named reference exception does not permit these other surface differences.
+Six unbacked initializer/helper/thunk rows remain explicitly unknown; no
+positive-size exact-name original row is missing from the finite subtotal.
+The unit closes as unqualified without further comparisons, variants,
+representation-proof expenditure, runtime fixtures or production integration.
+Neither unknown absolute scores nor unknown deltas are assigned zero.
+
+### Batch397: serializer source-form trial excluded
+
+The sole unchanged O2 full-owner comparison loses67.26136292 known weighted
+bytes. `EdClass::Serialise` falls52.110767% → 46.292310%,890 → 891 emitted
+bytes (original1156). All232 original-backed rows have unique finite scores,
+all41 known exacts retain and full Counter/U surfaces retain. The original
+reloads stream mode after writing, but actual stream helpers preserve it;
+the independent second mode test is only a stable-domain source-form trial,
+not a claimed callback/gameplay fix. The negative unit closes without
+variants, further comparisons, runtime fixtures or production integration.
+Unbacked compiler representations do not acquire fabricated absolute scores.
+
+### Batch399: memory-context diagnostic remains unqualified
+
+The sole unchanged O2 comparison restores the original non-debug leak report,
+post-pop context-name read and modulo-byte ASCII predicates. Its known owner
+subtotal gains139.31649985 weighted bytes: `PopContext`54.180927% →
+62.305622%,1513 → 1684 emitted bytes (original1727), with a small collateral
+`DumpBlocksForContext`27.954683% → 27.879154% decrease included. All78
+original-backed rows have unique finite scores and all24 known exacts retain;
+the full undefined-reference multiset retains. Complete Counters nevertheless
+remove ten and add eleven literal-label/storage identities. The original
+diagnostic literal does not imply a blanket compiler-label exemption. The
+unit closes unqualified without variants, further comparisons, runtime or
+production integration. The two unbacked thunks remain explicitly unknown;
+their zero symbol extents are not scored or treated as zero absolute weight.
+
+### Batch398: decoder temporary-name restoration excluded
+
+The sole unchanged O3 complete-owner comparison loses111.701739624 known
+weighted bytes. `CreateDecoder` falls21.798851% → 6.0804596%,260 → 904 emitted
+bytes (original716); a small `Initialise` increase is included in the owner
+subtotal. All110 original-backed rows have unique finite scores and all26
+isolated known exacts retain. The canonical empty-string reference is backed
+by full raw use, GLOBAL4-byte storage, GOT bytes and relocation, with exactly
+one named U-addition exception; this does not waive the other20 removed and
+23 added Counter identities. Six emitted helper/initializer/thunk rows remain
+explicitly unbacked and unknown. No runtime, variant, report retry or
+production integration follows the negative comparison. The approved safety
+guards for allocation failure and names beyond the retail u16-capacity domain
+are not removed to chase matching.
+
+### Batch400: fresh script-processor census closes without a candidate
+
+A separately frozen twelve-name metadata/history screen promotes only
+`AIScriptProcess` (raw0x3e5060,1883 original bytes, finite60.904053%) to a
+complete child raw/current/canonical-helper audit. Reference-stack conditions,
+action reset/evaluation/live advancement, script/state reference transitions,
+ordered interrupt expiry and keep-blocked publication are already present.
+No omitted contract or specifically supported natural source-form unit is
+established. No export, candidate, comparison, runtime or production change
+follows. The other eleven names retain their individual metadata/history
+dispositions; two unresolved full closures are not falsely marked faithful.
+Parent review reads the complete audit without claiming to reproduce every
+child raw/helper read or validate the full script engine at runtime.
+
+### Batch401: spline neighbor correction remains unqualified
+
+The sole unchanged O3 whole-owner trial restores the original independent
+nearest-distance MIN reduction and first-index neighbor priority. The actual
+loader admits two allocated point records; at length2/index0 the original
+selects next1, whereas the previous independent ternaries select next0.
+No gameplay use of such an area spline or invalid-length safety is inferred.
+All existing guards and the actual LineIntersectXY helper remain unchanged.
+
+The known subtotal gains23.62008688 original-weighted bytes:
+`OutSideSplineArea`20.318897% → 22.877953%,825 → 841 emitted bytes
+(original923). All15 original-backed rows have unique finite scores; there
+are no known exacts to lose, and full Counter/U surfaces retain. Three
+unbacked rows nevertheless include the398-byte private SplinePointAngles
+clone and two zero-extent thunks. Their unknown absolute scores/deltas are
+not zero; invariant extents alone are not complete representation proofs.
+The small unit closes unqualified without additional comparisons, variants,
+expensive closure proofs, runtime fixtures or production integration.
+
+### Batch394: character shadow cutoff and continuation restored
+
+The complete899-byte retail `CharShadows_Update` uses0.075f, backed by the
+raw0x57681c literal bytes9a99993d and the full raw joint-height comparison.
+Restore this cutoff, captured object-count/accepted-tail refresh and the
+stored u16 joint-mask continuation. The latter two are source forms on the
+admitted stable table, not claimed callback mutation bugs. Keep all existing
+guards, five-shadow/16-joint bounds, radius99 policy and nonfinite policy.
+
+The sole actual O3 whole-owner pair gains83.58153133 original-weighted
+bytes: Update44.188680% → 53.485847%,860 → 864 emitted bytes. All four
+original-backed rows have unique finite exact raw-VA/size/name/binding
+pairings, no known exact losses, no collateral changes and full Counter/U
+retention. Root independently inspects both unbacked thunks' complete12-byte
+executable COMDAT sections, bytes, storage, symbol identities and full
+relocations, including unchanged eh_frame references. These specific
+representations are invariant; zero symbol extents are not zero storage or
+invented absolute matching scores.
+
+Root builds and runs full actual old/current Update bodies with actual
+GameShadow, NewShadowEx/NewScanRot/NewCast, PlatOnOff, terrain geometry and
+angle/math helpers. All24 exact extracts, two untouched full data/allocator
+owners, actual context/layer tables and14 individual production actions are
+pinned. All32 host/NDK preprocessing closures qualify before object builds;
+each actual compile dependency map equals its preflight map. Current and
+old legacy-control each pass316 cases/225,315 checks per ABI. Host ASan,
+UBSan and leak checks pass; NDK32 uses unchanged owner options and Linux libc
+for this bounded diagnostic, not a Bionic gameplay validation.
+
+The real ordinary plane0.0875 over jointY0 and extended floor−2/material3
+produces the canonical rejection layer. Current passes; old fails exactly
+the one documented0.075 cutoff assertion with status1 and no sanitizer
+diagnostic. Default-count cases separately require five real casts per
+admitted object, preventing a zero-work fixture from falsely qualifying.
+Counts−3/0/1/2/16/64, masks/POI holes, guards, radius boundaries, real signed
+contexts, threshold neighbors, layers, platform disable/restore, hover masks,
+nonzero slope angles and96 seeded cases also check whole64-object stores,
+canaries, terrain/cache state and declared timing service order. Active
+rotating/skinned platforms, renderer/GPU, arbitrary callback mutation and
+full gameplay remain outside this finite claim.
+
+Preserved first diagnostic failures exposed a missing canonical globals
+header, host GAMECHARACTERDATA/config-view pointer expansion and Bionic
+stderr FILE linkage. Fresh diagnostic-only packets repair these wrappers
+and canonical fixture inputs; candidate/helper/oracle bodies and matching
+reports are not varied or retried. The final runtime packet is
+`/tmp/saga-charshadows-runtime394-configfix.kYMXEN`, freeze
+faed2c72de918348d8b2ad295823c91a343fd0074686708498d5ddaabe1369f0.
+Two failed packets are recoverably archived in ignored.cache with original
+path links and291 frozen evidence hashes revalidated after a /tmp user quota
+failure. No evidence or user files are deleted. Production source byte-equals
+the sole frozen candidate; linked checkpoint verification follows separately.
+
+### Checkpoint28: linked shadow-cutoff verification
+
+Fresh raw and mapped whole-binary reports agree at68.672380% fuzzy matching,
++0.001780 percentage points versus checkpoint27 and+0.669920 versus the
+current68.002460% main baseline. All6,293 exact raw address/symbol records
+retain; there are no new exacts. The original name/alias-inclusive denominator
+remains4,722,419 bytes and every raw key/extent is retained. Production
+charshadows.cpp byte-equals the sole frozen batch394 candidate. Target,
+native and WASM builds and all five repository tests pass. Final normal
+hook and pushed-head CI results are recorded separately; the70.002460%
+cycle merge threshold is not reached.

@@ -120,8 +120,8 @@ extern "C" void LocaledbitsDrawSolidCircleXY(NUVEC *centre, f32 radius, f32 lowe
 }
 
 extern "C" void RndrOSquare(NUVEC *centre, f32 radius, i32 colour) {
-    NUMTX matrix = global_camera.mtx;
     f32 corners[4][2] = {{-1.0f, -1.0f}, {1.0f, -1.0f}, {1.0f, 1.0f}, {-1.0f, 1.0f}};
+    NUMTX matrix = global_camera.mtx;
     matrix.m30 = centre->x;
     matrix.m31 = centre->y;
     matrix.m32 = centre->z;

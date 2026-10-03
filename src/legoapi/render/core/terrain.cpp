@@ -6747,7 +6747,7 @@ i16 *NewScanHandelFull(nuvec_s *position, nuvec_s *movement, f32 radius, i32 sca
     if (scan_type != 0) {
         const TERRAIN_CELL &cell = CurTerr->cells[TERRAIN_PLATFORM_CELL];
         const i16 *indices = CurTerr->group_indices + static_cast<i16>(cell.first_group);
-        for (i32 i = 0; i < static_cast<i16>(cell.group_count); ++i) {
+        for (i32 i = 0; i < static_cast<i16>(CurTerr->cells[TERRAIN_PLATFORM_CELL].group_count); ++i) {
             const i32 index = indices[i];
             TERRAIN_GROUP &group = CurTerr->groups[index];
             TERRAIN_PLATFORM &platform = CurTerr->platforms[static_cast<i16>(group.scene_index)];

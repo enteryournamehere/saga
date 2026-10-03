@@ -1570,6 +1570,7 @@ void DrawSaveSlots(MENU_s *menu, float y) {
     menu->item_x[2] = -0.5f;
     menu->item_height[2] = text3d_height * 2.0f;
     menu->item_row[2] = 0;
+    y += 0.0f;
 
     DrawGameState(0.0f, y, menu->selected_row == menu->first_row && menu->selected_column == 1, 1);
     menu->item_width[3] = text3d_width;
@@ -1578,6 +1579,7 @@ void DrawSaveSlots(MENU_s *menu, float y) {
     menu->item_x[3] = 0.0f;
     menu->item_height[3] = text3d_height * 2.0f;
     menu->item_row[3] = 0;
+    y = 0.0f + y;
 
     DrawGameState(0.5f, y, menu->selected_row == menu->first_row && menu->selected_column == 2, 2);
     menu->item_column[4] = 2;

@@ -796,7 +796,9 @@ void Hub_Update(WORLDINFO_s *world) {
             if (gizmo == NULL) {
                 continue;
             }
-            if (GizmoGetOutput(world->gizmo_sys, gizmo, 0, 0) == 0) {
+            const i32 output = GizmoGetOutput(world->gizmo_sys, gizmo, 0, 0);
+            gizmo = HubAreaInfo[i].bonus_gizmo;
+            if (output == 0) {
                 GIZBUILDIT_s *buildit = static_cast<GIZBUILDIT_s *>(gizmo->object);
                 if (gold_bricks < buildit->anim_object_count) {
                     GizmoSetVisibility(world->gizmo_sys, gizmo, 0, 0);
@@ -812,7 +814,7 @@ void Hub_Update(WORLDINFO_s *world) {
                     GizmoActivate(world->gizmo_sys, gizmo, 1, 0);
                 }
             }
-            if (GizmoGetOutput(world->gizmo_sys, gizmo, 0, 0) != 0) {
+            if (GizmoGetOutput(world->gizmo_sys, HubAreaInfo[i].bonus_gizmo, 0, 0) != 0) {
                 const u32 bit = 1U << (buildit_index & 31);
                 if ((Game.field_0x7c26[2] & bit) == 0) {
                     Game.field_0x7c26[2] = static_cast<u8>(Game.field_0x7c26[2] | bit);

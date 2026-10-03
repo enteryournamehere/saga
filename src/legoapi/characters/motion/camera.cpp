@@ -956,7 +956,8 @@ mode_selected:
                     average.x = 0.0f;
                     average.y = 0.0f;
                     average.z = 0.0f;
-                    for (i32 index = 0; index < player_count; ++index) {
+                    index = 0;
+                    for (; index < player_count; ++index) {
                         GameObject_s *player = camera_players[index];
                         average.x += player->apiobj.pos_x - NU_SIN_LUT(player->apiobj.facing_angle) * PodCamDist;
                         average.y += player->apiobj.pos_y + 1.0f;
@@ -988,7 +989,8 @@ mode_selected:
                     average.x = 0.0f;
                     average.y = 0.0f;
                     average.z = 0.0f;
-                    for (i32 index = 0; index < player_count; ++index) {
+                    index = 0;
+                    for (; index < player_count; ++index) {
                         GameObject_s *player = camera_players[index];
                         average.x += player->apiobj.position.x;
                         average.y += player->apiobj.collision_min.y + 0.65f;

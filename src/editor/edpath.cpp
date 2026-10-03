@@ -3013,6 +3013,7 @@ eduimenu_s *pathEditor_Process(nupad_s *pad) {
                                                                                   : NuLinkedListGetTail(&path->nodes));
         path = aieditor->current_path;
         if (named_only && path->current_node && NuStrLen(path->current_node->name) == 0) {
+            path = aieditor->current_path;
             EDAIPATHNODE_s *start = path->current_node;
             do {
                 path = aieditor->current_path;
@@ -3028,6 +3029,7 @@ eduimenu_s *pathEditor_Process(nupad_s *pad) {
                     break;
             } while (NuStrLen(path->current_node->name) == 0);
         }
+        path = aieditor->current_path;
         if (path->current_node)
             edcamSetPos(&path->current_node->position);
     }

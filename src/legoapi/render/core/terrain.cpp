@@ -513,15 +513,16 @@ namespace {
             const f32 move_length = NuFsqrt(scan_query.movement.x * scan_query.movement.x +                            \
                                             scan_query.movement.y * scan_query.movement.y +                            \
                                             scan_query.movement.z * scan_query.movement.z);                            \
-            const f32 reach = (wall_arg) ? 0.1f + scan_query.collision_radius + move_length                            \
-                                         : move_length + 0.1f + scan_query.collision_radius;                           \
-            const f32 vertical = reach * scan_query.object_scale;                                                      \
-            scan_bounds.min_x = scan_query.position.x - 0.05f - reach;                                                 \
-            scan_bounds.max_x = scan_query.position.x + 0.05f + reach;                                                 \
-            scan_bounds.min_y = scan_query.position.y - 0.05f - vertical;                                              \
-            scan_bounds.max_y = scan_query.position.y + 0.05f + vertical;                                              \
-            scan_bounds.min_z = scan_query.position.z - 0.05f - reach;                                                 \
-            scan_bounds.max_z = scan_query.position.z + 0.05f + reach;                                                 \
+            const TerrainQuery_s &sphere_query = *TerI;                                                                \
+            const f32 reach = (wall_arg) ? 0.1f + sphere_query.collision_radius + move_length                          \
+                                         : move_length + 0.1f + sphere_query.collision_radius;                         \
+            const f32 vertical = reach * sphere_query.object_scale;                                                    \
+            scan_bounds.max_x = sphere_query.position.x + 0.05f + reach;                                               \
+            scan_bounds.max_z = sphere_query.position.z + 0.05f + reach;                                               \
+            scan_bounds.min_x = sphere_query.position.x - 0.05f - reach;                                               \
+            scan_bounds.min_z = sphere_query.position.z - 0.05f - reach;                                               \
+            scan_bounds.min_y = sphere_query.position.y - 0.05f - vertical;                                            \
+            scan_bounds.max_y = sphere_query.position.y + 0.05f + vertical;                                            \
             bounds_radius = reach;                                                                                     \
         } else {                                                                                                       \
             const f32 radius = scan_query.collision_radius;                                                            \
@@ -3929,11 +3930,12 @@ void ScanWallSplineTerrain(i32, i32 terrain_mask, i32) {
     WallSplinesOnly = 0;
     ScaleTerrain = static_cast<TERRAIN_SHAPE *>(ScaleTerrainT1);
     platinrange = 0;
-    TerI->scan_group_index = -1;
+    TerrainQuery_s *const entry_query = TerI;
+    entry_query->scan_group_index = -1;
     TerrainScanBounds bounds;
     f32 scan_radius;
     TERRAIN_GET_SCAN_BOUNDS(bounds, scan_radius, true);
-    i16 *terminator = reinterpret_cast<i16 *>(TerI->scan_list_storage);
+    i16 *terminator = reinterpret_cast<i16 *>(entry_query->scan_list_storage);
     terminator[0] = 0;
     terminator[1] = 0;
     TERRAIN_COLLECT_WALL_SPLINES(bounds, terrain_mask, true, true);

@@ -48,6 +48,15 @@ to68.989170% (+0.161780 percentage points). Only the six expected codec rows
 change, all positively, retaining all6,293 existing raw exact matches and
 the original report denominator. The generated report remains authoritative.
 
+The subsequent PCA follow-up restores seven explicit double libm argument
+boundaries, retaining float polynomial arithmetic, local narrowing, and the
+widened float1/3 exponent. Only ComputePrincipleComponent improves,
+85.914560%→99.924050%; overall matching reaches68.993220%, retaining all
+6,293 raw exacts. Same-object ABI/storage/service qualification and four
+GNU64/i386 O3/SSE sanitizer lanes pass, each with100 actual ColourSet-produced
+cases and6,196 version-specific arithmetic checks. These bounded diagnostics
+do not certify arbitrary matrices, complete compression or private target ABI.
+
 ## Validation and remaining work
 
 In the earlier integration against main `3b3e5bb`, the x86 build increased overall

@@ -12878,3 +12878,96 @@ Raw report92f45aed29eddb301f1461b0b28d100b75e85100046e2f8e659d6f0aade60bdf;
 mapped reportb1ab619e3d8c04e73d6e1443f95d8201079ad5c386c36bb89ac9bd62cc63871b.
 New-head CI is not yet claimed. The70.002460% cycle threshold still prohibits
 a merge below+2pp even if checks pass.
+
+Checkpoint50 commit7678e4d9e8d1204e8cf40bc5b8be0357a70a246a passes the
+normal complete pre-commit workflow: all five tests, native declaration
+validation, Android/native/WASM clang-tidy, target build, zero missing symbols
+and report generation. The committed mapped report exactly equals the
+independent checkpoint50 report hash above. Human author and the required
+Codex co-author trailer retain. Push succeeds; all11 exact-head GitHub checks
+subsequently pass. A fresh main fetch still resolves toa496c28. The below+2pp
+gain remains insufficient for merging.
+
+The first full edppDrawTorus audit covers the1595-byte original, canonical
+effect/key records, actual emission/pool producers, cursor caller and complete
+immediate drawing service. Current lifetime, ordered age, first inclusive
+segment, interpolation, scale and outgoing draw behavior are faithful.
+There is no missing behavior candidate or measured trial. A separately scoped
+original-backed structural comparison may examine the actual fixed-offset
+interpolation branches; this does not authorize flags, attributes, fabricated
+behavior or a blind source-shape sweep.
+
+### Batch473: one selected-time source-form trial, rejected
+
+The complete raw body shows dynamically indexed values but selected times
+retained through all three interpolation tails. Current code instead reloads
+times through indexed pointers. One ordinary helper-only candidate captures
+both times in the same seven ordered inclusive comparisons, preserving first
+match, value indices, arithmetic grouping, zero fallback and the shared helper
+used elsewhere. No fabricated behavior difference is claimed.
+
+ROOT retains the canonical checkpoint50 owner object/report rather than
+recompiling a baseline. Fresh live action473 retains O2/ABI/argv/environment.
+The sole canonical candidate build passes. An initial manual dependency path
+lookup fails on an absent execroot external symlink; the corrected post-build
+review covers the same162 actual dependency names. It is explicitly a
+review-time receipt, not a pre-build pin assertion.
+
+The sole linked report retains every original identity and all6293 exacts,
+but yields net−13.88196337B: target22.061947%→22.359882% (+4.75206325B)
+and cbPtlEmitMenu61.003510%→59.603508% (−18.63402662B). No other score
+changes. ROOT rejects the candidate, restores the exact original source and
+rebuilds to the byte-identical baseline owner object. No variant, report retry
+or runtime fixture is executed; runtime PREP stops before any source is written.
+Failed whole report9d66e4af5937d71e3987a2783db37a98c544712bb7ba3c9d1df9ed3d0335d163.
+
+### Batch474: seven explicit PCA double boundaries, positive trial
+
+The full1366-byte original ComputePrincipleComponent body independently
+confirms double sqrt/atan2/pow/cos/sin boundaries with float local round-trips.
+The pow exponent is widened float1/3, not double1/3. Polynomial coefficients,
+grouping, branches, eigenvector helpers and current Vec3 selects remain
+unchanged. One seven-line source candidate explicitly promotes only those
+arguments, including direct double sqrt into theta's atan2. No global precision
+flag, codec version, attribute, private helper ABI or algorithm changes.
+
+ROOT retains the actual canonical checkpoint50 maths object, pins all138
+actual consumed dependencies before the candidate, and applies the source
+through the existing archive patch. The sole O3 canonical build passes;
+the fetched complete maths.cpp exactly equals the frozen candidate. Every
+dependency except that owner remains byte-identical. The sole linked report
+changes only PCA85.914560%→99.924050%, known+191.3696334B, retaining every
+original identity and all6293 raw exact matches. Covariance, private helper
+and RangeFit caller scores do not change. This small gain is not a promised
+constructor improvement or codec-byte/gameplay divergence.
+Raw report6b9b77f415fe1b0865ec3164b7b92adf30e73b0f98a31fa97e4c8fd7f11a544f.
+Specific service/literal/storage/thunk qualification passes on those same
+canonical objects and existing reports; no isolated recompile or second
+matching trial is introduced. Three original-backed bodies, the unscored
+12-byte thunk, full storage/symbol/CFI/PIC roles and precise double services,
+widened exponent and switch entries are covered. Receipt
+a860c61c0be89bc377d9f3d32563a5ab78588ef04bc1a64550f1dc8e01a6e10b.
+
+GNU64/i386 O3/SSE ASan/UBSan/float-cast-overflow/LSan diagnostics pass on
+both complete old/new Squish sources:100 actual ColourSet-produced cases
+and6196 checks per lane, including22 distinct-root and74 repeated-root
+cases. Each version agrees bitwise with its own precision-boundary oracle;
+this is not a general eigensolver, encoder-output or private-ABI certificate.
+Runtime receiptf639ecdc10e1f4f89d0a204faebca0caa2cddb62ac9dc86617b21b3e4012acaa.
+Final preflight reuses the reviewed finite169-header/108-backend catalog
+without additions; all four consumed-input/link plans are reviewed before
+objects and both build manifests before execution. Nonzero constant RGB is
+not assumed to yield exact zero covariance after float centroid rounding;
+the overbroad unexecuted draft assertion is narrowed before freeze.
+
+Mapped checkpoint51 is68.993220%, +0.004050pp over checkpoint50 and
++0.990760pp over main. Ownership summary,4722419-byte denominator and all
+6293 exact identities retain. Android/native/WASM builds and all five checks
+pass; the normal commit workflow and new-head GitHub checks remain pending.
+Mapped report9316d88f0ebc3bbb4fa95e32cadad1b2778434b76d0c9f36160c64f8ad678433.
+The70.002460% merge threshold remains unchanged.
+
+A complete11528-byte CompressAlphaDxt5 behavioral and emitted-structure
+audit finds no grounded candidate. Current first-fit fixed16-pixel expansion
+and second-fit16-iteration loop already match the original structures; manual
+unrolling would not restore an observed omission. No trial is executed.

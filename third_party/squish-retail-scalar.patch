@@ -45,3 +45,24 @@ diff --git a/maths.h b/maths.h
 +			(left.m_x - right.m_x) >= 0.0f ? left.m_x : right.m_x,
 +			(left.m_y - right.m_y) >= 0.0f ? left.m_y : right.m_y,
 +			(left.m_z - right.m_z) >= 0.0f ? left.m_z : right.m_z
+diff --git a/maths.cpp b/maths.cpp
+--- a/maths.cpp
++++ b/maths.cpp
+@@ -187,2 +187,2 @@
+-		float theta = std::atan2( std::sqrt( -Q ), -0.5f*b );
+-		float rho = std::sqrt( 0.25f*b*b - Q );
++		float theta = std::atan2( std::sqrt( static_cast<double>( -Q ) ), static_cast<double>( -0.5f*b ) );
++		float rho = std::sqrt( static_cast<double>( 0.25f*b*b - Q ) );
+@@ -190,3 +190,3 @@
+-		float rt = std::pow( rho, 1.0f/3.0f );
+-		float ct = std::cos( theta/3.0f );
+-		float st = std::sin( theta/3.0f );
++		float rt = std::pow( static_cast<double>( rho ), static_cast<double>( 1.0f/3.0f ) );
++		float ct = std::cos( static_cast<double>( theta/3.0f ) );
++		float st = std::sin( static_cast<double>( theta/3.0f ) );
+@@ -212,1 +212,1 @@
+-			rt = -std::pow( -0.5f*b, 1.0f/3.0f );
++			rt = -std::pow( static_cast<double>( -0.5f*b ), static_cast<double>( 1.0f/3.0f ) );
+@@ -214,1 +214,1 @@
+-			rt = std::pow( 0.5f*b, 1.0f/3.0f );
++			rt = std::pow( static_cast<double>( 0.5f*b ), static_cast<double>( 1.0f/3.0f ) );

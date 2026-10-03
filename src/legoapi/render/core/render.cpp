@@ -1830,20 +1830,20 @@ void DrawBoxMtx_Now(_vum_s *, _vuv_s *, i32, i32) {
 void *AddGameMessage(char *, NUVEC *, f32, NUVEC *, f32, u8, u8, u8, u32, f32);
 
 void DrawCutBorders(i32 widescreen) {
-    if (CutBorderScale <= 0.0f) {
+    if (!(CutBorderScale > 0.0f)) {
         return;
     }
 
     NuRndrBeginScene(-1);
     f32 border_scale = 0.1f;
     const CUTINFO *cut = static_cast<CUTINFO *>(CutStopInfo);
-    const bool active_cut_wide = cut != NULL && (cut->flags & 0x4000) != 0;
-    bool single_cut_wide = false;
-    if (WORLD->cutscene_sys != NULL && WORLD->cutscene_sys->count == 1 && WORLD->cutscene_sys->cuts[0] != NULL) {
-        single_cut_wide = (WORLD->cutscene_sys->cuts[0]->flags & 0x4000) != 0;
-    }
-    if (active_cut_wide || single_cut_wide) {
+    if (cut != NULL && (cut->flags & 0x4000) != 0) {
         border_scale = 0.21276596f;
+    } else {
+        const CUTSYS *system = WORLD->cutscene_sys;
+        if (system != NULL && system->count == 1 && (system->cuts[0]->flags & 0x4000) != 0) {
+            border_scale = 0.21276596f;
+        }
     }
     if (widescreen != 0) {
         border_scale = (border_scale * 4.0f - 0.5f) / 3.0f;

@@ -82,9 +82,8 @@ void GameAudio_SetActionMusicTimes(f32 initial_delay, f32 hold_time) {
     sticky_attack_timeout[1] = hold_time;
 }
 void SpaceAudioPoint() {
-    const f32 entry_time = WORLD->space_level->door_time;
-    music_man.SetTrackEntryTimeByClass(TRACK_CLASS_ACTION, entry_time);
-    music_man.SetTrackEntryTimeByClass(TRACK_CLASS_NOMUSIC, entry_time);
+    music_man.SetTrackEntryTimeByClass(TRACK_CLASS_ACTION, WORLD->space_level->door_time);
+    music_man.SetTrackEntryTimeByClass(TRACK_CLASS_NOMUSIC, WORLD->space_level->door_time);
 }
 void legoSetCutVolume(float v) {
     music_man.SetClassVolume(TRACK_CLASS_CUTSCENE, v);

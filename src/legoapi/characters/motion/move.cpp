@@ -6610,12 +6610,10 @@ void Move_WEIRDO(GameObject_s *object) {
 }
 
 void Move_JEDI(GameObject_s *object) {
-    const u32 action_mask = GAMEPAD_ACTION;
     GAMEPAD_s *pad = object->pad_gamepad;
-    const u32 pressed = pad->buttons_pressed;
-    const u32 held = pad->buttons_held;
-    const u32 jump_mask = GAMEPAD_JUMP;
-    const u32 special_mask = GAMEPAD_SPECIAL;
+    const struct {
+        u32 action_mask, pressed, held, jump_mask, special_mask;
+    } input = {GAMEPAD_ACTION, pad->buttons_pressed, pad->buttons_held, GAMEPAD_JUMP, GAMEPAD_SPECIAL};
 
     if (object->id == id_BODYGUARD) {
         KeepWeaponOut(object);
@@ -6659,7 +6657,7 @@ void Move_JEDI(GameObject_s *object) {
     if (LedgeTerrain_On != 0) {
         LedgeTerrain_MoveCode(object);
     }
-    const i32 jump_pressed = pressed & jump_mask;
+    const i32 jump_pressed = input.pressed & input.jump_mask;
     Climb_MoveCode(object);
     TightRope_MoveCode(object, jump_pressed);
     ForcePushed_MoveCode(object);
@@ -6684,10 +6682,11 @@ void Move_JEDI(GameObject_s *object) {
     if ((game_character->flags_090 & 0x00400000) != 0) {
         jump_animations |= 0x100;
     }
-    const i32 action_pressed = pressed & action_mask;
-    const i32 action_held = held & action_mask;
-    const i32 special_pressed = pressed & special_mask;
-    JumpCode(object, jump_pressed, held & jump_mask, jump_animations, action_pressed, action_held, hit_effect);
+    const i32 action_pressed = input.pressed & input.action_mask;
+    const i32 action_held = input.held & input.action_mask;
+    const i32 special_pressed = input.pressed & input.special_mask;
+    JumpCode(object, jump_pressed, input.held & input.jump_mask, jump_animations, action_pressed, action_held,
+             hit_effect);
 
     GizPanel_MoveCode(WORLD, object, special_pressed);
     HatMachine_MoveCode(WORLD, object, special_pressed);
@@ -6695,11 +6694,11 @@ void Move_JEDI(GameObject_s *object) {
     BuildIt_MoveCode(object);
     Lever_MoveCode(WORLD, object);
     if ((static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->flags_094[1] & 0x80) == 0) {
-        ForceDeflectCode(object, special_pressed, held & special_mask, 0);
-        ForcePushCode(object, held & special_mask, 0);
+        ForceDeflectCode(object, special_pressed, input.held & input.special_mask, 0);
+        ForcePushCode(object, input.held & input.special_mask, 0);
         FindForcePushTarget(object, special_pressed, 1);
         ForceThrowCode(object, special_pressed, 0);
-        ForceCode(object, special_pressed, held & special_mask, 0);
+        ForceCode(object, special_pressed, input.held & input.special_mask, 0);
         FindForcePushTarget(object, special_pressed, 2);
         if (object->apiobj.field_0x287 == 0 && FadeSys.fade == 0.0f) {
             if (object->force_glow_step > 0.0f)

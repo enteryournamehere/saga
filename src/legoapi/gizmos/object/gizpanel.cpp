@@ -334,17 +334,16 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
             panel.target_offset.y != 2000000.0f && models.target != -1 && world->lev_objs[models.target].active != 0) {
             NUVEC target_position;
             GizPanel_GetAbsTargetPos(&panel, &target_position, 0);
-            NUMTX target_matrix;
-            NuMtxSetRotationY(&target_matrix, target_spin);
+            NuMtxSetRotationY(&base_matrix, target_spin);
             if (panel.target_roll != 0) {
-                NuMtxRotateZ(&target_matrix, panel.target_roll);
+                NuMtxRotateZ(&base_matrix, panel.target_roll);
             }
             if (panel.target_pitch != 0) {
-                NuMtxRotateX(&target_matrix, panel.target_pitch);
+                NuMtxRotateX(&base_matrix, panel.target_pitch);
             }
-            NuMtxTranslate(&target_matrix, &target_position);
-            NuMtxPreScaleU(&target_matrix, panel.target_scale);
-            NuSpecialDrawAtAlpha(&world->lev_objs[models.target].special, &target_matrix,
+            NuMtxTranslate(&base_matrix, &target_position);
+            NuMtxPreScaleU(&base_matrix, panel.target_scale);
+            NuSpecialDrawAtAlpha(&world->lev_objs[models.target].special, &base_matrix,
                                  (panel.flags & 1) != 0 ? 0.0f : target_alpha);
         }
 
@@ -353,14 +352,13 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
             NUVEC arm_offset = models.arm_offset;
             NuVecRotateX(&arm_offset, &arm_offset, panel.arm_x_rotation);
             NuVecRotateY(&arm_offset, &arm_offset, panel.y_rotation);
-            NUMTX arm_matrix;
-            NuMtxSetRotationX(&arm_matrix, panel.arm_x_rotation);
-            NuMtxRotateY(&arm_matrix, panel.y_rotation);
-            NuMtxPreRotateX(&arm_matrix, panel.target_x_rotation);
-            NuMtxRotateY(&arm_matrix, panel.target_y_rotation);
-            NuMtxTranslate(&arm_matrix, &panel.position);
-            NuMtxTranslate(&arm_matrix, &arm_offset);
-            NuSpecialDrawAt(&world->lev_objs[models.arm].special, &arm_matrix);
+            NuMtxSetRotationX(&base_matrix, panel.arm_x_rotation);
+            NuMtxRotateY(&base_matrix, panel.y_rotation);
+            NuMtxPreRotateX(&base_matrix, panel.target_x_rotation);
+            NuMtxRotateY(&base_matrix, panel.target_y_rotation);
+            NuMtxTranslate(&base_matrix, &panel.position);
+            NuMtxTranslate(&base_matrix, &arm_offset);
+            NuSpecialDrawAt(&world->lev_objs[models.arm].special, &base_matrix);
         }
         if (flashing) {
             NuSpecialConstTint(0, NULL);

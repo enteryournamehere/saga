@@ -1615,7 +1615,7 @@ mode_selected:
             if (camera->judder_reverse)
                 amount = -amount;
             if (camera->judder_axis == 0)
-                NuMtxPreRotateX(&camera->render_mtx, static_cast<u16>(amount));
+                NuMtxPreRotateX(&camera->render_mtx, static_cast<u16>(static_cast<i32>(amount)));
             else if (camera->judder_axis == 1)
                 NuMtxPreRotateY(&camera->render_mtx, static_cast<u16>(amount));
             else

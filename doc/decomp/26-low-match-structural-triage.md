@@ -13149,3 +13149,118 @@ Checkpoint53 candidate68.999560%, +0.002500pp over checkpoint52 and
 b0bda82acb7619dc5fd4b858c70b47cdde3e79d541513a4ff1e30b9847273b41;
 metadata-only map39ac7af1b89440586e9e856b8f0f4678492177feb50d7983361f6003e4d2c7f9.
 No new score generation is used for this mapping; commit/new-head CI pending.
+
+Checkpoint53 is committed as08ed7ca851565facef4784335dad753a4d251552.
+All eleven GitHub checks pass for that exact head. The +2pp merge threshold
+is not reached; green checks alone do not authorize this cycle's merge.
+
+### Fresh finite closures and remaining producer prerequisites
+
+Complete original/current audits of NetFtpManager::Reset(180B),
+VaderC_Update(4536B), GameObjOwnsAnyCables(155B), and
+SceneObjectHelper::GetNextObject(292B) identify no missing finite behavior.
+Keep the surprising retail first-cable ownership predicate and inverse scene
+filter/initial-NULL owned-list admission; intuitive rewrites would change
+their contracts. These are source-only closures, not new matching trials or
+full-engine runtime certifications. Prior negative mechanisms remain closed.
+
+MechEdgeStopAddon's complete157B startup initializes the same six16B vector
+values and real4B hash object. Packed versus scalar vector stores and hash
+inlining are representation differences, not an omitted initialization.
+supportall's146B startup has the same known vector/manager initialization;
+its exported16B BigBuffer still lacks a canonical type/storage mapping.
+A bounded whole-retail direct-reference census finds only the startup's two
+zero stores, not a meaningful producer/consumer for its remaining words.
+This does not exclude indirect or external users and does not permit a
+placeholder, padding record, dummy constructor, or guessed owner move.
+
+The next low-score history screen covers exactly physical ranks31–60 of212
+original100–599B functions below40% in frozen checkpoint52. It is history
+metadata only, not a body audit. Nine exact receipts remain unlocated;
+152 later rows remain unscreened. An unlocated receipt is neither a faithful
+closure nor automatic permission to retry a family's rejected mechanism.
+
+eduiGetAnalougePadValue(264B) and AddVariableShotDebrisEffectMtx(575B) also
+close without proposals: unsigned pad axes/thresholds/coefficient overwrite
+and signed-angle matrix construction/real key-storage lifetime already agree.
+These audits do not certify all upstream calibration, allocation or rendering.
+
+CharScenes_AreaLoad's full400B audit finds a real retail scalar alias: its
+lookup output overwrites the outer traversal index. The actual lookup writes
+−1 on failure; naive restoration can restart/stall traversal. Real model
+producers preserve prefixes, reuse entries and skip failed loads, so no
+monotonic list-position invariant is established. Preserve the current safe
+separate index. No patch, fixture-aligned domain or matching trial is proposed.
+
+### Batch487: retail-backed legacy AI-path reset cursors
+
+The original252B GameAILoad callback captures its typed path-system/path-array,
+per-path connection count and connection cursor. Restore only that reset-loop
+source form, retaining the live outer count and all four canonical flag stores.
+Actual loader allocations establish stable disjoint records; zero connections
+neither dereference nor increment the captured pointer. All services and the
+existing positive tag-length/initialized string/supplied arena safeguards stay
+unchanged. Retail's uninitialized local allocator cursor is not recreated;
+this is not whole-original-trailer or shipped-asset equivalence.
+
+The sole linked row improves10.519481%→58.558440%, +121.05817668 weighted
+bytes, with all6293 exact identities retained. Actual O3 owner retains377
+named function identities/634 named undefined symbols. Only the target body
+and explicit callback/bound-call coordinate operands change; all actual
+destinations retain. Its334→290B body changes alignment and shifts later
+entries by−32. Storage changes are only22 verified callback addresses; literals,
+groups, startup, other bodies and non-target CFI instructions retain. ROOT
+independently reproduces the compact owner observations and all4178 bound
+non-target control-edge identities. Android/native/WASM and five checks pass.
+
+Existing linked report69.002120% SHA
+cc3a6a769a102c6cd71d3b85420c70bb9780dd322808c502e7e9fe84dfad2ac8;
+metadata-only mapped SHA
+e838285009931902092540546cff0a751ebf6c782d9f91d260e9a33fe294e6a6.
+
+### Batch488: lever output branch form rejected
+
+One behavior-neutral retail-backed output1/2/0 branch order and explicit
+output0 booleanization reduces19.522728%→9.590909% (−14.30181936 weighted
+bytes). Only its144B report row changes, all6293 exact identities retain.
+Revert the sole candidate; source and canonical owner object restore exactly.
+Keep the current NULL safeguards and pure typed helper. No variant or
+runtime claim follows.
+
+### Batch489: restore the real recursive memory-buffer lock lifecycle
+
+The complete313B sound memory-manager startup constructs the actual GLOBAL4B
+NuSoundMemoryBuffer::s_cs with recursive mutex attributes and registers its
+NuCriticalSection destructor. Current source instead used a plain static
+pthread mutex. Use the existing canonical NuCriticalSection static type and
+its Lock/Unlock methods, preserving instance layout and all manager algorithms.
+Its actual constructor ignores the name argument; NULL invents no debug string.
+Real Defragment/SwapSimilarBuffers paths acquire the buffer lock recursively;
+the source-derived valid allocation witness is not claimed executed.
+
+The sole linked row improves12.363636%→99.527275%, +272.82219007 weighted
+bytes. All6293 exact identities retain. The actual O3 owner's entire5676B
+ordinary text and266 resolved relocations remain identical. Existing main
+FDEs retain; only startup and naturally emitted/removed compiler-helper FDEs
+change. s_cs remains4B. Six local vector records pack12B earlier and five
+packed vector literals become one scalar1.0 literal plus zero/immediate stores,
+preserving all actual values. Only this real initializer gains lifecycle work.
+
+The added34B weak D1/D2 destructor aliases match the canonical linked provider;
+an unused cx thunk disappears while bx retains. These are ordinary header
+emissions, not fabricated helpers or attributes. All69 actual dependencies
+were pinned before the patch/build; only the intended CPP/HPP contents change.
+The extra weak aliases move two metadata assignments to ambiguous ownership:
+12663 assigned,258 ambiguous,533 unassigned; original row identities retain.
+
+A24-line Linux diagnostic using the unchanged actual NuCriticalSection header
+confirms nested trylock succeeds for the canonical class and returns EBUSY for
+a plain static mutex. This is not a Bionic, full Defragment, contention or
+shutdown-order test. Final Android/native/WASM and all five repository tests
+pass for the retained state.
+
+Checkpoint54 candidate69.007910%, +0.008350pp over checkpoint53 and
++1.005450pp over main. Existing raw report
+2adb04625d36c583ea46cf8b3966622e6bbbb12992e199aad852084b0d039f5c;
+metadata-only mapaff803bdddbc57796995797bb386db66289838602a42356eb327ce28cf9841be.
+No new scoring experiment is used for this map; commit/new-head CI pending.

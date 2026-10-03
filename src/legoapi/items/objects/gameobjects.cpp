@@ -1877,13 +1877,17 @@ static i32 GameFindAlternativeSpecialObject(AISYS *, nuhspecial_s *special) {
 
 static void GameAILoad(AISYS *system, i32 version, NUGSCN *, VARIPTR *buffer, VARIPTR *buffer_end) {
     if (version < 12 && system->path_sys != NULL && system->path_sys->path_count != 0) {
-        for (i32 path_index = 0; path_index < system->path_sys->path_count; ++path_index) {
-            AIPATH *path = system->path_sys->paths[path_index];
-            for (i32 connection = 0; connection < path->connection_count; ++connection) {
-                path->connections[connection].traversal_flags[0] = 0;
-                path->connections[connection].traversal_flags[1] = 0;
-                path->connections[connection].original_traversal_flags[0] = 0;
-                path->connections[connection].original_traversal_flags[1] = 0;
+        AIPATHSYS *path_system = system->path_sys;
+        AIPATH **paths = path_system->paths;
+        for (i32 path_index = 0; path_index < path_system->path_count; ++path_index) {
+            AIPATH *path = paths[path_index];
+            const i32 connection_count = path->connection_count;
+            AIPATHCNX *entry = path->connections;
+            for (i32 connection = 0; connection < connection_count; ++connection, ++entry) {
+                entry->traversal_flags[0] = 0;
+                entry->traversal_flags[1] = 0;
+                entry->original_traversal_flags[0] = 0;
+                entry->original_traversal_flags[1] = 0;
             }
         }
     }

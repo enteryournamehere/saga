@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.99956,
+    "fuzzy_match_percent": 69.00791,
     "total_code": "4722419",
     "matched_code": "526280",
     "matched_code_percent": 11.144289,
@@ -64034,7 +64034,7 @@
           "address": 1540768,
           "offset": 650800,
           "size": 252,
-          "match_percent": 10.519481
+          "match_percent": 58.55844
         },
         {
           "name": "_ZL21GlobalCharacterRenderP7nuvec_ssiiP12EDCREATURE_s",
@@ -115366,7 +115366,7 @@
           "address": 911376,
           "offset": 21408,
           "size": 313,
-          "match_percent": 12.363636
+          "match_percent": 99.527275
         },
         {
           "name": "_ZN19NuSoundMemoryBufferC1Ev",
@@ -118751,22 +118751,6 @@
       "object": "bazel-out/k8-fastbuild/bin/src/_objs/saga_target_nu2api/nusound_weakptr.o",
       "functions": [
         {
-          "name": "_ZN17NuCriticalSectionD1Ev",
-          "demangled_name": "NuCriticalSection::~NuCriticalSection()",
-          "address": 978256,
-          "offset": 88288,
-          "size": 34,
-          "match_percent": 100.0
-        },
-        {
-          "name": "_ZN17NuCriticalSectionD2Ev",
-          "demangled_name": "NuCriticalSection::~NuCriticalSection()",
-          "address": 978256,
-          "offset": 88288,
-          "size": 34,
-          "match_percent": 100.0
-        },
-        {
           "name": "_ZN17NuSoundWeakPtrObjI21NuSoundBufferCallbackE4LinkEP22NuSoundWeakPtrListNode",
           "demangled_name": "NuSoundWeakPtrObj<NuSoundBufferCallback>::Link(NuSoundWeakPtrListNode*)",
           "address": 3232544,
@@ -119018,6 +119002,30 @@
       "candidate_units": [
         "legoapi/gizmos/transport/tubes.cpp.o",
         "legoapi/props/objects/tubes.cpp.o"
+      ]
+    },
+    {
+      "name": "_ZN17NuCriticalSectionD1Ev",
+      "demangled_name": "NuCriticalSection::~NuCriticalSection()",
+      "address": 978256,
+      "offset": 88288,
+      "size": 34,
+      "match_percent": 100.0,
+      "candidate_units": [
+        "nu2api/nusound/nusound_memorymanager.cpp.o",
+        "nu2api/nusound/nusound_weakptr.cpp.o"
+      ]
+    },
+    {
+      "name": "_ZN17NuCriticalSectionD2Ev",
+      "demangled_name": "NuCriticalSection::~NuCriticalSection()",
+      "address": 978256,
+      "offset": 88288,
+      "size": 34,
+      "match_percent": 100.0,
+      "candidate_units": [
+        "nu2api/nusound/nusound_memorymanager.cpp.o",
+        "nu2api/nusound/nusound_weakptr.cpp.o"
       ]
     },
     {
@@ -127563,8 +127571,8 @@
   "summary": {
     "bazel_units": 452,
     "functions": 13454,
-    "assigned_functions": 12665,
-    "ambiguous_functions": 256,
+    "assigned_functions": 12663,
+    "ambiguous_functions": 258,
     "unassigned_functions": 533
   }
 }

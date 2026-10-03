@@ -1,0 +1,47 @@
+diff --git a/simd_float.h b/simd_float.h
+--- a/simd_float.h
++++ b/simd_float.h
+@@ -138,4 +138,4 @@
+-			std::min( left.m_x, right.m_x ), 
+-			std::min( left.m_y, right.m_y ), 
+-			std::min( left.m_z, right.m_z ), 
+-			std::min( left.m_w, right.m_w ) 
++			(left.m_x - right.m_x) >= 0.0f ? right.m_x : left.m_x,
++			(left.m_y - right.m_y) >= 0.0f ? right.m_y : left.m_y,
++			(left.m_z - right.m_z) >= 0.0f ? right.m_z : left.m_z,
++			(left.m_w - right.m_w) >= 0.0f ? right.m_w : left.m_w
+@@ -148,4 +148,4 @@
+-			std::max( left.m_x, right.m_x ), 
+-			std::max( left.m_y, right.m_y ), 
+-			std::max( left.m_z, right.m_z ), 
+-			std::max( left.m_w, right.m_w ) 
++			(left.m_x - right.m_x) >= 0.0f ? left.m_x : right.m_x,
++			(left.m_y - right.m_y) >= 0.0f ? left.m_y : right.m_y,
++			(left.m_z - right.m_z) >= 0.0f ? left.m_z : right.m_z,
++			(left.m_w - right.m_w) >= 0.0f ? left.m_w : right.m_w
+@@ -158,4 +158,4 @@
+-			v.m_x > 0.0f ? std::floor( v.m_x ) : std::ceil( v.m_x ), 
+-			v.m_y > 0.0f ? std::floor( v.m_y ) : std::ceil( v.m_y ), 
+-			v.m_z > 0.0f ? std::floor( v.m_z ) : std::ceil( v.m_z ),
+-			v.m_w > 0.0f ? std::floor( v.m_w ) : std::ceil( v.m_w )
++			v.m_x > 0.0f ? std::floor( static_cast<double>(v.m_x) ) : std::ceil( static_cast<double>(v.m_x) ),
++			v.m_y > 0.0f ? std::floor( static_cast<double>(v.m_y) ) : std::ceil( static_cast<double>(v.m_y) ),
++			v.m_z > 0.0f ? std::floor( static_cast<double>(v.m_z) ) : std::ceil( static_cast<double>(v.m_z) ),
++			v.m_w > 0.0f ? std::floor( static_cast<double>(v.m_w) ) : std::ceil( static_cast<double>(v.m_w) )
+diff --git a/maths.h b/maths.h
+--- a/maths.h
++++ b/maths.h
+@@ -166,3 +166,3 @@
+-			std::min( left.m_x, right.m_x ), 
+-			std::min( left.m_y, right.m_y ), 
+-			std::min( left.m_z, right.m_z )
++			(left.m_x - right.m_x) >= 0.0f ? right.m_x : left.m_x,
++			(left.m_y - right.m_y) >= 0.0f ? right.m_y : left.m_y,
++			(left.m_z - right.m_z) >= 0.0f ? right.m_z : left.m_z
+@@ -175,3 +175,3 @@
+-			std::max( left.m_x, right.m_x ), 
+-			std::max( left.m_y, right.m_y ), 
+-			std::max( left.m_z, right.m_z )
++			(left.m_x - right.m_x) >= 0.0f ? left.m_x : right.m_x,
++			(left.m_y - right.m_y) >= 0.0f ? left.m_y : right.m_y,
++			(left.m_z - right.m_z) >= 0.0f ? left.m_z : right.m_z

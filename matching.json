@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.82739,
+    "fuzzy_match_percent": 68.98917,
     "total_code": "4722419",
     "matched_code": "526280",
     "matched_code_percent": 11.144289,
@@ -123829,7 +123829,7 @@
       "address": 948704,
       "offset": 58736,
       "size": 5019,
-      "match_percent": 33.449028
+      "match_percent": 99.94054
     },
     {
       "name": "_ZN6squish10ClusterFit9Compress3EPv",
@@ -123837,7 +123837,7 @@
       "address": 953728,
       "offset": 63760,
       "size": 4395,
-      "match_percent": 26.390177
+      "match_percent": 99.94816
     },
     {
       "name": "_ZN6squish17WriteColourBlock3ERKNS_4Vec3ES2_PKhPv",
@@ -123957,7 +123957,7 @@
       "address": 966576,
       "offset": 76608,
       "size": 2319,
-      "match_percent": 33.32934
+      "match_percent": 41.830338
     },
     {
       "name": "_ZN6squish8RangeFitC2EPKNS_9ColourSetEi",
@@ -123965,7 +123965,7 @@
       "address": 966576,
       "offset": 76608,
       "size": 2319,
-      "match_percent": 33.32934
+      "match_percent": 41.830338
     },
     {
       "name": "_ZN6squish15SingleColourFitC1EPKNS_9ColourSetEi",
@@ -126365,7 +126365,7 @@
       "address": 5358912,
       "offset": 4468944,
       "size": 2416,
-      "match_percent": 92.65039
+      "match_percent": 99.9082
     },
     {
       "name": "_Z13_vp_psy_clearP15vorbis_look_psy",
@@ -126445,7 +126445,7 @@
       "address": 5369552,
       "offset": 4479584,
       "size": 614,
-      "match_percent": 18.548023
+      "match_percent": 99.99435
     },
     {
       "name": "_ZL11_encodepartP14oggpack_bufferPiiP8codebookPl",

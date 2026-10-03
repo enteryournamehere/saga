@@ -12776,3 +12776,105 @@ Strict Counter/U checks stop on the expected floorf/ceilf→floor/ceil and
 explicit coefficient-storage changes. Original-backed service/literal/thunk
 qualification and finite codec diagnostics are pending. No source integration,
 unknown-score imputation or final compressed-output divergence is claimed.
+
+### Batches469–472: bounded scalar codec follow-up
+
+Checkpoint49 commit7459cf36b39d9808dcbdf77e142f6dff85b6f663 subsequently
+passes all11 exact-head GitHub checks. Main remainsa496c28; the linked merge
+threshold remains70.002460%, not the sum of isolated gains below.
+
+ROOT qualifies the same469 objects/reports, all24 original double floor/ceil
+call windows and every changed literal consumer. The thunk, retained bodies,
+CFI, COMDAT, vtable and full storage remain explicitly covered; unknown scores
+stay None. The first metadata proof has an incorrect string-table boundary;
+its failed log is preserved and an additive r1 changes only15→16. Successful
+receipt1f4c07521e6cd554c21df8e6ec52a165451c0743f9f1c4a42a155ac8b4d088e4.
+Both first runtime preflights stop before objects on ten uncataloged GNU
+headers. An additive r2 pins exactly those ten observed identities, retaining
+all original159 pins, fixture, helpers and options. Four GNU64/i386 O3/SSE
+ASan/UBSan/LSan runs pass97 cases/9736 checks each with empty stderr.
+Result82229c6e38f292f9d283b05cf9a649a64f71f23716ffe245e8fcb284c2e703c2.
+The canonical finite black/white producer demonstrates only the original-backed
+singular RGB intermediate clamp; no final compressed-byte divergence is claimed.
+
+Batch470 changes only residue scale100.0f and integer entropy multiplication.
+The sole res0 owner pair yields known+499.94170834B, res1_class
+18.519773%→99.943504%,623→614B; all16 backed names/two exacts retain.
+Specific literal/registry/thunk/full-object receipt
+4e4d9cc0ad908fb06c535caaeae8fed9e7a750f272b3698b17ce3634e6af7d47.
+The first runtime admission rejects a mismatched batch spelling before compiler
+metadata. Fresh r1 corrects only that exact schema assertion. Four actual
+allocator/ripcord/canonical-type diagnostics pass138 cases/18219 checks each,
+including two finite classification witnesses, with empty sanitizer stderr.
+Resultd33f974d6dba0368ebd17eae00b6b69f16d001988c0db1c40045b810b8cb5a4a.
+These are residue classification/storage tests, not audio or gameplay fixtures.
+
+Batch471 changes only six Vec3 subtraction-based Min/Max selects. The sole
+RangeFit owner pair yields known+391.96197162B under unchanged C1/C2 alias
+weighting:33.407185%→41.858284%,1529→1857B. Both near-exact Compress siblings
+retain. The literal Counter difference is a three-slot1.0/31.5/63.5 payload
+permutation, not LC10→LC7 payload equality. The first proof omits two cold-load
+REL operands; additive r1 restores the exact complete consumer vectors without
+weakening them. Receipt
+a565e5467f7510196541de59ac3d6c432c7889dcdde2edb5e6597ef52ef82a74.
+Four actual public RangeFit diagnostics pass100 cases/14719 checks each,
+including count0..16, independent packing/decode and known endpoint blocks.
+Result5c0f70eed2bfa3044c79e54a257235f0cb10eb9887fef4fff814de41a11e3a6c.
+No private-state shim, output-divergence or whole-codec certificate is claimed.
+
+Batch472's sole two local float suffixes in psy_init yield
+known+174.59368960B,92.304690%→99.531250%,2448→2416B; all18 backed names,
+two exacts and full Counter/U retain. Capture
+a168c86eadfbcc1a03167034272c4fa9fb154d724b9ec038f5b497308cdea4a1.
+The first metadata proof incorrectly includes the changed target's own39
+self-branches among retained incoming callers. Its failure remains preserved.
+Additive r1 pins the target's complete40 control rows separately on each side;
+all15 retained callers and16 PIC pairs still require exact equality. Full
+storage, symbol surface, CFI and the unscored12-byte thunk remain covered.
+Receipt44d1a5c0f596f4c58e7207d7f122d380616d67e58d8c5c0144cb5b7f16ef04ba.
+Both arithmetic preflights stop before objects on one uncataloged GNU C++
+fenv compatibility wrapper. Fresh r1 adds only that exact reviewed pin;
+fixture, statements, catalogs and launcher stay byte-identical. Four GNU64/i386
+O3/SSE ASan/UBSan/float-cast-overflow/LSan runs pass7000 cases/375214 checks
+each, with731 finite arithmetic witnesses and empty stderr. The independent
+bounded integer rounding oracle and fixed shipped coefficient/fraction catalog
+do not certify actual audio or runtime frequency distribution. Existing
+negative Bark shifts and the upper-row k17 access are unchanged; this candidate cannot certify
+whole-function sanitizer portability.
+Resultd219e8524158472ec00d80f2512d20e49eced6c708871bb8d5abae81f90956b0.
+No new ABI attribute, optimization flag, codec version or algorithm is proposed.
+
+A distinct full _ov_open1 audit finds no safe local candidate. Its97.905060%
+body requests n+8 bytes in retail but writes4*n+8, with actual header producers
+counting entries. The first ordinary n=1 case requests9B and writes12B.
+Current typed calloc retains the correct requested extent and native long
+width; allocator slack is not a portable contract. No unsafe reproduction,
+candidate or compiler/runtime trial is admitted.
+
+The separate full vorbis_synthesis_headerin audit also yields no safe local
+candidate. Its98.850945% body requests n+4 bytes for each comment array in
+retail but writes4*n bytes. Two admitted empty comments already request6B
+and write8B per array. Current canonical typed allocations remain unchanged;
+no underallocation, flag/version change or speculative codec repair is tried.
+
+ROOT integrates the four candidates through two separate pinned-archive
+patches; the existing Android Vorbis compatibility patch remains unchanged.
+Squish hunks use zero context to preserve upstream whitespace without a
+space-before-tab patch warning. The first Bazel repository refresh rejects
+missing multi-file boundaries before compilation; adding explicit diff file
+headers fixes only packaging. The Android build then passes and all four
+fetched source hashes exactly equal the qualified candidates. Version, source
+membership, ABI and optimization choices remain unchanged.
+
+Independent linked checkpoint50 is68.989170%, +0.161780pp over checkpoint49
+and+0.986710pp over unchanged main. Exactly six expected rows improve:
+Compress3 26.390177%→99.948160%, Compress4 33.449028%→99.940540%,
+RangeFit C1/C2 33.329340%→41.830338%, res1_class18.548023%→99.994350%,
+and psy_init92.650390%→99.908200%. All6293 raw exact identities, the full
+original identity multiset, ownership summary and4722419-byte denominator
+retain. No other original row's score changes. Android/native/WASM builds
+and all five repository checks pass; the normal pre-commit workflow is pending.
+Raw report92f45aed29eddb301f1461b0b28d100b75e85100046e2f8e659d6f0aade60bdf;
+mapped reportb1ab619e3d8c04e73d6e1443f95d8201079ad5c386c36bb89ac9bd62cc63871b.
+New-head CI is not yet claimed. The70.002460% cycle threshold still prohibits
+a merge below+2pp even if checks pass.

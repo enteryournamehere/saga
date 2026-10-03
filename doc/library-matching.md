@@ -16,16 +16,41 @@ The Android build needs the following integration details:
   units. The Android compatibility patch defines these arrays in the registry
   header, retaining external linkage for the backend export bundles.
 
-The patch changes C++ keyword identifiers and target linkage/integration only;
+The Android compatibility patch changes C++ keyword identifiers and target linkage/integration only;
 it does not alter codec algorithms. `-fpermissive` is limited to the external
 Vorbis sources to accept their C void-pointer conversions. The public linkage
 define propagates to Android consumers. Native builds retain C compilation
 and the existing system libraries; WASM retains its separate, newer Vorbis
 dependency.
 
+A separate retail-scalar patch restores individually verified arithmetic:
+Squish Vec3/Vec4 Min/Max subtraction-based selects and Vec4 double floor/ceil
+arguments with float narrowing; Vorbis residue float scale/integer entropy
+multiplication and two local float constants in psy_init. Version pins,
+scalar configuration, compiler options, signatures and codec algorithms stay
+unchanged. These are local source changes, not a global single-precision flag.
+The Squish patch affects the pinned Squish source; native Vorbis still uses
+its system library and WASM Vorbis its separate newer source.
+
+The four isolated owners retain every original-backed function and previous
+exact match. Same-object proofs cover changed literal/service roles, full
+storage, symbol surface, CFI and unscored PIC thunks. GNU64/i386 O3/SSE
+ASan/UBSan/LSan diagnostics pass on both old and new sources: 97 Squish cluster
+cases, 100 public RangeFit cases, 138 residue classification/storage cases,
+and 7,000 exact ATH/noise arithmetic cases per ABI and revision. These finite
+diagnostics do not certify audio/gameplay equivalence, the entire codecs,
+private target ABI, or unchanged pre-existing psychoacoustic bounds/shift
+issues. Detailed receipts and linked integration results are recorded in
+doc/decomp/26-low-match-structural-triage.md.
+
+The linked scalar follow-up increases overall fuzzy matching from68.827390%
+to68.989170% (+0.161780 percentage points). Only the six expected codec rows
+change, all positively, retaining all6,293 existing raw exact matches and
+the original report denominator. The generated report remains authoritative.
+
 ## Validation and remaining work
 
-Against main `3b3e5bb`, the final integrated x86 build increased overall
+In the earlier integration against main `3b3e5bb`, the x86 build increased overall
 fuzzy match from **19.808786% to 23.734074%** (+3.925288 percentage points),
 and exact report matches from **1,182 to 1,218**. No function declined by more
 than 0.01 percentage points in that comparison. The generated matching report
@@ -44,12 +69,12 @@ were excluded. This classification is separate from the committed objdiff
 score and does not change its normalization. The separate Squish PCH
 initializer is not included in the 36 library functions.
 
-Vorbis still has real differences in `_ov_open1`, `vorbis_synthesis_headerin`,
+That earlier audit found real differences in `_ov_open1`, `vorbis_synthesis_headerin`,
 `_vp_psy_init`, `_vp_noisemask`, `_vp_offset_and_mix`, and `res1_class`.
 Some are float-versus-double differences; enabling single-precision constants
 globally improves a few functions but regresses already-matching ones.
 
-Squish still has real differences in `CompressAlphaDxt5`,
+The earlier Squish audit found real differences in `CompressAlphaDxt5`,
 `ClusterFit::Compress3`, `ClusterFit::Compress4`, `ColourSet` constructors,
 `ComputePrincipleComponent`, and `RangeFit` constructors. The constructors
 each have C1/C2 aliases, accounting for eight report entries. Tested broad

@@ -1,7 +1,6 @@
 #include "gamelib/util/Utilities.h"
 
 #include "nu2api/nucore/nutime.h"
-#include "nu2api/nucore/nuvuvec.hpp"
 
 static u32 frameStartTimeMS;
 static NUTIME frameStartTime;

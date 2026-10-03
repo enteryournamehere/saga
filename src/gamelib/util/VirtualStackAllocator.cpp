@@ -1,7 +1,6 @@
 #include "gamelib/util/gamelib_util_types.h"
 #include "decomp.h"
 #include <cstddef>
-#include "nu2api/nucore/nuvuvec.hpp"
 
 DECOMP_ASSERT(sizeof(VirtualStackAllocator) == 0x10, "VirtualStackAllocator size");
 DECOMP_ASSERT(offsetof(VirtualStackAllocator, cursor) == 4, "Allocator cursor offset");

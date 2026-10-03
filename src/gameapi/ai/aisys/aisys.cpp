@@ -1,6 +1,5 @@
 #include "decomp.h"
 #include "legoapi/actions/combat/hits.h"
-#include "legoapi/actions/character/speederchase.h"
 #include "batman.h"
 #include "gameapi/ai/aisys/aisys.h"
 #include "globals.h"
@@ -23,7 +22,6 @@
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/gizmo/base/gizmo.h"
-#include "legoapi/gizmo/base/gizactions.h"
 #include "legoapi/gizmos/traps/gizturrets.h"
 #include "legoapi/gizmos/object/gizobstacles.h"
 #include "legoapi/gizmos/object/gizbuildits.h"
@@ -288,7 +286,7 @@ extern "C" f32 AIPathNodeDistanceToPathNode(AIPATH *path, i32 start_node, i32 de
 extern void CurrentStart(GameObject_s *object, i32 mode, i32 start);
 extern "C" void ComplexSockAngles(SOCKROT *angles);
 extern void oneAtOnce_SetInitDistPerRow(f32 distance);
-extern i32 oneAtOnce_CanAttack(GameObject_s *object, GameObject_s *opponent);
+extern bool oneAtOnce_CanAttack(GameObject_s *object, GameObject_s *opponent);
 extern f32 oneAtOnce_GetHoldRange(GameObject_s *object);
 extern void Hint_CancelCurrent();
 extern i32 TagCharacter(GameObject_s *source, GameObject_s *target, i32 mode);
@@ -326,8 +324,6 @@ static i32 Action_SetCurrentSpeed(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char *
 i32 Action_SetState(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 i32 Action_FollowPlayer(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 i32 Action_UsePanel(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
-i32 Action_PullLever(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
-i32 Action_UseTechno(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 i32 Action_HelpWithTriggers(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 i32 Action_UseTriggerSet(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 static i32 Action_GoToOriginalPath(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
@@ -552,7 +548,7 @@ __used__ static i32 Action_Kill(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET
         return 1;
     }
 
-    GameObject_s *object = packet != NULL && packet->owner != NULL ? packet->owner->apiobj.objptr : NULL;
+    GameObject_s *object = packet != NULL ? packet->owner : NULL;
     GameObject_s *excluded = NULL;
     AIAREA *area = NULL;
     i32 creature_set = 0;
@@ -611,8 +607,8 @@ __used__ static i32 Action_Kill(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET
             continue;
         }
         value = ActionParamValue(params[index], "area");
-        if (value != NULL && WORLD != NULL && WORLD->ai_sys != NULL) {
-            area = AISysFindArea(WORLD->ai_sys, value);
+        if (value != NULL && sys != NULL) {
+            area = AISysFindArea(sys, value);
         }
     }
 
@@ -628,54 +624,35 @@ __used__ static i32 Action_Kill(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET
         if (parts_on) {
             KillParts(candidate, -1, -1, 1, 0.0f, 0, NULL);
         }
-        if (debris)
-            KillGameObject(candidate, 2, 0);
-        else
-            KillGameObject(candidate, 4, 0);
+        KillGameObject(candidate, debris ? 2 : 4, 0);
     };
 
-    if (Obj == NULL && (all_ai || creature_set != 0 || area != NULL))
-        return 1;
-    if (all_ai) {
-        for (i32 index = 0; index < HIGHGAMEOBJECT; ++index) {
+    if (all_ai || creature_set != 0 || area != NULL) {
+        for (i32 index = 0; Obj != NULL && index < HIGHGAMEOBJECT; ++index) {
             GameObject_s *candidate = &Obj[index];
-            if (may_kill(candidate) && (candidate->apiobj.field_0x1f4 & 0x400u) != 0 && candidate != excluded)
-                kill(candidate);
-        }
-        return 1;
-    }
-    if (creature_set != 0) {
-        for (i32 index = 0; index < HIGHGAMEOBJECT; ++index) {
-            GameObject_s *candidate = &Obj[index];
-            if (may_kill(candidate) && candidate->ai.creature_set == creature_set)
-                kill(candidate);
-        }
-        return 1;
-    }
-    if (area != NULL) {
-        for (i32 index = 0; index < HIGHGAMEOBJECT; ++index) {
-            GameObject_s *candidate = &Obj[index];
-            if (!may_kill(candidate)) {
+            if (!may_kill(candidate) || candidate == excluded) {
                 continue;
             }
-            if (area->system != NULL && area->system->areas != NULL) {
-                const isize area_index = area - area->system->areas;
+            if (all_ai && (candidate->apiobj.field_0x1f4 & 0x1000u) == 0) {
+                continue;
+            }
+            if (creature_set != 0 && candidate->ai.creature_set != creature_set) {
+                continue;
+            }
+            if (area != NULL && sys != NULL) {
+                const isize area_index = area - sys->areas;
                 const u64 mask = static_cast<u64>(candidate->apiobj.ai_area_mask_low) |
                                  (static_cast<u64>(candidate->apiobj.ai_area_mask_high) << 32);
                 if (area_index < 0 || area_index >= 64 || (mask & (1ull << area_index)) == 0) {
                     continue;
                 }
-            } else {
-                continue;
             }
             kill(candidate);
         }
         return 1;
     }
 
-    // An explicitly selected object is not subject to the group scan's
-    // in-use/character flags; only check_if_dead gates this path.
-    if (object != NULL && (!check_if_dead || (object->apiobj.field_0x287 == 0 && object->field_0x101c <= 0.0f))) {
+    if (may_kill(object)) {
         kill(object);
     }
     return 1;
@@ -3621,67 +3598,16 @@ __used__ static i32 Action_SetOpponent(AISYS *sys, AISCRIPTPROCESS *processor, A
 
     GameObject_s *object = packet->owner->apiobj.objptr;
     GameObject_s *opponent = NULL;
-    GameObject_s *droids[10];
-    i32 droid_count = 0;
-    static i32 prev_droid_ix;
     for (i32 index = 0; index < param_4; ++index) {
-        char *value;
-        if (NuStrIStr(params[index], "opponent=droid") != NULL) {
-            // The retail script action checks eight player slots explicitly.
-            // Keep its ordered float comparisons, including slot seven's
-            // inverted rejection test (which admits an unordered death timer).
-#define OPPONENT_DROID(slot)                                                                                           \
-    {                                                                                                                  \
-        GameObject_s *candidate = Player[slot];                                                                        \
-        if (candidate != NULL && (candidate->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&                                 \
-            (candidate->apiobj.field_0x287 == 0 || candidate->field_0x101c > 0.0f) &&                                  \
-            (candidate->field_0xeff & 1) == 0 && candidate->apiobj.character_data != NULL &&                           \
-            (candidate->apiobj.character_data->model_flags & 0x10) != 0 && droid_count < 10)                           \
-            droids[droid_count++] = candidate;                                                                         \
-    }
-            OPPONENT_DROID(0)
-            OPPONENT_DROID(1)
-            OPPONENT_DROID(2)
-            OPPONENT_DROID(3)
-            OPPONENT_DROID(4)
-            OPPONENT_DROID(5)
-            OPPONENT_DROID(6)
-#undef OPPONENT_DROID
-            GameObject_s *candidate = Player[7];
-            if (candidate != NULL && (candidate->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
-                !(candidate->apiobj.field_0x287 != 0 && candidate->field_0x101c <= 0.0f) &&
-                (candidate->field_0xeff & 1) == 0 && candidate->apiobj.character_data != NULL &&
-                (candidate->apiobj.character_data->model_flags & 0x10) != 0 && droid_count < 10) {
-                droids[droid_count++] = candidate;
-            }
-            // Retail accumulates candidates across parameters. Bound the
-            // original ten-entry array when malformed scripts repeat droid.
-            if (droid_count != 0) {
-                prev_droid_ix = (prev_droid_ix + 1) % droid_count;
-                opponent = droids[prev_droid_ix];
-            }
-        } else if (NuStrIStr(params[index], "opponent=nearest_enemy") != NULL) {
-            object->opponent = NULL;
-        } else if ((value = NuStrIStr(params[index], "opponent=")) != NULL) {
-            opponent = GetNamedGameObject(sys, value + 9);
+        char *value = NuStrIStr(params[index], "opponent=");
+        if (value != NULL && NuStrICmp(value + NuStrLen("opponent="), "nearest_enemy") != 0) {
+            opponent = GetNamedGameObject(sys, value + NuStrLen("opponent="));
         } else if (NuStrICmp(params[index], "last_attacker") == 0) {
             opponent = static_cast<GameObject_s *>(object->last_attacker);
-        } else if ((value = NuStrIStr(params[index], "opponentType")) != NULL) {
-            i32 type = 0xff;
-            if (LevelCharacterTypeIDFn != NULL && LevelCharacterGlobalIDFn != NULL) {
-                const i8 local_type = static_cast<i8>(LevelCharacterTypeIDFn(value + 13));
-                if (local_type != -1)
-                    type = LevelCharacterGlobalIDFn(static_cast<u8>(local_type));
-            }
-            for (i32 object_index = 0; object_index < HIGHGAMEOBJECT; ++object_index) {
-                if (Obj[object_index].id == type) {
-                    opponent = &Obj[object_index];
-                    break;
-                }
-            }
         }
     }
     object->opponent = opponent;
+    packet->opponent = opponent != NULL ? &opponent->apiobj : NULL;
     return 1;
 }
 
@@ -7277,7 +7203,7 @@ extern "C" {
         {"JudderGameCamera", Action_JudderGameCamera, 0, 0, 0},
         {"CameraShake", Action_CameraShake, 0, 0, 0},
         {"ResetGameCamera", NULL, 1, 0, 0},
-        {"PlayCutScene", Action_PlayCutScene, 1, 0, 0},
+        {"PlayCutScene", NULL, 1, 0, 0},
         {"SetLevelPath", Action_SetLevelPath, 0, 0, 0},
         {"ImmuneToKillTerrain", Action_ImmuneToKillTerrain, 0, 0, 0},
         {"ImmuneToBolts", Action_ImmuneToBolts, 0, 0, 0},
@@ -7290,9 +7216,9 @@ extern "C" {
         {"CnxController", Action_CnxController, 0, 0, 0},
         {"CnxHelper", Action_CnxHelper, 0, 0, 0},
         {"PlaySfx", Action_PlaySfx, 0, 0, 0},
-        {"CameraCut", Action_CameraCut, 1, 0, 0},
+        {"CameraCut", NULL, 1, 0, 0},
         {"DynamicCameraCut", NULL, 1, 0, 0},
-        {"EndCameraCut", Action_EndCameraCut, 1, 0, 0},
+        {"EndCameraCut", NULL, 1, 0, 0},
         {"DontRaycastLOS", Action_DontRaycastLOS, 0, 0, 0},
         {"SetForceBack", Action_SetForceBack, 1, 0, 0},
         {"FaceCamera", Action_FaceCamera, 0, 0, 0},
@@ -7311,9 +7237,9 @@ extern "C" {
         {"SetObstacleToEnd", NULL, 1, 0, 0},
         {"HelpWithTriggers", Action_HelpWithTriggers, 0, 0, 0},
         {"UseTriggerSet", Action_UseTriggerSet, 0, 0, 0},
-        {"PullLever", Action_PullLever, 0, 0, 0},
+        {"PullLever", NULL, 0, 0, 0},
         {"UsePanel", Action_UsePanel, 0, 0, 0},
-        {"UseTechno", Action_UseTechno, 0, 0, 0},
+        {"UseTechno", NULL, 0, 0, 0},
         {"ReleaseLocator", NULL, 0, 0, 0},
         {"AssignLocator", NULL, 0, 0, 0},
         {"GetLocatorFromSet", NULL, 0, 0, 0},
@@ -7338,7 +7264,7 @@ extern "C" {
         {"SetLayer", Action_SetLayer, 0, 0, 0},
         {"CreateRider", Action_CreateRider, 0, 0, 0},
         {"AddTorpedoPacket", NULL, 1, 0, 0},
-        {"SpeederBeingChased", Action_SpeederBeingChased, 0, 0, 0},
+        {"SpeederBeingChased", NULL, 0, 0, 0},
         {"ThrowDetonator", Action_ThrowDetonator, 0, 0, 0},
         {"SetScaleOverride", NULL, 0, 0, 0},
         {"DisableNarrowSocks", Action_DisableNarrowSocks, 1, 0, 0},

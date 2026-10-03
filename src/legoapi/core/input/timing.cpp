@@ -82,6 +82,7 @@ void UpdatePickupFlicker() {
     if (frames > 30) {
         i32 flicker_frames = frames / 5;
         if (flicker_frames % 2 != 0) {
+            
             ++flicker_frames;
         }
         PickUpFlickerFrames = flicker_frames;
@@ -89,6 +90,7 @@ void UpdatePickupFlicker() {
     } else {
         i32 *flicker_frames_ptr = &PickUpFlickerFrames;
         flicker_test = 3;
+        
         *flicker_frames_ptr = 6;
     }
 

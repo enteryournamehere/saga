@@ -347,10 +347,7 @@ extern "C" i32 edbriLoadPage(char *path, void *gscn) {
         bridge.field_1e = EdFileReadChar();
         char name[20];
         EdFileRead(name, 20);
-        if (name[0])
-            bridge.special_20 = edbitsLookupInstance(name, static_cast<NUGSCN *>(gscn));
-        else
-            bridge.special_20 = -1;
+        bridge.special_20 = name[0] ? edbitsLookupInstance(name, static_cast<NUGSCN *>(gscn)) : -1;
         EdFileRead(name, 20);
         bridge.special_24 = name[0] ? edbitsLookupInstance(name, static_cast<NUGSCN *>(gscn)) : -1;
         bridge.field_28 = EdFileReadFloat();
@@ -467,7 +464,7 @@ void edbriDoInput(nupad_s *pad) {
         edbri_width -= pad->analog_left_pad_left / 5000.0f;
         if (edbri_width < 0.1f)
             edbri_width = 0.1f;
-        if (!(edbri_width <= 5.0f))
+        if (edbri_width > 5.0f)
             edbri_width = 5.0f;
     }
 }

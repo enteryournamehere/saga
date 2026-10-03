@@ -23,11 +23,15 @@
 #include "legoapi/gizmos/object/lever.h"
 #include "legoapi/gizmos/object/gizpanel.h"
 #include "legoapi/gizmos/object/gizbuildits.h"
+#include "legoapi/props/objects/techno.h"
 #include "nu2api/numath/nuvec.h"
+#include "nu2api/numath/nuang.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nuspline.h"
 #include "legoapi/render/fx/spline_position.h"
-#include "legoapi/render/fx/parts.h"
+#include "legoapi/props/system/socksys.h"
+
+void GameCameraMakeMiniCut2(NUVEC *, NUVEC *, i32, f32, f32, f32, f32, i32, i32, i32);
 
 i32 Action_SetState(AISYS_s *, AISCRIPTPROCESS_s *processor, AIPACKET_s *, char **params, i32 param_count,
                     i32 is_first_time, float) {
@@ -448,58 +452,59 @@ i32 Action_BoulderSection(AISYS_s *system, AISCRIPTPROCESS_s *processor, AIPACKE
                           i32 param_count, i32 first_time, f32) {
     if (packet == NULL || packet->owner == NULL || packet->owner->apiobj.objptr == NULL)
         return 1;
+
     GameObject_s *object = packet->owner->apiobj.objptr;
     if (first_time != 0) {
         processor->action_data_4 = 1.0f;
         processor->action_data_5 = 1.0f;
-        for (i32 index = 0; index < param_count; ++index) {
-            char *value = NuStrIStr(params[index], "boulder_range=");
+        for (i32 i = 0; i < param_count; ++i) {
+            char *value = NuStrIStr(params[i], "boulder_range=");
             if (value != NULL) {
-                processor->action_data_4 = AIParamToFloat(&packet->script_process, value + 14);
-            } else if ((value = NuStrIStr(params[index], "attack_time=")) != NULL) {
-                processor->action_data_5 = AIParamToFloat(&packet->script_process, value + 12);
-            } else {
-                packet->movement_instruction_parameter = AIParamToFloat(processor, params[index]);
+                processor->action_data_4 = AIParamToFloat(processor, value + 14);
+                continue;
             }
+            value = NuStrIStr(params[i], "attack_time=");
+            if (value != NULL)
+                processor->action_data_5 = AIParamToFloat(processor, value + 12);
+            else
+                packet->movement_instruction_parameter = AIParamToFloat(processor, params[i]);
         }
     }
-    const bool can_attack = FreePlay == 0 || CharCategory_IsCategory(object, 0) != 0 ||
-                            CharCategory_IsCategory(object, 1) != 0 || CharCategory_IsCategory(object, 8) != 0;
-    if (!can_attack) {
+
+    i32 can_attack = 1;
+    if (FreePlay != 0 && CharCategory_IsCategory(object, 0) == 0 && CharCategory_IsCategory(object, 1) == 0 &&
+        CharCategory_IsCategory(object, 8) == 0) {
         processor->action_timer -= FRAMETIME;
         if (processor->action_timer < 0.0f) {
             processor->action_timer = 0.5f;
-            object->pad_gamepad->buttons_pressed |= GAMEPAD_TOGGLELEFT;
+            object->pad_gamepad->buttons_down_08 |= GAMEPAD_TOGGLELEFT;
         }
+        can_attack = 0;
     }
-    object->field_0xef8 |= GAMEOBJECT_EF8_FLAG_KEEP_WEAPON_OUT;
-    PART_s *nearest = NULL;
+
+    object->field_0xef8 |= 0x10;
     f32 nearest_distance = processor->action_data_4 * processor->action_data_4;
-    NUVEC difference;
-    if (boulder_part[0] != NULL) {
-        const f32 distance = NuVecDistSqr(&object->apiobj.collision_position, &boulder_part[0]->position, &difference);
+    PART_s *nearest = NULL;
+    for (i32 i = 0; i < 2; ++i) {
+        PART_s *part = boulder_part[i];
+        if (part == NULL)
+            continue;
+        NUVEC delta;
+        f32 distance = NuVecDistSqr(&object->apiobj.collision_position, &part->position, &delta);
         if (distance < nearest_distance) {
-            nearest = boulder_part[0];
             nearest_distance = distance;
+            nearest = part;
         }
     }
-    if (boulder_part[1] != NULL) {
-        const f32 distance = NuVecDistSqr(&object->apiobj.collision_position, &boulder_part[1]->position, &difference);
-        if (distance < nearest_distance)
-            nearest = boulder_part[1];
-    }
-    // The retail third probe reads padding past this two-entry array. Do not
-    // reproduce that out-of-bounds access or enlarge the recovered global.
-    if (nearest == NULL) {
-        if (system != NULL && system->player_1 != NULL && system->player_1->ai != NULL) {
-            AIPACKET_s *player_packet = system->player_1->ai;
-            AIMoveInstruction(packet, &player_packet->last_path_position, player_packet->mover_height,
-                              &player_packet->path_info, 1, packet->movement_instruction_parameter);
-        }
-    } else {
+
+    if (nearest != NULL) {
         packet->movement_look_target = &nearest->position;
-        if (can_attack)
-            object->pad_gamepad->buttons_pressed |= GAMEPAD_ACTION;
+        if (can_attack != 0)
+            object->pad_gamepad->buttons_down_08 |= GAMEPAD_ACTION;
+    } else {
+        AIPACKET *player_packet = system->player_1->ai;
+        AIMoveInstruction(packet, &player_packet->last_path_position, player_packet->mover_height,
+                          &player_packet->path_info, 1, packet->movement_instruction_parameter);
     }
     return 0;
 }
@@ -780,8 +785,7 @@ struct GIZSPINNER_s;
 f32 GizSpinner_GetNearestTargetPoint(GIZSPINNER_s *, NUVEC *, NUVEC *, NUVEC *, i32);
 void ClearSpecialMove(GameObject_s *);
 extern i32 spinner_gizmotype_id;
-extern u32 GAMEPAD_SPECIAL, GAMEPAD_JUMP, GAMEPAD_TOGGLERIGHT;
-extern f32 ai_moveradius;
+extern u32 GAMEPAD_SPECIAL, GAMEPAD_JUMP;
 
 i32 Action_HelpWithTriggers(AISYS_s *, AISCRIPTPROCESS_s *processor, AIPACKET_s *packet, char **, i32, i32,
                             f32 elapsed) {

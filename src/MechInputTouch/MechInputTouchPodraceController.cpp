@@ -25,7 +25,9 @@ void MechInputTouchPodraceController::Deactivate() {
     MechSystems::Get()->gesture_tracking_system.UnregisterGestureTracker(*this);
 }
 
-MechInputTouchPodraceController::MechInputTouchPodraceController(i32 index) : MechInputTouchMainController(index) {
+MechInputTouchPodraceController::MechInputTouchPodraceController(i32 index)
+    : MechInputTouchMainController(index) {
+    
     active = 0;
     steering_touch = NULL;
 }
@@ -47,9 +49,9 @@ bool MechInputTouchPodraceController::OnRelease(GameObject_s &, TouchHolder &hol
 }
 
 void MechInputTouchPodraceController::Update(NuInputTouchData const *) {
-    if (player != NULL && NewMode == 0 && NewLData == NULL && FadeSys.fade == 0.0f && Paused == 0 && CUTSTOPGAME == 0 &&
-        GetMenuID() != 12 && GetMenuID() != 16 && TouchHacks::TouchControlsActive && MiniCutCam != 2 &&
-        MechSystems::Get()->PlayerButton().selector == NULL) {
+    if (player != NULL && NewMode == 0 && NewLData == NULL && FadeSys.fade == 0.0f && Paused == 0 &&
+        CUTSTOPGAME == 0 && GetMenuID() != 12 && GetMenuID() != 16 && TouchHacks::TouchControlsActive &&
+        MiniCutCam != 2 && MechSystems::Get()->PlayerButton().selector == NULL) {
         Activate();
     } else {
         Deactivate();
@@ -65,6 +67,7 @@ void MechInputTouchPodraceController::Update(NuInputTouchData const *) {
         stick_values[1] = -1.0f;
     }
     button_was_pressed[2] = 1;
+    
     const f32 steering = steering_touch->touch_position.x * 3.0f;
     stick_values[0] = MAX(-1.0f, (MIN(steering, 1.0f)));
     UpdateButtons();

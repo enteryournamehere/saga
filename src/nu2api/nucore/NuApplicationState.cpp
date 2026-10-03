@@ -1,5 +1,4 @@
 #include "nu2api/nucore/nucore.hpp"
-#include "nu2api/nucore/nuvuvec.hpp"
 
 NuApplicationState::NuApplicationState() : status(NUAPPLICATIONSTATUS_IDLE) {
 }

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.76394,
+    "fuzzy_match_percent": 68.78035,
     "total_code": "4722419",
     "matched_code": "527252",
     "matched_code_percent": 11.164871,
@@ -21954,7 +21954,7 @@
           "address": 4232752,
           "offset": 3342784,
           "size": 10501,
-          "match_percent": 28.32172
+          "match_percent": 35.415054
         },
         {
           "name": "_ZL31pathEditor_cbDisconnectPathNodeP10eduimenu_sP10eduiitem_sj",
@@ -42354,7 +42354,7 @@
           "address": 2332784,
           "offset": 1442816,
           "size": 535,
-          "match_percent": 32.162964
+          "match_percent": 34.11111
         },
         {
           "name": "_Z17GetAudioFadeLevelv",
@@ -75694,7 +75694,7 @@
           "address": 4810208,
           "offset": 3920240,
           "size": 693,
-          "match_percent": 88.550385
+          "match_percent": 89.51163
         },
         {
           "name": "_Z16DrawGameMessagesv",
@@ -78065,7 +78065,7 @@
           "address": 3663952,
           "offset": 2773984,
           "size": 1371,
-          "match_percent": 46.990166
+          "match_percent": 47.954098
         },
         {
           "name": "_Z11ScanTerrainiii",

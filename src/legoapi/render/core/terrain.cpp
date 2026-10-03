@@ -525,21 +525,21 @@ namespace {
             bounds_radius = reach;                                                                                     \
         } else {                                                                                                       \
             const f32 radius = scan_query.collision_radius;                                                            \
-            if (scan_query.movement.x <= 0.0f) {                                                                       \
+            if (!(scan_query.movement.x > 0.0f)) {                                                                     \
                 scan_bounds.min_x = scan_query.position.x + scan_query.movement.x - 0.02f - radius;                    \
                 scan_bounds.max_x = scan_query.position.x + 0.02f + radius;                                            \
             } else {                                                                                                   \
                 scan_bounds.min_x = scan_query.position.x - 0.02f - radius;                                            \
                 scan_bounds.max_x = scan_query.position.x + scan_query.movement.x + 0.02f + radius;                    \
             }                                                                                                          \
-            if (scan_query.movement.y <= 0.0f) {                                                                       \
+            if (!(scan_query.movement.y > 0.0f)) {                                                                     \
                 scan_bounds.min_y = scan_query.position.y + scan_query.movement.y - 0.02f - radius;                    \
                 scan_bounds.max_y = scan_query.position.y + 0.02f + radius;                                            \
             } else {                                                                                                   \
                 scan_bounds.min_y = scan_query.position.y - 0.02f - radius;                                            \
                 scan_bounds.max_y = scan_query.position.y + scan_query.movement.y + 0.02f + radius;                    \
             }                                                                                                          \
-            if (scan_query.movement.z <= 0.0f) {                                                                       \
+            if (!(scan_query.movement.z > 0.0f)) {                                                                     \
                 scan_bounds.min_z = scan_query.position.z + scan_query.movement.z - 0.02f - radius;                    \
                 scan_bounds.max_z = scan_query.position.z + 0.02f + radius;                                            \
             } else {                                                                                                   \

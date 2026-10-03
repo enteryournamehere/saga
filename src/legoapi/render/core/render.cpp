@@ -2228,8 +2228,9 @@ void DrawMiniKitCount(float position, float scale, i32 count, i32 maximum) {
     const f32 y = (KITPOSY - KITPOS2Y) * blend + KITPOS2Y;
     WORLDINFO_s *world = WorldInfo_CurrentlyActive();
     if (world->lev_objs[model].active != 0) {
-        const u16 rotation = static_cast<u16>(NuFmod(GlobalTimer.time_elapsed, 4.0f) * 0.25f * 65536.0f);
-        const u16 tilt = static_cast<u16>(1820.0f * NuTrigTable[rotation & 0x7fff]);
+        const u16 rotation =
+            static_cast<u16>(static_cast<i32>(NuFmod(GlobalTimer.time_elapsed, 4.0f) * 0.25f * 65536.0f));
+        const i16 tilt = static_cast<i16>(1820.0f * NuTrigTable[rotation & 0x7fff]);
         const f32 size = scale * PANEL_MINIKITSCALE;
         DrawPanel3DObjectNoAlpha(x, PANEL_MINIKITY + y, 1.0f, size, size, size, tilt, rotation, 0,
                                  &world->lev_objs[model].special, 2);

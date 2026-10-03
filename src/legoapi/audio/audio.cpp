@@ -181,9 +181,8 @@ void SpaceResetAudioPoint() {
         const f32 distance = DogFightDoors.doors[door].distance;
         if ((Player[0] != NULL && Player[0]->sock_position.distance > distance) ||
             (Player[1] != NULL && Player[1]->sock_position.distance > distance)) {
-            const f32 entry_time = DogFightDoors.doors[door].timer;
-            music_man.SetTrackEntryTimeByClass(TRACK_CLASS_ACTION, entry_time);
-            music_man.SetTrackEntryTimeByClass(TRACK_CLASS_NOMUSIC, entry_time);
+            music_man.SetTrackEntryTimeByClass(TRACK_CLASS_ACTION, DogFightDoors.doors[door].timer);
+            music_man.SetTrackEntryTimeByClass(TRACK_CLASS_NOMUSIC, DogFightDoors.doors[door].timer);
             return;
         }
     }

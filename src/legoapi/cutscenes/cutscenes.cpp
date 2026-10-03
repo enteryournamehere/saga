@@ -563,26 +563,22 @@ void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
                 continue;
             }
             CUTINFO *cut = system->cuts[i];
-            if (cut == NULL || cut->instance == NULL) {
+            instNUGCUTSCENE_s *instance = static_cast<instNUGCUTSCENE_s *>(cut->instance);
+            if (instance->rate <= 0.0f) {
                 continue;
             }
-            instNUGCUTSCENE_s *instance = static_cast<instNUGCUTSCENE_s *>(cut->instance);
-            if (instance->rate > 0.0f) {
-                for (CUTSCENESFX &sfx : cut->sfx) {
-                    if (sfx.id != -1 && cut->previous_frame < sfx.frame &&
-                        sfx.frame <= static_cast<instNUGCUTSCENE_s *>(cut->instance)->current_frame) {
-                        PlaySfxById(sfx.id, (sfx.flags & 1) != 0 ? &sfx.position : NULL);
-                    }
+            for (CUTSCENESFX &sfx : cut->sfx) {
+                if (sfx.id != -1 && cut->previous_frame <= sfx.frame && sfx.frame != cut->previous_frame &&
+                    sfx.frame <= instance->current_frame) {
+                    PlaySfxById(sfx.id, (sfx.flags & 1) != 0 ? &sfx.position : NULL);
                 }
             }
 
-            if ((i != stop_index || stop_index == -1) &&
-                instNuGCutSceneIsFinished(static_cast<instNUGCUTSCENE_s *>(cut->instance)) != 0) {
+            if ((i != stop_index || stop_index == -1) && instNuGCutSceneIsFinished(instance) != 0) {
                 if (CutScene_StoppedFn != NULL) {
                     CutScene_StoppedFn(cut);
                 }
                 if (CutInstEndCount < 4) {
-                    instance = static_cast<instNUGCUTSCENE_s *>(cut->instance);
                     CutInstEnd[CutInstEndCount++] = instance;
                     instance->flags_88 |= 2;
                 }
@@ -722,9 +718,7 @@ i32 CutScene_HasPlayed(CUTINFO *cut) {
     i32 has_played = 0;
     if (cutscene_index != -1) {
         world = WorldInfo_CurrentlyActive();
-        u32 bit = 1u;
-        bit <<= cutscene_index & 0x1f;
-        has_played = (world->level_progress->played_cutscene_mask & bit) != 0;
+        has_played = (world->level_progress->played_cutscene_mask & (1u << (cutscene_index & 0x1f))) != 0;
     }
     return has_played;
 }
@@ -1264,8 +1258,9 @@ static void CutScene_FindCharacters(NUGCUTSCENE_s *cutscene) {
 }
 
 static void CutScene_ResetCharacters(instNUGCUTSCENE_s *instance) {
-    NUGCUTCHARSYS_s *character_system = instance->cutscene->character_system;
+    NUGCUTSCENE_s *cutscene = instance->cutscene;
     instNUGCUTCHARSYS_s *character_instance = instance->character_instance;
+    NUGCUTCHARSYS_s *character_system = cutscene->character_system;
 
     i32 i = 0;
     while (i < character_system->character_count) {
@@ -2081,10 +2076,7 @@ void LevelComplete_LSW_Draw(STATUS_STAGE_s *stage, STATUSPACKET_s *packet, i32 a
 }
 
 void LevelComplete_LSW_Skip(STATUS_STAGE_s *stage, STATUSPACKET_s *packet) {
-    if (stage->type == 26 && packet->mission_state == 2) {
-        *packet->score = packet->reward_score;
-    }
-    if (stage->type == 23 && packet->challenge_state == 2) {
+    if ((stage->type == 26 && packet->mission_state == 2) || (stage->type == 23 && packet->challenge_state == 2)) {
         *packet->score = packet->reward_score;
     }
     NextStatusStage(packet);

@@ -55,7 +55,6 @@ extern "C" {
     void aieditor_cbShowCreaturesToggle(eduimenu_s *, eduiitem_s *, u32);
     void cbNearClipAtCursor(eduimenu_s *, eduiitem_s *, u32);
     NUVEC edpath_addoffset;
-    char *(*EdGetCnxFlagNames)(u32 flags);
     f32 default_path_node_radius = .25f;
     extern char *(*SpecialRouteCharacterNameFn)(u8);
 }
@@ -312,13 +311,7 @@ static void pathEditorDrawPath(EDAIPATH_s *path, i32 path_index) {
             vertices[1].colour = edge_colour;
             for (i32 side_index = 0; side_index < 2; ++side_index) {
                 NUVEC side;
-                if (node->radius == other->radius) {
-                    side.x = side_index == 0 ? direction.z : -direction.z;
-                    side.y = direction.y;
-                    side.z = side_index == 0 ? -direction.x : direction.x;
-                } else {
-                    NuVecRotateY(&side, &direction, side_index == 0 ? angle : -angle);
-                }
+                NuVecRotateY(&side, &direction, side_index == 0 ? angle : -angle);
                 vertices[0].position = node->position;
                 vertices[1].position = other->position;
                 vertices[0].position.x += node->radius * side.x;
@@ -1939,13 +1932,12 @@ extern "C" {
         }
         EDAIPATHNODE_s *node = (EDAIPATHNODE_s *)NuLinkedListGetHead(&path->nodes);
         while (node != nullptr) {
-            const i32 node_index = node->index;
 #define CHECK_PATH_CONNECTION(slot)                                                                                    \
     {                                                                                                                  \
         EDAIPATHNODE_s *other = node->connections[slot].node;                                                          \
-        if (other != nullptr && !(checked[node_index][other->index / 8] & (1 << (other->index % 8)))) {                \
-            checked[node_index][other->index / 8] |= 1 << (other->index % 8);                                          \
-            checked[other->index][node_index / 8] |= 1 << (node_index % 8);                                            \
+        if (other != nullptr && !(checked[node->index][other->index / 8] & (1 << (other->index % 8)))) {               \
+            checked[node->index][other->index / 8] |= 1 << (other->index % 8);                                         \
+            checked[other->index][node->index / 8] |= 1 << (node->index % 8);                                          \
             f32 fraction;                                                                                              \
             f32 width;                                                                                                 \
             i32 angle;                                                                                                 \
@@ -1953,7 +1945,7 @@ extern "C" {
                 result->on_path = 1;                                                                                   \
                 result->path = path;                                                                                   \
                 result->first = node;                                                                                  \
-                result->second = node->connections[slot].node;                                                         \
+                result->second = other;                                                                                \
                 result->fraction = fraction;                                                                           \
                 result->width = width;                                                                                 \
                 result->angle = angle;                                                                                 \
@@ -2276,13 +2268,10 @@ void pathEditor_Render(i32 x, i32 y, float x_scale, float y_scale) {
             NuQFntPrintEx(system_qfont, screen_x, screen_y - 40, 16, "Show Routes : \"%s\"", path->name);
             NuQFntSetColour(system_qfont, 0x80000000);
             NuQFntSetScale(system_qfont, x_scale, y_scale);
-            path = aieditor->current_path;
-            if (path != nullptr)
-                NuQFntPrintEx(system_qfont, screen_x, screen_y + 120, 16, "\"%s\"", path->name);
+            NuQFntPrintEx(system_qfont, screen_x, screen_y + 120, 16, "%s", aieditor->current_path->name);
             NuQFntPrintEx(system_qfont, screen_x, screen_y + 240, 16, "SQR - Sub menu");
             NuQFntPrintEx(system_qfont, screen_x, screen_y + 360, 16, "SELECT - Goto nearest");
-            path = aieditor->current_path;
-            if (path != nullptr && path->runtime_nearest >= 0) {
+            if (path->runtime_nearest >= 0) {
                 NuQFntPrintEx(system_qfont, screen_x, screen_y + 480, 16, "TRI - Set as start of route");
                 NuQFntPrintEx(system_qfont, screen_x, screen_y + 600, 16, "X - Set as end of route");
             }
@@ -2290,8 +2279,7 @@ void pathEditor_Render(i32 x, i32 y, float x_scale, float y_scale) {
             NuQFntPrintEx(system_qfont, screen_x, screen_y - 40, 16, "AI Path Editor: \"%s\"", path->name);
             NuQFntSetColour(system_qfont, 0x80000000);
             NuQFntSetScale(system_qfont, x_scale, y_scale);
-            path = aieditor->current_path;
-            if (path != nullptr && path->current_node != nullptr) {
+            if (path->current_node != nullptr) {
                 if (path->current_node->name[0] != '\0') {
                     NuQFntPrintEx(system_qfont, screen_x, screen_y + 120, 16, "\"%s\" %d nodes",
                                   path->current_node->name, path->node_count);
@@ -2299,51 +2287,30 @@ void pathEditor_Render(i32 x, i32 y, float x_scale, float y_scale) {
                     NuQFntPrintEx(system_qfont, screen_x, screen_y + 120, 16, "ix=%d, %d nodes",
                                   path->current_node->index, path->node_count);
                 }
-            } else if (path != nullptr) {
+            } else {
                 NuQFntPrintEx(system_qfont, screen_x, screen_y + 120, 16, "%d nodes", path->node_count);
             }
             NuQFntPrintEx(system_qfont, screen_x, screen_y + 240, 16, "SQR - Sub menu");
             NuQFntPrintEx(system_qfont, screen_x, screen_y + 360, 16, "SELECT - Select nearest");
-            path = aieditor->current_path;
             if (aieditor->flags & 1) {
                 NuQFntPrintEx(system_qfont, screen_x, screen_y + 480, 16, "X - Move selected");
                 NuQFntPrintEx(system_qfont, screen_x, screen_y + 600, 16, "TRI - Delete selected");
-                path = aieditor->current_path;
-                if (path != nullptr && path->current_node != nullptr) {
+                if (path->current_node != nullptr) {
                     NuQFntPrintEx(system_qfont, screen_x, screen_y + 840, 16, "LRIGHT - Increase radius, %.2f",
                                   path->current_node->radius);
                 } else {
                     NuQFntPrintEx(system_qfont, screen_x, screen_y + 840, 16, "LRIGHT - Increase radius");
                 }
                 NuQFntPrintEx(system_qfont, screen_x, screen_y + 960, 16, "LLEFT - Decrease radius");
-            } else if (path != nullptr && path->nearest_node != nullptr) {
+            } else if (path->nearest_node != nullptr) {
                 NuQFntPrintEx(system_qfont, screen_x, screen_y + 480, 16, "X - Select");
                 NuQFntPrintEx(system_qfont, screen_x, screen_y + 720, 16, "O - Link/unlink to selected");
-                if (EdGetCnxFlagNames != nullptr) {
-                    path = aieditor->current_path;
-                    if (path != nullptr && path->nearest_node != nullptr && path->current_node != nullptr) {
-                        EDAIPATHNODE_s *nearest = path->nearest_node;
-                        EDAIPATHNODE_s *current = path->current_node;
-                        for (i32 index = 0; index < 8; ++index) {
-                            if (current->connections[index].node != nearest)
-                                continue;
-                            char *names = EdGetCnxFlagNames(current->connections[index].flags);
-                            if (names != nullptr && NuStrLen(names) != 0) {
-                                NuQFntSetColour(system_qfont, 0x80808080);
-                                NuQFntPrintEx(system_qfont, 5120, 160, 64, names);
-                                NuQFntSetColour(system_qfont, 0x80808080);
-                            }
-                            break;
-                        }
-                    }
-                }
             } else {
                 NuQFntPrintEx(system_qfont, screen_x, screen_y + 480, 16, "X - Create");
             }
         }
     }
-    if (aieditorsettings.unknown_060_bit0 && aieditor->cached_path_system != nullptr &&
-        aieditor->current_path != nullptr) {
+    if (aieditorsettings.unknown_060_bit0 && aieditor->cached_path_system != nullptr) {
         AIPATH_s *runtime_path = aieditor->cached_path_system->paths[0];
         if (runtime_path != nullptr) {
             i32 current = aieditor->current_path->runtime_start;
@@ -2690,47 +2657,6 @@ static void DestroyAIPathNode(EDAIPATHNODE_s *node, EDAIPATH_s *path) {
     NuLinkedListAppend(&aieditor->free_path_nodes, &node->link);
 }
 
-static inline i32 pathEditor_FirstFreeConnection(EDAIPATHNODE_s *node) {
-    if (node->connections[0].node == NULL)
-        return 0;
-    if (node->connections[1].node == NULL)
-        return 1;
-    if (node->connections[2].node == NULL)
-        return 2;
-    if (node->connections[3].node == NULL)
-        return 3;
-    if (node->connections[4].node == NULL)
-        return 4;
-    if (node->connections[5].node == NULL)
-        return 5;
-    if (node->connections[6].node == NULL)
-        return 6;
-    if (node->connections[7].node == NULL)
-        return 7;
-    return -1;
-}
-
-static inline bool pathEditor_ConnectNodes(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) {
-    const i32 node_slot = pathEditor_FirstFreeConnection(node);
-    if (node_slot == -1)
-        return false;
-    const i32 other_slot = pathEditor_FirstFreeConnection(other);
-    if (other_slot == -1)
-        return false;
-    node->connections[node_slot].node = other;
-    node->connections[node_slot].flags = 0;
-    other->connections[other_slot].node = node;
-    other->connections[other_slot].flags = 0;
-    return true;
-}
-
-static inline bool pathEditor_HasConnection(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) {
-    return node->connections[0].node == other || node->connections[1].node == other ||
-           node->connections[2].node == other || node->connections[3].node == other ||
-           node->connections[4].node == other || node->connections[5].node == other ||
-           node->connections[6].node == other || node->connections[7].node == other;
-}
-
 eduimenu_s *pathEditor_Process(nupad_s *pad) {
     if (pad->digital_buttons_pressed & 0x80) {
         eduimenu_s *menu = eduiMenuCreate(200, 70, 240, 270, ed_fnt, aieditor_cbCancelMainMenu, "Options");
@@ -2839,25 +2765,7 @@ eduimenu_s *pathEditor_Process(nupad_s *pad) {
                 edcamSetPos(&aieditor->runtime_path->nodes[path->runtime_nearest].position);
                 path = aieditor->current_path;
             }
-            EDAIPATHNODE_s *node = NULL;
-            if (path != NULL) {
-                f32 nearest_distance = FLT_MAX;
-                for (EDAIPATHNODE_s *candidate = reinterpret_cast<EDAIPATHNODE_s *>(NuLinkedListGetHead(&path->nodes));
-                     candidate != NULL; candidate = reinterpret_cast<EDAIPATHNODE_s *>(
-                                            NuLinkedListGetNext(&path->nodes, &candidate->link))) {
-                    NUVEC delta;
-                    const f32 distance = NuVecXZDistSqr(&aieditor->cursor_position, &candidate->position, &delta);
-                    if (distance < nearest_distance) {
-                        const f32 height = aieditor->cursor_position.y - candidate->position.y;
-                        const f32 upper = NuFmax(0.2f, candidate->height_max);
-                        const f32 lower = NuFmin(-0.2f, candidate->height_min);
-                        if (height <= upper && height >= lower) {
-                            node = candidate;
-                            nearest_distance = distance;
-                        }
-                    }
-                }
-            }
+            EDAIPATHNODE_s *node = pathEditor_GetNearestNode(path, 0);
             path->current_node = node;
             if (aieditor->current_path->current_node)
                 edcamSetPos(&aieditor->current_path->current_node->position);
@@ -2889,7 +2797,19 @@ eduimenu_s *pathEditor_Process(nupad_s *pad) {
                         node->radius = previous->radius;
                         node->height_max = previous->height_max;
                         node->height_min = previous->height_min;
-                        bool connected = pathEditor_ConnectNodes(node, previous);
+                        bool connected = false;
+                        for (i32 i = 0; i < 8 && !connected; ++i)
+                            if (!node->connections[i].node) {
+                                for (i32 j = 0; j < 8; ++j)
+                                    if (!previous->connections[j].node) {
+                                        node->connections[i].node = previous;
+                                        node->connections[i].flags = 0;
+                                        previous->connections[j].node = node;
+                                        previous->connections[j].flags = 0;
+                                        connected = true;
+                                        break;
+                                    }
+                            }
                         if (!connected) {
                             DestroyAIPathNode(node, path);
                             aieditor->current_path->current_node = previous;
@@ -2930,7 +2850,12 @@ eduimenu_s *pathEditor_Process(nupad_s *pad) {
         path = aieditor->current_path;
         EDAIPATHNODE_s *node = path->current_node, *nearest = path->nearest_node;
         if (node && nearest && node != nearest) {
-            bool connected = pathEditor_HasConnection(node, nearest);
+            bool connected = false;
+            for (i32 i = 0; i < 8; ++i)
+                if (node->connections[i].node == nearest) {
+                    connected = true;
+                    break;
+                }
             if (connected) {
                 eduimenu_s *menu = eduiMenuCreate(200, 70, 240, 270, ed_fnt, pathEditor_cbCancelDisconnectNodeMenu,
                                                   "Disconnect current path node??");
@@ -2940,7 +2865,18 @@ eduimenu_s *pathEditor_Process(nupad_s *pad) {
                 }
                 return menu;
             }
-            connected = pathEditor_ConnectNodes(node, nearest);
+            for (i32 i = 0; i < 8 && !connected; ++i)
+                if (!node->connections[i].node) {
+                    for (i32 j = 0; j < 8; ++j)
+                        if (!nearest->connections[j].node) {
+                            node->connections[i].node = nearest;
+                            node->connections[i].flags = 0;
+                            nearest->connections[j].node = node;
+                            nearest->connections[j].flags = 0;
+                            connected = true;
+                            break;
+                        }
+                }
             NUVEC position = {nearest->position.x, aieditor->cursor_position.y, nearest->position.z};
             edcamSetPos(&position);
         }
@@ -2982,26 +2918,7 @@ eduimenu_s *pathEditor_Process(nupad_s *pad) {
             }
         } else {
             path = aieditor->current_path;
-            EDAIPATHNODE_s *nearest_node = NULL;
-            if (path != NULL) {
-                f32 nearest_distance = FLT_MAX;
-                for (EDAIPATHNODE_s *candidate = reinterpret_cast<EDAIPATHNODE_s *>(NuLinkedListGetHead(&path->nodes));
-                     candidate != NULL; candidate = reinterpret_cast<EDAIPATHNODE_s *>(
-                                            NuLinkedListGetNext(&path->nodes, &candidate->link))) {
-                    NUVEC delta;
-                    const f32 distance = NuVecXZDistSqr(&aieditor->cursor_position, &candidate->position, &delta);
-                    if (distance < nearest_distance) {
-                        const f32 height = aieditor->cursor_position.y - candidate->position.y;
-                        const f32 upper = NuFmax(0.2f, candidate->height_max);
-                        const f32 lower = NuFmin(-0.2f, candidate->height_min);
-                        if (height <= upper && height >= lower) {
-                            nearest_node = candidate;
-                            nearest_distance = distance;
-                        }
-                    }
-                }
-            }
-            path->current_node = nearest_node;
+            path->current_node = pathEditor_GetNearestNode(path, 0);
             EDAIPATHNODE_s *node = aieditor->current_path->current_node;
             if (node) {
                 if (edpath_addoffset.x != 0 || edpath_addoffset.y != 0 || edpath_addoffset.z != 0) {
@@ -3085,7 +3002,6 @@ eduimenu_s *pathEditor_Process(nupad_s *pad) {
                                                                                   : NuLinkedListGetTail(&path->nodes));
         path = aieditor->current_path;
         if (named_only && path->current_node && NuStrLen(path->current_node->name) == 0) {
-            path = aieditor->current_path;
             EDAIPATHNODE_s *start = path->current_node;
             do {
                 path = aieditor->current_path;
@@ -3101,7 +3017,6 @@ eduimenu_s *pathEditor_Process(nupad_s *pad) {
                     break;
             } while (NuStrLen(path->current_node->name) == 0);
         }
-        path = aieditor->current_path;
         if (path->current_node)
             edcamSetPos(&path->current_node->position);
     }

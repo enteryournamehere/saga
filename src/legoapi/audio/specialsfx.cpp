@@ -179,7 +179,7 @@ void EngineNoiseCode(GameObject_s *object, i32 silent) {
     f32 target = 0.0f;
     if (silent == 0) {
         f32 speed;
-        if (object->apiobj.player_controlled) {
+        if (static_cast<i8>(object->apiobj.flags_low) < 0) {
             speed = *reinterpret_cast<f32 *>(reinterpret_cast<u8 *>(&object->player_packet) + 0x714);
             if (speed < 0.0f) {
                 speed = -speed;
@@ -193,7 +193,7 @@ void EngineNoiseCode(GameObject_s *object, i32 silent) {
     f32 &engine_level = *reinterpret_cast<f32 *>(reinterpret_cast<u8 *>(&object->player_packet) + 0x6e0);
     engine_level = SeekLinearF(engine_level, target, FRAMETIME * 0.5f);
     f32 volume = engine_level * 0.5f + 0.5f;
-    if (!object->apiobj.player_controlled) {
+    if (static_cast<i8>(object->apiobj.flags_low) >= 0) {
         volume *= 0.6f;
     }
     f32 variation = static_cast<f32>(qrand()) * 1.5259022e-5f * 0.03f + 0.985f;
@@ -336,286 +336,113 @@ void SetSpecialSfxBits(i32 *sfx_ids, i32 *sfx_count, WORLDINFO_s *world) {
 
 extern "C" i32 GetSfxIdN(char *, i32);
 
+template <typename T> static inline void EffectField(debinftype *effect, usize offset, T value) {
+    *reinterpret_cast<T *>(reinterpret_cast<u8 *>(effect) + offset) = value;
+}
+
 void FileLoadSingleEffectType(debinftype *effect, i32 version, char category) {
-    // Records are versioned field streams, not images of the runtime struct.
+    // The file record is not a byte-for-byte image of debinftype (runtime
+    // fields and padding differ). The shipped area pages use version 34.
+    if (version < 34 || version > 41) {
+        return;
+    }
+
+    u8 *bytes = reinterpret_cast<u8 *>(effect);
     EdFileRead(effect->name, sizeof(effect->name));
     effect->category = static_cast<u8>(category);
-    if (version < 28) {
-        const i16 rate = EdFileReadShort();
-        effect->frequency = rate > 0 ? static_cast<i16>(rate * 60) : rate == 0 ? 0 : static_cast<i16>(-60 / rate);
-        effect->max_particles = EdFileReadShort();
-        effect->emission_period = static_cast<f32>(EdFileReadShort()) / 60.0f;
-        effect->emission_period_random = static_cast<f32>(EdFileReadShort()) / 60.0f;
-        effect->emission_pause = static_cast<f32>(EdFileReadShort()) / 60.0f;
-        effect->emission_pause_random = static_cast<f32>(EdFileReadShort()) / 60.0f;
-        effect->start_offset_random = static_cast<f32>(EdFileReadShort()) / 60.0f;
-    } else {
-        effect->frequency = EdFileReadShort();
-        effect->max_particles = EdFileReadShort();
-        effect->emission_period = EdFileReadFloat();
-        effect->emission_period_random = EdFileReadFloat();
-        effect->emission_pause = EdFileReadFloat();
-        effect->emission_pause_random = EdFileReadFloat();
-        effect->start_offset_random = EdFileReadFloat();
-    }
+    effect->frequency = EdFileReadShort();
+    effect->max_particles = EdFileReadShort();
+    effect->emission_period = EdFileReadFloat();
+    effect->emission_period_random = EdFileReadFloat();
+    effect->emission_pause = EdFileReadFloat();
+    effect->emission_pause_random = EdFileReadFloat();
+    effect->start_offset_random = EdFileReadFloat();
     if (effect->frequency != 0) {
         const f32 minimum_period = 1.0f / static_cast<f32>(effect->frequency);
-        if (effect->emission_period_random <= minimum_period && effect->emission_period_random != minimum_period)
+        if (effect->emission_period_random <= minimum_period && effect->emission_period_random != minimum_period) {
             effect->emission_period_random = minimum_period;
+        }
     }
 
     effect->generator_type = static_cast<u8>(EdFileReadChar());
     effect->momentum_adjustment_type = static_cast<u8>(EdFileReadChar());
-    if (version >= 35)
-        effect->cutscene_only = static_cast<u8>(EdFileReadChar());
-    else
-        effect->cutscene_only = 0;
+    effect->cutscene_only = version >= 35 ? static_cast<u8>(EdFileReadChar()) : 0;
     effect->disabled = 0;
     effect->particle_type = static_cast<u8>(EdFileReadChar());
     if (version < 39)
         EdFileReadChar();
     effect->status = 1;
-    if (version >= 40)
-        effect->camera_facing = static_cast<u8>(EdFileReadChar());
-    else
-        effect->camera_facing = 0;
+    effect->camera_facing = version >= 40 ? static_cast<u8>(EdFileReadChar()) : 0;
 
-    *reinterpret_cast<f32 *>(effect->fields_030) = EdFileReadFloat();
-    if (version >= 6) {
-        effect->cut_on = EdFileReadFloat();
-        effect->clip_extent = EdFileReadFloat();
-    } else {
-        effect->cut_on = 0.0f;
-        effect->clip_extent = 25.0f;
+    for (usize offset = 0x30; offset <= 0xa4; offset += sizeof(f32)) {
+        EffectField<f32>(effect, offset, EdFileReadFloat());
     }
-    if (version >= 10)
-        effect->sound_range = EdFileReadFloat();
-    else
-        effect->sound_range = 0.0f;
-    if (version >= 23)
-        effect->sound_range_override = EdFileReadFloat();
-    else
-        effect->sound_range_override = 0.0f;
-    if (version >= 24)
-        effect->field_044 = EdFileReadFloat();
-    else
-        effect->field_044 = 0.5f;
-    if (version < 7) {
-        EdFileReadInt();
-        EdFileReadInt();
-    }
-    effect->field_048 = EdFileReadFloat();
-    effect->field_04c = EdFileReadFloat();
-    effect->field_050 = EdFileReadFloat();
-    effect->field_054 = EdFileReadFloat();
-    if (version < 18) {
-        EdFileReadFloat();
-        EdFileReadFloat();
-        EdFileReadFloat();
-    }
-    effect->field_058 = EdFileReadFloat();
-    effect->field_05c = EdFileReadFloat();
-    effect->field_060 = EdFileReadFloat();
-    if (version < 18) {
-        EdFileReadFloat();
-        EdFileReadFloat();
-        EdFileReadFloat();
-    }
-    if ((version == 18 || version == 19) && effect->generator_type == 6) {
-        effect->field_054 += effect->field_054;
-        effect->field_060 += effect->field_060;
-    }
-    if (version >= 29) {
-        effect->emitter_velocity.x = EdFileReadFloat();
-        effect->emitter_velocity.y = EdFileReadFloat();
-        effect->emitter_velocity.z = EdFileReadFloat();
-    } else {
-        effect->emitter_velocity.x = effect->emitter_velocity.y = effect->emitter_velocity.z = 0.0f;
+    EffectField<i16>(effect, 0xa8, EdFileReadShort());
+    bytes[0xaa] = static_cast<u8>(EdFileReadChar());
+    bytes[0xab] = static_cast<u8>(EdFileReadChar());
+    for (usize offset = 0xac; offset <= 0xbc; offset += sizeof(f32)) {
+        EffectField<f32>(effect, offset, EdFileReadFloat());
     }
 
-    for (usize i = 0; i < sizeof(effect->fields_070) / sizeof(f32); ++i)
-        reinterpret_cast<f32 *>(effect->fields_070)[i] = EdFileReadFloat();
-    effect->field_0a0 = EdFileReadFloat();
-    effect->particle_lifetime = EdFileReadFloat();
-    effect->field_0a8 = EdFileReadShort();
-    effect->field_0aa = static_cast<u8>(EdFileReadChar());
-    effect->field_0ab = static_cast<u8>(EdFileReadChar());
-    effect->field_0ac = EdFileReadFloat();
-    effect->jib_x_frequency = EdFileReadFloat();
-    effect->jib_x_amplitude = EdFileReadFloat();
-    effect->jib_y_frequency = EdFileReadFloat();
-    effect->jib_y_amplitude = EdFileReadFloat();
-    if (version >= 33) {
-        for (i32 i = 0; i < 8; ++i) {
-            effect->colour_keys[i].time = EdFileReadFloat();
-            effect->colour_keys[i].red = EdFileReadUnsignedChar();
-            effect->colour_keys[i].green = EdFileReadUnsignedChar();
-            effect->colour_keys[i].blue = EdFileReadUnsignedChar();
-            effect->colour_keys[i].alpha = EdFileReadUnsignedChar();
-        }
-    } else {
-        for (i32 i = 0; i < 8; ++i) {
-            effect->colour_keys[i].time = EdFileReadFloat();
-            effect->colour_keys[i].red = static_cast<u8>(static_cast<i32>(EdFileReadFloat()));
-            effect->colour_keys[i].green = static_cast<u8>(static_cast<i32>(EdFileReadFloat()));
-            effect->colour_keys[i].blue = static_cast<u8>(static_cast<i32>(EdFileReadFloat()));
-        }
+    for (usize offset = 0xc0; offset <= 0xf8; offset += 8) {
+        EffectField<f32>(effect, offset, EdFileReadFloat());
+        bytes[offset + 4] = EdFileReadUnsignedChar();
+        bytes[offset + 5] = EdFileReadUnsignedChar();
+        bytes[offset + 6] = EdFileReadUnsignedChar();
+        bytes[offset + 7] = EdFileReadUnsignedChar();
     }
-    for (i32 i = 0; i < 8; ++i) {
-        effect->alpha_keys[i].time = EdFileReadFloat();
-        effect->alpha_keys[i].value = EdFileReadFloat();
+    for (usize offset = 0x100; offset <= 0x13c; offset += sizeof(f32)) {
+        EffectField<f32>(effect, offset, EdFileReadFloat());
     }
-    if (version >= 21) {
-        effect->field_140 = EdFileReadFloat();
-        effect->field_144 = EdFileReadFloat();
-    } else {
-        effect->field_140 = 0.125f;
-        effect->field_144 = 0.125f;
+    EffectField<f32>(effect, 0x140, EdFileReadFloat());
+    EffectField<f32>(effect, 0x144, EdFileReadFloat());
+    for (usize offset = 0x148; offset <= 0x2a4; offset += sizeof(f32)) {
+        EffectField<f32>(effect, offset, EdFileReadFloat());
     }
-    effect->min_size = EdFileReadFloat();
-    effect->max_size = EdFileReadFloat();
-    for (i32 i = 0; i < 8; ++i) {
-        effect->width_keys[i].time = EdFileReadFloat();
-        effect->width_keys[i].value = EdFileReadFloat();
+    for (usize offset = 0; offset < sizeof(effect->fields_2b0); offset += sizeof(f32)) {
+        *reinterpret_cast<f32 *>(effect->fields_2b0 + offset) = EdFileReadFloat();
     }
-    for (i32 i = 0; i < 8; ++i) {
-        effect->height_keys[i].time = EdFileReadFloat();
-        effect->height_keys[i].value = EdFileReadFloat();
-    }
-    effect->min_rotation = EdFileReadFloat();
-    effect->max_rotation = EdFileReadFloat();
-    for (i32 i = 0; i < 8; ++i) {
-        effect->rotation_keys[i].time = EdFileReadFloat();
-        effect->rotation_keys[i].value = EdFileReadFloat();
-    }
-    for (i32 i = 0; i < 8; ++i) {
-        effect->field_218_keys[i].time = EdFileReadFloat();
-        effect->field_218_keys[i].value = EdFileReadFloat();
-    }
-    for (i32 i = 0; i < 8; ++i) {
-        effect->field_258_keys[i].time = EdFileReadFloat();
-        effect->field_258_keys[i].value = EdFileReadFloat();
-    }
-    effect->texture_u0 = EdFileReadFloat();
-    effect->texture_v0 = EdFileReadFloat();
-    effect->texture_u1 = EdFileReadFloat();
-    effect->texture_v1 = EdFileReadFloat();
 
-    if (version >= 3) {
-        for (i32 i = 0; i < 8; ++i) {
-            effect->collision_keys[i].time = EdFileReadFloat();
-            effect->collision_keys[i].value = EdFileReadFloat();
-        }
-        effect->process_spheres = static_cast<u8>(EdFileReadChar());
-    } else {
-        effect->process_spheres = 0;
-    }
-    if (version >= 17)
-        effect->time_group = static_cast<i8>(EdFileReadChar());
-    else
-        effect->time_group = 0;
-    if (effect->particle_type == 7)
+    effect->process_spheres = static_cast<u8>(EdFileReadChar());
+    effect->time_group = static_cast<u8>(EdFileReadChar());
+    if (effect->particle_type == 7) {
         effect->time_group = 2;
-    if (version >= 31)
-        effect->field_2f2 = static_cast<u8>(EdFileReadChar());
-    else
-        effect->field_2f2 = 3;
-    if (version >= 32) {
-        effect->use_explicit_clip_box = static_cast<u8>(EdFileReadChar());
-        effect->repeat_box.x = EdFileReadFloat();
-        effect->repeat_box.y = EdFileReadFloat();
-        effect->repeat_box.z = EdFileReadFloat();
-    } else {
-        effect->use_explicit_clip_box = 0;
-        effect->repeat_box.x = 1.0f;
-        effect->repeat_box.y = 1.0f;
-        effect->repeat_box.z = 1.0f;
     }
-    if (version >= 36)
-        effect->thinning = EdFileReadFloat();
-    else
-        effect->thinning = 4.0f;
-    if (version == 36 && effect->thinning < 4.0f)
-        effect->thinning = 4.0f;
-    if (!(version >= 30)) {
-        effect->torus_radius1 = 1.0f;
-        effect->torus_radius2 = 0.1f;
-        effect->torus_lifetime = 0.0f;
-        effect->torus_keys1[0].time = effect->torus_keys1[0].value = 0.0f;
-        effect->torus_keys1[1].time = effect->torus_keys1[1].value = 1.0f;
-        effect->torus_keys2[0].time = effect->torus_keys2[0].value = 0.0f;
-        effect->torus_keys2[1].time = effect->torus_keys2[1].value = 1.0f;
-        effect->torus_keys3[0].time = effect->torus_keys3[0].value = 0.0f;
-        effect->torus_keys3[1].time = effect->torus_keys3[1].value = 1.0f;
-    } else {
-        effect->torus_radius1 = EdFileReadFloat();
-        effect->torus_radius2 = EdFileReadFloat();
-        effect->torus_lifetime = EdFileReadFloat();
-        for (i32 i = 0; i < 8; ++i) {
-            effect->torus_keys1[i].time = EdFileReadFloat();
-            effect->torus_keys1[i].value = EdFileReadFloat();
-        }
-        for (i32 i = 0; i < 8; ++i) {
-            effect->torus_keys2[i].time = EdFileReadFloat();
-            effect->torus_keys2[i].value = EdFileReadFloat();
-        }
-        for (i32 i = 0; i < 8; ++i) {
-            effect->torus_keys3[i].time = EdFileReadFloat();
-            effect->torus_keys3[i].value = EdFileReadFloat();
-        }
+    effect->field_2f2 = static_cast<u8>(EdFileReadChar());
+    effect->use_explicit_clip_box = static_cast<u8>(EdFileReadChar());
+    *reinterpret_cast<f32 *>(effect->fields_2f8 + 0x0) = EdFileReadFloat();
+    *reinterpret_cast<f32 *>(effect->fields_2f8 + 0x4) = EdFileReadFloat();
+    *reinterpret_cast<f32 *>(effect->fields_2f8 + 0x8) = EdFileReadFloat();
+    effect->thinning = version >= 36 ? EdFileReadFloat() : 4.0f;
+    for (usize offset = 0xc; offset < sizeof(effect->fields_2f8); offset += sizeof(f32)) {
+        *reinterpret_cast<f32 *>(effect->fields_2f8 + offset) = EdFileReadFloat();
     }
 
-    for (i32 i = 0; i < 8; ++i)
+    for (usize i = 0; i < sizeof(effect->particle_keys) / sizeof(effect->particle_keys[0]); ++i) {
         effect->particle_keys[i] = -1;
-    if (version < 23) {
-        if (version < 11) {
-            for (i32 i = 0; i < 4; ++i) {
-                effect->sound_data[i * 3] = -1;
-                effect->sound_data[i * 3 + 1] = 0;
-                effect->sound_data[i * 3 + 2] = 0;
-            }
-        } else {
-            for (i32 i = 0; i < 12; ++i)
-                effect->sound_data[i] = EdFileReadInt();
-        }
-    } else {
-        const i32 stored_sound_count = EdFileReadInt();
-        const i32 sound_count = MAX(0, stored_sound_count);
-        for (i32 i = 0; i < sound_count; ++i) {
-            char sound_name[16];
-            EdFileRead(sound_name, sizeof(sound_name));
-            const i32 sound_id = GetSfxIdN(sound_name, sizeof(sound_name));
-            const i32 first = EdFileReadInt();
-            const i32 second = EdFileReadInt();
-            if (i < 4) {
-                effect->sound_data[i * 3] = sound_id;
-                effect->sound_data[i * 3 + 1] = first;
-                effect->sound_data[i * 3 + 2] = second;
-            }
-        }
-        for (i32 i = MIN(sound_count, 4); i < 4; ++i)
-            effect->sound_data[i * 3] = -1;
     }
-    if (version >= 16) {
-        effect->trail_count = static_cast<i8>(version >= 41 ? EdFileReadChar() : EdFileReadInt());
-        effect->trail_time = EdFileReadFloat();
-    } else {
-        effect->trail_count = 0;
-        effect->trail_time = 0.0f;
+    for (usize i = 0; i < sizeof(effect->sound_data) / sizeof(effect->sound_data[0]); i += 3) {
+        effect->sound_data[i] = -1;
     }
-    if (version >= 25) {
-        effect->radial_segments = static_cast<u8>(version >= 41 ? EdFileReadChar() : EdFileReadInt());
-        effect->radial_floor = EdFileReadFloat();
-    } else {
-        effect->radial_segments = 5;
-        effect->radial_floor = 0.5f;
+    const i32 sound_count = EdFileReadInt();
+    for (i32 i = 0; i < sound_count; ++i) {
+        char sound_name[16];
+        EdFileRead(sound_name, sizeof(sound_name));
+        const usize index = static_cast<usize>(i) * 3;
+        effect->sound_data[index] = GetSfxIdN(sound_name, sizeof(sound_name));
+        effect->sound_data[index + 1] = EdFileReadInt();
+        effect->sound_data[index + 2] = EdFileReadInt();
     }
-    if (version >= 26)
-        effect->scale_in_time = EdFileReadFloat();
-    else
-        effect->scale_in_time = 0.0f;
+
+    effect->trail_count = static_cast<u8>(version == 41 ? EdFileReadChar() : EdFileReadInt());
+    effect->trail_time = EdFileReadFloat();
+    effect->radial_segments = static_cast<u8>(version == 41 ? EdFileReadChar() : EdFileReadInt());
+    effect->radial_floor = EdFileReadFloat();
+    effect->scale_in_time = EdFileReadFloat();
     effect->scale = 1.0f;
     effect->unscaled_effect_index = 0;
-    if (NuStrCmp(effect->name, (char *)"STARDESTROYER") == 0)
+
+    if (NuStrCmp(effect->name, (char *)"STARDESTROYER") == 0) {
         effect->frequency = 0;
+    }
 }

@@ -13,9 +13,6 @@ typedef struct EPISODEDATA {
 } EPISODEDATA;
 
 #ifdef __cplusplus
-static_assert(sizeof(EPISODEDATA) == 0x1c, "EPISODEDATA size");
-static_assert(offsetof(EPISODEDATA, area_ids) == 0x4, "EPISODEDATA area list offset");
-
 extern "C" {
 #endif
     extern EPISODEDATA *EDataList;
@@ -35,5 +32,6 @@ i32 Episode_IsComplete(EPISODEDATA *episode, i32 *completed_area_count);
 i32 Episodes_Completed();
 
 u32 Episode_FindAreaFromFlags(EPISODEDATA *ep, u32 flags, u32 want);
+
 
 #endif

@@ -1,5 +1,4 @@
 #include "nu2api/nucore/nuthread.h"
-#include "nu2api/nucore/nuvuvec.hpp"
 
 NuThreadManager::NuThreadManager() {
     this->bitflags = 0;

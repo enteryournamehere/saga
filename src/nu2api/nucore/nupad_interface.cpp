@@ -208,9 +208,8 @@ const NuInputDevice *NuInputManager::GetFirstDeviceByType(NUPADTYPE type) const 
     return NULL;
 }
 
-i32 NuInputDevicePS::GetIdentifierPS(u32) {
+void NuInputDevicePS::GetIdentifierPS(u32) {
     STUBBED();
-    return 0;
 }
 
 void NuTouchInputStick::Render() {

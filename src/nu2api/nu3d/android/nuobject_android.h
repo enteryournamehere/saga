@@ -4,7 +4,6 @@
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/nu3d/nuspecial.h"
-#include "nu2api/nu3d/nugeom.h"
 
 struct NuFadeObjGType;
 
@@ -23,6 +22,4 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-
-i32 NuFadeSetFxCodeMtls(nugeom_s *geometry, u8 *material_codes);
 #endif

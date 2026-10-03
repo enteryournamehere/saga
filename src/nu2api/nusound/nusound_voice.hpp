@@ -27,7 +27,6 @@ class NuSoundEffect;
 class NuSoundHandle;
 class NuSoundListener;
 class NuSoundRoutingTable;
-class NuCriticalSection;
 struct nuvec_s;
 struct VuMtx;
 struct VuVec;
@@ -142,8 +141,7 @@ class NuSoundVoice : public NuSoundBufferCallback {
     f32 field130_0x144;
     i32 field131_0x148; // -1
 
-    static NuCriticalSection sStateCriticalSection;
-    static NuCriticalSection sReleaseCriticalSection;
+    static pthread_mutex_t sStateCriticalSection;
 
   public:
     NuSoundVoice(NuSoundSource *sound_source, bool loop);

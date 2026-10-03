@@ -17,7 +17,6 @@ extern float DIEAIRJUMPSPEED;
 extern NUVEC CustomisePos[2];
 extern "C" f32 CameraEmitterDistance(NUVEC *position);
 void Move_BEAST(GameObject_s *object);
-void Move_DEFAULT(GameObject_s *object);
 void Move_VEHICLE(GameObject_s *object);
 void Move_JEDI(GameObject_s *object);
 void Move_DROIDGENERIC(GameObject_s *object);

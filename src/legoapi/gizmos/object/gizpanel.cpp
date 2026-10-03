@@ -267,7 +267,7 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
                 models.state_on = 0x110;
                 models.target = 0x113;
                 models.arm = 0x112;
-                models.arm_offset = {0.0f, 0.245f, -0.19f};
+                models.arm_offset = {0.0f, 0.245f, 0.19f};
                 break;
             case 3:
                 models.base = 0x114;
@@ -277,7 +277,7 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
                 models.state_on = 0x117;
                 models.target = 0x11a;
                 models.arm = 0x119;
-                models.arm_offset = {0.0f, 0.34f, -0.17f};
+                models.arm_offset = {0.0f, 0.34f, 0.17f};
                 break;
             default:
                 break;
@@ -304,8 +304,9 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
             NuVecRotateY(&picture_offset, &picture_offset, panel.y_rotation);
             NuVecRotateY(&transition_offset, &transition_offset, panel.y_rotation);
 
+            NUMTX animation_base = base_matrix;
             NUMTX transition_base = base_matrix;
-            NuMtxTranslate(&base_matrix, &picture_offset);
+            NuMtxTranslate(&animation_base, &picture_offset);
             NuMtxTranslate(&transition_base, &transition_offset);
 
             NUMTX animated_matrix;
@@ -326,7 +327,7 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
             animated_matrix.m30 = 0.0f;
             animated_matrix.m31 = 0.0f;
             animated_matrix.m32 = 0.0f;
-            NuMtxMulVU0(&animated_matrix, &animated_matrix, &base_matrix);
+            NuMtxMulVU0(&animated_matrix, &animated_matrix, &animation_base);
             NuSpecialDrawAtAlpha(&world->lev_objs[models.animated].special, &animated_matrix, 1.0f);
         }
 
@@ -334,16 +335,17 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
             panel.target_offset.y != 2000000.0f && models.target != -1 && world->lev_objs[models.target].active != 0) {
             NUVEC target_position;
             GizPanel_GetAbsTargetPos(&panel, &target_position, 0);
-            NuMtxSetRotationY(&base_matrix, target_spin);
+            NUMTX target_matrix;
+            NuMtxSetRotationY(&target_matrix, target_spin);
             if (panel.target_roll != 0) {
-                NuMtxRotateZ(&base_matrix, panel.target_roll);
+                NuMtxRotateZ(&target_matrix, panel.target_roll);
             }
             if (panel.target_pitch != 0) {
-                NuMtxRotateX(&base_matrix, panel.target_pitch);
+                NuMtxRotateX(&target_matrix, panel.target_pitch);
             }
-            NuMtxTranslate(&base_matrix, &target_position);
-            NuMtxPreScaleU(&base_matrix, panel.target_scale);
-            NuSpecialDrawAtAlpha(&world->lev_objs[models.target].special, &base_matrix,
+            NuMtxTranslate(&target_matrix, &target_position);
+            NuMtxPreScaleU(&target_matrix, panel.target_scale);
+            NuSpecialDrawAtAlpha(&world->lev_objs[models.target].special, &target_matrix,
                                  (panel.flags & 1) != 0 ? 0.0f : target_alpha);
         }
 
@@ -352,13 +354,14 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
             NUVEC arm_offset = models.arm_offset;
             NuVecRotateX(&arm_offset, &arm_offset, panel.arm_x_rotation);
             NuVecRotateY(&arm_offset, &arm_offset, panel.y_rotation);
-            NuMtxSetRotationX(&base_matrix, panel.arm_x_rotation);
-            NuMtxRotateY(&base_matrix, panel.y_rotation);
-            NuMtxPreRotateX(&base_matrix, panel.target_x_rotation);
-            NuMtxRotateY(&base_matrix, panel.target_y_rotation);
-            NuMtxTranslate(&base_matrix, &panel.position);
-            NuMtxTranslate(&base_matrix, &arm_offset);
-            NuSpecialDrawAt(&world->lev_objs[models.arm].special, &base_matrix);
+            NUMTX arm_matrix;
+            NuMtxSetRotationX(&arm_matrix, panel.arm_x_rotation);
+            NuMtxRotateY(&arm_matrix, panel.y_rotation);
+            NuMtxPreRotateX(&arm_matrix, panel.target_x_rotation);
+            NuMtxRotateY(&arm_matrix, panel.target_y_rotation);
+            NuMtxTranslate(&arm_matrix, &panel.position);
+            NuMtxTranslate(&arm_matrix, &arm_offset);
+            NuSpecialDrawAt(&world->lev_objs[models.arm].special, &arm_matrix);
         }
         if (flashing) {
             NuSpecialConstTint(0, NULL);
@@ -395,12 +398,12 @@ static i32 GizPanel_GetNumOutputs(GIZMO *) {
 static void GizPanel_Activate(GIZMO *gizmo, i32 active) {
     if (gizmo != NULL && gizmo->object != NULL) {
         GIZPANEL *panel = static_cast<GIZPANEL *>(gizmo->object);
-        if (__builtin_expect(active != 0, 1)) {
-            panel->flags = static_cast<GIZPANEL_FLAGS>(panel->flags | GIZPANEL_FLAG_TRACK_PLAYER);
-            GizPanel_Reset(panel);
-        } else {
+        if (active == 0) {
             panel->flags = static_cast<GIZPANEL_FLAGS>(panel->flags & ~GIZPANEL_FLAG_TRACK_PLAYER);
+            return;
         }
+        panel->flags = static_cast<GIZPANEL_FLAGS>(panel->flags | GIZPANEL_FLAG_TRACK_PLAYER);
+        GizPanel_Reset(panel);
     }
 }
 
@@ -618,14 +621,20 @@ ADDGIZMOTYPE *GizPanel_RegisterGizmo(i32 type_id) {
     addtype = Default_ADDGIZMOTYPE;
 
     addtype.name = "Panel";
-    addtype.prefix = "";
     addtype.fns.unknown1 = 0xc;
-    addtype.fns.get_max_gizmos_fn = GizPanel_GetMaxGizmos;
-    addtype.fns.add_gizmos_fn = GizPanel_AddGizmos;
+    addtype.prefix = "";
     addtype.fns.early_update_fn = NULL;
-    addtype.fns.late_update_fn = GizPanel_Update;
-    addtype.fns.draw_fn = GizPanel_Draw;
     addtype.fns.panel_draw_fn = NULL;
+    addtype.fns.get_visibility_fn = NULL;
+    addtype.fns.get_max_gizmos_fn = GizPanel_GetMaxGizmos;
+    addtype.fns.get_pos_fn = NULL;
+    addtype.fns.using_special_fn = NULL;
+    addtype.fns.add_gizmos_fn = GizPanel_AddGizmos;
+    addtype.fns.bolt_hit_plat_fn = NULL;
+    addtype.fns.get_best_bolt_target_fn = NULL;
+    addtype.fns.late_update_fn = GizPanel_Update;
+    addtype.fns.bolt_hit_fn = NULL;
+    addtype.fns.draw_fn = GizPanel_Draw;
     addtype.fns.get_gizmo_name_fn = GizPanel_GetGizmoName;
     addtype.fns.get_output_fn = GizPanel_GetOutput;
     addtype.fns.get_output_name_fn = GizPanel_GetOutputName;
@@ -633,12 +642,6 @@ ADDGIZMOTYPE *GizPanel_RegisterGizmo(i32 type_id) {
     addtype.fns.activate_fn = GizPanel_Activate;
     addtype.fns.activate_rev_fn = NULL;
     addtype.fns.set_visibility_fn = GizPanel_SetVisibility;
-    addtype.fns.get_visibility_fn = NULL;
-    addtype.fns.get_pos_fn = NULL;
-    addtype.fns.using_special_fn = NULL;
-    addtype.fns.bolt_hit_plat_fn = NULL;
-    addtype.fns.get_best_bolt_target_fn = NULL;
-    addtype.fns.bolt_hit_fn = NULL;
     addtype.fns.allocate_progress_data_fn = GizPanels_AllocateProgressData;
     addtype.fns.clear_progress_fn = GizPanels_ClearProgress;
     addtype.fns.store_progress_fn = GizPanels_StoreProgress;

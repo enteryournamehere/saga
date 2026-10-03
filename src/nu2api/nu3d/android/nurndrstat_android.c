@@ -251,7 +251,7 @@ extern "C" {
     }
 
     void RndrStateCopyGlobalState(NUGLOBALRNDRSTATE *state) {
-        *state = render_state;
+        memcpy(state, &render_state, sizeof(*state));
         state->fog_state = NULL;
         state->camera_state = NULL;
         state->light_state = NULL;

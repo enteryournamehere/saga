@@ -311,7 +311,6 @@ struct EdEnumControl : EdControl {
         i32 value;
     };
     Item *items;
-    static void operator delete(void *);
 
     void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
     char *GetEnumString(i32);
@@ -326,7 +325,6 @@ struct EdEnumControl : EdControl {
 };
 struct EdBitControl : EdEnumControl {
     u32 bit_mask;
-    static void operator delete(void *);
 
     void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
     void Refresh() override;
@@ -651,7 +649,6 @@ struct EdRegistry {
 };
 struct EdSpecialObjectControl : EdControl {
     eduimenu_s *menu;
-    static void operator delete(void *);
     EdSpecialObjectControl();
     void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
     void Process(EdInputContext &) override;
@@ -679,8 +676,6 @@ struct EdStringControl : EdControl {
     static void cbChanged(eduimenu_s *, eduiitem_s *, u32);
     static void cbPress(eduimenu_s *, eduiitem_s *, u32);
 };
-inline EdStringControl::~EdStringControl() {
-}
 struct EdSfxNameControl : EdStringControl {
     EdSfxNameControl();
     void AddMenuItem(eduimenu_s *, EdRef *, void *) override;

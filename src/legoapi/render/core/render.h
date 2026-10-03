@@ -5,7 +5,6 @@
 #include "legoapi/legoapi_types.h"
 
 // Core rendering helpers.
-void Draw3DObjectMtx(WORLDINFO_s *world, i32 object_index, numtx_s *matrix);
 
 extern void (*DisguiseAdjustFn)(i32 character_id, i32 hat, NUVEC *scale, NUVEC *offset);
 

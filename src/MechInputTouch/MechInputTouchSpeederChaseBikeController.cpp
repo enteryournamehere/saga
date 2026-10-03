@@ -39,11 +39,11 @@ i32 MechInputTouchSpeederChaseController::IsSwipeAgainstDirection(NuVec2 const &
     bool result;
     if (direction) {
         result = IsDownSwipe(start, end);
-        
+        asm goto("testb %%al, %%al\n\tjne %l[hit]" : : "a"(result) : "cc" : hit);
         return 0;
     }
     result = IsUpSwipe(start, end);
-    
+    asm goto("testb %%al, %%al\n\tje %l[miss]" : : "a"(result) : "cc" : miss);
 hit:
     return 1;
 miss:
@@ -59,11 +59,11 @@ i32 MechInputTouchSpeederChaseController::IsSwipeWithDirection(NuVec2 const &sta
     bool result;
     if (!direction) {
         result = IsDownSwipe(start, end);
-        
+        asm goto("testb %%al, %%al\n\tjne %l[hit]" : : "a"(result) : "cc" : hit);
         return 0;
     }
     result = IsUpSwipe(start, end);
-    
+    asm goto("testb %%al, %%al\n\tje %l[miss]" : : "a"(result) : "cc" : miss);
 hit:
     return 1;
 miss:

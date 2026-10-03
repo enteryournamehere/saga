@@ -53,8 +53,8 @@ MechAutoJumpConnection *MechAutoJumpGetBest(JumpTriggerPacket const &packet, i32
         return NULL;
     }
 
-    MechAutoJumpConnection *current =
-        reinterpret_cast<MechAutoJumpConnection *>(NuLinkedListGetHead(&WORLD->mech_auto_jump_manager->jump_connections));
+    MechAutoJumpConnection *current = reinterpret_cast<MechAutoJumpConnection *>(
+        NuLinkedListGetHead(&WORLD->mech_auto_jump_manager->jump_connections));
     MechAutoJumpConnection *best = NULL;
 
     if (packet.type == 3) {
@@ -82,9 +82,8 @@ MechAutoJumpConnection *MechAutoJumpGetBest(JumpTriggerPacket const &packet, i32
                     best = current;
                 }
             }
-            current = reinterpret_cast<MechAutoJumpConnection *>(
-                NuLinkedListGetNext(&WORLD->mech_auto_jump_manager->jump_connections,
-                                    reinterpret_cast<NULISTLNK *>(current)));
+            current = reinterpret_cast<MechAutoJumpConnection *>(NuLinkedListGetNext(
+                &WORLD->mech_auto_jump_manager->jump_connections, reinterpret_cast<NULISTLNK *>(current)));
         } while (current != NULL);
         return best;
     }
@@ -103,9 +102,8 @@ MechAutoJumpConnection *MechAutoJumpGetBest(JumpTriggerPacket const &packet, i32
                 best = current;
             }
         }
-        current = reinterpret_cast<MechAutoJumpConnection *>(
-            NuLinkedListGetNext(&WORLD->mech_auto_jump_manager->jump_connections,
-                                reinterpret_cast<NULISTLNK *>(current)));
+        current = reinterpret_cast<MechAutoJumpConnection *>(NuLinkedListGetNext(
+            &WORLD->mech_auto_jump_manager->jump_connections, reinterpret_cast<NULISTLNK *>(current)));
     }
     return best;
 }
@@ -262,12 +260,12 @@ void MechInputTouchSystem::CreateGamePanels() {
         return;
     }
 
+    MechSystems *systems = MechSystems::Get();
     inputTouchDevice->AddAlwaysActiveElement(
-        reinterpret_cast<NuTouchInputElement *>(&MechSystems::Get()->gesture_tracking_system));
+        reinterpret_cast<NuTouchInputElement *>(&systems->gesture_tracking_system));
 
-    MechInputTouchMenuController *menu_controller = new MechInputTouchMenuController(0);
-    MechSystems::Get()->menu_controller = menu_controller;
-    inputTouchDevice->AddAlwaysActiveElement(reinterpret_cast<NuTouchInputElement *>(menu_controller));
+    systems->menu_controller = new MechInputTouchMenuController(0);
+    inputTouchDevice->AddAlwaysActiveElement(reinterpret_cast<NuTouchInputElement *>(systems->menu_controller));
 
     inputTouchDevice->GetAspectRatio();
     CreateGamePlayLayoutConsoleMode(*inputTouchDevice, 1);
@@ -278,22 +276,21 @@ void MechInputTouchSystem::CreateGamePanels() {
     CreateGamePlayLayoutGestureBased_SpeederChase(*inputTouchDevice, 6);
     CreateGamePlayLayoutBlank(*inputTouchDevice, 7);
 
-    control_mode = SuperOptions.touch_controls != 0 ? 2 : 1;
+    control_mode = SuperOptions.touch_controls == 1 ? 2 : 1;
     inputTouchDevice->SetCurrentLayoutIndex(control_mode);
 }
 
-static inline __attribute__((always_inline)) NuButtonLayout &GetTouchLayout(NuVirtualTouchDevice &device, i32 index) {
+static inline NuButtonLayout &GetTouchLayout(NuVirtualTouchDevice &device, i32 index) {
     return *reinterpret_cast<NuButtonLayout *>(reinterpret_cast<u8 *>(&device) + 0xd4 + index * 0xcc);
 }
 
-static inline __attribute__((always_inline)) void AppendTouchElement(NuButtonLayout &layout, NuTouchInputElement *element) {
+static inline void AppendTouchElement(NuButtonLayout &layout, NuTouchInputElement *element) {
     u32 index = layout.unknown_c8;
     layout.elements[index] = element;
     layout.unknown_c8 = index + 1;
 }
 
-static inline __attribute__((always_inline)) void AppendMainControls(NuButtonLayout &layout,
-                                                                      MechInputTouchMainController &controller) {
+static inline void AppendMainControls(NuButtonLayout &layout, MechInputTouchMainController &controller) {
     AppendTouchElement(layout, new MechInputTouchMainDummyStick(controller, NuTouchInputElement::TYPE_RIGHT_STICK));
     AppendTouchElement(layout, new MechInputTouchMainDummyButton(
                                    controller, 0x80, static_cast<MechInputTouchMainController::eButtonTypes>(0)));
@@ -522,7 +519,7 @@ MechObjectInterface *MechInputTouchSystem::FindTargetObject(GameObject_s &object
                 bool hit;
                 if (__builtin_expect(sphere, 0)) {
                     NUVEC *position = item->field_0x120 ? static_cast<NUVEC *>(item->field_0x120)
-                                                       : reinterpret_cast<NUVEC *>(mid_z - 2);
+                                                        : reinterpret_cast<NUVEC *>(mid_z - 2);
                     VuVec center(position->x, position->y, position->z, 1.0f);
                     f32 radius = item->field_0x128 > 0.0f ? item->field_0x128 : item->target_scale;
                     if (VehicleArea)
@@ -791,7 +788,7 @@ void MechInputTouchSystem::ProcessEvenWhenPaused(ThingProcessData *data) {
     if (inputTouchDevice == NULL) {
         return;
     }
-    const i32 layout = ChooseTouchLayout(data->paused != 0);
+    const i32 layout = ChooseTouchLayout(data != NULL && data->paused != 0);
     if (inputTouchDevice->GetCurrentLayoutIndex() != static_cast<u32>(layout)) {
         ResetAllOwners();
         inputTouchDevice->SetCurrentLayoutIndex(layout);

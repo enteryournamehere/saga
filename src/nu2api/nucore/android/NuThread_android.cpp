@@ -6,7 +6,6 @@
 #include "java/java.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nucore/nuthread.h"
-#include "nu2api/nucore/nuvuvec.hpp"
 
 static thread_local NuThreadBase *g_currentThread;
 static thread_local pthread_t g_currentPthread;

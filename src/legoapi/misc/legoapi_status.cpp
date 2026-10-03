@@ -26,10 +26,10 @@ extern "C" {
         return 1;
     }
 
-    __attribute__((optimize("O2", "omit-frame-pointer"))) void DebugLog(void) {
+    void DebugLog(void) {
     }
 
-    __attribute__((optimize("O2", "omit-frame-pointer"))) void Debug_Print(void) {
+    void Debug_Print(void) {
     }
 
 } // extern "C"

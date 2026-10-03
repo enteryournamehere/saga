@@ -248,6 +248,7 @@ void NuPostFilter::initSharedResources(i32, i32) {
 }
 
 void NuPostFilter::renderFrustum(numtx_s *) {
+    STUBBED();
 }
 
 void NuDynamicLight::addShadowCasterScene(nugscn_s *scene) {
@@ -836,22 +837,18 @@ static inline NUVEC WarpTransformPoint(const NUVEC4 &point, const NUMTX &matrix)
     NuVecMtxTransformH(&output, (NUVEC *)&point, &copy);
     return output;
 }
-static inline void WarpAccumulatePoint(const NUVEC4 &point, const NUMTX &matrix, NUVEC4 &output, f32 &min_z, f32 &min_y,
+static inline void WarpAccumulatePoint(const NUVEC4 &point, const NUMTX &matrix, NUVEC &output, f32 &min_z, f32 &min_y,
                                        f32 &max_z, f32 &max_y) {
-    NUVEC transformed = WarpTransformPoint(point, matrix);
-    output.x = transformed.x;
-    output.y = transformed.y;
-    output.z = transformed.z;
+    output = WarpTransformPoint(point, matrix);
     min_z = output.z < min_z ? output.z : min_z;
     min_y = output.y < min_y ? output.y : min_y;
     max_z = max_z < output.z ? output.z : max_z;
     max_y = max_y < output.y ? output.y : max_y;
 }
-static inline void WarpProjectBounds(NUVEC4 &point, NUVEC &translation, f32 near_plane, f32 &left, f32 &bottom,
+static inline void WarpProjectBounds(NUVEC &point, NUVEC &translation, f32 near_plane, f32 &left, f32 &bottom,
                                      f32 &right, f32 &top) {
-    NUVEC xyz = {point.x, point.y, point.z};
     NUVEC shifted;
-    NuVecAdd(&shifted, &xyz, &translation);
+    NuVecAdd(&shifted, &point, &translation);
     f32 x = shifted.x * near_plane / shifted.z;
     f32 y = shifted.y * near_plane / shifted.z;
     if (left > x)
@@ -886,8 +883,7 @@ void NuDynamicLight::computeWarpEffect(NuDynamicLight::RenderSet &set) {
     points[9].y = points[0].y - direction.y * 200.0f;
     points[9].z = points[0].z - direction.z * 200.0f;
     points[9].w = 0.0f;
-    // Retail transformed records have a 16-byte stride; only XYZ is consumed.
-    NUVEC4 transformed[10];
+    NUVEC transformed[10];
     f32 min_z = FLT_MAX, min_y = FLT_MAX, max_z = -FLT_MAX, max_y = -FLT_MAX;
     WarpAccumulatePoint(points[0], light_space, transformed[0], min_z, min_y, max_z, max_y);
     WarpAccumulatePoint(points[1], light_space, transformed[1], min_z, min_y, max_z, max_y);
@@ -1125,6 +1121,7 @@ void NuMainFilterGen::destroyResources() {
 }
 
 void NuMainFilterGen::destroyTextureResources() {
+    STUBBED();
 }
 
 void NuMainFilterGen::initResources() {
@@ -1601,6 +1598,7 @@ void NuPostFilterGen::copy(nueffecttex_s *, nuframebuffer_s *output) {
 }
 
 void NuPostFilterGen::copyDepth(nueffecttex_s *, nuframebuffer_s *) {
+    STUBBED();
 }
 
 void NuPostFilterGen::destroyResources() {
@@ -1609,9 +1607,11 @@ void NuPostFilterGen::destroyResources() {
 }
 
 void NuPostFilterGen::destroySharedResources() {
+    STUBBED();
 }
 
 void NuPostFilterGen::destroySharedTextureResources() {
+    STUBBED();
 }
 
 void NuPostFilterGen::initResources() {
@@ -1638,12 +1638,15 @@ void NuPostFilterGen::initSharedTextureResources(i32 width, i32 height) {
 }
 
 void NuPostFilterGen::renderFrustum(numtx_s *) {
+    STUBBED();
 }
 
 void NuPostFilterGen::renderQuad() {
+    STUBBED();
 }
 
 void NuPostFilterGen::renderQuadGrid() {
+    STUBBED();
 }
 
 __attribute__((weak)) void NuPostFilterGen::reset() {
@@ -1834,6 +1837,7 @@ void NuDeferredFilterGen::render() {
 }
 
 void NuDeferredFilterGen::renderStencilMask(NuDynamicLight &) {
+    STUBBED();
 }
 
 void NuDeferredFilterGen::resetAll() {
@@ -1878,6 +1882,7 @@ void NuSpeedBlurFilterGen::computeSpeedBlur(VuVec &result) {
 }
 
 void NuSpeedBlurFilterGen::destroyTextureResources() {
+    STUBBED();
 }
 
 void NuSpeedBlurFilterGen::initTextureResources(i32 width, i32 height) {
@@ -1940,6 +1945,7 @@ void NuMotionAccumFilterGen::destroyResources() {
 }
 
 void NuMotionAccumFilterGen::destroyTextureResources() {
+    STUBBED();
 }
 
 void NuMotionAccumFilterGen::initResources() {

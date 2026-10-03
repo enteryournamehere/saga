@@ -33,10 +33,6 @@ class NuSoundEffect {
     friend class NuSoundVoice;
 
   public:
-    static void operator delete(void *allocation) {
-        NU_FREE(allocation);
-    }
-
     enum class EffectType : u32 {
         ATTENUATION = 0,
         PITCH = 1,
@@ -344,10 +340,6 @@ class NuSoundVoiceFactoryList {
 
 class NuSoundSystem {
   public:
-    static void operator delete(void *allocation) {
-        NU_FREE(allocation);
-    }
-
     enum class MemoryDiscipline : u32 {
         SCRATCH = 0,
         SAMPLE = 1,
@@ -487,7 +479,7 @@ class NuSoundSystem {
 
     NuSoundSample *GetSample(const char *path);
 
-    static i32 GenerateHash(const char *str);
+    i32 GenerateHash(const char *str);
 
     virtual ~NuSoundSystem();
     virtual NuSoundEffect *CreateEffect(NuSoundEffect::EffectType);
@@ -631,7 +623,7 @@ class NuSoundHandle {
     NuList<NuSoundEffect *> effects;
 
   public:
-    static NuCriticalSection sCriticalSection;
+    static pthread_mutex_t sCriticalSection;
 
     NuSoundHandle();
     NuSoundHandle(NuSoundHandle &other);

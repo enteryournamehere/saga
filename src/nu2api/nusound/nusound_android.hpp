@@ -11,7 +11,6 @@ struct NuSoundAndroid : public NuSoundSystem {
     u32 reverb_properties[7];
 
     NuSoundAndroid();
-    ~NuSoundAndroid() override;
     bool InitAudioDevice() override;
 
     static i32 m_workerThreadCount;

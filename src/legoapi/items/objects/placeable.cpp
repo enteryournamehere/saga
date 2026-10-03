@@ -57,9 +57,9 @@ void *PlaceableHelper::GetNextObject(void *object) {
     while (iteration_object_type < object_type_count) {
         EdClassInterface *interface =
             reinterpret_cast<EdClassInterface *>(object_types[iteration_object_type].interface);
-        object = interface->vtable->get_next_object(interface, object);
-        if (object != NULL)
-            return object;
+        void *next = interface->vtable->get_next_object(interface, object);
+        if (next != NULL)
+            return next;
         ++iteration_object_type;
         object = NULL;
     }
@@ -111,11 +111,9 @@ PlaceableHelper::PlaceableHelper() {
 }
 
 void PlaceableHelper::RegisterObjectType(char *name, PlaceableInterface *interface) {
-    i32 index = object_type_count;
-    ObjectType *entry = object_types + index;
-    object_type_count = index + 1;
-    entry->name = name;
-    entry->interface = interface;
+    i32 index = object_type_count++;
+    object_types[index].name = name;
+    object_types[index].interface = interface;
     *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(interface) + 8) = object_type_count;
 }
 
@@ -167,7 +165,7 @@ void PlaceableNameControl::AddMenuItem(eduimenu_s *menu, EdRef *reference, void 
 PlaceableNameControl::PlaceableNameControl() : reserved_10(0) {
 }
 
-inline PlaceableNameControl::~PlaceableNameControl() {
+PlaceableNameControl::~PlaceableNameControl() {
 }
 
 inline void PlaceableNameControl::operator delete(void *memory) {

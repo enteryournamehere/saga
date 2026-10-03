@@ -11,7 +11,7 @@ class NuThreadSemaphore {
 
   public:
     void Signal();
-    bool TryWait();
+    i32 TryWait();
     void Wait();
 
   private:

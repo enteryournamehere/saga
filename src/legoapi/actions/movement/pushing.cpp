@@ -325,8 +325,7 @@ void FindForcePushTarget(GameObject_s *object, i32 activate, i32 target_filter) 
             }
 
             const bool candidate_is_player = candidate->apiobj.field_0x27c != -1;
-            if (!(WORLD->area != NULL && WORLD->area == EMPERORFIGHT_ADATA &&
-                  ((candidate->field_0xefb & 8) != 0 || candidate_is_player))) {
+            if (!(WORLD->area == EMPERORFIGHT_ADATA && ((candidate->field_0xefb & 8) != 0 || candidate_is_player))) {
                 if (candidate->id == id_BODYGUARD) {
                     continue;
                 }
@@ -364,8 +363,8 @@ void FindForcePushTarget(GameObject_s *object, i32 activate, i32 target_filter) 
                 if (candidate->id == id_ATST) {
                     distance *= 1.0f / 3.0f;
                 }
-                if (!(distance < best_distance) ||
-                    !(delta.x * object->facing_direction.x + delta.z * object->facing_direction.z < 0.0f)) {
+                if (distance >= best_distance ||
+                    delta.x * object->facing_direction.x + delta.z * object->facing_direction.z >= 0.0f) {
                     continue;
                 }
 
@@ -437,9 +436,7 @@ void FindForcePushTarget(GameObject_s *object, i32 activate, i32 target_filter) 
                 best->context_animation = 0x53;
                 best->action_movement_state = 3;
             } else {
-                best->context_animation = best->apiobj.character_model->model_data_b[0x2b] != NULL
-                                              ? 0x2b
-                                              : (best->apiobj.character_model->model_data_b[5] != NULL ? 5 : 0x2b);
+                best->context_animation = best->apiobj.character_model->model_data_b[5] != NULL ? 5 : 0x2b;
                 best->action_movement_state = 0;
                 if (object->apiobj.player_controlled && Cheat_IsOn(0x13)) {
                     best->action_movement_state = 4;
@@ -574,11 +571,11 @@ void PushCode(GameObject_s *object, i32 allow_push) {
         return;
     }
 
-    i8 saved_context = object->character_context;
+    u8 saved_context = object->character_context;
     u16 wall_angle;
     i32 surface;
     i32 angle_difference;
-    i32 obstacle_input_difference;
+    f32 saved_push_timer = object->field_0xdc4;
     i32 set_facing_angle;
     i32 allow_block_push;
     i32 walljumpwait_context;
@@ -662,7 +659,7 @@ check_cinfo_flags: {
     if (set_facing_angle != 0) {
         object->takeover_start_angle = wall_angle;
     }
-    if (object->field_0xdc4 <= 0.0f) {
+    if (saved_push_timer <= 0.0f) {
         goto exit_push_check;
     }
     goto check_current_contexts;
@@ -685,7 +682,7 @@ check_jump_context: {
 check_walljump_flag: {
     GAMECHARACTERDATA_s *game_character =
         static_cast<GAMECHARACTERDATA_s *>(object->apiobj.character_data->field11_0x24);
-    if ((game_character->flags_090 & 0x8000000) == 0) {
+    if ((game_character->flags_090 & 0x8000000) != 0) {
         goto check_current_contexts;
     }
     walljumpwait_context = LEGOCONTEXT_WALLJUMPWAIT;
@@ -725,9 +722,8 @@ revalidate_context: {
     FastWeaponIn(object, 0);
     if (LEGOCONTEXT_WALLJUMPWAIT != -1 && LEGOCONTEXT_WALLJUMPWAIT == context) {
         PlayLandSfx(object, 0, 0);
-    } else {
-        PlayGruntSfx(object);
     }
+    PlayGruntSfx(object);
     if (set_facing_angle == 0) {
         return;
     }
@@ -736,9 +732,10 @@ revalidate_context: {
 }
 
 near_floor_push_check: {
-    i32 near_floor = GameObjectNearFloor(object, 1.25f, NULL);
-    context = object->character_context;
-    if (near_floor != 0 && context == -1) {
+    if (GameObjectNearFloor(object, 1.25f, NULL) != 0) {
+        context = object->character_context;
+    }
+    if (context == -1) {
         goto push_entry_gate;
     }
     goto check_jump_context_inner;
@@ -754,6 +751,9 @@ check_jump_context_inner: {
 
 push_entry_gate: {
     if (allow_push != 0) {
+        if (LEGOCONTEXT_PUSH == -1) {
+            goto check_jump_context_inner;
+        }
         if (LEGOACT_PUSH == -1 || object->apiobj.character_model->model_data_b[LEGOACT_PUSH] == NULL) {
             goto check_jump_context_inner;
         }
@@ -773,16 +773,17 @@ push_entry_gate: {
     if (object->character_context == -1) {
         goto check_current_contexts;
     }
+    if (LEGOACT_PUSH == -1) {
+        goto check_current_contexts;
+    }
     object->context_animation = LEGOACT_PUSH;
     SetPushAngle(object);
-    context = object->character_context;
-    goto check_current_contexts;
+    FastWeaponIn(object, 0);
+    PlayGruntSfx(object);
+    goto pushblock_maintain;
 }
 
 exit_push_check: {
-    if (LEGOCONTEXT_PUSHOBSTACLE != -1 && LEGOCONTEXT_PUSHOBSTACLE == context) {
-        GameCam_Blend(NULL, 0.5f, 0.0f, 1);
-    }
     object->character_context = -1;
     context = -1;
     goto check_current_contexts;
@@ -890,11 +891,11 @@ pushobstacle_maintain: {
     {
         u16 wanted = GamePad_InputAngle(object, pad);
         u16 have = object->takeover_start_angle;
-        obstacle_input_difference = RotDiff(wanted, have);
-        if (obstacle_input_difference < 0) {
-            obstacle_input_difference = -obstacle_input_difference;
+        i32 diff = RotDiff(wanted, have);
+        if (diff < 0) {
+            diff = -diff;
         }
-        if (obstacle_input_difference > 0x31c6) {
+        if (diff > 0x31c6) {
             goto obstacle_steer;
         }
     }
@@ -906,8 +907,8 @@ pushobstacle_maintain: {
     {
         GIZOBSTACLE_s *obstacle = static_cast<GIZOBSTACLE_s *>(object->field_0x788);
         i32 mode = obstacle->anim_set->state;
-        i32 below = mode == 0;
-        i32 at_least = mode != 0;
+        i32 below = mode < 1;
+        i32 at_least = mode >= 1;
         GizObstacle_SetPushControlled(obstacle, object, -1.0f);
         if (below) {
             goto obstacle_rumble_a;
@@ -972,19 +973,19 @@ input_dead_obstacle: {
 }
 
 obstacle_steer: {
-    if (obstacle_input_difference <= 0x4e38) {
+    if (angle_difference <= 0x4e38) {
         goto superpush_idle_set;
     }
     object->field_0x758 = 0.75f;
-    object->context_animation = LEGOACT_SUPERPUSH_PULL;
-    if (object->field_0x7a6 != 0x1e) {
+    object->context_animation = LEGOACT_SUPERPUSH_PUSH;
+    if (object->field_0x7a6 == 0x1e) {
         goto obstacle_control_eq2;
     }
     {
         GIZOBSTACLE_s *obstacle = static_cast<GIZOBSTACLE_s *>(object->field_0x788);
         i32 mode = obstacle->anim_set->state;
-        i32 below = mode == 0;
-        i32 at_least = mode != 0;
+        i32 below = mode < 1;
+        i32 at_least = mode >= 1;
         GizObstacle_SetPushControlled(obstacle, object, -1.0f);
         if (below) {
             goto obstacle_rumble_a;
@@ -1017,10 +1018,10 @@ pushspinner_maintain: {
         if (object->apiobj.player_controlled) {
             u32 strength = qrand();
             f32 scaled = static_cast<f32>(strength) * 1.5259021893143654e-05f;
-            scaled *= 0.4f;
+            scaled *= 0.3f;
             NewRumble(object->pad_gamepad->pad, scaled, 0);
         }
-        search_center = &object->apiobj.collision_position;
+        search_center = reinterpret_cast<NUVEC *>(reinterpret_cast<uintptr_t>(object) - 0x80);
         GameAudio_PlaySfx(0x38, search_center, 0, 0);
         context = object->character_context;
         goto revalidate_context;
@@ -1079,7 +1080,9 @@ obstacle_path: {
 spinner_find: {
     // NOTE: unlike the obstacle branch below, the original performs no
     // permission check here and goes straight to the spinner search.
-    search_center = &object->apiobj.collision_position;
+    uintptr_t search_addr = reinterpret_cast<uintptr_t>(object);
+    search_addr -= 0x80;
+    search_center = reinterpret_cast<NUVEC *>(search_addr);
     {
         found_spinner = GizSpinner_Find(WORLD, search_center, 1);
         if (found_spinner == NULL) {
@@ -1101,7 +1104,9 @@ check_spinner_room: {
         context = object->character_context;
         goto push_anim_set;
     }
-    if (found_spinner->field_0x090 <= 0.0f) {
+    // The original compares a carried FP value against field_0x090 here;
+    // observably this gates on the armed push timer.
+    if (object->field_0xdc4 >= found_spinner->field_0x090) {
         goto spinner_teamwork_check;
     }
     context = object->character_context;
@@ -1109,7 +1114,8 @@ check_spinner_room: {
 }
 
 spinner_teamwork_check: {
-    // Another player already owns this spinner; only an unclaimed one can attach.
+    // If a teammate in PUSHSPINNER already holds this spinner, join the
+    // push. Unrolled to match the original's straight-line layout.
     i32 pushspinner_id = LEGOCONTEXT_PUSHSPINNER;
 #define CHECK_TEAMMATE(idx)                                                                                            \
     {                                                                                                                  \
@@ -1156,6 +1162,9 @@ push_anim_set_tail: {
     if (context == -1) {
         goto check_current_contexts;
     }
+    if (LEGOACT_PUSH == -1) {
+        goto check_current_contexts;
+    }
     object->context_animation = LEGOACT_PUSH;
     SetPushAngle(object);
     goto check_current_contexts;
@@ -1163,6 +1172,9 @@ push_anim_set_tail: {
 
 obstacle_find_check: {
     if (LEGOCONTEXT_PUSHOBSTACLE == -1) {
+        goto attach_obstacle_fail;
+    }
+    if (LEGOCONTEXT_PUSHSPINNER == -1) {
         goto attach_obstacle_fail;
     }
     if (CanPushObstaclesFn == NULL) {
@@ -1177,7 +1189,7 @@ obstacle_find_check: {
     }
     {
         f32 distance;
-        search_center = &object->apiobj.collision_position;
+        search_center = reinterpret_cast<NUVEC *>(reinterpret_cast<uintptr_t>(object) - 0x80);
         GIZOBSTACLE_s *obstacle = GizObstacle_FindNearest(WORLD->giz_obstacle_sys, search_center, object, &distance, 7);
         if (obstacle == NULL) {
             goto attach_obstacle_fail;
@@ -1200,7 +1212,7 @@ obstacle_find_check: {
 attach_obstacle_fail: { goto push_anim_set; }
 
 wallshuffle_entry: {
-    if (static_cast<u32>(surface) > 31) {
+    if (surface > 31) {
         goto wallshuffle_entry_gated;
     }
     if ((TerSurface[surface].flags & 0x10581) != 0) {
@@ -1208,7 +1220,10 @@ wallshuffle_entry: {
     }
 wallshuffle_entry_gated: {
     GAMECHARACTERDATA_s *gcd = static_cast<GAMECHARACTERDATA_s *>(object->apiobj.character_data->field11_0x24);
-    if (object->pad_gamepad->input_magnitude != gcd->run_speed && !allow_block_push) {
+    if (object->pad_gamepad->input_magnitude != gcd->run_speed) {
+        if (!allow_block_push) {
+            goto check_current_contexts;
+        }
         goto check_current_contexts;
     }
     if (set_facing_angle == 0) {
@@ -1259,7 +1274,7 @@ wallshuffle_entry_gated: {
         object->context_animation = wait_anim;
         object->landing_followup = 0;
         f32 duration = AnimDuration(object->id, wait_anim, 0.0f, 0.0f, 0);
-        f32 timer_value = duration <= 0.0f ? 0.3f : duration;
+        f32 timer_value = duration <= 0.0f ? duration : 0.3f;
         object->apiobj.movement_facing_angle = wall_angle;
         object->context_animation_timer = timer_value;
         object->apiobj.velocity = v000;

@@ -7,7 +7,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    void NuOcclusionManagerInit(u32 capacity, VARIPTR *buffer, VARIPTR buffer_end);
     void NuOcclusionManagerBeginFrame(void);
     void NuOcclusionManagerEndFrame(void);
     bool NuOcclusionManagerIsEnabled(void);

@@ -1,6 +1,5 @@
 #include "nu2api_nufile_types.h"
 #include "nu2api/nucore/numemory.h"
-#include "nu2api/nucore/nuthread.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufile.h"
 
@@ -14,7 +13,7 @@ NuFileDevice *NuFileDevice::sm_HostDevice;
 i32 NuFileDevice::sm_NumRules;
 NuFileDevice::PathRule NuFileDevice::sm_Rules[32];
 NuFileDevice::DirectoryHandle NuFileDevice::sm_DirectoryHandles[16];
-NuCriticalSection NuFileDevice::sm_CriticalSection(NULL);
+pthread_mutex_t NuFileDevice::sm_CriticalSection;
 
 void NuFileDevice::AddDevice(NuFileDevice *device) {
     device->device_id = sm_NumDevices;
@@ -40,7 +39,7 @@ void NuFileDevice::AddPathRule(NuFileDeviceType type, char const *path) {
 }
 
 i32 NuFileDevice::AllocDirectoryHandle(char const *path) {
-    pthread_mutex_lock(&sm_CriticalSection.mutex);
+    pthread_mutex_lock(&sm_CriticalSection);
     i32 handle = 0;
     for (i32 i = 1; i < 16; ++i) {
         if (!sm_DirectoryHandles[i].device) {
@@ -61,7 +60,7 @@ i32 NuFileDevice::AllocDirectoryHandle(char const *path) {
             entry.path = NULL;
         }
     }
-    pthread_mutex_unlock(&sm_CriticalSection.mutex);
+    pthread_mutex_unlock(&sm_CriticalSection);
     return handle;
 }
 
@@ -142,13 +141,13 @@ i32 NuFileDevice::FormatName(char *output, i32 size, char const *path) const {
 }
 
 void NuFileDevice::FreeDirectoryHandle(i32 handle) {
-    pthread_mutex_lock(&sm_CriticalSection.mutex);
+    pthread_mutex_lock(&sm_CriticalSection);
     char *path = sm_DirectoryHandles[handle].path;
     sm_DirectoryHandles[handle].device = NULL;
     if (path)
         NuMemoryGet()->GetThreadMem()->BlockFree(path, 4);
     sm_DirectoryHandles[handle].path = NULL;
-    pthread_mutex_unlock(&sm_CriticalSection.mutex);
+    pthread_mutex_unlock(&sm_CriticalSection);
 }
 
 NuFileDevice *NuFileDevice::GetDeviceByType(NuFileDeviceType type) {

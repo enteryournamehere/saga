@@ -21,8 +21,7 @@ member accesses and destructor code to be wrong.
 | `+0x78` | drag touch | `OnDown`, `OnRelease` |
 | `+0x7c`–`+0x88` | four UI buttons | `UpdateButtonPositions`, `Deactivate` |
 | `+0x8c` | D-pad UI element | `UpdateDPadPos`, `OnDown`, `Deactivate` |
-| `+0x90` | optional D-pad lock button | `Activate` allocates `VirtualControlDPad_LockButton` |
-| `+0x94` | optional button mover | `Activate` allocates `VirtualControlButtonMover` |
+| `+0x90`, `+0x94` | optional UI elements | `Deactivate` removes and deletes them |
 
 The constructor clears the four button pointers, the two touch pointers, the
 active byte, and the optional pointers. It does **not** clear the D-pad pointer

@@ -35,14 +35,14 @@ template <class T, u32 Capacity> class NuThreadQueue {
     NuThreadQueue(const NuThreadQueue &) = delete;
     NuThreadQueue &operator=(const NuThreadQueue &) = delete;
 
-    bool TryPost(T message) {
+    bool TryPost(const T &message) {
         if (!free_slots.TryWait())
             return false;
         Store(message);
         return true;
     }
 
-    void Post(T message) {
+    void Post(const T &message) {
         free_slots.Wait();
         Store(message);
     }
@@ -80,9 +80,10 @@ template <class T, u32 Capacity> class NuThreadQueue {
     static void Save(u32 &value, u32 next) {
         __atomic_store_n(&value, next, __ATOMIC_RELAXED);
     }
-    void Store(T message) {
-        Record record = {message, NO_TOKEN};
-        records[Load(write_count) & (Capacity - 1)] = record;
+    void Store(const T &message) {
+        Record &record = records[Load(write_count) & (Capacity - 1)];
+        record.message = message;
+        record.token = NO_TOKEN;
         if (Load(read_count) == Load(write_count)) {
             became_empty.TryWait();
             became_nonempty.TryWait();

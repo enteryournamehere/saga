@@ -72,7 +72,6 @@ int NuSoundDecoderOGG::OGGReadCallbacksDecoder::GetPosition() const {
 // the decoder's streaming ring, blocking on the decode thread when the ring
 // runs dry and looping the stream at EOF when requested.
 // The reference keeps a frame pointer and realigns this callback stack.
-__attribute__((force_align_arg_pointer, optimize("no-omit-frame-pointer")))
 int NuSoundDecoderOGG::OGGReadCallbacksDecoder::Read(void *dest, unsigned int size) {
     memset(dest, 0, size);
     this->decoder->GetEncodedSource();
@@ -145,7 +144,9 @@ u64 NuSoundDecoderOGG::Decode(NuSoundSource &source, NuSoundBuffer &buffer, bool
 
     if (this->locked_buffer == NULL) {
         for (i32 i = 0; i < source.GetNumInitialBuffers(); i++) {
-            source.RequestBuffer(loop, NuSoundWeakPtr<NuSoundBufferCallback>(this));
+            NuSoundWeakPtr<NuSoundBufferCallback> callback;
+            callback.Set(this);
+            source.RequestBuffer(loop, callback);
         }
         this->locked_buffer = this->encoded_buffers[this->ring_read_pos % 4];
         __sync_fetch_and_add(&this->ring_read_pos, 1);
@@ -220,7 +221,6 @@ u32 NuSoundDecoderOGG::DecodeOggChunk(char *dest, unsigned int size) {
     void *saved_datasource = ogg->datasource;
     ogg->datasource = &this->read_callbacks;
 
-    int bitstream = 0;
     u32 decoded = 0;
     u32 block_size = desc->GetBlockSize();
 
@@ -233,6 +233,7 @@ u32 NuSoundDecoderOGG::DecodeOggChunk(char *dest, unsigned int size) {
         char *cursor = dest;
 
         do {
+            int bitstream = 0;
             NuIOS_IsLowEndDevice();
             int ret = ov_read(ogg, cursor, (int)(size - decoded), 0, bytes_per_sample, 1, &bitstream);
 
@@ -296,9 +297,11 @@ u32 NuSoundDecoderOGG::DecodeOggChunk(char *dest, unsigned int size) {
 
             tmp = *(u16 *)&dest[6 + i * 2];
             *(u16 *)&dest[6 + i * 2] = *(u16 *)&dest[10 + i * 2];
-            u16 tmp2 = *(u16 *)&dest[8 + i * 2];
-            *(u16 *)&dest[8 + i * 2] = tmp;
-            *(u16 *)&dest[10 + i * 2] = tmp2;
+            *(u16 *)&dest[10 + i * 2] = tmp;
+
+            tmp = *(u16 *)&dest[8 + i * 2];
+            *(u16 *)&dest[8 + i * 2] = *(u16 *)&dest[10 + i * 2];
+            *(u16 *)&dest[10 + i * 2] = tmp;
             i += desc->GetNumChannels();
         }
         return decoded;

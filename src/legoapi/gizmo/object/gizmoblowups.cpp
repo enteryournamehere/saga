@@ -454,6 +454,7 @@ i32 GizmoBlowupBlowup(GIZMOBLOWUP_s *blowup, i32 effects, i32 hit_type, i32 dama
 }
 
 void BlowupObjEmit_Stop(PART_s *) {
+    STUBBED();
 }
 
 GIZMOBLOWUPTYPE_s *GizmoBlowupTypeAdd(WORLDINFO_s *world, nuhspecial_s *special, i32 flags, i32 *result) {
@@ -537,9 +538,9 @@ i32 SetGizmoBlowUpTarget(GameObject_s *object, GIZMOBLOWUP_s *blowup) {
 }
 
 void GizBlowup_InitTerrain() {
-    GIZMOBLOWUP_s *blowup = WORLD->gizmo_blowups;
-    if (blowup != NULL) {
-        for (i32 i = 0; i < WORLD->gizmo_blowup_count; ++i, ++blowup) {
+    if (WORLD->gizmo_blowups != NULL) {
+        for (i32 i = 0; i < WORLD->gizmo_blowup_count; ++i) {
+            GIZMOBLOWUP_s *blowup = &WORLD->gizmo_blowups[i];
             blowup->platform_id = -1;
             blowup->field_0x10c = -1;
             if ((blowup->draw_flags & 4) != 0)
@@ -559,16 +560,9 @@ void GizmoBlowupTypeRemove(GIZMOBLOWUPTYPE_s *type, WORLDINFO_s *world) {
         return;
     }
 
-    i32 capacity =
-        world->current_level != NULL ? world->current_level->max_gizmo_blowup_types : world->gizmo_blowup_type_count;
-    // Preserve active-only handling when the level capacity is missing or inconsistent.
-    if (capacity < world->gizmo_blowup_type_count) {
-        capacity = world->gizmo_blowup_type_count;
-    }
-    GIZMOBLOWUPTYPE_s *last_allocated_type = types + capacity - 1;
     GIZMOBLOWUPTYPE_s *last_type = active_end - 1;
-    if (type < last_allocated_type) {
-        for (GIZMOBLOWUPTYPE_s *moved_type = type + 1; moved_type <= last_allocated_type; ++moved_type) {
+    if (type < last_type) {
+        for (GIZMOBLOWUPTYPE_s *moved_type = type + 1; moved_type <= last_type; ++moved_type) {
             for (i32 index = 0; index < world->gizmo_blowup_count; ++index) {
                 if (world->gizmo_blowups[index].type == moved_type) {
                     world->gizmo_blowups[index].type = moved_type - 1;
@@ -748,10 +742,9 @@ void GizmoBlowupsFinalSetup(WORLDINFO_s *world) {
 }
 
 void GizBlowup_DeleteTerrain() {
-    GIZMOBLOWUP_s *blowup = WORLD->gizmo_blowups;
-    if (blowup != NULL) {
-        for (i32 i = 0; i < WORLD->gizmo_blowup_count; ++i, ++blowup) {
-            GizBlowup_DeleteSingleTerrain(blowup);
+    if (WORLD->gizmo_blowups != NULL) {
+        for (i32 i = 0; i < WORLD->gizmo_blowup_count; ++i) {
+            GizBlowup_DeleteSingleTerrain(&WORLD->gizmo_blowups[i]);
         }
     }
 }
@@ -1125,9 +1118,8 @@ i32 GizmoBlowupGetTypeFromNameTableId(WORLDINFO_s *world, i32 name_id) {
     }
 
     const char *name = gizmoblowupnametable[name_id];
-    GIZMOBLOWUPTYPE_s *type = world->gizmo_blowup_types;
-    for (i32 type_index = 0; type_index < world->gizmo_blowup_type_count; ++type_index, ++type) {
-        if (NuStrICmp(type->name, name) == 0) {
+    for (i32 type_index = 0; type_index < world->gizmo_blowup_type_count; ++type_index) {
+        if (NuStrICmp(world->gizmo_blowup_types[type_index].name, name) == 0) {
             return type_index;
         }
     }
@@ -1281,12 +1273,11 @@ void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float) {
                                 (blowup->output_flags & GIZMOBLOWUP_OUTPUT_BLOWN_UP) == 0) ||
                                (blowup->state_flags & GIZMOBLOWUP_STATE_DELAY_ACTIVE) != 0;
         if (requires_update) {
+            GIZMOBLOWUPTYPE_s *type = blowup->type;
             if ((blowup->draw_flags & 0x400000) != 0) {
                 nuhspecial_s *special = blowup->override_special;
                 if (special == NULL || !NuSpecialExistsFn(special)) {
-                    special = &blowup->type->animated_special;
-                } else {
-                    special = blowup->override_special;
+                    special = &type->animated_special;
                 }
                 blowup->transform = *NuSpecialGetInstanceMtx(special);
                 blowup->state_flags |= GIZMOBLOWUP_STATE_ACTIVE;
@@ -1295,27 +1286,27 @@ void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float) {
                 UpdateMidPos(blowup);
             }
             if (animation != NULL) {
-                const f32 end_frame = NuAnimEndFrameOld(
-                    blowup->type->animated_special.scene->instance_animation_data[animation->anim_ix]);
+                const f32 end_frame =
+                    NuAnimEndFrameOld(type->animated_special.scene->instance_animation_data[animation->anim_ix]);
                 if ((blowup->state_flags & GIZMOBLOWUP_STATE_REPEAT_ANIMATION) != 0) {
-                    if ((blowup->type->animation_runtime_flags & GIZMOBLOWUPTYPE_ANIMATION_UPDATED) == 0 &&
-                        ((blowup->type->animation_flags & GIZMOBLOWUPTYPE_ANIMATION_INCLUDES_INSTANCE_TRANSFORM) != 0 ||
+                    if ((type->animation_runtime_flags & GIZMOBLOWUPTYPE_ANIMATION_UPDATED) == 0 &&
+                        ((type->animation_flags & GIZMOBLOWUPTYPE_ANIMATION_INCLUDES_INSTANCE_TRANSFORM) != 0 ||
                          (blowup->state_flags & GIZMOBLOWUP_STATE_REPEATING) != 0)) {
-                        blowup->type->animation_base_frame += FRAMETIME * 60.0f * animation->tfactor;
+                        type->animation_base_frame += FRAMETIME * 60.0f * animation->tfactor;
                         blowup->state_flags |= GIZMOBLOWUP_STATE_ACTIVE;
-                        if (blowup->type->animation_base_frame >= end_frame) {
+                        if (type->animation_base_frame >= end_frame) {
                             if (animation->repeating != 0) {
-                                blowup->type->animation_base_frame = 1.0f;
+                                type->animation_base_frame = 1.0f;
                             } else {
                                 blowup->field_0x9f |= 1;
                             }
                         }
-                        blowup->type->animation_runtime_flags |= GIZMOBLOWUPTYPE_ANIMATION_UPDATED;
+                        type->animation_runtime_flags |= GIZMOBLOWUPTYPE_ANIMATION_UPDATED;
                     }
                     blowup->state_flags |= GIZMOBLOWUP_STATE_ACTIVE;
                     blowup->animation_time += FRAMETIME * 60.0f * animation->tfactor;
                     NUMTX matrix;
-                    EvalAnim(&blowup->type->animated_special, blowup->animation_time, &matrix, 0);
+                    EvalAnim(&type->animated_special, blowup->animation_time, &matrix, 0);
                     blowup->mid_position.x = matrix.m30 + blowup->position.x;
                     blowup->mid_position.y = matrix.m31 + blowup->position.y;
                     blowup->mid_position.z = matrix.m32 + blowup->position.z;
@@ -1323,7 +1314,7 @@ void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float) {
                         if (animation->repeating != 0) {
                             blowup->animation_time = 0.0f;
                         } else {
-                            blowup->animation_time = blowup->type->animation_start_frame;
+                            blowup->animation_time = type->animation_start_frame;
                             blowup->field_0x9f |= 1;
                         }
                     }
@@ -1342,7 +1333,7 @@ void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float) {
                     }
                 }
             } else if ((blowup->state_flags & GIZMOBLOWUP_STATE_DELAY_ACTIVE) != 0) {
-                if (!(blowup->animation_time > 0.0f)) {
+                if (blowup->animation_time <= 0.0f) {
                     blowup->state_flags &= ~GIZMOBLOWUP_STATE_DELAY_ACTIVE;
                 } else {
                     blowup->animation_time -= FRAMETIME;
@@ -1351,13 +1342,13 @@ void GizmoBlowupEarlyUpdate(void *world_ptr, void *, float) {
             if ((blowup->field_0x9f & 1) != 0) {
                 GizmoBlowupBlowup(blowup, 1, -1, 1, NULL, 1);
             }
-            if (blowup->type->particle_types[7] != -1) {
-                AddVariableShotDebrisEffectTimed1(blowup->type->particle_types[7], &blowup->mid_position, 60, FRAMETIME,
-                                                  0, 0, NULL);
+            if (type->particle_types[7] != -1) {
+                AddVariableShotDebrisEffectTimed1(type->particle_types[7], &blowup->mid_position, 60, FRAMETIME, 0, 0,
+                                                  NULL);
             }
-            if (blowup->type->particle_types[8] != -1) {
-                AddVariableShotDebrisEffectTimed1(blowup->type->particle_types[8], &blowup->mid_position, 60, FRAMETIME,
-                                                  0, 0, NULL);
+            if (type->particle_types[8] != -1) {
+                AddVariableShotDebrisEffectTimed1(type->particle_types[8], &blowup->mid_position, 60, FRAMETIME, 0, 0,
+                                                  NULL);
             }
         } else if ((blowup->state_flags & GIZMOBLOWUP_STATE_ACTIVATED) == 0 && animation != NULL &&
                    animation->playing != 0) {
@@ -1995,12 +1986,12 @@ GIZMOBLOWUP_s *GizmoBlowUp_Hit(GameObject_s *object, NUVEC *points, i32 point_co
         static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24)->field_0x28 > 0.0f;
     GIZMOBLOWUP_s *nearest = NULL;
     f32 nearest_distance = 1000000.0f;
-    GIZMOBLOWUP_s *blowup = WORLD->gizmo_blowups;
-    if (blowup == NULL) {
+    if (WORLD->gizmo_blowups == NULL) {
         return NULL;
     }
-    for (i32 index = 0; index < WORLD->gizmo_blowup_count; ++index, ++blowup) {
-        u32 properties = blowup->draw_flags;
+    for (i32 index = 0; index < WORLD->gizmo_blowup_count; ++index) {
+        GIZMOBLOWUP_s *blowup = &WORLD->gizmo_blowups[index];
+        const u32 properties = blowup->draw_flags;
         if ((blowup->status_flags & 0x804001) != 0x804000 ||
             (exclude_flag_1 && (properties & 0x80000) && airborne_damage)) {
             continue;
@@ -2009,7 +2000,6 @@ GIZMOBLOWUP_s *GizmoBlowUp_Hit(GameObject_s *object, NUVEC *points, i32 point_co
             BlowupExFunc(blowup, hit_type)) {
             continue;
         }
-        properties = blowup->draw_flags;
         if (bolt != NULL && (blowup->platform_id != -1 || (properties & 0x8000) == 0 ||
                              ((properties & 0x80000) && (object == NULL || object->field_0xcc0 == NULL)))) {
             continue;

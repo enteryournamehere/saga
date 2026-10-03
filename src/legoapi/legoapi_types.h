@@ -550,7 +550,8 @@ struct AREADATA_s;
 struct AREASAVE_s {
     u8 complete;
     u8 area_complete;
-    u8 true_hero_complete[2]; // Story and free-play completion.
+    u8 story_buildup_complete;
+    u8 freeplay_buildup_complete;
     u8 minikit_complete;
     union {
         u8 field_0x5[3];
@@ -561,9 +562,6 @@ struct AREASAVE_s {
     f32 challenge_trial_time;
 };
 DECOMP_ASSERT(sizeof(AREASAVE_s) == 0xc, "AREASAVE_s size");
-DECOMP_ASSERT(offsetof(AREASAVE_s, true_hero_complete[0]) == 0x2, "AREASAVE story true hero offset");
-DECOMP_ASSERT(offsetof(AREASAVE_s, true_hero_complete[1]) == 0x3, "AREASAVE free-play true hero offset");
-DECOMP_ASSERT(sizeof(((AREASAVE_s *)0)->true_hero_complete) == 0x2, "AREASAVE true hero completion extent");
 DECOMP_ASSERT(offsetof(AREASAVE_s, area_complete) == 0x1, "AREASAVE area completion offset");
 DECOMP_ASSERT(offsetof(AREASAVE_s, challenge_trial_time) == 0x8, "AREASAVE challenge time offset");
 struct ATTRACTO_s;
@@ -1020,6 +1018,7 @@ struct CUTINFO {
         i32 music_track_handle;
     };
     f32 low_end_distance;
+    f32 field_194;
 };
 DECOMP_ASSERT(offsetof(CUTINFO, burnout_threshold) == 0x60, "CUTINFO burnout threshold offset");
 DECOMP_ASSERT(offsetof(CUTINFO, texture_animations) == 0x144, "CUTINFO texture animations offset");
@@ -1034,7 +1033,7 @@ DECOMP_ASSERT(offsetof(CUTINFO, debris_render_group) == 0xf3, "CUTINFO debris re
 DECOMP_ASSERT(offsetof(CUTINFO, next_cutscene) == 0x104, "CUTINFO chained-cutscene offset");
 DECOMP_ASSERT(offsetof(CUTINFO, end_flags) == 0x18a, "CUTINFO end-flags offset");
 DECOMP_ASSERT(offsetof(CUTINFO, music_handle) == 0x18c, "CUTINFO music-handle offset");
-DECOMP_ASSERT(sizeof(CUTINFO) == 0x194, "CUTINFO size");
+DECOMP_ASSERT(sizeof(CUTINFO) == 0x198, "CUTINFO size");
 DECOMP_ASSERT(offsetof(CUTINFO, music_track_handle) == 0x18c, "CUTINFO music offset");
 DECOMP_ASSERT(offsetof(CUTINFO, texture_animations) + offsetof(CUTSCENETEXANIM, index) == 0x148,
               "CUTINFO texture signals offset");
@@ -5789,7 +5788,6 @@ struct SceneObject : SpecialObject {
     i32 editor_owned;
     i32 reserved_0x28;
 
-    static void operator delete(void *pointer);
     Placeable *Clone(i32) const override;
     SceneObject();
 };
@@ -5896,7 +5894,6 @@ DECOMP_ASSERT(offsetof(TTNetwork, session) == 0x110f0, "TTNetwork session offset
 // through these slots, so the declarations must carry the same order.
 struct ThingManager {
     virtual ~ThingManager();
-    static void operator delete(void *);
     virtual void AddThing(BaseThing *);
     virtual void AddThingAfterThis(BaseThing *);
     virtual void RemoveTemporaryThings();

@@ -83,15 +83,14 @@ static void SystemPauseCallback(const NuPhoneOSMessageData *) {
     if (game_is_paused == 0 && timer_updates != 0 && !(autosave_pre_delay > 0.0f) && new_mode == 0 &&
         (((pause_player = Player[0]) != NULL && static_cast<i8>(pause_player->apiobj.field_0x1f8) < 0 &&
           (dropin_context == -1 || dropin_context != static_cast<i8>(pause_player->field_0x7a5)) && new_level == NULL &&
-          fade == 0.0f && editor_is_active == 0 && game_time > 0.0f && world != NULL &&
+          fade == 0.0f && editor_is_active == 0 && !(game_time <= 0.0f) && world != NULL &&
           world->current_level != title_level && GameMenu[menu_level].menu == -1 && cutscene_waiting == 0 &&
           cutscene_stops_game == 0 && mini_cut_camera == 0 && autosave_started == 0 && !(autosave_post_delay > 0.0f)) ||
          ((pause_player = Player[1]) != NULL && static_cast<i8>(pause_player->apiobj.field_0x1f8) < 0 &&
           (dropin_context == -1 || dropin_context != static_cast<i8>(pause_player->field_0x7a5)) && new_level == NULL &&
-          fade == 0.0f && editor_is_active == 0 && game_time > 0.0f && world != NULL &&
+          fade == 0.0f && editor_is_active == 0 && !(game_time <= 0.0f) && world != NULL &&
           world->current_level != title_level && GameMenu[menu_level].menu == -1 && cutscene_waiting == 0 &&
-          cutscene_stops_game == 0 && mini_cut_camera == 0 && autosave_started == 0 &&
-          !(autosave_post_delay > 0.0f)))) {
+          cutscene_stops_game == 0 && mini_cut_camera == 0 && autosave_started == 0 && autosave_post_delay <= 0.0f))) {
         PauseGame(pause_player->pad_gamepad - GamePad);
     }
 
@@ -117,15 +116,15 @@ i32 Text_ExpandButtonString(char *input, char *output) {
         strcpy(output, "[[y]]");
         return 1;
     }
-    if (NuStrICmp(input, "[ACTION]") == 0 || NuStrICmp(input, "[SQUARE]") == 0 || NuStrICmp(input, "[S]") == 0) {
+    if (NuStrICmp(input, "[SQUARE]") == 0 || NuStrICmp(input, "[S]") == 0 || NuStrICmp(input, "[ACTION]") == 0) {
         strcpy(output, "[[x]]");
         return 1;
     }
-    if (NuStrICmp(input, "[SPECIAL]") == 0 || NuStrICmp(input, "[CIRCLE]") == 0 || NuStrICmp(input, "[O]") == 0) {
+    if (NuStrICmp(input, "[CIRCLE]") == 0 || NuStrICmp(input, "[O]") == 0 || NuStrICmp(input, "[SPECIAL]") == 0) {
         strcpy(output, "[[b]]");
         return 1;
     }
-    if (NuStrICmp(input, "[JUMP]") == 0 || NuStrICmp(input, "[CROSS]") == 0 || NuStrICmp(input, "[X]") == 0) {
+    if (NuStrICmp(input, "[CROSS]") == 0 || NuStrICmp(input, "[X]") == 0 || NuStrICmp(input, "[JUMP]") == 0) {
         strcpy(output, "[[a]]");
         return 1;
     }

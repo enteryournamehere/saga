@@ -90,6 +90,7 @@ extern "C" {
 }
 
 static i32 clip_special_objects = 1;
+
 using NUHGOBJVIDEOMEMFN = void (*)(nuhgobj_s *);
 
 NUHGOBJVIDEOMEMFN hgobj_to_video_mem;
@@ -368,14 +369,14 @@ extern "C" {
                 return 2;
             }
 
-            distance0 = center->x * ScissorPlanes.m00 + center->y * ScissorPlanes.m10 +
-                        center->z * ScissorPlanes.m20 + ScissorPlanes.m30;
-            distance1 = center->x * ScissorPlanes.m01 + center->y * ScissorPlanes.m11 +
-                        center->z * ScissorPlanes.m21 + ScissorPlanes.m31;
-            distance2 = center->x * ScissorPlanes.m02 + center->y * ScissorPlanes.m12 +
-                        center->z * ScissorPlanes.m22 + ScissorPlanes.m32;
-            distance3 = center->x * ScissorPlanes.m03 + center->y * ScissorPlanes.m13 +
-                        center->z * ScissorPlanes.m23 + ScissorPlanes.m33;
+            distance0 = center->x * ScissorPlanes.m00 + center->y * ScissorPlanes.m10 + center->z * ScissorPlanes.m20 +
+                        ScissorPlanes.m30;
+            distance1 = center->x * ScissorPlanes.m01 + center->y * ScissorPlanes.m11 + center->z * ScissorPlanes.m21 +
+                        ScissorPlanes.m31;
+            distance2 = center->x * ScissorPlanes.m02 + center->y * ScissorPlanes.m12 + center->z * ScissorPlanes.m22 +
+                        ScissorPlanes.m32;
+            distance3 = center->x * ScissorPlanes.m03 + center->y * ScissorPlanes.m13 + center->z * ScissorPlanes.m23 +
+                        ScissorPlanes.m33;
             NuVecMtxTransform(reinterpret_cast<NUVEC *>(&radius), extent, &AbsScissorPlanes);
 
             if (distance0 > radius.x || distance1 > radius.y || distance2 > radius.z || distance3 > radius.w) {
@@ -1636,9 +1637,8 @@ extern "C" {
                         const u32 wrapped = static_cast<u32>(angles[axis]) & 0xffff;
                         angles[axis] =
                             wrapped >= 0x8000 ? static_cast<i32>(wrapped) - 0x10000 : static_cast<i32>(wrapped);
-                        if (angles[axis] > joint_override.rotation_limit_start[axis]) {
-                            angles[axis] = joint_override.rotation_limit_start[axis];
-                        } else if (angles[axis] < joint_override.rotation_limit_end[axis]) {
+                        if (joint_override.rotation_limit_start[axis] >= angles[axis] &&
+                            angles[axis] < joint_override.rotation_limit_end[axis]) {
                             angles[axis] = joint_override.rotation_limit_end[axis];
                         }
                     }
@@ -2228,16 +2228,13 @@ extern "C" {
         }
 
         u8 *lod_animation = static_cast<u8 *>(animation);
-        if (lod == 0) {
-            return lod_animation;
-        }
-        do {
+        while (lod-- != 0) {
             const u16 next_lod = *reinterpret_cast<u16 *>(lod_animation + 0x14);
             if (next_lod == 0) {
                 return NULL;
             }
             lod_animation += next_lod;
-        } while (--lod != 0);
+        }
         return lod_animation;
     }
     i32 NuAnimGetUseQuatsFlag(void) {
@@ -2258,14 +2255,11 @@ extern "C" {
         return ForceEulerToQuat;
     }
     i32 NuAnimPushSetUseQuatsFlag(i32 enabled) {
-        i32 *push_count = &NumQuatPushes;
-        i32 previous = ForceEulerToQuat;
-        i32 current_count = *push_count;
-        if (current_count > 3) {
+        const i32 previous = ForceEulerToQuat;
+        if (NumQuatPushes > 3) {
             return 0;
         }
-        QuatPushes[current_count] = previous;
-        *push_count = current_count + 1;
+        QuatPushes[NumQuatPushes++] = ForceEulerToQuat;
         ForceEulerToQuat = static_cast<u8>(enabled);
         return previous;
     }
@@ -2311,37 +2305,6 @@ extern "C" {
     // Math / geometry
     // ---------------------------------------------------------------------------
 
-    f32 NuLog2(f32 value) {
-        return NuLog10(value) * 3.321928f;
-    }
-    static f32 pow_x[32], pow_y[32], pow_rv[32];
-    static i32 pow_cache_free;
-    f32 NuPow(f32 x, f32 y) {
-        if (x == 0.0f)
-            return 0.0f;
-        static i32 first_time = 1;
-        if (first_time != 0) {
-            first_time = 0;
-            for (i32 i = 0; i < 32; ++i)
-                pow_x[i] = FLT_MAX;
-        }
-        for (i32 i = 0; i < 32; ++i) {
-            if (pow_x[i] == x && pow_y[i] == y)
-                return pow_rv[i];
-        }
-        f32 result = static_cast<f32>(exp(static_cast<double>(y) * log(static_cast<double>(x))));
-        pow_x[pow_cache_free] = x;
-        pow_y[pow_cache_free] = y;
-        pow_rv[pow_cache_free] = result;
-        pow_cache_free = (pow_cache_free + 1) & 31;
-        return result;
-    }
-    i32 NuPower2(i32 value) {
-        i32 power = value > 127 ? 128 : 1;
-        while (power < value)
-            power += power;
-        return power;
-    }
     // ---------------------------------------------------------------------------
     // Quick-font platform rendering (the generic font run lives in nuqfnt.cpp)
     // ---------------------------------------------------------------------------
@@ -2574,32 +2537,18 @@ extern "C" {
     // ---------------------------------------------------------------------------
 
     void NuAccumulationMotionBlurEffect(i32 frames, f32 blend, i32 mode) {
-        volatile nurenderscene_s *scene = &currentScene;
-        scene->accumulation_blend = blend;
-        scene->unknown_174 = 1;
-        scene->unknown_178 = 1;
-#if defined(__i386__) && defined(__GNUC__) && !defined(__clang__)
-        typedef f32 AliasedFloat __attribute__((may_alias));
-        *reinterpret_cast<volatile AliasedFloat *>(&scene->accumulation_mode) =
-            *reinterpret_cast<const AliasedFloat *>(&mode);
-#else
-        scene->accumulation_mode = mode;
-#endif
-        scene->accumulation_frames = frames;
+        currentScene.accumulation_blend = blend;
+        currentScene.unknown_174 = 1;
+        currentScene.unknown_178 = 1;
+        currentScene.accumulation_mode = mode;
+        currentScene.accumulation_frames = frames;
         motionBlurAccumActiveThisFrame = 1;
     }
     void NuAccumulationMotionBlurParams(i32 frames, f32 blend, i32 mode) {
-        volatile nurenderscene_s *scene = &currentScene;
-        scene->accumulation_blend = blend;
-        scene->unknown_174 = 1;
-        scene->accumulation_frames = frames;
-#if defined(__i386__) && defined(__GNUC__) && !defined(__clang__)
-        typedef f32 AliasedFloat __attribute__((may_alias));
-        *reinterpret_cast<volatile AliasedFloat *>(&scene->accumulation_mode) =
-            *reinterpret_cast<const AliasedFloat *>(&mode);
-#else
-        scene->accumulation_mode = mode;
-#endif
+        currentScene.accumulation_blend = blend;
+        currentScene.unknown_174 = 1;
+        currentScene.accumulation_frames = frames;
+        currentScene.accumulation_mode = mode;
     }
     extern nurenderscene_s currentScene;
     void NuBackbufferCopy(i32 texture_id) {
@@ -2820,8 +2769,8 @@ extern "C" {
         NUMTX clip_matrix;
         NuCameraGetClipMtx(&clip_matrix, NULL);
         f32 aspect = (f32)PS2_REZ_W / (f32)PS2_REZ_H;
-        NULGTLASER *laser = NuLgtLaserData;
-        for (i32 i = 0; i < NuLgtLaserCnt; ++i, ++laser) {
+        for (i32 i = 0; i < NuLgtLaserCnt; ++i) {
+            NULGTLASER *laser = &NuLgtLaserData[i];
             vertices[4].x = laser->start.x;
             vertices[4].y = laser->start.y;
             vertices[4].z = laser->start.z;
@@ -3280,7 +3229,7 @@ extern "C" {
         light->setupCustomCameraFrustum(camera, splits, count);
     }
     i32 NuDynamicLightTestShadowExtrusionExtent(NuDynamicLight *light, const NUVEC *center, const NUVEC *extent,
-                                              i32 render_set) {
+                                                i32 render_set) {
         VuVec minimum;
         VuVec maximum;
         minimum.x = center->x - extent->x;
@@ -4245,7 +4194,7 @@ extern "C" {
         }
         return 0;
     }
-    static inline __attribute__((always_inline)) void NuPadCopyTouchFields(volatile u8 *source_x) {
+    static inline void NuPadCopyTouchFields(volatile u8 *source_x) {
         f32 x = *reinterpret_cast<volatile f32 *>(source_x);
         u8 active = source_x[-4];
         *reinterpret_cast<volatile f32 *>(source_x - 24) = x;
@@ -4262,136 +4211,6 @@ extern "C" {
         u32 id = *reinterpret_cast<volatile u32 *>(source_x + 16);
         *reinterpret_cast<volatile f32 *>(source_x - 12) = old_y;
         *reinterpret_cast<volatile u32 *>(source_x - 8) = id;
-    }
-    void NuPad_Interface_TouchScreenInput(i32 x, i32 y, i32 prior_x, i32 prior_y, i32 is_down, i32 is_up,
-                                          i32 is_move, i32 is_cancelled) {
-        NuInputDevice *device = inputManager->GetDevice(0);
-        if (device == NULL) {
-            return;
-        }
-
-        // The retail routine writes directly to the touch data at device+0x198.
-        NuInputTouchData *data = reinterpret_cast<NuInputTouchData *>(reinterpret_cast<u8 *>(device) + 0x198);
-        f32 width = static_cast<f32>(g_backingWidth);
-        f32 height = static_cast<f32>(g_backingHeight);
-        f32 old_x = static_cast<f32>(prior_x) / width;
-        f32 old_y = static_cast<f32>(prior_y) / height;
-
-        if (is_cancelled != 0) {
-            f32 aspect = width / height;
-            i32 count = data->touch_count;
-            if (count > 0) {
-                f32 nearest_distance = FLT_MAX;
-                i32 nearest = 0;
-                for (i32 i = 0; i < count; ++i) {
-                    f32 dx = (data->touch_events[i].unknown_04 - old_x) * aspect;
-                    f32 dy = data->touch_events[i].unknown_08 - old_y;
-                    f32 distance = dx * dx + dy * dy;
-                    if (distance < nearest_distance) {
-                        nearest_distance = distance;
-                        nearest = i;
-                    }
-                }
-                if (!(nearest_distance > 0.04f)) {
-                    used_touch_IDs[data->touch_events[nearest].unknown_14] = false;
-                    volatile u8 *source_x =
-                        reinterpret_cast<volatile u8 *>(&data->touch_events[nearest + 1].unknown_04);
-                    for (i32 i = nearest + 1; i < count; ++i) {
-                        NuPadCopyTouchFields(source_x);
-                        source_x += sizeof(NuInputTouch);
-                    }
-                    NuInputTouch *last = &data->touch_events[--data->touch_count];
-                    last->unknown_00 = 0;
-                    last->unknown_01 = 0;
-                    last->unknown_02 = 0;
-                    last->unknown_04 = 0.0f;
-                    last->unknown_08 = 0.0f;
-                    last->unknown_0c = 0.0f;
-                    last->unknown_10 = 0.0f;
-                    last->unknown_14 = 0;
-                    return;
-                }
-            }
-            memset(data->touch_events, 0, sizeof(data->touch_events));
-            data->touch_count = 0;
-            memset(used_touch_IDs, 0, sizeof(used_touch_IDs));
-            return;
-        }
-
-        f32 new_x = static_cast<f32>(x) / width;
-        f32 new_y = static_cast<f32>(y) / height;
-        if (is_move != 0) {
-            i32 free_id = 0;
-            while (free_id < 10 && used_touch_IDs[free_id]) {
-                ++free_id;
-            }
-            for (i32 i = 0; i < 10; ++i) {
-                NuInputTouch *touch = &data->touch_events[i];
-                if (!touch->unknown_00 && !touch->unknown_01 && !touch->unknown_02) {
-                    touch->unknown_00 = 0;
-                    touch->unknown_01 = 0;
-                    touch->unknown_02 = 1;
-                    touch->unknown_04 = new_x;
-                    touch->unknown_08 = new_y;
-                    touch->unknown_0c = 0.0f;
-                    touch->unknown_10 = 0.0f;
-                    touch->unknown_14 = free_id;
-                    used_touch_IDs[free_id] = true;
-                    ++data->touch_count;
-                    return;
-                }
-            }
-            return;
-        }
-
-        if (is_up != 0) {
-            i32 selected = 10;
-            for (i32 i = 0; i < 10; ++i) {
-                volatile NuInputTouch *touch = &data->touch_events[i];
-                if ((touch->unknown_00 || touch->unknown_02) &&
-                    ((touch->unknown_04 == old_x && touch->unknown_08 == old_y) ||
-                     (touch->unknown_0c == old_x && touch->unknown_10 == old_y))) {
-                    selected = i;
-                    break;
-                }
-            }
-            used_touch_IDs[data->touch_events[selected].unknown_14] = false;
-            volatile u8 *source_x = reinterpret_cast<volatile u8 *>(&data->touch_events[selected + 1].unknown_04);
-            for (i32 i = selected + 1; i < static_cast<i32>(data->touch_count); ++i) {
-                NuPadCopyTouchFields(source_x);
-                source_x += sizeof(NuInputTouch);
-            }
-            NuInputTouch *last = &data->touch_events[--data->touch_count];
-            last->unknown_00 = 0;
-            last->unknown_01 = 0;
-            last->unknown_02 = 0;
-            last->unknown_04 = 0.0f;
-            last->unknown_08 = 0.0f;
-            last->unknown_0c = 0.0f;
-            last->unknown_10 = 0.0f;
-            last->unknown_14 = 0;
-            return;
-        }
-
-        if (is_down != 0) {
-            i32 selected = 10;
-            for (i32 i = 0; i < 10; ++i) {
-                volatile NuInputTouch *touch = &data->touch_events[i];
-                if ((touch->unknown_00 || touch->unknown_02) && touch->unknown_04 == old_x &&
-                    touch->unknown_08 == old_y) {
-                    selected = i;
-                    break;
-                }
-            }
-            NuInputTouch *touch = &data->touch_events[selected];
-            touch->unknown_00 = 1;
-            touch->unknown_01 = 0;
-            touch->unknown_02 = 0;
-            touch->unknown_04 = new_x;
-            touch->unknown_08 = new_y;
-            touch->unknown_0c = old_x;
-            touch->unknown_10 = old_y;
-        }
     }
     void NuPad_Interface_TouchScreenInput(i32 x, i32 y, i32 prior_x, i32 prior_y, i32 is_down, i32 is_up, i32 is_move,
                                           i32 is_cancelled) {
@@ -4554,17 +4373,9 @@ extern "C" {
         return scene != NULL ? static_cast<u16>(scene->num_rooms) : 0;
     }
     void NuPortalResetActive(NUGSCN *scene) {
-        const u32 count = scene->max_portals;
-        if (count == 0)
-            return;
-        const u32 portal_bytes = count * sizeof(*scene->portals);
-        u8 *portals = reinterpret_cast<u8 *>(scene->portals);
-        u32 offset = 0;
-        do {
-            reinterpret_cast<decltype(scene->portals)>(portals + offset)->is_active |=
-                NUPORTAL_FLAG_ACTIVE | NUPORTAL_FLAG_DEFAULT_ACTIVE;
-            offset += sizeof(*scene->portals);
-        } while (portal_bytes != offset);
+        for (u32 i = 0; i < scene->max_portals; ++i) {
+            scene->portals[i].is_active |= NUPORTAL_FLAG_ACTIVE | NUPORTAL_FLAG_DEFAULT_ACTIVE;
+        }
     }
     i32 NuPortalRoomClipTest(NUGSCN *scene, i16 room_id) {
         if (scene == NULL || scene->max_portals == 0) {
@@ -4619,19 +4430,13 @@ extern "C" {
                 ++plane;
                 --plane_count;
             }
-            if (!(plane_distance <= 0.0f)) {
+            if (plane_distance > 0.0f) {
                 continue;
             }
 
-            // Later matches do not change the selected pair; avoid overflowing the candidate slots.
-            if (candidate_count >= 3) {
-                continue;
-            }
-
-            // Retail snapshots the old candidate rooms before inserting this room.
-            NUROOM &first = scene->rooms[candidates[0]];
-            NUROOM &second = scene->rooms[candidates[1]];
             if (candidate_count == 2) {
+                NUROOM &first = scene->rooms[candidates[0]];
+                NUROOM &second = scene->rooms[candidates[1]];
                 if (first.priority < second.priority) {
                     candidates[0] = static_cast<i16>(room_index);
                 } else {
@@ -4646,6 +4451,8 @@ extern "C" {
                 continue;
             }
 
+            NUROOM &first = scene->rooms[candidates[0]];
+            NUROOM &second = scene->rooms[candidates[1]];
             if ((first.flags & NUROOM_FLAG_OVERLAPPING) != 0 || (second.flags & NUROOM_FLAG_OVERLAPPING) != 0) {
                 continue;
             }
@@ -4653,7 +4460,7 @@ extern "C" {
         }
 
         if (candidate_count == 1) {
-            return static_cast<u16>(candidates[0]);
+            return candidates[0];
         }
         if (candidate_count == 0) {
             return -1;
@@ -4676,7 +4483,9 @@ extern "C" {
         }
         return -1;
     }
-    i32 do_boxtree;
+    void NuVisiBoxTree(void) {
+        STUBBED();
+    }
     i32 VisiSysCameraLock;
     i32 LoadedOcclusionData;
     i32 UsingOcclusionData;
@@ -4717,6 +4526,9 @@ extern "C" {
             NuCameraUnlock();
         }
         return result;
+    }
+    void NuVisiInstTree(void *, NUGSCN *) {
+        STUBBED();
     }
     struct NuVisibilityOcclusionGrid {
         u32 reserved_00;
@@ -4860,10 +4672,24 @@ extern "C" {
     // Debug / error / profiling
     // ---------------------------------------------------------------------------
 
-    i32 NuRndrBeginScene(i32 flags);
-    f32 NuFrameEnd(void);
-    char *NuGetErrN(i32 entry);
+    void NuErrorSleep(void) {
+        STUBBED();
+    }
 
+    // ---------------------------------------------------------------------------
+    // Thread / misc OS
+    // ---------------------------------------------------------------------------
+
+#ifndef ANDROID
+    void NuGetCurrentThreadId(void) {
+        STUBBED();
+    }
+#endif
+#ifndef ANDROID
+    void NuThreadCreate(void) {
+        STUBBED();
+    }
+#endif
     static f32 nu2api_paused;
     void NuPause(i32 paused) {
         nu2api_paused = (f32)paused;
@@ -4900,15 +4726,6 @@ struct nuframebuffer_s;
 struct nushaderobject_s;
 union variptr_u;
 
-static char g_smbPath[256];
-
-void Nu360ConfigureSMBSharing(char **path) {
-    NuFileSetCurrentDirectory("d:\\");
-    if (static_cast<bool>(NuFileLoadBuffer("smbpath.txt", g_smbPath, sizeof(g_smbPath)))) {
-        NuFileSetCurrentDirectory(g_smbPath);
-        *path = g_smbPath;
-    }
-}
 void NuLgtSetArcMatEx(i32 type, numtl_s *material, f32 u0, f32 v0, f32 u1, f32 v1) {
     if (type > 3)
         return;

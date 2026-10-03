@@ -28,7 +28,9 @@ class NuVirtualTouchDevice : public NuInputDeviceTranslator {
     void CreateDefaultLayout(u32 unknown);
 
     void AddAlwaysActiveElement(NuTouchInputElement *element) {
-        unknown_08.elements[unknown_08.unknown_c8++] = element;
+        if (element != NULL && unknown_08.unknown_c8 < 50) {
+            unknown_08.elements[unknown_08.unknown_c8++] = element;
+        }
     }
 
     static f32 GetAspectRatio();

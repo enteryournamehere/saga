@@ -52,7 +52,6 @@ extern "C" {
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nuquat.h"
-#include "nu2api/nuplatform/nuplatform.h"
 
 #include <GLES2/gl2.h>
 #include <string.h>
@@ -76,38 +75,25 @@ i32 GetIntCurveVal(ani3_animheader_s *animation, f32 *values, i32 curve) {
         return reinterpret_cast<i32 *>(values)[curve];
     }
     const f32 value = values[curve];
-    if (value < 0.0f) {
-        return static_cast<i32>(value - 0.5f);
-    }
-    return static_cast<i32>(value + 0.5f);
+    return static_cast<i32>(value < 0.0f ? value - 0.5f : value + 0.5f);
 }
 
 extern "C" void NuAnimBuffCreateScratch(nuanimbuff_s *buffer);
 extern "C" void NuAnimBuffDestroyScratch(nuanimbuff_s *buffer);
 extern nurenderscene_s currentScene;
 extern HashRedirect g_shaderProgramRedirects[417];
-void bgSuspendMain(i32);
 
-#if defined(__GNUC__) && !defined(__clang__)
-#define NU_PRINT_FRAME_POINTER                                                                                         \
-    __attribute__((optimize("no-omit-frame-pointer", "no-schedule-insns", "no-schedule-insns2")))
-#else
-#define NU_PRINT_FRAME_POINTER
-#endif
-
-NU_PRINT_FRAME_POINTER void NuErrorPrint(char *message) {
+void NuErrorPrint(char *message) {
     printf("%s", message);
 }
 
-NU_PRINT_FRAME_POINTER void NuWarningPrint(char *message) {
+void NuWarningPrint(char *message) {
     printf("%s", message);
 }
 
-NU_PRINT_FRAME_POINTER void NuDebugMsgPrint(char *message) {
+void NuDebugMsgPrint(char *message) {
     printf("%s", message);
 }
-
-#undef NU_PRINT_FRAME_POINTER
 
 void NuVpSetDestRect(float left, float top, float right, float bottom) {
     NuVpSetPosition2(left, top);
@@ -331,35 +317,11 @@ void NuVpSetSourceRect(float left, float top, float right, float bottom) {
     const float source_height = bottom - top;
     const float scaled_width = (width / source_width) * width;
     float position_scale_x = scaled_width / source_width;
-    
     const float scaled_height = (height / source_height) * height;
     const float position_x = -left * position_scale_x * 0.5f;
     const float position_y = -top * (scaled_height / source_height) * 0.5f;
     NuVpSetPosition2(position_x, position_y);
     NuVpSetSize2(scaled_width, scaled_height);
-}
-
-__attribute__((optimize("O0,no-omit-frame-pointer"))) i32 NuFrameEndBgLoadPS(i32 minimum_delay) {
-    i32 delay = 0;
-    NUTIME now;
-    NUTIME elapsed;
-    NuTimeGet(&now);
-    NuTimeSub(&elapsed, &now, &nuapi.time2);
-    const i32 scanlines = static_cast<i32>(NuTimeScanlines(&elapsed));
-    if (nuapi.fps == 60.0f) {
-        delay = 0xff - scanlines;
-    } else if (nuapi.fps == 50.0f) {
-        delay = 0x131 - scanlines;
-    } else if (nuapi.fps == 30.0f) {
-        delay = 0x1e0 - scanlines;
-    } else if (nuapi.fps == 25.0f) {
-        delay = 0x244 - scanlines;
-    }
-    if (delay >= minimum_delay) {
-        bgSuspendMain(delay);
-        return 0;
-    }
-    return 1;
 }
 
 void NuGCutRigidCalcMtx(NUGCUTRIGID_s *rigid, float frame, numtx_s *mtx) {
@@ -564,7 +526,7 @@ i32 NuIOS_GetInAppProductByID(char *, NuIOS_InAppProduct *) {
     return 0;
 }
 
-__attribute__((optimize("no-omit-frame-pointer"))) ShaderObjectKey NuIOS_GetShaderProgramKey(ShaderObjectKey const &key) {
+ShaderObjectKey NuIOS_GetShaderProgramKey(ShaderObjectKey const &key) {
     ShaderObjectKey result;
     u32 redirected_key __attribute__((aligned(16)));
     if (LookupHash(key.key, &redirected_key, g_shaderProgramRedirects, 417))
@@ -695,7 +657,7 @@ GLuint NuIOS_CreateGLTexFromPVRInMemory(void *data, i32 *out_width, i32 *out_hei
     extern i32 g_loadDefaultTexture;
     extern i32 g_loadingCharacterInHub;
 
-    GLenum cube_faces[6] = {
+    static const GLenum cube_faces[6] = {
         GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
         GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
     };
@@ -712,51 +674,6 @@ GLuint NuIOS_CreateGLTexFromPVRInMemory(void *data, i32 *out_width, i32 *out_hei
     const u32 surfaces = *(u32 *)(header + 0x24);
     const u32 faces = *(u32 *)(header + 0x28);
     const u32 mip_count = *(u32 *)(header + 0x2c);
-
-    if (faces == 6) {
-        struct PVRMetadataHeader {
-            u32 fourcc;
-            u32 key;
-            u32 data_size;
-        };
-        const u8 *metadata = header + 0x34;
-        usize remaining = *(u32 *)(header + 0x30);
-        while (remaining >= sizeof(PVRMetadataHeader)) {
-            PVRMetadataHeader record;
-            memcpy(&record, metadata, sizeof(record));
-            metadata += sizeof(record);
-            remaining -= sizeof(record);
-            if (record.data_size > remaining) {
-                break;
-            }
-            if (record.fourcc == 0x03525650 && record.key == 2 && record.data_size == 6) {
-                for (u32 face = 0; face < 6; ++face) {
-                    switch (metadata[face]) {
-                        case 'X':
-                            cube_faces[face] = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
-                            break;
-                        case 'x':
-                            cube_faces[face] = GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
-                            break;
-                        case 'Y':
-                            cube_faces[face] = GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
-                            break;
-                        case 'y':
-                            cube_faces[face] = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
-                            break;
-                        case 'Z':
-                            cube_faces[face] = GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
-                            break;
-                        case 'z':
-                            cube_faces[face] = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
-                            break;
-                    }
-                }
-            }
-            metadata += record.data_size;
-            remaining -= record.data_size;
-        }
-    }
 
     GLenum internal_format = 0;
     GLenum format = 0;
@@ -802,19 +719,11 @@ GLuint NuIOS_CreateGLTexFromPVRInMemory(void *data, i32 *out_width, i32 *out_hei
     GLuint texture = 0;
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp", 0x2e7);
     glGenTextures(1, &texture);
-    if (faces <= 1) {
-        glActiveTexture(GL_TEXTURE0);
-        g_currentTexUnit = 0;
-        glBindTexture(GL_TEXTURE_2D, texture);
-    } else {
-        if (g_currentTexUnit != 0) {
-            glActiveTexture(GL_TEXTURE0);
-            g_currentTexUnit = 0;
-        }
-        if (g_lastBoundCubeTexIds[0] != texture) {
-            glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
-            g_lastBoundCubeTexIds[0] = texture;
-        }
+    glActiveTexture(GL_TEXTURE0);
+    g_currentTexUnit = 0;
+    glBindTexture(texture_target, texture);
+    if (faces > 1) {
+        g_lastBoundCubeTexIds[0] = texture;
     }
     glTexParameteri(texture_target, GL_TEXTURE_MIN_FILTER, mip_count < 2 ? GL_LINEAR : GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(texture_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -843,33 +752,20 @@ GLuint NuIOS_CreateGLTexFromPVRInMemory(void *data, i32 *out_width, i32 *out_hei
                 for (u32 z = 0; z < depth; ++z) {
                     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                            0x31d);
-                    if (faces <= 1) {
-                        glActiveTexture(GL_TEXTURE0);
-                        g_currentTexUnit = 0;
-                        glBindTexture(GL_TEXTURE_2D, texture);
-                    } else {
-                        if (g_currentTexUnit != 0) {
-                            glActiveTexture(GL_TEXTURE0);
-                            g_currentTexUnit = 0;
-                        }
-                        if (g_lastBoundCubeTexIds[0] != texture) {
-                            glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
-                            g_lastBoundCubeTexIds[0] = texture;
-                        }
-                    }
+                    glActiveTexture(GL_TEXTURE0);
+                    g_currentTexUnit = 0;
+                    glBindTexture(texture_target, texture);
 
-                    if (compressed) {
-                        if ((NuPlatform::Get()->GetCurrentPlatform() == IOS_PLATFORM ||
-                             NuPlatform::Get()->GetCurrentPlatform() == ANDROID_PVRTC_PLATFORM) &&
-                            g_loadDefaultTexture == 0) {
+                    if (g_loadDefaultTexture == 0) {
+                        if (compressed) {
                             glCompressedTexImage2D(target, mip, internal_format, mip_width, mip_height, 0, mip_size,
                                                    pixels + offset);
                         } else {
-                            loadDefaultTexture(texture, mip, mip_width, target, target);
+                            glTexImage2D(target, mip, internal_format, mip_width, mip_height, 0, format, type,
+                                         pixels + offset);
                         }
                     } else {
-                        glTexImage2D(target, mip, internal_format, mip_width, mip_height, 0, format, type,
-                                     pixels + offset);
+                        loadDefaultTexture(texture, mip, mip_width, texture_target, target);
                     }
                     EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                          0x341);

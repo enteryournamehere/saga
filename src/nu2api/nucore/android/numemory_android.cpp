@@ -5,7 +5,6 @@
 #include <stdlib.h>
 
 #include "nu2api/nucore/common.h"
-#include "nu2api/nucore/nuvuvec.hpp"
 
 NuMemoryPS::Mem1EventHandler::Mem1EventHandler() {
     this->page_count = 0;

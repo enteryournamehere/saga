@@ -21,8 +21,6 @@
 
 extern i32 MenuLoadStarted;
 extern i32 memcard_slot;
-extern i32 memcard_cardchanged;
-extern i32 memcard_slotsused;
 extern i32 memcard_saveneeded;
 extern i32 memcard_savestarted;
 extern i32 memcard_savefailed;
@@ -42,8 +40,6 @@ char filteroutblocks[8][12];
 i32 numfilterblocks;
 char filterblocks[8][96];
 
-#define SAVELOAD_TARGET_OPT __attribute__((optimize("O2", "omit-frame-pointer")))
-
 char FS_FileList[0x10000];
 char FS_LastFileName[64];
 char FS_Path[256];
@@ -55,6 +51,18 @@ i32 FS_SortMode = 3;
 char *FS_CurrentCursorPos = FS_FileList;
 char *FS_CurrentPos = FS_FileList;
 char *FS_FileListEnd = FS_FileList;
+char FS_Title[64] = "Title";
+char FS_Filter[256] = "*.nup | *.hgp   ";
+char FS_FilterOut[256] = "_PC. | _360. | _PS3.";
+f32 FS_X = 50.0f;
+f32 FS_Y = 40.0f;
+f32 FS_Width = 248.0f;
+f32 FS_W;
+f32 FS_H;
+u8 FS_Active;
+u8 FS_RefreshDir;
+u8 FS_ShowVolumes;
+void (*FS_Callback)(char *, char *);
 
 void FS_BuildFilterBlocks(char *);
 void FS_BuildFilterOutBlocks(char *);
@@ -62,18 +70,30 @@ void FS_SortStrings(char *, char *, i32);
 i32 FS_FileNameFilter(char *);
 void FS_MakeDateTimeString(FS_FILEENTRYHDR *, char *);
 
+f32 memcard_autosavecanceldelay = 1.5f;
+extern f32 memcard_formatmessage_delay;
+extern f32 memcard_formatresult_delay;
+f32 memcard_createmessage_delay;
+f32 memcard_createresult_delay;
+extern f32 memcard_deletemessage_delay;
+extern f32 memcard_deleteresult_delay;
+f32 memcard_message_delay;
+f32 memcard_result_delay;
+i32 memcard_justformatted;
+i32 saveload_autosavedisabled;
+
 void InitMemCard() {
 }
 
-SAVELOAD_TARGET_OPT i32 SaveGizmoSys(GIZMOSYS_s *, char *, char *) {
+i32 SaveGizmoSys(GIZMOSYS_s *, char *, char *) {
     return 0;
 }
 
-SAVELOAD_TARGET_OPT void SerialiseInt(EdStream &stream, void *data, i32) {
+void SerialiseInt(EdStream &stream, void *data, i32) {
     stream.SerialiseBuffer(data, 4, 1);
 }
 
-SAVELOAD_TARGET_OPT void FS_GetDirList(char *path, char *filter, char *filter_out) {
+void FS_GetDirList(char *path, char *filter, char *filter_out) {
     FS_BuildFilterBlocks(filter);
     FS_BuildFilterOutBlocks(filter_out);
 
@@ -95,8 +115,7 @@ SAVELOAD_TARGET_OPT void FS_GetDirList(char *path, char *filter, char *filter_ou
         next = FS_FileList + 10;
         while (i32 name_length = NuFileReadDir(directory, entry)) {
             char *name = entry + 0x18;
-            if (*reinterpret_cast<u16 *>(name) == '.' ||
-                (*reinterpret_cast<u32 *>(name) & 0xffffff) == 0x2e2e ||
+            if (*reinterpret_cast<u16 *>(name) == '.' || (*reinterpret_cast<u32 *>(name) & 0xffffff) == 0x2e2e ||
                 !(entry[0] & 8)) {
                 continue;
             }
@@ -161,11 +180,11 @@ SAVELOAD_TARGET_OPT void FS_GetDirList(char *path, char *filter, char *filter_ou
     FS_FileListEnd = next;
 }
 
-SAVELOAD_TARGET_OPT void SerialiseChar(EdStream &stream, void *data, i32) {
+void SerialiseChar(EdStream &stream, void *data, i32) {
     stream.SerialiseBuffer(data, 1, 1);
 }
 
-SAVELOAD_TARGET_OPT i32 FS_PrevNameLen(char *name) {
+i32 FS_PrevNameLen(char *name) {
     if (__builtin_expect(name == FS_FileList, 0)) {
         return 0;
     }
@@ -180,7 +199,6 @@ SAVELOAD_TARGET_OPT i32 FS_PrevNameLen(char *name) {
     for (;;) {
         --previous;
         ++length;
-        
         if (*previous == '\0') {
             return length + 1;
         }
@@ -190,22 +208,20 @@ SAVELOAD_TARGET_OPT i32 FS_PrevNameLen(char *name) {
     }
 }
 
-static inline __attribute__((always_inline)) u32 FS_EncodedDateKey(const char *name) {
+static inline u32 FS_EncodedDateKey(const char *name) {
     u32 key = static_cast<u8>(name[6]) - 'A';
     key = key * 13 + static_cast<u8>(name[5]) - 'A';
     key = key * 33 + static_cast<u8>(name[4]) - 'A';
     key = key + ((key + (key << 1)) << 3) + static_cast<u8>(name[3]) - 'A';
     key *= 61;
     key += static_cast<u8>(name[2]);
-    
     key -= 'A';
     key *= 61;
     return key + static_cast<u8>(name[1]) - 'A';
 }
 
-SAVELOAD_TARGET_OPT void FS_SortStrings(char *start, char *end, i32 mode) {
+void FS_SortStrings(char *start, char *end, i32 mode) {
     char tmp[256];
-    
 
     if (static_cast<u32>(mode) > 1) {
         const i32 direction = mode == 2 ? 1 : -1;
@@ -248,31 +264,31 @@ SAVELOAD_TARGET_OPT void FS_SortStrings(char *start, char *end, i32 mode) {
     }
 }
 
-SAVELOAD_TARGET_OPT void SerialiseFloat(EdStream &stream, void *data, i32) {
+void SerialiseFloat(EdStream &stream, void *data, i32) {
     stream.SerialiseBuffer(data, 4, 1);
 }
 
-SAVELOAD_TARGET_OPT void SerialiseNuMtx(EdStream &stream, void *data, i32) {
+void SerialiseNuMtx(EdStream &stream, void *data, i32) {
     stream.SerialiseBuffer(data, 4, 16);
 }
 
-SAVELOAD_TARGET_OPT void SerialiseNuVec(EdStream &stream, void *data, i32) {
+void SerialiseNuVec(EdStream &stream, void *data, i32) {
     stream.SerialiseBuffer(data, 4, 3);
 }
 
-SAVELOAD_TARGET_OPT void SerialiseShort(EdStream &stream, void *data, i32) {
+void SerialiseShort(EdStream &stream, void *data, i32) {
     stream.SerialiseBuffer(data, 4, 1);
 }
 
-SAVELOAD_TARGET_OPT void SerialiseVuMtx(EdStream &stream, void *data, i32) {
+void SerialiseVuMtx(EdStream &stream, void *data, i32) {
     stream.SerialiseBuffer(data, 4, 16);
 }
 
-SAVELOAD_TARGET_OPT void SerialiseVuVec(EdStream &stream, void *data, i32) {
+void SerialiseVuVec(EdStream &stream, void *data, i32) {
     stream.SerialiseBuffer(data, 4, 3);
 }
 
-SAVELOAD_TARGET_OPT void FS_MoveCursorUp(i32 steps) {
+void FS_MoveCursorUp(i32 steps) {
     i32 remaining = steps;
     while (remaining > 0) {
         i32 currentPosLength = FS_PrevNameLen(FS_CurrentPos);
@@ -293,15 +309,15 @@ SAVELOAD_TARGET_OPT void FS_MoveCursorUp(i32 steps) {
     }
 }
 
-SAVELOAD_TARGET_OPT void SerialiseString(EdStream &stream, void *data, i32 count) {
+void SerialiseString(EdStream &stream, void *data, i32 count) {
     stream.SerialiseString(static_cast<char *>(data), count);
 }
 
-SAVELOAD_TARGET_OPT void SerialiseColour3(EdStream &stream, void *data, i32) {
+void SerialiseColour3(EdStream &stream, void *data, i32) {
     stream.SerialiseBuffer(data, 4, 3);
 }
 
-SAVELOAD_TARGET_OPT i32 FS_FileNameFilter(char *name) {
+i32 FS_FileNameFilter(char *name) {
     char lower[256];
     NuStrCpy(lower, name);
     NuStrToLower(lower);
@@ -385,17 +401,17 @@ SAVELOAD_TARGET_OPT i32 FS_FileNameFilter(char *name) {
     return 0;
 }
 
-SAVELOAD_TARGET_OPT void FS_MakeDateString(FS_FILEENTRYHDR *entry, char *output) {
+void FS_MakeDateString(FS_FILEENTRYHDR *entry, char *output) {
     const u8 *date = reinterpret_cast<const u8 *>(entry);
     sprintf(output, " %.2d/%.2d/%d", date[4] - 'A', date[5] - 'A', date[6] + 1915);
 }
 
-SAVELOAD_TARGET_OPT void FS_MakeTimeString(FS_FILEENTRYHDR *entry, char *output) {
+void FS_MakeTimeString(FS_FILEENTRYHDR *entry, char *output) {
     const u8 *date = reinterpret_cast<const u8 *>(entry);
     sprintf(output, " %.2d:%.2d:%.2d", date[3] - 'A', date[2] - 'A', date[1] - 'A');
 }
 
-SAVELOAD_TARGET_OPT void FS_MoveCursorDown(i32 steps) {
+void FS_MoveCursorDown(i32 steps) {
     char **currentPos = &FS_CurrentPos;
     char **cursorPos = &FS_CurrentCursorPos;
     i32 remaining = steps;
@@ -423,7 +439,7 @@ SAVELOAD_TARGET_OPT void FS_MoveCursorDown(i32 steps) {
     }
 }
 
-SAVELOAD_TARGET_OPT __attribute__((aligned(16))) f32 FS_GetDirTextWidth() {
+f32 FS_GetDirTextWidth() {
     char date_time[64];
     f32 max_width = 0.0f;
     for (char *entry = FS_FileList; entry < FS_FileListEnd;) {
@@ -443,7 +459,7 @@ SAVELOAD_TARGET_OPT __attribute__((aligned(16))) f32 FS_GetDirTextWidth() {
     return max_width;
 }
 
-__attribute__((optimize("O3", "omit-frame-pointer"))) char *FS_GetFilterString(char *input, char *output) {
+char *FS_GetFilterString(char *input, char *output) {
     while (*input == ' ' || *input == '*') {
         ++input;
     }
@@ -466,11 +482,11 @@ __attribute__((optimize("O3", "omit-frame-pointer"))) char *FS_GetFilterString(c
     return end;
 }
 
-SAVELOAD_TARGET_OPT i32 getsaveload_status() {
+i32 getsaveload_status() {
     return saveload_status;
 }
 
-SAVELOAD_TARGET_OPT i32 FS_GetPadWithRepeat(nupad_s *pad, float repeat, float elapsed) {
+i32 FS_GetPadWithRepeat(nupad_s *pad, float repeat, float elapsed) {
     static i32 LastPad;
     static float PadRepeat;
 
@@ -488,7 +504,7 @@ SAVELOAD_TARGET_OPT i32 FS_GetPadWithRepeat(nupad_s *pad, float repeat, float el
     return 0;
 }
 
-SAVELOAD_TARGET_OPT void SerialiseNuHSpecial(EdStream &stream, void *data, i32) {
+void SerialiseNuHSpecial(EdStream &stream, void *data, i32) {
     nuhspecial_s *special = static_cast<nuhspecial_s *>(data);
     if (stream.mode == 2) {
         char *name = NuSpecialGetName(special);
@@ -507,11 +523,11 @@ SAVELOAD_TARGET_OPT void SerialiseNuHSpecial(EdStream &stream, void *data, i32) 
     }
 }
 
-SAVELOAD_TARGET_OPT void SerialiseStringAddr(EdStream &stream, void *data, i32 count) {
+void SerialiseStringAddr(EdStream &stream, void *data, i32 count) {
     stream.SerialiseString(static_cast<char **>(data), count);
 }
 
-SAVELOAD_TARGET_OPT void FS_BuildFilterBlocks(char *input) {
+void FS_BuildFilterBlocks(char *input) {
     numfilterblocks = 0;
     NuStrToLower(input);
     i32 slot = 0;
@@ -531,13 +547,13 @@ SAVELOAD_TARGET_OPT void FS_BuildFilterBlocks(char *input) {
     }
 }
 
-SAVELOAD_TARGET_OPT void FS_MakeDateTimeString(FS_FILEENTRYHDR *entry, char *output) {
+void FS_MakeDateTimeString(FS_FILEENTRYHDR *entry, char *output) {
     const u8 *date = reinterpret_cast<const u8 *>(entry);
-    sprintf(output, " %.2d/%.2d/%d %.2d:%.2d:%.2d", date[4] - 'A', date[5] - 'A', date[6] + 1915,
-            date[3] - 'A', date[2] - 'A', date[1] - 'A');
+    sprintf(output, " %.2d/%.2d/%d %.2d:%.2d:%.2d", date[4] - 'A', date[5] - 'A', date[6] + 1915, date[3] - 'A',
+            date[2] - 'A', date[1] - 'A');
 }
 
-SAVELOAD_TARGET_OPT void FS_BuildFilterOutBlocks(char *input) {
+void FS_BuildFilterOutBlocks(char *input) {
     numfilteroutblocks = 0;
     NuStrToLower(input);
     while (*input != '\0') {
@@ -551,7 +567,7 @@ SAVELOAD_TARGET_OPT void FS_BuildFilterOutBlocks(char *input) {
     }
 }
 
-SAVELOAD_TARGET_OPT __attribute__((aligned(16))) void FS_SetCursorToLastFileName() {
+void FS_SetCursorToLastFileName() {
     char *last_name = FS_LastFileName;
     if (last_name[0] == '\0' || FS_NumFiles <= 0) {
         return;
@@ -589,7 +605,136 @@ SAVELOAD_TARGET_OPT __attribute__((aligned(16))) void FS_SetCursorToLastFileName
     }
 }
 
-SAVELOAD_TARGET_OPT i32 LoadState(i32, variptr_u *, variptr_u *, variptr_u *, variptr_u *, variptr_u *, variptr_u *) {
+i32 ProcessFileSel3(f32 elapsed, nupad_s *pad) {
+    if (FS_Active == 0)
+        return 0;
+    if (FS_RefreshDir != 0) {
+        FS_GetDirList(FS_Path, FS_Filter, FS_FilterOut);
+        NuQFntPushCoordinateSystem(NUQFNT_CSMODE_PS2);
+        NuQFntSet(system_qfont);
+        NuQFntSetPointSize(system_qfont, 1.0f, 1.0f);
+        f32 width = FS_GetDirTextWidth() * 0.0625f;
+        NuQFntPopCoordinateSystem();
+        if (width < 240.0f)
+            width = 240.0f;
+        FS_Width = width + 8.0f;
+        FS_GetPadWithRepeat(pad, 0.05f, elapsed);
+        if (FS_LastFileName[0] != '\0')
+            FS_SetCursorToLastFileName();
+        FS_RefreshDir = 0;
+    }
+    const i32 buttons = FS_GetPadWithRepeat(pad, 0.05f, elapsed);
+    if ((buttons & 0x4000) != 0)
+        FS_MoveCursorDown(1);
+    if ((buttons & 0x1000) != 0)
+        FS_MoveCursorUp(1);
+    if ((buttons & 1) != 0)
+        FS_MoveCursorDown(14);
+    if ((buttons & 4) != 0)
+        FS_MoveCursorUp(14);
+    if ((buttons & 2) != 0)
+        FS_MoveCursorDown(FS_NumFiles);
+    if ((buttons & 8) != 0)
+        FS_MoveCursorUp(FS_NumFiles);
+    if ((buttons & 0x80) != 0) {
+        FS_RefreshDir = 2;
+        FS_SortMode = static_cast<i32>(static_cast<u32>(FS_SortMode) + 1);
+        if (FS_SortMode == 4)
+            FS_SortMode = 0;
+        NuStrCpy(FS_LastFileName, FS_CurrentCursorPos + 7);
+    }
+    if ((buttons & 0x20) != 0) {
+        const i32 length = NuStrLen(FS_Path);
+        if (length != 0 && FS_Path[length - 1] == '\\')
+            FS_Path[length - 1] = '\0';
+        char *separator = NuStrRChr(FS_Path, '\\');
+        if (separator != NULL)
+            separator[1] = '\0';
+        else
+            NuStrCat(FS_Path, "\\");
+        FS_RefreshDir = 1;
+        FS_LastFileName[0] = '\0';
+    }
+    if ((buttons & 0x40) != 0) {
+        if (FS_CurrentCursorPos[0] == 'V') {
+            FS_ShowVolumes = 0;
+            NuStrCpy(FS_Path, FS_CurrentCursorPos + 7);
+            FS_RefreshDir = 1;
+            FS_LastFileName[0] = '\0';
+        } else if (FS_CurrentCursorPos[0] == 'D') {
+            if (FS_CurrentCursorPos[7] == '.' && FS_CurrentCursorPos[8] == '.' && FS_CurrentCursorPos[9] == '\0') {
+                const i32 length = NuStrLen(FS_Path);
+                if (length != 0 && FS_Path[length - 1] == '\\')
+                    FS_Path[length - 1] = '\0';
+                char *separator = NuStrRChr(FS_Path, '\\');
+                if (separator != NULL)
+                    separator[1] = '\0';
+                else
+                    NuStrCat(FS_Path, "\\");
+            } else {
+                const i32 length = NuStrLen(FS_Path);
+                if (length != 0 && FS_Path[length - 1] != '\\')
+                    NuStrCat(FS_Path, "\\");
+                NuStrCat(FS_Path, FS_CurrentCursorPos + 7);
+                NuStrCat(FS_Path, "\\");
+            }
+            FS_RefreshDir = 1;
+            FS_LastFileName[0] = '\0';
+        } else {
+            FS_Active = 0;
+            NuStrCpy(FS_LastFileName, FS_CurrentCursorPos + 7);
+            if (FS_Callback != NULL)
+                FS_Callback(FS_Path, FS_CurrentCursorPos + 7);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+extern "C" i32 ProcessFileSel2(f32 elapsed, nupad_s *pad) {
+    return ProcessFileSel3(elapsed, pad);
+}
+
+extern "C" void FileSelKill(void) {
+    NuStrCpy(FS_LastFileName, FS_CurrentCursorPos + 7);
+    FS_Active = 0;
+}
+
+void ProcessFileSel(f32 elapsed, nupad_s *pad) {
+    ProcessFileSel3(elapsed, pad);
+    RenderFileSel();
+    if ((pad->digital_buttons & 0x10) != 0)
+        FileSelKill();
+}
+
+extern "C" void StartFileSel(char *title, char *path, char *filter, char *filter_out,
+                             void (*callback)(char *, char *)) {
+    if (title != NULL)
+        NuStrCpy(FS_Title, title);
+    if (path != NULL)
+        NuStrCpy(FS_Path, path);
+    if (filter != NULL)
+        NuStrCpy(FS_Filter, filter);
+    else
+        FS_Filter[0] = '\0';
+    if (filter_out != NULL)
+        NuStrCpy(FS_FilterOut, filter_out);
+    else
+        FS_FilterOut[0] = '\0';
+    FS_Active = 1;
+    FS_Callback = callback;
+    FS_RefreshDir = 2;
+}
+
+extern "C" void RenderFileSel2(i32 x, i32 y, i32 *width, i32 *height) {
+    FS_X = static_cast<f32>(x);
+    FS_Y = static_cast<f32>(y) * 0.5f;
+    RenderFileSel3(0);
+    *height = static_cast<i32>(FS_H + FS_H);
+    *width = static_cast<i32>(FS_W);
+}
+
+i32 LoadState(i32, variptr_u *, variptr_u *, variptr_u *, variptr_u *, variptr_u *, variptr_u *) {
     return 0;
 }
 
@@ -599,12 +744,7 @@ extern "C" {
     i32 memcard_headerdatasize;
     void *memcard_headerdatabuffer;
 
-    void (*savesuccessfn)(void);
-    void *memcard_headerdata;
-    i32 memcard_headerdatasize;
-    void *memcard_headerdatabuffer;
-
-    SAVELOAD_TARGET_OPT __attribute__((force_align_arg_pointer, aligned(16))) void FS_SetFileSelPathFromName(char *name) {
+    void FS_SetFileSelPathFromName(char *name) {
         char file_name[256] = "";
         NuStrCpy(FS_Path, name);
         if (NuStrRChr(FS_Path, '.') != NULL) {
@@ -624,9 +764,8 @@ extern "C" {
         }
     }
 
-    SAVELOAD_TARGET_OPT void SaveSystemInitialiseEx(i32 slots, void *makeSaveHash, void *save, i32 saveSize,
-                                                   void *header, i32 headerSize, i32 autosave,
-                                                   void (*drawSaveIcon)(void)) {
+    void SaveSystemInitialiseEx(i32 slots, void *makeSaveHash, void *save, i32 saveSize, void *header, i32 headerSize,
+                                i32 autosave, void (*drawSaveIcon)(void)) {
         memcard_hashfn = reinterpret_cast<i16 (*)(void)>(makeSaveHash);
         memcard_savedata = save;
         memcard_savedatasize = saveSize;
@@ -653,7 +792,7 @@ extern "C" {
         SAVESLOTS = saveSlots;
     }
 
-    SAVELOAD_TARGET_OPT void SetSaveSuccessFn(void (*callback)(void)) {
+    void SetSaveSuccessFn(void (*callback)(void)) {
         savesuccessfn = callback;
     }
 
@@ -853,26 +992,7 @@ extern "C" {
 
     void loadsaveCallEachFrame(void) {
         saveloadASCallEachFrame();
-        if (saveload_cardchanged != 0) {
-            memcard_cardchanged = 1;
-        }
         UpdateSaveSlots();
-
-        memcard_slotsused = 0;
-        if (saveload_savepresent != 0) {
-            i32 slots = SAVESLOTS;
-            const i32 slot_capacity = sizeof(saveload_slotused) / sizeof(saveload_slotused[0]);
-            if (slots > slot_capacity) {
-                slots = slot_capacity;
-            }
-            i32 used = 0;
-            for (i32 slot = 0; slot < slots; ++slot) {
-                if (saveload_slotused[slot] != 0) {
-                    ++used;
-                }
-            }
-            memcard_slotsused = used;
-        }
     }
 
     i32 TriggerAutoSave(void) {

@@ -1,14 +1,6 @@
 # Original translation-unit reconstruction
 
-The numerical dashboard below is a historical reconstruction snapshot, not
-the current matching baseline. See the linked checkpoints in
-[the structural triage log](26-low-match-structural-triage.md) for current
-body matching. The historical editor repeat-box callback split is already
-resolved: `edtoolsall_plain.cpp` includes `edptlall.cpp`, which includes
-`edptlcallbacks.cpp`; Bazel treats both included fragments as textual sources.
-Do not reopen that merge or infer a current split from the older table.
-
-At that measured target build, there were 458 current translation
+At the latest measured target build, there are 458 current translation
 units, 4,796 exact functions, and a 46.2415% whole-binary fuzzy match. The independent structural
 dashboard reports 52.1% largest-run text grouping and 2,649/2,650
 assessable same-TU writable-state links satisfied (48.3% of original links

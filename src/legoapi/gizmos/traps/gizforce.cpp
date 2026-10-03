@@ -206,10 +206,9 @@ static void edgizforce_ReadAnimSetData(GAMEANIMOBJ_s *object, unsigned char vers
         return;
     }
 
-    GIZFORCEANIMDATA_s fallback;
+    GIZFORCEANIMDATA_s fallback = {};
     GIZFORCEANIMDATA_s *object_data = static_cast<GIZFORCEANIMDATA_s *>(object->object_data);
     if (object_data == NULL) {
-        fallback = {};
         object_data = &fallback;
     }
     if (version > 8) {
@@ -869,7 +868,6 @@ static i32 *GizForces_GetBestBoltTarget(GIZMOSET *set, float *result_distance, N
     if (directional != 0 && (bolt_type->field_60 & 0x20000) != 0) {
         aim.y = 0.0f;
         NuVecNorm(&aim, &aim);
-        system = static_cast<GIZFORCESYS_s *>(set->unknown);
     }
     if (system->hit_test_gizmo_count == 0) {
         return NULL;
@@ -1374,11 +1372,6 @@ static i32 GizForces_Load(void *world_ptr, void *data) {
                 force.stop_sfx_id = static_cast<i16>(GetSfxId(sfx_name));
             }
         }
-        if (version == 14) {
-            force.start_sfx_id = -1;
-            force.loop_sfx_id = -1;
-            force.stop_sfx_id = -1;
-        }
 
         if ((force.config_flags & GIZFORCE_CONFIG_ALONG_SOCKET) != 0) {
             for (GAMEANIMOBJ_s *object = force.anim_set->objects; object != NULL; object = object->next) {
@@ -1413,11 +1406,11 @@ static void GizForces_PostLoad(void *world_ptr, void *data) {
         return;
     }
 
-    GIZFORCE_s *force = force_sys->forces;
-    for (i32 index = 0; index < force_sys->count; ++index, ++force) {
-        if ((force->runtime_flags & GIZFORCE_RUNTIME_PENDING_BLOWUP_TYPE) != 0) {
-            force->blowup_type = static_cast<i16>(GizmoBlowupGetTypeFromNameTableId(world, force->blowup_type));
-            force->runtime_flags &= ~GIZFORCE_RUNTIME_PENDING_BLOWUP_TYPE;
+    for (i32 index = 0; index < force_sys->count; ++index) {
+        GIZFORCE_s &force = force_sys->forces[index];
+        if ((force.runtime_flags & GIZFORCE_RUNTIME_PENDING_BLOWUP_TYPE) != 0) {
+            force.blowup_type = static_cast<i16>(GizmoBlowupGetTypeFromNameTableId(world, force.blowup_type));
+            force.runtime_flags &= ~GIZFORCE_RUNTIME_PENDING_BLOWUP_TYPE;
         }
     }
 }
@@ -1542,20 +1535,18 @@ void GizForce_ResetLOS(GameObject_s *object) {
 
 GIZFORCE_s *GizForce_FindByName(GIZFORCESYS_s *force_sys, char *name) {
     GIZFORCE_s *force = NULL;
-    if (name != NULL && force_sys != NULL) {
-        force = force_sys->forces;
-        for (i32 index = 0; index < force_sys->count; ++index, ++force) {
-            if (NuStrICmp(force->name, name) == 0) {
-                return force;
-            }
+    if (name == NULL || force_sys == NULL) {
+        return force;
+    }
+    force = force_sys->forces;
+    for (i32 index = 0; index < force_sys->count; ++index, ++force) {
+        if (NuStrICmp(force->name, name) == 0) {
+            return force;
         }
     }
     return force;
 }
 
-#if defined(__GNUC__) && !defined(__clang__)
-__attribute__((optimize("no-tree-loop-optimize")))
-#endif
 i32 GizForce_UpdateHint(HINT_s *) {
     for (i32 i = 0; i < 2; ++i) {
         GameObject_s *object = Player[i];
@@ -1572,14 +1563,14 @@ GIZFORCE_s *GizForces_FindForce(WORLDINFO_s *world, char *name) {
 }
 
 i32 GizForce_AnimComplete(GIZFORCE_s *force) {
-    if (force == NULL || force->anim_set == NULL) {
-        return 1;
-    }
-    if ((force->progress_flags & GIZFORCE_PROGRESS_ANIMATION_REVERSED) != 0) {
-        if (force->anim_set->state != GAMEANIMSET_STATE_AT_START) {
-            return 0;
+    if (force != NULL && force->anim_set != NULL) {
+        if ((force->progress_flags & GIZFORCE_PROGRESS_ANIMATION_REVERSED) == 0) {
+            if (force->anim_set->state == GAMEANIMSET_STATE_AT_END) {
+                return 1;
+            }
+        } else if (force->anim_set->state == GAMEANIMSET_STATE_AT_START) {
+            return 1;
         }
-    } else if (force->anim_set->state != GAMEANIMSET_STATE_AT_END) {
         return 0;
     }
     return 1;
@@ -1609,15 +1600,19 @@ void GizForce_PlayForwards(GIZFORCE_s *force) {
 }
 
 i32 GizForce_StoodOnForce(GIZFORCE_s *force, GameObject_s *object) {
-    if ((force->runtime_flags & GIZFORCE_RUNTIME_HAS_PLATFORM) == 0 || object->field_0x1078 == -1) {
-        return 0;
-    }
-    for (GAMEANIMOBJ_s *anim_object = force->anim_set->objects; anim_object != NULL; anim_object = anim_object->next) {
-        if (object->field_0x1078 == static_cast<GIZFORCEANIMDATA_s *>(anim_object->object_data)->platform_id) {
-            return 1;
+    i32 result = 0;
+    GAMEANIMOBJ_s *anim_object;
+    if ((force->runtime_flags & GIZFORCE_RUNTIME_HAS_PLATFORM) != 0 && object->field_0x1078 != -1 &&
+        (anim_object = force->anim_set->objects) != NULL) {
+        while (object->field_0x1078 != static_cast<GIZFORCEANIMDATA_s *>(anim_object->object_data)->platform_id) {
+            anim_object = anim_object->next;
+            if (anim_object == NULL) {
+                return 0;
+            }
         }
+        result = 1;
     }
-    return 0;
+    return result;
 }
 
 void GizForce_PlayBackwards(GIZFORCE_s *force) {

@@ -19,17 +19,15 @@ i32 NuSoundAndroid::m_workerThreadCount = 0;
 void NuSoundAndroid::AndroidNuSoundClockThread(void *) {
     // 5 ms tick driving the audio clock callbacks (the callback list is
     // empty in practice on the title screen).
+    NuSoundAndroid *system = &NuSound;
     while (NuSoundAndroid::m_workerThreadCount != 0) {
-        NuSoundSystem::Get()->clock.HandleCallbacks();
+        system->clock.HandleCallbacks();
         NuThreadSleep(5);
     }
 }
 
 // libTTapp.so 0x32b0c0: the android system registers the PCM voice factory
 // for DataFormat::ZERO right after the base constructor.
-NuSoundAndroid::~NuSoundAndroid() {
-}
-
 NuSoundAndroid::NuSoundAndroid() : NuSoundSystem() {
     NuSoundVoiceFactoryAndroid_PCM *factory = new NuSoundVoiceFactoryAndroid_PCM();
     this->factory_list.RegisterFactory(factory, NuSoundStreamDesc::DataFormat::ZERO);

@@ -28,10 +28,8 @@
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nu3d/numtl.h"
-#include "nu2api/nucore/nustring.h"
 
 #include <cfloat>
-#include <stdio.h>
 
 extern i32 numtl_renderplane;
 
@@ -79,10 +77,6 @@ extern "C" {
 // The original retains reads of this local BSS control despite having no
 // program-side setter. Preserve its externally observable debug accesses.
 static volatile i32 capture_dlist;
-
-// The Android setter retains this BSS write even though the reader is not yet
-// reconstructed in this translation unit.
-static void *volatile CurrentInstSurfGeom;
 
 extern "C" void NuDisplayListCaptureBegin(void) {
     i32 request = capture_dlist;
@@ -322,7 +316,7 @@ template <typename T> static T *CloneSceneAllocate(VARIPTR *buffer, usize count,
     return result;
 }
 
-extern "C" NUDLDLISTSCENE *NuDisplaySceneClone(NUDLDLISTSCENE *source, VARIPTR *buffer, VARIPTR *) {
+extern "C" NUDLDLISTSCENE *NuDisplaySceneClone(NUDLDLISTSCENE *source, VARIPTR *buffer) {
     NuThreadCriticalSectionBegin(global_dlist_manager.loading_critical_section);
     NUDLDLISTSCENE *scene = CloneSceneAllocate<NUDLDLISTSCENE>(buffer, 1);
     *scene = *source;
@@ -407,32 +401,26 @@ extern "C" NUDLDLISTSCENE *NuDisplaySceneClone(NUDLDLISTSCENE *source, VARIPTR *
     NuDisplaySceneClonePS(source, scene, buffer);
     global_dlist_manager.dlists[global_dlist_manager.ndisplay_lists++] = scene;
     ResetSceneBeforeFrame(scene, false);
-    if (scene->nsort_pris > 0) {
-        NUSORTPRI *sort = scene->sort_pris;
-        NUSORTPRI *sort_list = global_dlist_manager.sort_list;
-        i32 render_plane = numtl_renderplane;
-        i32 render_plane_offset = render_plane * 0x20000;
-        i32 used_sort_pris = global_dlist_manager.nused_sort_pris;
-        for (i32 i = 0; i < scene->nsort_pris; ++i, ++sort) {
-            sort->sort_pri &= 0x1ffff;
-            if (render_plane != 0)
-                sort->sort_pri += render_plane_offset;
-            NUSORTPRI *previous = NULL;
-            NUSORTPRI *current = sort_list;
-            while (current != NULL && current->sort_pri < sort->sort_pri) {
-                previous = current;
-                current = current->sys_next;
-            }
-            sort->sys_next = current;
-            if (previous == NULL)
-                sort_list = sort;
-            else
-                previous->sys_next = sort;
-            ++used_sort_pris;
+    NUSORTPRI *sort_list = global_dlist_manager.sort_list;
+    for (i32 i = 0; i < scene->nsort_pris; ++i) {
+        NUSORTPRI *sort = &scene->sort_pris[i];
+        sort->sort_pri &= 0x1ffff;
+        if (numtl_renderplane != 0)
+            sort->sort_pri += numtl_renderplane * 0x20000;
+        NUSORTPRI *previous = NULL;
+        NUSORTPRI *current = sort_list;
+        while (current != NULL && current->sort_pri < sort->sort_pri) {
+            previous = current;
+            current = current->sys_next;
         }
-        global_dlist_manager.sort_list = sort_list;
-        global_dlist_manager.nused_sort_pris = used_sort_pris;
+        sort->sys_next = current;
+        if (previous == NULL)
+            sort_list = sort;
+        else
+            previous->sys_next = sort;
+        ++global_dlist_manager.nused_sort_pris;
     }
+    global_dlist_manager.sort_list = sort_list;
     scene->flags &= 0xef;
     scene->render_buffer |= 0x20;
     NuDisplaySceneAddPS(scene);
@@ -762,7 +750,7 @@ static i32 MtlSortKey(const NUMTL *mtl) {
            mtl->sort_pri;
 }
 
-__attribute__((optimize("no-reorder-blocks"))) void DisplayListLinkDynamicMtls(void) {
+void DisplayListLinkDynamicMtls(void) {
     NUDLIST_MANAGER *mgr = &global_dlist_manager;
     if (mgr->nnew_materials == 0 && mgr->ndel_materials == 0)
         return;
@@ -1262,10 +1250,6 @@ void NuDisplayListEndScene(void) {
 
 extern "C" void *DisplayListCreateFaceonTransformPS(VARIPTR *, NUMTX *, NUMTL *, void *);
 extern "C" void *DisplayListCreateGeomTransformPS(VARIPTR *, NUMTX *, NUMTL *, void *, void *);
-
-void NuDisplayListSetInstSurfGeom(void *geometry) {
-    CurrentInstSurfGeom = geometry;
-}
 
 void NuDisplayListCreate(nudisplayscene_s *raw_scene, variptr_u *buffer, variptr_u, i32 item_count, i32 material_count,
                          i32, i32, i32 sort_priority_count, i32, i32 allocate_materials) {

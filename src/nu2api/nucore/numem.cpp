@@ -7,6 +7,7 @@
 
 // The original Android implementation does not change page protection.
 extern "C" i32 NuPhysicalProtect(void) {
+    STUBBED();
     return 0;
 }
 
@@ -296,8 +297,8 @@ NUMEMBLK *NuMemBlkCreateEx(u32 element_size, i32 count, u32 alignment_mask, void
 }
 
 void *NuMemBlkAlloc(NUMEMBLK *pool) {
-    NUMEMBLKLINK *block;
-    if ((block = pool->free_list) != NULL) {
+    NUMEMBLKLINK *block = pool->free_list;
+    if (block != NULL) {
         pool->free_list = pool->free_list->next;
         pool->free_count--;
         memset(block, -1, pool->stride);

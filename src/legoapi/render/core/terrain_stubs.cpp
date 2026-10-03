@@ -10,7 +10,6 @@
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/numtx.h"
-#include "nu2api/numath/nuvec4.h"
 #include "nu2api/numath/nurand.h"
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nutex.h"
@@ -298,18 +297,15 @@ extern "C" void TerrSetPlatScanDist(f32 dist) {
 
 extern "C" void TerrainPlatformNewUpdate(void) {
     if (CurTerr != NULL) {
-        TERRAIN_TRACK_SLOT *slot = CurTerr->track_slots;
-        i32 remaining = TERRAIN_TRACK_SLOT_COUNT;
-        do {
-            if (slot->id != NULL) {
-                if (slot->platform_contact_state > 0)
-                    --slot->platform_contact_state;
-                if (slot->wall_contact_state > 0)
-                    --slot->wall_contact_state;
+        for (i32 i = 0; i < 64; ++i) {
+            TERRAIN_TRACK_SLOT &slot = CurTerr->track_slots[i];
+            if (slot.id != NULL) {
+                if (slot.platform_contact_state > 0)
+                    --slot.platform_contact_state;
+                if (slot.wall_contact_state > 0)
+                    --slot.wall_contact_state;
             }
-            ++slot;
-            --remaining;
-        } while (remaining != 0);
+        }
         for (i32 i = 0; i < 16; ++i) {
             if (static_cast<i16>(CurTerr->index_levels[i].entry_count) > 0)
                 --CurTerr->index_levels[i].entry_count;
@@ -642,10 +638,10 @@ extern "C" {
         return closest_index;
     }
 
-    __attribute__((force_align_arg_pointer)) void DebFreeAllCreatedEffects(void) {
+    void DebFreeAllCreatedEffects(void) {
         for (i32 i = 0; i < maxdebkeys; ++i) {
             if (debkeydata[i].effect_index != 0 && debkeydata[i].field_2f9 != 0) {
-                i32 handle __attribute__((aligned(16))) = i;
+                i32 handle = i;
                 DebFreeInstantly(&handle);
             }
         }
@@ -661,11 +657,11 @@ extern "C" {
         }
     }
 
-    __attribute__((force_align_arg_pointer)) void DebFreeAllPanelEffects(void) {
+    void DebFreeAllPanelEffects(void) {
         for (i32 i = 0; i < maxdebkeys; ++i) {
             const i16 effect_index = debkeydata[i].effect_index;
             if (effect_index != 0 && debtab[effect_index]->time_group == 4) {
-                i32 handle __attribute__((aligned(16))) = i;
+                i32 handle = i;
                 DebFreeInstantly(&handle);
             }
         }
@@ -1107,16 +1103,24 @@ extern "C" {
     i32 DebrisQueryPriority(i32 effect_index) {
         if (effect_index < 0 || effect_index >= EDPP_MAX_TYPES || debtab[effect_index] == NULL)
             return 0;
-        const u8 particle_type = debtab[effect_index]->particle_type;
-        if (particle_type == 2)
-            return -25536;
-        if (particle_type <= 2)
-            return particle_type == 0 ? 20000 : 0;
-        if (particle_type == 3)
-            return 30000;
-        if (particle_type == 7)
-            return 10000;
-        return 0;
+        i16 priority = 0;
+        switch (static_cast<i8>(debtab[effect_index]->particle_type)) {
+            case 0:
+                priority = 20000;
+                break;
+            case 2:
+                priority = -25536;
+                break;
+            case 3:
+                priority = 30000;
+                break;
+            case 7:
+                priority = 10000;
+                break;
+            default:
+                break;
+        }
+        return priority;
     }
 
     void DebrisReScale(i32 effect_index, f32 scale) {
@@ -1329,7 +1333,9 @@ extern "C" {
     }
 
     void DebrisStartOffset(i32 handle, f32 offset) {
-        DebrisStartOffsetEx(debkeydata + handle, offset);
+        if (handle != -1) {
+            DebrisStartOffsetEx(debkeydata + handle, offset);
+        }
     }
 
     void DebrisStatusAlwaysOff(i32 *handle) {
@@ -1730,12 +1736,11 @@ extern "C" {
     void PlatOnOff(i32 index, i32 enabled) {
         if (CurTerr != NULL && index >= 0 && index < CurTerr->max_platforms) {
             TERRAIN_GROUP &group = CurTerr->groups[CurTerr->platforms[index].terrain_group_index];
-            volatile i32 *chunk_type = &group.chunk_type;
             if (enabled != 0) {
-                *chunk_type = 1;
+                group.chunk_type = 1;
                 return;
             }
-            *chunk_type = -1;
+            group.chunk_type = -1;
         }
     }
 

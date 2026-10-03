@@ -5,7 +5,7 @@
 
 extern "C" {
 
-    void NuFramebufferInitEx(u32, u32, VARIPTR *, VARIPTR) {
+    void NuFramebufferInitEx(void) {
     }
 
     SAGA_HOST_WEAK nuframebuffer_s *NuFramebufferCreate(void) {

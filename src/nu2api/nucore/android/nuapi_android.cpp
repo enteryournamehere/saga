@@ -56,7 +56,7 @@ i32 NuInitHardwarePS(VARIPTR *buf, VARIPTR *buf_end, i32 heap_size) {
     return 0;
 }
 
-i32 NuInitHardwareParseArgsPS(i32 setup_tok, va_list *args) {
+i32 NuInitHardwareParseArgsPS(i32 setup_tok, char **args) {
     return 0;
 }
 

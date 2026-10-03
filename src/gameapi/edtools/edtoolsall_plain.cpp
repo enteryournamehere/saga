@@ -1876,9 +1876,10 @@ extern "C" {
         gp_cam.yaw = yaw;
     }
     void edcamSetAutoSpeed(f32 move_base, f32 move_distance_scale, f32 zoom_base, f32 zoom_distance_scale) {
-        typedef f32 AutoSpeedVector __attribute__((vector_size(16)));
-        AutoSpeedVector speeds = {move_base, move_distance_scale, zoom_base, zoom_distance_scale};
-        __builtin_memcpy(&gp_cam.auto_move_base, &speeds, sizeof(speeds));
+        gp_cam.auto_move_base = move_base;
+        gp_cam.auto_move_dist_scale = move_distance_scale;
+        gp_cam.auto_zoom_base = zoom_base;
+        gp_cam.auto_zoom_dist_scale = zoom_distance_scale;
     }
     void edcamSetDist(f32 distance) {
         gp_cam.distance = distance;
@@ -2448,12 +2449,11 @@ extern "C" {
         }
     }
     void edpartParticleReset(void) {
-        i32 *instance = &part_emits[0].instance_id;
-        i32 *const end = &part_emits[512].instance_id;
+        part_emit_s *emit = part_emits;
+        part_emit_s *const emit_end = part_emits + 512;
         do {
-            *instance = -1;
-            instance = reinterpret_cast<i32 *>(reinterpret_cast<char *>(instance) + sizeof(part_emit_s));
-        } while (instance != end);
+            emit->instance_id = -1;
+        } while (++emit != emit_end);
         memset(part_page_used, 0, sizeof(part_page_used));
         memset(part_page_on, 0, sizeof(part_page_on));
         edpart_instances_used = 0;
@@ -2662,7 +2662,31 @@ extern "C" {
             effect->last_render_time = 0.0f;
             effect->page = static_cast<u8>(page_index);
             debtab[index] = effect;
-            UpdateTotalPtls(debtab[index]);
+            f32 elapsed_time = 0.0f;
+            f32 active_time = 0.0f;
+            while (effect->particle_lifetime > elapsed_time) {
+                f32 remaining_time = effect->particle_lifetime - elapsed_time;
+                f32 emission_time = effect->emission_period_random + effect->emission_pause;
+                f32 emitted = remaining_time < emission_time ? remaining_time : emission_time;
+                active_time += emitted;
+                elapsed_time += emitted;
+                remaining_time = effect->particle_lifetime - elapsed_time;
+                elapsed_time +=
+                    remaining_time < effect->emission_pause_random ? remaining_time : effect->emission_pause_random;
+            }
+            i16 particle_count = static_cast<i16>(static_cast<i32>(
+                static_cast<f32>(effect->frequency) * (active_time / elapsed_time) * effect->particle_lifetime));
+            if (particle_count < 1)
+                particle_count = 1;
+            effect->max_particles = static_cast<i16>(particle_count * (effect->trail_count + 1));
+            for (i32 particle_index = 0; particle_index < 512; ++particle_index) {
+                i32 instance_id = edpp_ptls[particle_index].instance_id;
+                if (instance_id == -1 || instance_id == 99999)
+                    continue;
+                debkeydatatype_s *key = &debkeydata[instance_id];
+                if (debtab[key->effect_index] == effect)
+                    DebReAlloc(key, effect->max_particles);
+            }
             edpp_types_used++;
         }
 
@@ -2876,7 +2900,7 @@ extern "C" {
         return 0;
     }
     i32 eduiCheckForPadMenuCancel(eduimenu_s *menu, nupad_s *pad) {
-        if (!pad || __builtin_expect(!(pad->digital_buttons_pressed & 0x10), 0))
+        if (!pad || !(pad->digital_buttons_pressed & 0x10))
             return 0;
 
         eduimenu_s *parent = menu->parent;
@@ -2972,9 +2996,6 @@ extern "C" {
         }
         menu->field_10 = menu->selected;
     }
-#if defined(__i386__)
-    __attribute__((force_align_arg_pointer))
-#endif
     void cbInteractMenuKeySelect(eduimenu_s *menu) {
         char text[16];
         u32 modifiers;
@@ -3020,8 +3041,9 @@ extern "C" {
         *y = edui_cursor_dy / 224.0f;
     }
     eduimenu_s *eduiGetTopLevelParent(eduimenu_s *menu) {
-        while (__builtin_expect(menu != NULL, 1) && menu->parent)
-            menu = menu->parent;
+        if (menu)
+            while (menu->parent)
+                menu = menu->parent;
         return menu;
     }
     i32 bUsingMenuFocus;
@@ -3080,14 +3102,15 @@ extern "C" {
         return eduiGradStageAdd(item, time, hue, saturation, value);
     }
     void eduiGradStageDelete(edui_gradient_pick_s *item, edui_gradient_node_s *stage) {
-        if (stage->previous)
-            stage->previous->next = stage->next;
-        else
-            item->first_stage = stage->next;
+        edui_gradient_node_s *previous = stage->previous;
         edui_gradient_node_s *next = stage->next;
+        if (previous)
+            previous->next = next;
+        else
+            item->first_stage = next;
         if (next)
-            next->previous = stage->previous;
-        item->selected_stage = next ? next : stage->previous;
+            next->previous = previous;
+        item->selected_stage = next ? next : previous;
         NU_FREE(stage);
     }
     void eduiGradStageSetHSV(edui_gradient_node_s *stage, f32 hue, f32 saturation, f32 value) {
@@ -3805,11 +3828,10 @@ extern "C" {
             menu->first = item;
         item->previous = menu->last;
         item->next = NULL;
-        menu->field_0c = menu->first;
-        eduiitem_s **last_item = &edui_last_item;
         menu->last = item;
+        menu->field_0c = menu->first;
         menu->field_10 = 0;
-        *last_item = item;
+        edui_last_item = item;
         return item;
     }
     void eduiMenuAddItemAfter(eduimenu_s *menu, eduiitem_s *item, eduiitem_s *after) {
@@ -4286,7 +4308,8 @@ extern "C" {
         eduiitem_s *item = menu->field_0c;
         i32 max_item_height = 0;
         if (item) {
-            bool find_selected = menu->selected != NULL;
+            eduiitem_s *selected = menu->selected;
+            bool find_selected = selected != NULL;
 
             if (item != menu->first) {
                 const i32 scroll_height = static_cast<i32>(NuQFntHeight(edui_font) * 0.125f);
@@ -4305,13 +4328,12 @@ extern "C" {
                 if (!edui_donotdraw) {
                     NuRndrRect2di(x << 4, y << 3, menu->width << 4, scroll_height << 3, 0x80000000, uimtls[ui_bgmtl]);
                 }
-                i32 centre = (x * 2 + menu->width) << 3;
+                const i32 centre = (x * 2 + menu->width) << 3;
                 const i32 top = (y << 3) + 8;
                 const i32 bottom = ((y + scroll_height) << 3) - 16;
                 if (!edui_donotdraw) {
                     NuRndrLine2di(centre, top, centre - ((scroll_height - 2) << 4), bottom, 0x80ffffff, uimtls[0]);
                 }
-                centre = (x * 2 + menu->width) << 3;
                 if (!edui_donotdraw) {
                     NuRndrLine2di(centre, top, centre + ((scroll_height - 2) << 4), bottom, 0x80ffffff, uimtls[0]);
                 }
@@ -4321,7 +4343,7 @@ extern "C" {
             menu->field_10 = item;
             while (item) {
                 i32 is_selected = 0;
-                if (item == menu->selected) {
+                if (item == selected) {
                     find_selected = false;
                     if (!menu->child)
                         is_selected = 1;
@@ -4370,13 +4392,12 @@ extern "C" {
                         NuRndrRect2di(x << 4, y << 3, menu->width << 4, scroll_height << 3, 0x80000000,
                                       uimtls[ui_bgmtl]);
                     }
-                    i32 centre = (x * 2 + menu->width) << 3;
+                    const i32 centre = (x * 2 + menu->width) << 3;
                     const i32 top = (y << 3) + 8;
                     const i32 bottom = ((y + scroll_height - 2) << 3);
                     if (!edui_donotdraw) {
                         NuRndrLine2di(centre, bottom, centre - ((scroll_height - 2) << 4), top, 0x80ffffff, uimtls[0]);
                     }
-                    centre = (x * 2 + menu->width) << 3;
                     if (!edui_donotdraw) {
                         NuRndrLine2di(centre, bottom, centre + ((scroll_height - 2) << 4), top, 0x80ffffff, uimtls[0]);
                     }
@@ -4390,7 +4411,7 @@ extern "C" {
         }
 
         if (!(menu->flags & 2))
-            x = menu->x + menu->width;
+            x += menu->width;
         else
             y += max_item_height;
         menu->field_24 = x - menu->x;
@@ -4644,44 +4665,40 @@ extern "C" {
         submenu1 = eduiMenuCreate(90, 90, 180, 50, font, NULL, const_cast<char *>("SubMenu1"));
         if (submenu1 != NULL) {
             eduiMenuAddItem(submenu1, eduiItemSelCreate(0, colours, 0, 1, reinterpret_cast<EdUiItemCallback>(cbSel),
-                                                       const_cast<char *>("Sub Sel 0")));
+                                                        const_cast<char *>("Sub Sel 0")));
             eduiMenuAddItem(submenu1, eduiItemSelCreate(1, colours, 0, 1, reinterpret_cast<EdUiItemCallback>(cbSel),
-                                                       const_cast<char *>("Sub Sel 1")));
+                                                        const_cast<char *>("Sub Sel 1")));
             eduiMenuAddItem(submenu1, eduiItemSelCreate(2, colours, 0, 1, reinterpret_cast<EdUiItemCallback>(cbSel),
-                                                       const_cast<char *>("Sub Sel 2")));
+                                                        const_cast<char *>("Sub Sel 2")));
         }
 
         submenu0 = eduiMenuCreate(70, 70, 180, 50, font, NULL, const_cast<char *>("SubMenu0"));
         if (submenu0 != NULL) {
             eduiMenuAddItem(submenu0, eduiItemSelCreate(0, colours, 0, 1, reinterpret_cast<EdUiItemCallback>(cbSel),
-                                                       const_cast<char *>("Sub Sel")));
-            eduiMenuAddItem(submenu0,
-                            eduiItemSelCreate(reinterpret_cast<usize>(submenu1), colours, 0, 0,
-                                              reinterpret_cast<EdUiItemCallback>(cbSubMenu),
-                                              const_cast<char *>("Sub Menu 1..")));
+                                                        const_cast<char *>("Sub Sel")));
+            eduiMenuAddItem(submenu0, eduiItemSelCreate(reinterpret_cast<usize>(submenu1), colours, 0, 0,
+                                                        reinterpret_cast<EdUiItemCallback>(cbSubMenu),
+                                                        const_cast<char *>("Sub Menu 1..")));
             eduiMenuAddItem(submenu0, eduiItemSelCreate(2, colours, 0, 1, reinterpret_cast<EdUiItemCallback>(cbSel),
-                                                       const_cast<char *>("Sub Sel")));
+                                                        const_cast<char *>("Sub Sel")));
         }
 
         testmenu0 = eduiMenuCreate(50, 50, 180, 50, font, NULL, const_cast<char *>("Main Menu"));
         if (testmenu0 != NULL) {
-            eduiMenuAddItem(testmenu0,
-                            eduiItemSelCreate(reinterpret_cast<usize>(submenu0), colours, 0, 0,
-                                              reinterpret_cast<EdUiItemCallback>(cbSubMenu),
-                                              const_cast<char *>("Sub Menu 0..")));
+            eduiMenuAddItem(testmenu0, eduiItemSelCreate(reinterpret_cast<usize>(submenu0), colours, 0, 0,
+                                                         reinterpret_cast<EdUiItemCallback>(cbSubMenu),
+                                                         const_cast<char *>("Sub Menu 0..")));
 
-            edui_gradient_pick_s *gradient = static_cast<edui_gradient_pick_s *>(
-                eduiItemGradPickCreate(1, colours, reinterpret_cast<EdUiItemCallback>(cbGradChange),
-                                       const_cast<char *>("GradPick")));
+            edui_gradient_pick_s *gradient = static_cast<edui_gradient_pick_s *>(eduiItemGradPickCreate(
+                1, colours, reinterpret_cast<EdUiItemCallback>(cbGradChange), const_cast<char *>("GradPick")));
             if (gradient != NULL) {
                 eduiGradStageAdd(gradient, 0.0f, 0.0f, 0.0f, 0.0f);
                 eduiGradStageAdd(gradient, 1.0f, 0.0f, 0.0f, 1.0f);
             }
             eduiMenuAddItem(testmenu0, gradient);
 
-            edui_gradient_pick_s *grey_gradient = static_cast<edui_gradient_pick_s *>(
-                eduiItemGreyGradPickCreate(1, colours, reinterpret_cast<EdUiItemCallback>(cbGradChange),
-                                           const_cast<char *>("GreyGradPick")));
+            edui_gradient_pick_s *grey_gradient = static_cast<edui_gradient_pick_s *>(eduiItemGreyGradPickCreate(
+                1, colours, reinterpret_cast<EdUiItemCallback>(cbGradChange), const_cast<char *>("GreyGradPick")));
             if (grey_gradient != NULL) {
                 eduiGradStageAdd(grey_gradient, 0.0f, 0.0f, 0.0f, 0.0f);
                 eduiGradStageAdd(grey_gradient, 1.0f, 0.0f, 0.0f, 1.0f);
@@ -4796,7 +4813,7 @@ extern "C" {
 
     static __used__ void cbMMRegSel(eduimenu_s *, eduiitem_s *selected, u32) {
         ed_curr = static_cast<ed_module_s *>(selected->data_ptr);
-        if (__builtin_expect(!ed_curr->reserved, 1)) {
+        if (!ed_curr->reserved) {
             ed_module_active = 1;
             if (ed_curr->activate)
                 ed_curr->activate();
@@ -5388,11 +5405,12 @@ extern "C" {
         u8 increase = pad->analog_r1;
         if (decrease)
             goto decrease_time;
+        if (increase)
+            goto increase_time;
         decrease = left2;
         if (decrease)
             goto decrease_time;
-        if (!increase)
-            increase = right2;
+        increase = right2;
         if (!increase)
             return 0;
     increase_time:
@@ -5986,7 +6004,7 @@ extern "C" {
             NuRndrLine2di(x << 4, value_y, (x + width - 1) << 4, value_y, 0x80ffffff, uimtls[0]);
             NuRndrLine2di(hue_x, y << 3, hue_x, ((y + main_height) << 3) - 8, 0x80ffffff, uimtls[0]);
         }
-        i32 bar_height = width / 8;
+        i32 bar_height = (width + 7) >> 3;
         f32 full_red, full_green, full_blue;
         eduiHSVToRGB(picker->hue, 1.0f, picker->value, full_red, full_green, full_blue);
         i32 grey_byte = static_cast<i32>(picker->value * 255.0f);
@@ -5998,16 +6016,14 @@ extern "C" {
         if (!edui_donotdraw)
             NuRndrGradRect2di(x << 4, saturation_y << 3, width << 4, bar_height << 3, saturation_colours,
                               uimtls[ui_bgmtl]);
+        i32 marker_x = static_cast<i32>(x + picker->saturation * (width - 2));
         if (!edui_donotdraw) {
             i32 marker_mid = saturation_y + (bar_height >> 1);
-            for (i32 offset = 1; offset >= -1 && !edui_donotdraw; --offset) {
-                i32 marker_x = static_cast<i32>(static_cast<f32>(x + offset) + picker->saturation * (width - 2)) << 4;
-                NuRndrLine2di(marker_x, saturation_y << 3, marker_x, (marker_mid << 3) - 8, 0x80ffffff, uimtls[0]);
-            }
-            for (i32 offset = 1; offset >= -1 && !edui_donotdraw; --offset) {
-                i32 marker_x = static_cast<i32>(static_cast<f32>(x + offset) + picker->saturation * (width - 2)) << 4;
-                NuRndrLine2di(marker_x, marker_mid << 3, marker_x, ((saturation_y + bar_height) << 3) - 8, 0x80000000,
-                              uimtls[0]);
+            for (i32 offset = -1; offset <= 1; ++offset) {
+                NuRndrLine2di((marker_x + offset) << 4, saturation_y << 3, (marker_x + offset) << 4,
+                              (marker_mid << 3) - 8, 0x80ffffff, uimtls[0]);
+                NuRndrLine2di((marker_x + offset) << 4, marker_mid << 3, (marker_x + offset) << 4,
+                              ((saturation_y + bar_height) << 3) - 8, 0x80000000, uimtls[0]);
             }
         }
         f32 red, green, blue;
@@ -6170,24 +6186,15 @@ extern "C" {
             eduiFntPrintEx(edui_font, (width + x * 2) << 3, (y << 3) + baseline, 64, item->text);
 
         i32 half_height = height >> 1;
-        edui_gradient_node_s *stage = gradient->first_stage;
-        if (!stage)
-            return height;
-        f32 stage_time = stage->time;
-        u32 stage_colour = stage->colour;
-        edui_gradient_node_s *next = stage->next;
-        while (next) {
-            i32 colours[4] = {static_cast<i32>(stage_colour), static_cast<i32>(next->colour),
-                              static_cast<i32>(stage_colour), static_cast<i32>(next->colour)};
+        for (edui_gradient_node_s *stage = gradient->first_stage; stage && stage->next; stage = stage->next) {
+            i32 colours[4] = {static_cast<i32>(stage->colour), static_cast<i32>(stage->next->colour),
+                              static_cast<i32>(stage->colour), static_cast<i32>(stage->next->colour)};
             if (!edui_donotdraw) {
-                i32 left = static_cast<i32>((width << 4) * stage_time);
-                i32 right = static_cast<i32>((width << 4) * next->time);
+                i32 left = static_cast<i32>((width << 4) * stage->time);
+                i32 right = static_cast<i32>((width << 4) * stage->next->time);
                 NuRndrGradRect2di((x << 4) + left, (y + half_height) << 3, right - left, half_height << 3, colours,
                                   uimtls[ui_bgmtl]);
             }
-            stage_time = next->time;
-            stage_colour = next->colour;
-            next = next->next;
         }
         for (edui_gradient_node_s *stage = gradient->first_stage; stage; stage = stage->next) {
             i32 marker_x = (x + static_cast<i32>(width * stage->time) - 2) << 4;

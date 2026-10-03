@@ -15,7 +15,6 @@
 #include "legoapi/world/level.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/nuspecial.h"
-#include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nucore/nustring.h"
@@ -394,7 +393,7 @@ void Customiser_LoadAll(CUSTOMISER *customiser, WORLDINFO_s *world) {
     for (i32 category_index = 0; category_index < 9; ++category_index) {
         CUSTOMPIECECATEGORY *category = customiser->categories[category_index];
         const i32 piece_count = customiser->piece_counts[category_index];
-        if (piece_count < 1 || category == NULL || category->name == NULL) {
+        if (piece_count < 1 || category == NULL || category->name == NULL || category->name[0] == '\0') {
             world->customiser_resources[category_index] = NULL;
             continue;
         }
@@ -432,11 +431,11 @@ void Customiser_LoadAll(CUSTOMISER *customiser, WORLDINFO_s *world) {
             char path[0x80];
             NuStrCpy(piece_name, piece->name);
             NuStrCpy(path, "chars\\weirdo\\");
-            NuStrCat(path, customiser->categories[category_index]->name);
+            NuStrCat(path, category->name);
             NuStrCat(path, "\\");
             NuStrCat(path, piece_name);
 
-            if (customiser->categories[category_index]->uses_special != 0) {
+            if (category->uses_special != 0) {
                 resource->scene = world->customiser_shared_scenes[category_index];
                 if (resource->scene == NULL) {
                     NuStrCat(path, ".gsc");
@@ -449,7 +448,7 @@ void Customiser_LoadAll(CUSTOMISER *customiser, WORLDINFO_s *world) {
                 continue;
             }
 
-            if (customiser->categories[category_index]->material_tag == -1) {
+            if (category->material_tag == -1) {
                 continue;
             }
             PLATFORMS_SUPPORTED platform = NuPlatform::Get()->GetCurrentPlatform();
@@ -801,8 +800,7 @@ CUSTOMISER *Customiser_Configure(char *filename, VARIPTR *buffer, VARIPTR *, i32
     return customiser;
 }
 
-__attribute__((optimize("O3,omit-frame-pointer"))) CUSTOMPIECE *Customiser_FindPieceByName(CUSTOMISER *customiser, char *name,
-                                                                          i32 *category, i32 *index) {
+CUSTOMPIECE *Customiser_FindPieceByName(CUSTOMISER *customiser, char *name, i32 *category, i32 *index) {
     if (customiser != NULL) {
         for (i32 category_index = 0; category_index < 9; ++category_index) {
             for (i32 piece_index = 0; piece_index < customiser->piece_counts[category_index]; ++piece_index) {

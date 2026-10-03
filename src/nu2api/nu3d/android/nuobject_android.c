@@ -24,6 +24,8 @@ struct NuFadeObjGType {
 };
 DECOMP_ASSERT(sizeof(NuFadeObjGType) == 0x40, "fade group size");
 
+struct nugeom_s;
+
 extern "C" {
     i16 *NuFadeData;
     NUMTX *NuFadeObjMtxs;
@@ -103,13 +105,8 @@ NUMTX *NuFadeObjAllocMtxs(i32 count) {
     return NULL;
 }
 
-i32 NuFadeSetFxCodeMtls(nugeom_s *geometry, u8 *) {
-    i32 count = 1;
-    while (geometry != NULL) {
-        geometry = geometry->next;
-        ++count;
-    }
-    return count;
+void NuFadeSetFxCodeMtls(nugeom_s *, unsigned char *) {
+    STUBBED();
 }
 
 void NuFadeObjFreeMtxs(NUMTX *matrices, i32 count) {

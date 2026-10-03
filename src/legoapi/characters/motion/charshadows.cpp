@@ -83,8 +83,7 @@ void CharShadows_Reset(PLAYERPACKET_s *packet) {
 
 void CharShadows_Update() {
     GameObject_s *object = Obj;
-    i32 object_count = HIGHGAMEOBJECT;
-    for (i32 object_index = 0; object_index < object_count; ++object_index, ++object) {
+    for (i32 object_index = 0; object_index < HIGHGAMEOBJECT; ++object_index, ++object) {
         const u16 required_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER;
         if ((object->apiobj.field_0x1f8 & required_flags) != required_flags || object->apiobj.field_0x287 != 0 ||
             (object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_DISABLE_BLOB_SHADOW) != 0 ||
@@ -113,7 +112,7 @@ void CharShadows_Update() {
         NUMTX *joint_matrix = object->joint_matrices;
         for (i32 joint_index = 0; joint_index < kMaxShadowJoints && shadow_index < kMaxCharacterShadows;
              ++joint_index, ++joint_matrix) {
-            if ((object->shadow_joint_mask & (1u << joint_index)) == 0 ||
+            if ((shadow_joint_mask & (1u << joint_index)) == 0 ||
                 object->apiobj.character_model->points_of_interest[joint_index] == NULL) {
                 continue;
             }
@@ -142,7 +141,7 @@ void CharShadows_Update() {
             const i32 layer_index = EShadowInfo();
             if (layer_index >= 0 && EShadY != kInvalidShadowHeight && layer_index <= 16 &&
                 (TerLayer[layer_index].flags & TERRAIN_LAYER_FLAG_REJECT_CHARACTER_SHADOW) != 0 &&
-                (EShadY > shadow.position.y || shadow.position.y > joint_position.y + 0.075f)) {
+                (EShadY > shadow.position.y || shadow.position.y > joint_position.y + 0.1f)) {
                 shadow.position.y = kInvalidShadowHeight;
                 ++shadow_index;
                 continue;
@@ -158,6 +157,5 @@ void CharShadows_Update() {
         for (; shadow_index < kMaxCharacterShadows; ++shadow_index) {
             object->character_shadows[shadow_index].position.y = kInvalidShadowHeight;
         }
-        object_count = HIGHGAMEOBJECT;
     }
 }

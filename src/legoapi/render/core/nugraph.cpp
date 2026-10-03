@@ -426,7 +426,9 @@ extern "C" {
     }
 
     f32 nugraphGetYatXScaled(nugraph_s *graph, f32 x, i32 iterations) {
-        return graph->y_extent * graph->y_scale * nugraphGetYatX(graph, x, iterations);
+        f32 scale;
+        scale = graph->y_extent * graph->y_scale;
+        return scale * nugraphGetYatX(graph, x, iterations);
     }
 
     void nugraphInit(nugraph_s *graph) {

@@ -192,6 +192,9 @@ NUGSCNVIDEOMEMFN video_mem_to_gscene;
 extern "C" void NuGScnFromVideoMem(NUGSCNVIDEOMEMFN callback) {
     video_mem_to_gscene = callback;
 }
+extern "C" void NuGScnReadForMultiRender(void) {
+    STUBBED();
+}
 extern "C" void NuGScnRndr(NUGSCN *scene) {
     if (scene->additional_scenes != NULL && scene->rendered_additional_scene_count > 0) {
         NuDisplaySceneRndr(scene->additional_scenes[scene->rendered_additional_scene_count - 1]->display_list);
@@ -238,6 +241,9 @@ extern "C" void NuMtlAnimateShaderMtlTextures(f32 frame_time) {
         firstcall = 0;
     }
 }
+static void NuMtlCreate3D(void) {
+    STUBBED();
+}
 static inline NUMTL *NuMtlAllocateBuff(VARIPTR *buffer) {
     NUMTL *material = reinterpret_cast<NUMTL *>(ALIGN(buffer->addr, 16));
     buffer->addr = reinterpret_cast<usize>(material + 1);
@@ -259,6 +265,9 @@ extern "C" NUMTL *NuMtlCreateBuff3D(i32, VARIPTR *buffer) {
     return material;
 }
 
+static void NuMtlSetRenderStatesPS(void) {
+    STUBBED();
+}
 extern "C" i32 NuMtlSpecialSetUV(nuhspecial_s *special, f32 u, f32 v) {
     if (special->scene == NULL) {
         return 0;
@@ -502,6 +511,7 @@ extern "C" void NuRndrEndShadowReceiveRender(void) {
     global_GobjIsShadowReceive = 0;
 }
 extern "C" i32 NuRndrGetCullDebug(void) {
+    STUBBED();
     return 0;
 }
 extern i32 global_frame_count;
@@ -722,7 +732,7 @@ extern "C" i32 NuRndrHighResScreenGrab(char *prefix, f32 scale, f32 a, f32 b, f3
     i32 width = static_cast<i32>(xPos == xTiles - 1.0f ? scale * w - ((xTiles - 1.0f) * 0.75f) * w : 0.75f * w);
     f32 full_height = scale * h;
     i32 height = static_cast<i32>(yPos == yTiles - 1.0f ? full_height - ((yTiles - 1.0f) * 0.75f) * h : 0.75f * h);
-    u8 *data = pixels + static_cast<u32>(((static_cast<f32>(static_cast<i32>(params.width)) * 3.0f) * 0.125f) * h) +
+    u8 *data = pixels + static_cast<u32>(((static_cast<f32>(params.width) * 3.0f) * 0.125f) * h) +
                static_cast<u32>((0.125f * w) * 3.0f) +
                static_cast<u32>(((static_cast<f32>(xOffsetHack * 3) * w) / static_cast<f32>(PS2_VREZ_W)) * scale);
     if (yPos == yTiles - 1.0f)
@@ -1032,6 +1042,7 @@ extern "C" void NuRndrRectUV2di(i32 x, i32 y, i32 w, i32 h, f32 u0, f32 v0, f32 
     NuPrim2DEnd();
 }
 extern "C" void NuRndrSetCullDebug(void) {
+    STUBBED();
 }
 extern "C" {
     i32 NuRndrStopUpdate;
@@ -1404,6 +1415,9 @@ extern "C" nu2api::ShaderUniformRecord *NuShaderUniformGetByString(const char *n
             return &g_shaderUniforms[i];
     }
     return NULL;
+}
+static void NuTexGenTexture(void) {
+    STUBBED();
 }
 extern "C" void NuTextureBlendEffect(i32 arg0, i32 arg1, NUVEC4 *parameters) {
     currentScene.texture_blend_arg0 = arg0;

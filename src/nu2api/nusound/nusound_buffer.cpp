@@ -32,17 +32,6 @@ NuSoundBuffer::NuSoundBuffer(char *address, u64 size) {
     Provide(address, size);
 }
 
-NuSoundBuffer::~NuSoundBuffer() {
-}
-
-i32 NuSoundBuffer::Provide(char *address, u64 size) {
-    this->address = address;
-    this->allocated = 1;
-    this->size = size;
-
-    return 1;
-}
-
 void NuSoundBuffer::Free() {
     if (this->memory_buffer != NULL) {
         NuSoundSystem::FreeMemory(this->memory_discipline, (usize)this->memory_buffer, this->size);
@@ -54,10 +43,22 @@ void NuSoundBuffer::Free() {
     this->size = 0;
     this->memory_buffer = NULL;
 
+    this->context.field5_0x20 = 0;
     this->context.read_size = 0;
     this->context.size2 = 0;
     this->context.size3 = 0;
-    this->context.field5_0x20 = 0;
+}
+
+bool NuSoundBuffer::IsAllocated() const {
+    if (this->allocated == 0) {
+        return this->memory_buffer != NULL;
+    } else {
+        return true;
+    }
+}
+
+void NuSoundBuffer::SetCurrentContext(Context &context) {
+    this->context = context;
 }
 
 void *NuSoundBuffer::GetAddress() const {
@@ -68,35 +69,38 @@ u64 NuSoundBuffer::GetBufferSize() const {
     return this->size;
 }
 
-u32 NuSoundBuffer::GetSegmentSize(u32 segments, u32 alignment) const {
-    u32 result = (u32)GetBufferSize() / segments;
-    if (segments != 0) {
-        for (u32 index = 0; index < segments; index++) {
-            u32 segment_size = (u32)GetBufferSize() / segments;
-            u32 segment_start = segment_size * index;
-            u32 aligned_start = (segment_start + alignment - 1) & -alignment;
-            u32 available = ((u32)GetBufferSize() / segments + segment_start) - aligned_start;
-            if (result > available) {
-                result = available;
-            }
+bool NuSoundBuffer::IsLocked() const {
+    return this->lock_count > 0;
+}
+
+i32 NuSoundBuffer::Allocate(u64 size, NuSoundSystem::MemoryDiscipline disc) {
+    if (!IsAllocated() || this->size < size) {
+        if (IsAllocated()) {
+            Free();
         }
+
+        this->memory_buffer = (NuSoundMemoryBuffer *)NuSoundSystem::_AllocMemory(
+            disc, size, 4, "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound_buffer.cpp:53");
+
+        if (this->memory_buffer == NULL) {
+            if (size <= NuSoundSystem::GetFreeMemory(disc)) {
+                return -2;
+            }
+            return -1;
+        }
+        this->address = this->memory_buffer;
+        this->size = size;
+        this->memory_discipline = disc;
     }
-    return result;
+    return 1;
 }
 
-void *NuSoundBuffer::GetSegmentAddress(u32 index, u32 segments, u32 alignment) const {
-    void *address = this->address;
-    u64 segment_size = GetBufferSize() / segments;
-    usize segment = (usize)address + (u32)segment_size * index;
-    return (void *)((segment + alignment - 1) & -alignment);
-}
+i32 NuSoundBuffer::Provide(char *address, u64 size) {
+    this->address = address;
+    this->allocated = 1;
+    this->size = size;
 
-NuSoundBuffer::Context &NuSoundBuffer::GetCurrentContext() {
-    return this->context;
-}
-
-void NuSoundBuffer::SetCurrentContext(Context &context) {
-    this->context = context;
+    return 1;
 }
 
 void NuSoundBuffer::Lock() {
@@ -126,36 +130,32 @@ void NuSoundBuffer::Unlock() {
     sCriticalSection.Unlock();
 }
 
-bool NuSoundBuffer::IsLocked() const {
-    return this->lock_count > 0;
+NuSoundBuffer::~NuSoundBuffer() {
 }
 
-bool NuSoundBuffer::IsAllocated() const {
-    if (this->allocated == 0) {
-        return this->memory_buffer != NULL;
-    } else {
-        return true;
-    }
+NuSoundBuffer::Context &NuSoundBuffer::GetCurrentContext() {
+    return this->context;
 }
 
-i32 NuSoundBuffer::Allocate(u64 size, NuSoundSystem::MemoryDiscipline disc) {
-    if (!IsAllocated() || this->size < size) {
-        if (IsAllocated()) {
-            Free();
-        }
+void *NuSoundBuffer::GetSegmentAddress(u32 index, u32 segments, u32 alignment) const {
+    void *address = this->address;
+    u64 segment_size = GetBufferSize() / segments;
+    usize segment = (usize)address + (u32)segment_size * index;
+    return (void *)((segment + alignment - 1) & -alignment);
+}
 
-        this->memory_buffer = (NuSoundMemoryBuffer *)NuSoundSystem::_AllocMemory(
-            disc, size, 4, "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound_buffer.cpp:53");
-
-        if (this->memory_buffer == NULL) {
-            if (size <= NuSoundSystem::GetFreeMemory(disc)) {
-                return -2;
+u32 NuSoundBuffer::GetSegmentSize(u32 segments, u32 alignment) const {
+    u32 result = (u32)GetBufferSize() / segments;
+    if (segments != 0) {
+        for (u32 index = 0; index < segments; index++) {
+            u32 segment_size = (u32)GetBufferSize() / segments;
+            u32 segment_start = segment_size * index;
+            u32 aligned_start = (segment_start + alignment - 1) & -alignment;
+            u32 available = ((u32)GetBufferSize() / segments + segment_start) - aligned_start;
+            if (result > available) {
+                result = available;
             }
-            return -1;
         }
-        this->address = this->memory_buffer;
-        this->size = size;
-        this->memory_discipline = disc;
     }
-    return 1;
+    return result;
 }

@@ -879,8 +879,7 @@ static void edpartDieDebrisMenu(eduimenu_s *menu, eduiitem_s *, u32) {
         eduiMenuAddItem(edpart_diedebris_menu,
                         eduiItemSelCreate(1, edblack, 0, 0, edpartGeneralDebrisIndexMenu, "General List..."));
         if (edpart_nearest_type->field_b3 == 1)
-            eduiMenuAddItem(edpart_diedebris_menu,
-                            eduiItemSelCreate(1, edblack, 0, 0, edpartLevelDebrisIndexMenu, "Level List..."));
+            eduiMenuAddItem(edpart_diedebris_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartLevelDebrisIndexMenu, "Level List..."));
         else
             eduiMenuAddItem(edpart_diedebris_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Level List..."));
     }
@@ -1001,8 +1000,7 @@ static void edpartImpactPartMenu(eduimenu_s *menu, eduiitem_s *, u32) {
         eduiMenuAddItem(edpart_impactpart_menu,
                         eduiItemSelCreate(1, edblack, 0, 0, edpartGeneralPartIndexMenu, "General List..."));
         if (edpart_nearest_type->field_b3 == 1)
-            eduiMenuAddItem(edpart_impactpart_menu,
-                            eduiItemSelCreate(1, edblack, 0, 0, edpartLevelPartIndexMenu, "Level List..."));
+            eduiMenuAddItem(edpart_impactpart_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartLevelPartIndexMenu, "Level List..."));
         else
             eduiMenuAddItem(edpart_impactpart_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Level List..."));
     }
@@ -1370,8 +1368,7 @@ static void edpartImpactDebrisMenu(eduimenu_s *menu, eduiitem_s *, u32) {
         eduiMenuAddItem(edpart_impactdebris_menu,
                         eduiItemSelCreate(1, edblack, 0, 0, edpartGeneralDebrisIndexMenu, "General List..."));
         if (edpart_nearest_type->field_b3 == 1)
-            eduiMenuAddItem(edpart_impactdebris_menu,
-                            eduiItemSelCreate(1, edblack, 0, 0, edpartLevelDebrisIndexMenu, "Level List..."));
+            eduiMenuAddItem(edpart_impactdebris_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartLevelDebrisIndexMenu, "Level List..."));
         else
             eduiMenuAddItem(edpart_impactdebris_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Level List..."));
     }
@@ -1431,8 +1428,7 @@ static void edpartTrail1DebrisMenu(eduimenu_s *menu, eduiitem_s *, u32) {
         eduiMenuAddItem(edpart_trail1debris_menu,
                         eduiItemSelCreate(1, edblack, 0, 0, edpartGeneralDebrisIndexMenu, "General List..."));
         if (edpart_nearest_type->field_b3 == 1)
-            eduiMenuAddItem(edpart_trail1debris_menu,
-                            eduiItemSelCreate(1, edblack, 0, 0, edpartLevelDebrisIndexMenu, "Level List..."));
+            eduiMenuAddItem(edpart_trail1debris_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartLevelDebrisIndexMenu, "Level List..."));
         else
             eduiMenuAddItem(edpart_trail1debris_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Level List..."));
         eduiMenuAddItem(edpart_trail1debris_menu,
@@ -1454,8 +1450,7 @@ static void edpartTrail2DebrisMenu(eduimenu_s *menu, eduiitem_s *, u32) {
         eduiMenuAddItem(edpart_trail2debris_menu,
                         eduiItemSelCreate(1, edblack, 0, 0, edpartGeneralDebrisIndexMenu, "General List..."));
         if (edpart_nearest_type->field_b3 == 1)
-            eduiMenuAddItem(edpart_trail2debris_menu,
-                            eduiItemSelCreate(1, edblack, 0, 0, edpartLevelDebrisIndexMenu, "Level List..."));
+            eduiMenuAddItem(edpart_trail2debris_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartLevelDebrisIndexMenu, "Level List..."));
         else
             eduiMenuAddItem(edpart_trail2debris_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Level List..."));
         eduiMenuAddItem(edpart_trail2debris_menu,
@@ -1566,8 +1561,7 @@ static void edpartEmitterDebrisMenu(eduimenu_s *menu, eduiitem_s *, u32) {
         eduiMenuAddItem(edpart_emitterdebris_menu,
                         eduiItemSelCreate(1, edblack, 0, 0, edpartGeneralDebrisIndexMenu, "General List..."));
         if (edpart_nearest_type->field_b3 == 1)
-            eduiMenuAddItem(edpart_emitterdebris_menu,
-                            eduiItemSelCreate(1, edblack, 0, 0, edpartLevelDebrisIndexMenu, "Level List..."));
+            eduiMenuAddItem(edpart_emitterdebris_menu, eduiItemSelCreate(1, edblack, 0, 0, edpartLevelDebrisIndexMenu, "Level List..."));
         else
             eduiMenuAddItem(edpart_emitterdebris_menu, eduiItemSelCreate(1, edgrey, 0, 0, NULL, "Level List..."));
     }
@@ -1712,11 +1706,12 @@ static void edpartCancelVarStartMenu(eduimenu_s *, eduimenu_s *) {
 
 static void edpartChangeDebrisPerSec(eduimenu_s *, eduiitem_s *item, u32) {
     if (edpart_nearest_type != NULL) {
-        if (edpart_set_debris == 0) {
-            edpart_nearest_type->trail_rates[0] = static_cast<i32>(static_cast<edui_slider_s *>(item)->value);
-        } else if (edpart_set_debris == 1) {
-            edpart_nearest_type->trail_rates[1] = static_cast<i32>(static_cast<edui_slider_s *>(item)->value);
+        if (edpart_set_debris != 0) {
+            if (edpart_set_debris == 1)
+                edpart_nearest_type->trail_rates[1] = static_cast<i32>(static_cast<edui_slider_s *>(item)->value);
+            return;
         }
+        edpart_nearest_type->trail_rates[0] = static_cast<i32>(static_cast<edui_slider_s *>(item)->value);
     }
 }
 

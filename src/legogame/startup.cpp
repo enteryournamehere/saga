@@ -444,9 +444,6 @@ void LoadPerm(void) {
         } else {
             NuLanguageSet(device_language);
             Text_Language = static_cast<u32>(device_language);
-            if (language_index >= LANGUAGECOUNT) {
-                LoadPerm_LanguageSelect = 0;
-            }
         }
     }
 

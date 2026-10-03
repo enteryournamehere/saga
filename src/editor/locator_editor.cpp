@@ -701,6 +701,8 @@ extern "C" {
 
 void locatorEditor_Enter(void) {
     AIEDITOR_RENDER_STATE *const *state = &aieditor;
+    // Keep the global pointer slot in a register across the list operations.
+    __asm__ volatile("" : "+r"(state));
     memset(&(*state)->locators, 0, 0x48);
     for (i32 index = 0; index < 256; ++index) {
         NuLinkedListAppend(&(*state)->free_locators, &(*state)->locator_pool[index].link);
@@ -965,60 +967,59 @@ process_buttons:
         return menu;
     } else if ((pad->digital_buttons_pressed & 0x10) != 0) {
         // A delete press without a matching selected locator only refreshes hover state.
-    } else if ((pad->digital_buttons & 0x100) != 0) {
+    } else if ((pad->digital_buttons & 0x100) != 0 && (pad->digital_buttons_pressed & (0x08 | 0x02)) != 0) {
         EDLOCATOR_s *next = nullptr;
-        if ((pad->digital_buttons_pressed & (0x08 | 0x02)) == 0) {
-            if ((pad->digital_buttons_pressed & 0x100) == 0) {
-                goto refresh_hover;
-            }
-            next = locatorEditor_GetNearest(0);
-        } else {
-            EDLOCATORSET_s *set = aieditor->current_locator_set;
-            if (set != nullptr) {
-                i32 index = -1;
-                for (i32 i = 0; i < 64; ++i) {
-                    if (set->locators[i] == aieditor->current_locator) {
-                        index = i;
-                        break;
-                    }
+        EDLOCATORSET_s *set = aieditor->current_locator_set;
+        if (set != nullptr) {
+            i32 index = -1;
+            for (i32 i = 0; i < 64; ++i) {
+                if (set->locators[i] == aieditor->current_locator) {
+                    index = i;
+                    break;
                 }
-                if ((pad->digital_buttons_pressed & 0x08) != 0) {
-                    next = index < 0 || index >= 63 || set->locators[index + 1] == nullptr ? set->locators[0]
-                                                                                           : set->locators[index + 1];
+            }
+            if ((pad->digital_buttons_pressed & 0x08) != 0) {
+                next = index < 0 || index >= 63 || set->locators[index + 1] == nullptr ? set->locators[0]
+                                                                                       : set->locators[index + 1];
+            } else {
+                if (aieditor->current_locator == nullptr) {
+                    next = set->locators[0];
+                } else if (index > 0) {
+                    next = set->locators[index - 1];
                 } else {
-                    if (aieditor->current_locator == nullptr) {
-                        next = set->locators[0];
-                    } else if (index > 0) {
-                        next = set->locators[index - 1];
-                    } else {
-                        for (i32 i = 63; i >= 0; --i) {
-                            if (set->locators[i] != nullptr) {
-                                next = set->locators[i];
-                                break;
-                            }
+                    for (i32 i = 63; i >= 0; --i) {
+                        if (set->locators[i] != nullptr) {
+                            next = set->locators[i];
+                            break;
                         }
                     }
                 }
-            } else if ((pad->digital_buttons_pressed & 0x08) != 0) {
-                next = aieditor->current_locator == nullptr
-                           ? (EDLOCATOR_s *)NuLinkedListGetHead(&aieditor->locators)
-                           : (EDLOCATOR_s *)NuLinkedListGetNext(&aieditor->locators, &aieditor->current_locator->link);
-                if (next == nullptr) {
-                    next = (EDLOCATOR_s *)NuLinkedListGetHead(&aieditor->locators);
-                }
-            } else {
-                next = aieditor->current_locator == nullptr
-                           ? (EDLOCATOR_s *)NuLinkedListGetTail(&aieditor->locators)
-                           : (EDLOCATOR_s *)NuLinkedListGetPrev(&aieditor->locators, &aieditor->current_locator->link);
-                if (next == nullptr) {
-                    next = (EDLOCATOR_s *)NuLinkedListGetTail(&aieditor->locators);
-                }
+            }
+        } else if ((pad->digital_buttons_pressed & 0x08) != 0) {
+            next = aieditor->current_locator == nullptr
+                       ? (EDLOCATOR_s *)NuLinkedListGetHead(&aieditor->locators)
+                       : (EDLOCATOR_s *)NuLinkedListGetNext(&aieditor->locators, &aieditor->current_locator->link);
+            if (next == nullptr) {
+                next = (EDLOCATOR_s *)NuLinkedListGetHead(&aieditor->locators);
+            }
+        } else {
+            next = aieditor->current_locator == nullptr
+                       ? (EDLOCATOR_s *)NuLinkedListGetTail(&aieditor->locators)
+                       : (EDLOCATOR_s *)NuLinkedListGetPrev(&aieditor->locators, &aieditor->current_locator->link);
+            if (next == nullptr) {
+                next = (EDLOCATOR_s *)NuLinkedListGetTail(&aieditor->locators);
             }
         }
         aieditor->current_locator = next;
         if (next != nullptr) {
             aieditor->current_path = next->path;
             edcamSetPos(&next->position);
+        }
+    } else if ((pad->digital_buttons_pressed & 0x01) != 0) {
+        aieditor->current_locator = locatorEditor_GetNearest(0);
+        if (aieditor->current_locator != nullptr) {
+            aieditor->current_path = aieditor->current_locator->path;
+            edcamSetPos(&aieditor->current_locator->position);
         }
     } else if ((pad->digital_buttons & 0x2000) != 0) {
         i32 &step = *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(aieditor) + 0x36934);
@@ -1088,7 +1089,6 @@ process_buttons:
             AddLocatorToSetAtEnd(set, nearest);
         }
     }
-refresh_hover:
     *reinterpret_cast<EDCREATURE_s **>(reinterpret_cast<u8 *>(aieditor) + 0x3692c) = creatureEditor_GetNearest(1);
     aieditor->nearest_locator = locatorEditor_GetNearest(1);
     return nullptr;

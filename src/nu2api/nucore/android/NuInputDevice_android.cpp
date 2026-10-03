@@ -9,7 +9,6 @@
 
 #include "nu2api/nucore/NuInputDevice.h"
 #include "nu2api/nucore/common.h"
-#include "nu2api/nucore/nuthread.h"
 
 namespace NuInputDevicePS {
     bool m_gamepadConnected;
@@ -17,7 +16,7 @@ namespace NuInputDevicePS {
     u32 m_deviceButtons;
     u32 m_padButtons;
 
-    NuCriticalSection m_touchEventQueueCriticalSection(NULL);
+    pthread_mutex_t m_touchEventQueueCriticalSection;
     struct TouchEvent {
         i32 type;
         i32 device;
@@ -53,7 +52,7 @@ namespace NuInputDevicePS {
         if (g_appWindow != NULL) {
             f32 width = ANativeWindow_getWidth(g_appWindow);
             f32 height = ANativeWindow_getHeight(g_appWindow);
-            pthread_mutex_lock(&m_touchEventQueueCriticalSection.mutex);
+            pthread_mutex_lock(&m_touchEventQueueCriticalSection);
             for (i32 i = 0; i != m_touchEventQueueSize; ++i) {
                 const TouchEvent &event = m_touchEventQueue[i];
                 switch (event.type) {
@@ -73,7 +72,7 @@ namespace NuInputDevicePS {
                 }
             }
             m_touchEventQueueSize = 0;
-            pthread_mutex_unlock(&m_touchEventQueueCriticalSection.mutex);
+            pthread_mutex_unlock(&m_touchEventQueueCriticalSection);
             m_touchDataR.touch_count = 0;
             u32 count = 0;
             for (i32 i = 0; i < 10; ++i) {
@@ -225,7 +224,7 @@ namespace NuInputDevicePS {
     }
 
     i32 HandleTouch_ANDROID_SPECIFIC(i32 type, i32 device, i32 touch, f32 x, f32 y) {
-        pthread_mutex_lock(&m_touchEventQueueCriticalSection.mutex);
+        pthread_mutex_lock(&m_touchEventQueueCriticalSection);
         TouchEvent &event = m_touchEventQueue[m_touchEventQueueSize];
         event.type = type;
         event.device = device;
@@ -233,19 +232,19 @@ namespace NuInputDevicePS {
         event.x = x;
         event.y = y;
         ++m_touchEventQueueSize;
-        pthread_mutex_unlock(&m_touchEventQueueCriticalSection.mutex);
+        pthread_mutex_unlock(&m_touchEventQueueCriticalSection);
         return 0;
     }
 
     void HandleGamePadAxis_ANDROID_SPECIFIC(f32 x, f32 y, f32 z, f32 rz, f32 left, f32 right) {
-        pthread_mutex_lock(&m_touchEventQueueCriticalSection.mutex);
+        pthread_mutex_lock(&m_touchEventQueueCriticalSection);
         m_gamePadAxis[0] = z;
         m_gamePadAxis[1] = rz;
         m_gamePadAxis[2] = left;
         m_gamePadAxis[3] = right;
         m_gamePadAxis[6] = x;
         m_gamePadAxis[7] = y;
-        pthread_mutex_unlock(&m_touchEventQueueCriticalSection.mutex);
+        pthread_mutex_unlock(&m_touchEventQueueCriticalSection);
     }
 
     void HandleSensor_ANDROID_SPECIFIC(i32, f32, f32, f32) {
@@ -255,7 +254,7 @@ namespace NuInputDevicePS {
         u32 button_idx;
         i32 port;
 
-        pthread_mutex_lock(&m_touchEventQueueCriticalSection.mutex);
+        pthread_mutex_lock(&m_touchEventQueueCriticalSection);
 
         button_idx = GetGamePadButtonIndex(key, &port);
 
@@ -265,14 +264,14 @@ namespace NuInputDevicePS {
             m_padButtons |= button_idx;
         }
 
-        pthread_mutex_unlock(&m_touchEventQueueCriticalSection.mutex);
+        pthread_mutex_unlock(&m_touchEventQueueCriticalSection);
     }
 
     void HandleKeyUp_ANDROID_SPECIFIC(i32 key) {
         u32 button_idx;
         i32 port;
 
-        pthread_mutex_lock(&m_touchEventQueueCriticalSection.mutex);
+        pthread_mutex_lock(&m_touchEventQueueCriticalSection);
 
         button_idx = ~GetGamePadButtonIndex(key, &port);
 
@@ -282,6 +281,6 @@ namespace NuInputDevicePS {
             m_padButtons &= button_idx;
         }
 
-        pthread_mutex_unlock(&m_touchEventQueueCriticalSection.mutex);
+        pthread_mutex_unlock(&m_touchEventQueueCriticalSection);
     }
 }; // namespace NuInputDevicePS

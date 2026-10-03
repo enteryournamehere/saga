@@ -5,8 +5,6 @@
 #include "decomp.h"
 #include "nu2api/nucore/common.h"
 
-class NuCriticalSection;
-
 class NuMemoryPool {
   public:
     class IEventHandler {
@@ -62,7 +60,7 @@ class NuMemoryPool {
 
   private:
     static NuMemoryPool *m_firstPool;
-    static NuCriticalSection m_globalCriticalSection;
+    static pthread_mutex_t m_globalCriticalSection;
 
     NuMemoryPool *next;
     const char *name;

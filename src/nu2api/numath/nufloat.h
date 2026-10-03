@@ -71,8 +71,6 @@ extern "C" {
     i32 NuMiscPow2Exp(i32 value);
 
     f32 NuLog10(float x);
-    f32 NuLog2(f32 value);
-    f32 NuPow(f32 base, f32 exponent);
 
     f32 NuExp10(float x);
 

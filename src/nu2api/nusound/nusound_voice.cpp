@@ -16,8 +16,7 @@
 
 #include <string.h>
 
-NuCriticalSection NuSoundVoice::sStateCriticalSection("NuSoundVoice::sStateCriticalSection");
-NuCriticalSection NuSoundVoice::sReleaseCriticalSection("NuSoundVoice::sReleaseCriticalSection");
+pthread_mutex_t NuSoundVoice::sStateCriticalSection = PTHREAD_MUTEX_INITIALIZER;
 
 namespace {
     struct VoiceListenerLink {
@@ -90,6 +89,8 @@ NuSoundVoice::NuSoundVoice(NuSoundSource *sound_source, bool loop) {
     sound_source->VoiceReference();
     this->sound_source = sound_source;
 
+    memset(this->mix_gains, 0, sizeof(this->mix_gains));
+
     this->field63_0x98 = 0.0f;
     this->field64_0x9c = 0.0f;
     this->field65_0xa0 = 1.0f; // falloff attenuation
@@ -125,7 +126,6 @@ NuSoundVoice::NuSoundVoice(NuSoundSource *sound_source, bool loop) {
     this->flags = (u8)(this->flags & 0xf0 | 0x10); // mix update on the first Update
 
     this->SetState(PLAYSTATE_STOPPED); // libTTapp.so ctor tail (0x3275b9)
-    memset(this->mix_gains, 0, sizeof(this->mix_gains));
 }
 
 NuSoundVoice::~NuSoundVoice() {
@@ -155,16 +155,16 @@ NuSoundVoice::~NuSoundVoice() {
 NuSoundVoice::PlayState NuSoundVoice::GetState() const {
     NuSoundVoice::PlayState state;
 
-    sStateCriticalSection.Lock();
+    pthread_mutex_lock(&sStateCriticalSection);
     state = this->state;
-    sStateCriticalSection.Unlock();
+    pthread_mutex_unlock(&sStateCriticalSection);
     return state;
 }
 
 void NuSoundVoice::SetState(PlayState state) {
-    sStateCriticalSection.Lock();
+    pthread_mutex_lock(&sStateCriticalSection);
     this->state = state;
-    sStateCriticalSection.Unlock();
+    pthread_mutex_unlock(&sStateCriticalSection);
 }
 
 bool NuSoundVoice::GetAutoDelete() const {

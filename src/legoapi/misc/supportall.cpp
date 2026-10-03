@@ -329,18 +329,11 @@ void RndrTexQuad(f32 x, f32 y, f32 width, f32 height, i32 colour, numtl_s *mater
 }
 
 i32 SuperWeirdo(GameObject_s *object) {
-    i32 result = 0;
-    if (__builtin_expect((object->apiobj.flags_low & 0x80) == 0, 0))
-        return result;
-    if ((Game.field_0x7c26[1] & 1) == 0)
-        return result;
-    if (CharacterCustomiser == NULL)
-        return result;
-    if (__builtin_expect(object->id == CharacterCustomiser->character_ids[0], 0))
-        result = 1;
-    else if (__builtin_expect(object->id == CharacterCustomiser->character_ids[1], 0))
-        result = 1;
-    return result;
+    if ((object->apiobj.flags_low & 0x80) != 0 && (Game.field_0x7c26[1] & 1) != 0 && CharacterCustomiser != NULL &&
+        (object->id == CharacterCustomiser->character_ids[0] || object->id == CharacterCustomiser->character_ids[1])) {
+        return 1;
+    }
+    return 0;
 }
 
 void bgProcClose() {
@@ -453,8 +446,7 @@ apply_weights:
 }
 
 static inline void TexQuadSubmit3D(f32 x, f32 y, i32 colour, i32 u, i32 v) {
-    VARIPTR *stream = g_NuPrim_StreamBufferPtr;
-    TexQuadVertex *vertex = static_cast<TexQuadVertex *>(stream->void_ptr);
+    TexQuadVertex *vertex = static_cast<TexQuadVertex *>(g_NuPrim_StreamBufferPtr->void_ptr);
     if (g_NuPrim_NeedsOverbrightening != 0) {
         vertex->colour = colour;
     } else {
@@ -470,7 +462,7 @@ static inline void TexQuadSubmit3D(f32 x, f32 y, i32 colour, i32 u, i32 v) {
     vertex->x = x;
     vertex->y = y;
     vertex->z = 0.0f;
-    stream->u8_ptr += sizeof(TexQuadVertex);
+    g_NuPrim_StreamBufferPtr->u8_ptr += sizeof(TexQuadVertex);
     ++g_NuPrim_VertexCount;
 }
 
@@ -581,14 +573,15 @@ void CheckResetBits() {
         BonusCoinTotal = 0;
     }
 
+    const i32 progress_index = WORLD->current_level->area_level_index;
     if (WORLD->api_object_sys != NULL)
         WORLD->api_object_sys->flags_210 &= ~1;
     if ((ResetBits & RESETBIT_CLEAR_LEVEL_PROGRESS) != 0) {
-        GizmoSysClearLevelProgress(WORLD, WORLD->current_level->area_level_index);
+        GizmoSysClearLevelProgress(WORLD, progress_index);
     }
 
-    GameAnimSys_ReStoreProgress(WORLD->game_anim_sys, WORLD->current_level->area_level_index);
-    GizmoSysReset(WORLD->gizmo_sys, WORLD, WORLD->current_level->area_level_index);
+    GameAnimSys_ReStoreProgress(WORLD->game_anim_sys, progress_index);
+    GizmoSysReset(WORLD->gizmo_sys, WORLD, progress_index);
 
     if ((ResetBits & RESETBIT_REINITIALISE_LEVEL) != 0) {
         DrawBossHitPoints(NULL);
@@ -1066,9 +1059,8 @@ extern "C" void NuHtmlBitmap(char *filename, i32 width, i32 height, char *captio
 void NuHtmlGraphArray(char **strings) {
     char *text = *strings++;
     while (text != NULL) {
-        char **next = strings++;
         NuHtmlWrite(text);
-        text = *next;
+        text = *strings++;
     }
 }
 
@@ -1119,11 +1111,13 @@ void AddChunkControlToStack(debris_chunk_control_s *control, debris_chunk_contro
 extern "C" debkeydatatype_s *debris_keystack;
 
 void AddDebrisEffectToStack(debkeydatatype_s *key) {
-    debkeydatatype_s *head = debris_keystack;
-    if (head != NULL) {
-        head->next = key;
+    if (key == NULL) {
+        return;
     }
-    key->previous = head;
+    if (debris_keystack != NULL) {
+        debris_keystack->next = key;
+    }
+    key->previous = debris_keystack;
     debris_keystack = key;
 }
 
@@ -1219,12 +1213,10 @@ void RemoveChunkFromRenderStack(particlechunkrendertype_s *, particlechunkrender
 void DebrisReleaseControlStackLock(void);
 
 void DebrisProcessAllocation() {
-    for (debkeydatatype_s *key = debris_keystack; key != NULL;) {
-        debkeydatatype_s *next = key->previous;
+    for (debkeydatatype_s *key = debris_keystack; key != NULL; key = key->previous) {
         if (key->previous_particle_count != key->particle_count) {
             DebReAlloc2(key);
         }
-        key = next;
     }
 }
 

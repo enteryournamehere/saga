@@ -1,15 +1,12 @@
 #include "nu2api_nusound_types.h"
 
-#include <new>
+pthread_mutex_t NuSoundHandle::sCriticalSection;
 
-NuCriticalSection NuSoundHandle::sCriticalSection(NULL);
-
-NuSoundHandle::NuSoundHandle() : intrusive_prev(NULL), intrusive_next(NULL) {
-    voice = NULL;
+NuSoundHandle::NuSoundHandle() : intrusive_prev(NULL), intrusive_next(NULL), voice(NULL) {
 }
 
 NuSoundHandle::~NuSoundHandle() {
-    pthread_mutex_lock(&sCriticalSection.mutex);
+    pthread_mutex_lock(&sCriticalSection);
     if (voice != NULL) {
         if ((voice->flags2 & 8) != 0) {
             voice->Stop(true);
@@ -21,7 +18,7 @@ NuSoundHandle::~NuSoundHandle() {
     for (; node != end; node = node->next) {
         static_cast<NuListNode<NuSoundEffect *> *>(node)->value->Shutdown();
     }
-    pthread_mutex_unlock(&sCriticalSection.mutex);
+    pthread_mutex_unlock(&sCriticalSection);
 }
 
 bool NuSoundHandle::operator==(NuSoundHandle const &other) {
@@ -174,11 +171,10 @@ NuSoundEffect *NuSoundHandle::GetEffect(NuSoundEffect::EffectType type) {
 }
 
 void NuSoundHandle::ResetFrameCount() {
-    NuListNodeBase *end = effects.Tail();
     NuListNodeBase *node = effects.Head();
-    while (node != end) {
+    NuListNodeBase *end = effects.Tail();
+    for (; node != end; node = node->next) {
         static_cast<NuListNode<NuSoundEffect *> *>(node)->value->Enable();
-        node = node->next;
     }
 }
 
@@ -212,14 +208,7 @@ NuSoundHandle &NuSoundHandle::operator=(NuSoundHandle &other) {
     for (; node != end; node = node->next) {
         NuSoundEffect *effect = static_cast<NuListNode<NuSoundEffect *> *>(node)->value;
         effect->Disable();
-        NuListNode<NuSoundEffect *> *copy =
-            static_cast<NuListNode<NuSoundEffect *> *>(NuMemoryGet()->GetThreadMem()->_BlockAlloc(
-                sizeof(NuListNode<NuSoundEffect *>), alignof(NuListNode<NuSoundEffect *>),
-                NuMemoryManager::MEM_ALLOC_SET_TO_ZERO, "", NUMEMORY_CATEGORY_NONE));
-        if (copy != NULL) {
-            new (copy) NuListNode<NuSoundEffect *>(NULL, NULL, static_cast<NuListNode<NuSoundEffect *> *>(node)->value);
-        }
-        effects.Append(copy);
+        NuSoundMemory::PushNuListNode(effects, effect);
     }
     while (other.effects.Head() != other.effects.Tail()) {
         other.effects.Remove(other.effects.Head());

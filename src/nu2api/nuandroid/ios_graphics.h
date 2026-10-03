@@ -17,7 +17,6 @@ extern "C" {
     i32 NuIOS_IsWidescreen(void);
 
     char *NuIOS_GetDocumentsPath(void);
-    extern char g_internalPath[256];
     char *NuIOS_GetAppBundlePath(void);
 
     u32 NuIOS_YieldThread(void);

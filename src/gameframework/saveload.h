@@ -16,7 +16,6 @@ extern "C" {
     extern i32 saveload_cardformatted;
     extern i32 saveload_freespace;
     extern i32 saveload_filecorrupt;
-    extern i32 saveload_cardchanged;
     extern char id_test[17];
     extern u8 code_test[16];
 

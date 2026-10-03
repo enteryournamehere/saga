@@ -5,8 +5,6 @@
 
 #include <pthread.h>
 
-class NuCriticalSection;
-
 class NuSoundMemoryBuffer {
     friend class NuSoundMemoryManager;
 
@@ -18,7 +16,7 @@ class NuSoundMemoryBuffer {
     NuSoundMemoryBuffer *next;
 
   private:
-    static NuCriticalSection s_cs;
+    static pthread_mutex_t s_cs;
 
     static void BeginCriticalSection();
     static void EndCriticalSection();

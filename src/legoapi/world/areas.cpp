@@ -263,8 +263,8 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
             area->area_index = 0xff;
             area->area_music = -1;
             area->minikit_id = 0xffff;
-            area->true_hero_targets[0] = 0;
-            area->true_hero_targets[1] = 0;
+            area->field37_0x8c = 0;
+            area->field38_0x90 = 0;
             area->text_id = 0xffff;
             area->text_id_value = 1;
             area->hub_player_ids = NULL;
@@ -783,15 +783,15 @@ void Area_Configure(i32 area, i32 param, EXTRAMODEL *models, i16 *s) {
                     break;
                 }
                 if (area != -1 && NuStrICmp(fp->word_buf, "story_coins") == 0) {
-                    ADataList[area].true_hero_targets[0] = NuFParGetInt(fp);
+                    ADataList[area].field37_0x8c = NuFParGetInt(fp);
                     if (g_lowEndLevelBehaviour != 0 && &ADataList[area] == DOGFIGHT_ADATA)
-                        ADataList[area].true_hero_targets[0] = 40000;
+                        ADataList[area].field37_0x8c = 40000;
                     break;
                 }
                 if (area != -1 && NuStrICmp(fp->word_buf, "freeplay_coins") == 0) {
-                    ADataList[area].true_hero_targets[1] = NuFParGetInt(fp);
+                    ADataList[area].field38_0x90 = NuFParGetInt(fp);
                     if (g_lowEndLevelBehaviour != 0 && &ADataList[area] == DOGFIGHT_ADATA)
-                        ADataList[area].true_hero_targets[1] = 40000;
+                        ADataList[area].field38_0x90 = 40000;
                     break;
                 }
                 if (area != -1 && NuStrICmp(fp->word_buf, "timetrial_time") == 0) {
@@ -970,29 +970,23 @@ void ClearAreaProgress(i32 a, i32 b) {
 }
 
 void Areas_CompleteAllBuildUps(AREASAVE_s *save) {
-    if (save == NULL) {
-        return;
-    }
     i32 count = AREACOUNT;
     u8 *area;
     u8 *end;
 
-    if (count <= 0) {
+    if (save == NULL || count <= 0) {
         return;
     }
     area = *(u8 **)&ADataList;
     end = area + count * 0x9c;
-    do {
+    while (area != end) {
         if ((*(u16 *)(area + 0x7a) & (AREAFLAG_TRUE_JEDI | AREAFLAG_MINIKIT)) && *((u8 *)save) != 0) {
             ((u8 *)save)[2] = 1;
             ((u8 *)save)[3] = 1;
         }
         area += 0x9c;
         save = (AREASAVE_s *)((u8 *)save + 0xc);
-        if (area == end) {
-            break;
-        }
-    } while (true);
+    }
 }
 
 void NewArea() {
@@ -1033,17 +1027,14 @@ have_jump:
     } else {
         area_ep = *(u8 *)((char *)&Game + 0x7831 + Area * 12);
     }
-    AreaGlobals.values.field_0x0c = area_ep;
-    AreaGlobals.values.field_0x14 = area_ep;
+    AreaGlobals.bytes[0x0c] = area_ep;
+    AreaGlobals.bytes[0x14] = area_ep;
     Door_UseCutCam = 0;
     AreaGlobals.values.field_0x00 = 0;
     AreaGlobals.values.field_0x1c = 0;
     AreaGlobals.values.field_0x08 = 0;
     AreaGlobals.values.field_0x18 = 0;
-    AreaGlobals.values.arcade_player_kills[0] = 0;
-    AreaGlobals.values.arcade_player_kills[1] = 0;
-    AreaGlobals.values.arcade_ai_kills[0] = 0;
-    AreaGlobals.values.arcade_ai_kills[1] = 0;
+    AreaGlobals.values.field_0x24 = 0;
     BuildUpTotal = 0;
     BuildUpDone = 0;
     if (*(void **)((char *)WORLD + 0x12c) == HOTHBATTLE_ADATA) {

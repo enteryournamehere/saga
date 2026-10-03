@@ -6,7 +6,6 @@
 #include "legoapi/gizmos/traps/gizforce.h"
 #include "legoapi/gizmos/traps/gizturrets.h"
 #include "legoapi/characters/motion.h"
-#include "legoapi/characters/core/players.h"
 
 u32 GizmoBlowups_TotalScore(void *world);
 extern i32 DoubleScore;
@@ -256,7 +255,6 @@ extern FadeSystem FadeSys;
 
 void Collection_Draw(COLLECTION_s *collection, float x, float y, float scale, APICHARACTERMODELLIST_s *models,
                      float alpha, i32 hide_selected) {
-    const f32 base_dy = COLLECTION_DY;
     nuhspecial_s *special = collection_draw_hspecial;
     i32 (*valid)(COLLECTION_s *, i32) = collection_draw_IsValidFn;
     collection_draw_hspecial = NULL;
@@ -292,7 +290,7 @@ void Collection_Draw(COLLECTION_s *collection, float x, float y, float scale, AP
                 }
         }
     }
-    const f32 dy = base_dy * scale;
+    const f32 dy = COLLECTION_DY * scale;
     collection->field_14 = dy;
     if (alpha > 1.0f)
         alpha = 1.0f;
@@ -330,7 +328,7 @@ void Collection_Draw(COLLECTION_s *collection, float x, float y, float scale, AP
                 id = -1;
             }
             opacity *= alpha;
-            if (!(opacity > 0.0f))
+            if (opacity <= 0.0f)
                 continue;
             u32 neighbours = 0;
             for (i32 player = 0; player < 2; ++player) {
@@ -440,7 +438,7 @@ void Collection_CreateCustom(char *name, i16 *id_list, COLLECTION_s *collection,
             if (id < 0) {
                 continue;
             }
-            if (excluded_model_flags != 0 && (apicharsys->char_data[id].model_flags & excluded_model_flags) != 0) {
+            if (excluded_model_flags != 0 && (CDataList[id].model_flags & excluded_model_flags) != 0) {
                 continue;
             }
             if (require_buyable != 0 && source.can_buy == 0) {
@@ -461,7 +459,7 @@ void Collection_CreateCustom(char *name, i16 *id_list, COLLECTION_s *collection,
                 (CDataList[id].model_flags & required_model_flags) != required_model_flags) {
                 continue;
             }
-            if (excluded_model_flags != 0 && (apicharsys->char_data[id].model_flags & excluded_model_flags) != 0) {
+            if (excluded_model_flags != 0 && (CDataList[id].model_flags & excluded_model_flags) != 0) {
                 continue;
             }
             if (required_game_flags != 0 && (GCDataList[id].flags_090 & required_game_flags) != required_game_flags) {
@@ -560,13 +558,11 @@ void CollectAllCharacters(i32 only_story) {
 
     if (only_story == 0) {
         for (i32 i = 0; i < CollectCount; ++i) {
-            __asm__ __volatile__("" : "+r"(i));
             if (CollectList[i].type != 8)
                 AddToCollection(CollectList[i].id);
         }
     } else {
         for (i32 i = 0; i < CollectCount; ++i) {
-            __asm__ __volatile__("" : "+r"(i));
             if (CollectList[i].type == 1)
                 AddToCollection(CollectList[i].id);
         }
@@ -576,8 +572,7 @@ void CollectAllCharacters(i32 only_story) {
 extern i32 freeplaymode;
 extern i32 freeplay_selected[2];
 static __used__ void Collection_GetSelectingPlayerIDs(i16 *ids) {
-    if (WORLD->area != NULL && WORLD->area == HUB_ADATA && GetMenuID() == 17 &&
-        static_cast<u32>(freeplaymode) <= 3) {
+    if (WORLD->area != NULL && WORLD->area == HUB_ADATA && GetMenuID() == 17 && static_cast<u32>(freeplaymode) <= 3) {
         i32 offset = 0;
         if (MenuPacket.active_player[0] != 0 && freeplay_selected[0] <= 2) {
             ids[0] = MenuPacket.player_model[0];
@@ -604,31 +599,6 @@ void ReleaseEat(GameObject_s *object) {
         object->field_0x7a5 = 0xff;
     }
     object->field_0xe24 = flags & ~1;
-}
-
-i32 ShipDropCoins(starfighter_s *fighter) {
-    u8 *space = reinterpret_cast<u8 *>(WORLD->space_level);
-    i32 *count = reinterpret_cast<i32 *>(space + 0x62ef0);
-    struct ShipCoinRecord {
-        i32 id;
-        f32 height;
-        u8 reserved[8];
-    };
-    ShipCoinRecord *records = reinterpret_cast<ShipCoinRecord *>(space + 0x62ef4);
-    u8 *fighter_data = reinterpret_cast<u8 *>(fighter);
-    u8 *object = *reinterpret_cast<u8 **>(fighter_data + 0xd4);
-    i32 id = *reinterpret_cast<i32 *>(object + 0x524);
-    f32 height = *reinterpret_cast<f32 *>(fighter_data + 0xf8);
-    for (i32 i = 0; i < *count; ++i) {
-        if (records[i].id == id && records[i].height == height)
-            return 0;
-    }
-    if (*count > 255)
-        return 0;
-    records[*count].id = id;
-    records[*count].height = height;
-    ++*count;
-    return 1;
 }
 
 i32 AddToCollection(i32 id) {
@@ -798,7 +768,7 @@ void ReCalculateCompletionPoints() {
 
         if ((flags & AREAFLAG_MINIKIT) == 0) {
             if ((flags & AREAFLAG_TRUE_JEDI) != 0 &&
-                (save->true_hero_complete[0] != 0 || save->true_hero_complete[1] != 0)) {
+                (save->story_buildup_complete != 0 || save->freeplay_buildup_complete != 0)) {
                 AddToCompletionPoints(POINTS_PER_TRUEJEDI);
                 AddToGoldBricks();
             }
@@ -812,17 +782,17 @@ void ReCalculateCompletionPoints() {
         }
 
         CompletionPointInfo_ReCalculate[1] += POINTS_PER_TRUEJEDI;
-        if (save->true_hero_complete[0] != 0) {
+        if (save->story_buildup_complete != 0) {
             AddToCompletionPoints(POINTS_PER_TRUEJEDI);
             AddToGoldBricks();
         }
         if (BOTHTRUEJEDIGOLDBRICKS != 0) {
             CompletionPointInfo_ReCalculate[1] += POINTS_PER_TRUEJEDI;
-            if (save->true_hero_complete[1] != 0) {
+            if (save->freeplay_buildup_complete != 0) {
                 AddToCompletionPoints(POINTS_PER_TRUEJEDI);
                 AddToGoldBricks();
             }
-        } else if (save->true_hero_complete[0] == 0 && save->true_hero_complete[1] != 0) {
+        } else if (save->story_buildup_complete == 0 && save->freeplay_buildup_complete != 0) {
             AddToCompletionPoints(POINTS_PER_TRUEJEDI);
             AddToGoldBricks();
         }

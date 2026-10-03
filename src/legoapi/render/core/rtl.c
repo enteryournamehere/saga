@@ -634,10 +634,10 @@ extern "C" {
     }
 
     void rtlSetLights(rtldata_s *data) {
-        rtldata_s *record = data;
-        NuRndrSetDirectionalLightsPS(&record->direction[0], &record->intensity[0], &record->direction[1],
-                                     &record->intensity[1], &record->direction[2], &record->intensity[2]);
-        NuRndrSetAmbientLightPS(&record->ambient_colour);
+        rtlidata_s *record = data;
+        NuRndrSetDirectionalLights(&record->direction[0], &record->intensity[0], &record->direction[1],
+                                   &record->intensity[1], &record->direction[2], &record->intensity[2]);
+        NuRndrSetAmbientLight(&record->ambient_colour);
     }
 
     void rtlSetSpecularLight(rtldata_s *data) {
@@ -1122,25 +1122,17 @@ static __used__ void rtlProcessLight(rtl_s *light, f32 elapsed) {
 
 extern "C" {
 
-#if defined(__GNUC__) && !defined(__clang__)
-#define RTL_OMIT_FRAME_POINTER __attribute__((optimize("omit-frame-pointer")))
-#else
-#define RTL_OMIT_FRAME_POINTER
-#endif
-
-    RTL_OMIT_FRAME_POINTER char *rtlGetEnvPath(void) {
+    char *rtlGetEnvPath(void) {
         return const_cast<char *>("_new");
     }
 
-    RTL_OMIT_FRAME_POINTER char *rtlGetEnvSceneName(void) {
+    char *rtlGetEnvSceneName(void) {
         return WORLD->config_file;
     }
 
-    RTL_OMIT_FRAME_POINTER rtlset *rtlGetEnvSet(void) {
+    rtlset *rtlGetEnvSet(void) {
         return WORLD->rtl_set;
     }
-
-#undef RTL_OMIT_FRAME_POINTER
 
     void rtlProcessLights(void *set, f32 frame_time) {
         rtl_s *light;
@@ -3439,7 +3431,7 @@ extern "C" void edrtlCalculateBurnout(burnset_s *set, f32 *threshold, f32 *inten
         }
         if (desired_dispersion > set->parameters_copy.field_1c) {
             f32 moved = set->parameters_copy.field_1c + step;
-            set->parameters_copy.field_1c = desired_dispersion > moved ? desired_dispersion : moved;
+            set->parameters_copy.field_1c = desired_dispersion > moved ? moved : desired_dispersion;
         } else if (desired_dispersion < set->parameters_copy.field_1c) {
             f32 moved = set->parameters_copy.field_1c - step;
             set->parameters_copy.field_1c = moved > desired_dispersion ? desired_dispersion : moved;

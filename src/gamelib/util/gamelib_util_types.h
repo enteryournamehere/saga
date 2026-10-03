@@ -183,9 +183,6 @@ struct FtpFile {
     u32 message_read_offset;
     u32 message_write_offset;
     void *transfer;
-    FtpFile() {
-        transfer = NULL;
-    }
     i32 Accept();
     i32 Accept(i32);
     i32 Accept(i32, void *);
@@ -241,10 +238,10 @@ struct NetMessage {
     u32 write_offset;
 
     NetMessage() : swap_endianness(1), data(NULL), read_offset(0x20), write_offset(0x20) {
-        for (MessageData *entry = sm_poolMessageData; entry != sm_poolMessageData + 512; ++entry) {
-            if (entry->references == 0) {
-                data = entry;
-                entry->references = 1;
+        for (i32 i = 0; i < 512; ++i) {
+            if (sm_poolMessageData[i].references == 0) {
+                data = &sm_poolMessageData[i];
+                data->references = 1;
                 break;
             }
         }
@@ -312,7 +309,7 @@ struct NetMessage {
     }
     void Write16(i16 value) {
         if (data != NULL) {
-            memmove(data->bytes + write_offset, &value, 2);
+            memcpy(data->bytes + write_offset, &value, 2);
             if (swap_endianness) {
                 EdFileSwapEndianess16(data->bytes + write_offset);
             }
@@ -321,7 +318,7 @@ struct NetMessage {
     }
     void Write32(i32 value) {
         if (data != NULL) {
-            memmove(data->bytes + write_offset, &value, 4);
+            memcpy(data->bytes + write_offset, &value, 4);
             if (swap_endianness) {
                 EdFileSwapEndianess32(data->bytes + write_offset);
             }

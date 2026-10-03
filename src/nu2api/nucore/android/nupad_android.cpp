@@ -2,15 +2,6 @@
 #include "nu2api/nucore/nupad.h"
 #include "nu2api/numath/nufloat.h"
 
-i32 ScaleAndClamp(i32 value) {
-    value = value * 4224 / 1048576;
-    if (value < -128)
-        value = -128;
-    if (value > 127)
-        value = 127;
-    return value + 128;
-}
-
 void UCStretchToCorners(i16 *horizontal, i16 *vertical) {
     f32 x = *horizontal;
     f32 y = *vertical;
@@ -46,6 +37,7 @@ i32 NuPadReadPS(i32, u8 *, u8 *, u8 *, u8 *, u8 *, u8 *, u8 *, u8 *, u32 *, u8 *
 }
 
 void NuPadInitPS(NUGENERICPAD *pad) {
+    STUBBED();
 }
 
 i32 NuPadGetNumberOfPortsPS(void) {
@@ -57,12 +49,15 @@ void NuPadOpenPS(NUPAD *pad) {
 }
 
 void NuPadClosePS(NUPAD *pad) {
+    STUBBED();
 }
 
 void NuPadSetMotorsPS(i32 port, i32 motor0, i32 motor1) {
+    STUBBED();
 }
 
 void NuPadGetDeadzonePS(NUPAD *pad) {
+    STUBBED();
 }
 
 i32 NuPadGetDeadzoneByPortPS(i32 port) {

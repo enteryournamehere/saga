@@ -601,7 +601,8 @@ void DrawBuildUpBar(float x, float y, i32 amount, i32 maximum, float scale, floa
     const f32 step = width * 0.02975f * NuTrigTable[((angle + 0x4000) >> 1) & 0x7fff];
     f32 px = x - step * 9.0f * 0.5f;
     i32 shimmer = 0xb3 - phase;
-    for (i32 i = 0; i < 10; ++i) {
+    for (i32 remaining = 10; remaining > 0; --remaining) {
+        const i32 i = 10 - remaining;
         i32 object;
         if (amount == maximum) {
             if (shimmer >= 0xb3)

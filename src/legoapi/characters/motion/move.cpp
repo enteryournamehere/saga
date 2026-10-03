@@ -2353,15 +2353,10 @@ void MoveBlocksOverBlock(WORLDINFO_s *world, pushblock_s *block, i32 excluded, n
 
 void MoveInactiveVehicle(GameObject_s *object, i32, GameObject_s **followed_object) {
     object->target_velocity.x = object->target_velocity.y = object->target_velocity.z = 0.0f;
-    GameObject_s *other;
-    if (object == Player[0] || object == Player[1]) {
-        other = object == Player[0] ? Player[1] : Player[0];
-        NUVEC position = other->apiobj.position;
-        SeekVec(&object->apiobj.position, &object->apiobj.position, &position, 10.0f);
-        object->apiobj.velocity = object->target_velocity;
-        object->apiobj.facing_angle = object->apiobj.movement_facing_angle = object->apiobj.field_0x276 =
-            other->apiobj.field_0x276;
-    } else {
+    GameObject_s *other = Player[0];
+    if (other == object) {
+        other = Player[1];
+    } else if (Player[1] != object) {
         NUVEC position = v000;
         float count = 0.0f;
         if (Player[0] != NULL) {
@@ -2378,7 +2373,16 @@ void MoveInactiveVehicle(GameObject_s *object, i32, GameObject_s **followed_obje
         SeekVec(&object->apiobj.position, &object->apiobj.position, &position, 10.0f);
         object->apiobj.velocity = object->target_velocity;
         other = NULL;
+        goto finish_vehicle;
     }
+    {
+        NUVEC position = other->apiobj.position;
+        SeekVec(&object->apiobj.position, &object->apiobj.position, &position, 10.0f);
+        object->apiobj.velocity = object->target_velocity;
+        object->apiobj.facing_angle = object->apiobj.movement_facing_angle = object->apiobj.field_0x276 =
+            other->apiobj.field_0x276;
+    }
+finish_vehicle:
     if (followed_object != NULL) {
         *followed_object = other;
     }

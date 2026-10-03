@@ -3665,6 +3665,7 @@ static void DrawCharacterAttachments(GameObject_s *object, NUMTX *joint_matrices
     i16 model_index = apicharsys->playermodelids[character_id];
     if (model_index == -1)
         return;
+    CHARACTERMODEL_s *attachment_model = &apicharsys->models[model_index];
     NUMTX matrix = joint_matrices[locator];
     NUMTX reflected;
     NUMTX *reflection = NULL;
@@ -3673,8 +3674,7 @@ static void DrawCharacterAttachments(GameObject_s *object, NUMTX *joint_matrices
                          &reflected)) {
         reflection = &reflected;
     }
-    GameDrawCharacterModel(&apicharsys->models[model_index], &animation, &matrix, NULL, reflection, NULL, NULL,
-                           0xffffffff);
+    GameDrawCharacterModel(attachment_model, &animation, &matrix, NULL, reflection, NULL, NULL, 0xffffffff);
 }
 
 void CharScene_Draw(WORLDINFO_s *, i32, NUMTX *, NUMTX *);

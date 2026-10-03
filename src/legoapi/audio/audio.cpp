@@ -325,12 +325,12 @@ void SetSoundFadeDist(WORLDINFO_s *world, OPTIONSSAVE_s *options) {
         GameSetMusicVolume(options);
         return;
     }
-    if (VehicleArea != 0) {
-        nusound_fade_start = 10.0f;
-        nusound_fade_end = 80.0f;
-    } else {
+    if (VehicleArea == 0) {
         nusound_fade_start = 2.0f;
         nusound_fade_end = 15.0f;
+    } else {
+        nusound_fade_start = 10.0f;
+        nusound_fade_end = 80.0f;
     }
     GameSetSoundVolume(options);
     GameSetMusicVolume(options);

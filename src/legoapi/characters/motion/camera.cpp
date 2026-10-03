@@ -2248,24 +2248,26 @@ extern "C" {
         u32 buttons = NuMouseReadButtons();
         if (camera->freedoms & EDCAM_FREEDOM_DISTANCE) {
             f32 distance = camera->distance - mouse_z * camera->distance_speed * zoom_scale;
-            camera->distance = distance <= -camera->minimum_distance ? distance : -camera->minimum_distance;
+            camera->distance = MIN(-camera->minimum_distance, distance);
         }
 
+        NUVEC opposite_offset = {0.0f, 0.0f, 0.0f};
         NUMTX rotation = numtx_identity;
         NuMtxRotateX(&rotation, camera->pitch);
         NuMtxRotateY(&rotation, camera->yaw);
-        NUVEC opposite_offset = {0.0f, 0.0f, -camera->distance};
+        opposite_offset.z = -camera->distance;
         NuVecMtxRotate(&opposite_offset, &opposite_offset, &rotation);
-        NUVEC old_opposite;
+        NUVEC opposite_positions[2];
+        NUVEC &old_opposite = opposite_positions[0];
         NuVecAdd(&old_opposite, &camera->position, &opposite_offset);
 
-        i32 pitch = camera->pitch;
-        if (camera->freedoms & EDCAM_FREEDOM_PITCH)
-            pitch += static_cast<i32>(mouse_y * 16.0f);
-        if (pitch > 0x4000)
-            pitch = 0x4000;
-        if (pitch < -0x4000)
-            pitch = -0x4000;
+        i32 pitch;
+        if (!(camera->freedoms & EDCAM_FREEDOM_PITCH))
+            pitch = camera->pitch;
+        else
+            pitch = static_cast<i32>(mouse_y * 16.0f) + camera->pitch;
+        pitch = MIN(0x4000, pitch);
+        pitch = MAX(pitch, -0x4000);
         camera->pitch = pitch;
         if (camera->freedoms & EDCAM_FREEDOM_YAW)
             camera->yaw += static_cast<i32>(mouse_x * 16.0f);
@@ -2273,18 +2275,20 @@ extern "C" {
         rotation = numtx_identity;
         NuMtxRotateX(&rotation, camera->pitch);
         NuMtxRotateY(&rotation, camera->yaw);
-        opposite_offset = {0.0f, 0.0f, -camera->distance};
+        opposite_offset.z = -camera->distance;
+        opposite_offset.y = 0.0f;
+        opposite_offset.x = 0.0f;
         NuVecMtxRotate(&opposite_offset, &opposite_offset, &rotation);
-        NUVEC new_opposite;
+        NUVEC &new_opposite = opposite_positions[1];
         NuVecAdd(&new_opposite, &camera->position, &opposite_offset);
         NuVecAdd(&camera->position, &camera->position, &new_opposite);
         NuVecSub(&camera->position, &camera->position, &old_opposite);
 
         NUVEC movement = {0.0f, 0.0f, 0.0f};
-        if (buttons == 1)
-            movement.z = -delta_time * camera->distance;
-        else if (buttons == 2)
+        if (buttons == 2)
             movement.z = delta_time * camera->distance;
+        else if (buttons == 1)
+            movement.z = -delta_time * camera->distance;
         NuVecMtxRotate(&movement, &movement, &rotation);
         if (camera->freedoms & EDCAM_FREEDOM_POSITION_X)
             camera->position.x += movement.x;

@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.7354,
+    "fuzzy_match_percent": 68.745575,
     "total_code": "4722419",
-    "matched_code": "527098",
-    "matched_code_percent": 11.161611,
+    "matched_code": "527252",
+    "matched_code_percent": 11.164871,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6296,
-    "matched_functions_percent": 46.779106,
+    "matched_functions": 6297,
+    "matched_functions_percent": 46.786537,
     "total_units": 1
   },
   "text": {
@@ -42466,7 +42466,7 @@
           "address": 5107776,
           "offset": 4217808,
           "size": 154,
-          "match_percent": 98.51163
+          "match_percent": 100.0
         },
         {
           "name": "_Z13GetMusicIndexPcP23nusound_filename_info_si",
@@ -46606,7 +46606,7 @@
           "address": 3821488,
           "offset": 2931520,
           "size": 1178,
-          "match_percent": 82.366936
+          "match_percent": 97.84274
         },
         {
           "name": "cbNearClipAtCursor",
@@ -47982,7 +47982,7 @@
           "address": 1375744,
           "offset": 485776,
           "size": 500,
-          "match_percent": 99.36522
+          "match_percent": 99.843475
         },
         {
           "name": "_Z12FaceOpponentP12GameObject_sP7nuvec_s",
@@ -68064,7 +68064,7 @@
           "address": 1306096,
           "offset": 416128,
           "size": 6194,
-          "match_percent": 88.16893
+          "match_percent": 92.217476
         },
         {
           "name": "_Z14DrawBonusScorefiifPi",
@@ -74974,7 +74974,7 @@
           "address": 1082560,
           "offset": 192592,
           "size": 1009,
-          "match_percent": 83.62009
+          "match_percent": 87.85153
         },
         {
           "name": "_ZL11DrawWeaponsP12GameObject_sif",

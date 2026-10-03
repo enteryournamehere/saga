@@ -16,7 +16,8 @@
 
 #include <string.h>
 
-pthread_mutex_t NuSoundVoice::sStateCriticalSection = PTHREAD_MUTEX_INITIALIZER;
+NuCriticalSection NuSoundVoice::sStateCriticalSection("NuSoundVoice::sStateCriticalSection");
+NuCriticalSection NuSoundVoice::sReleaseCriticalSection("NuSoundVoice::sReleaseCriticalSection");
 
 namespace {
     struct VoiceListenerLink {
@@ -154,16 +155,16 @@ NuSoundVoice::~NuSoundVoice() {
 NuSoundVoice::PlayState NuSoundVoice::GetState() const {
     NuSoundVoice::PlayState state;
 
-    pthread_mutex_lock(&sStateCriticalSection);
+    sStateCriticalSection.Lock();
     state = this->state;
-    pthread_mutex_unlock(&sStateCriticalSection);
+    sStateCriticalSection.Unlock();
     return state;
 }
 
 void NuSoundVoice::SetState(PlayState state) {
-    pthread_mutex_lock(&sStateCriticalSection);
+    sStateCriticalSection.Lock();
     this->state = state;
-    pthread_mutex_unlock(&sStateCriticalSection);
+    sStateCriticalSection.Unlock();
 }
 
 bool NuSoundVoice::GetAutoDelete() const {

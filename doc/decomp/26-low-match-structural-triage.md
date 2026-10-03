@@ -13264,3 +13264,70 @@ Checkpoint54 candidate69.007910%, +0.008350pp over checkpoint53 and
 2adb04625d36c583ea46cf8b3966622e6bbbb12992e199aad852084b0d039f5c;
 metadata-only mapaff803bdddbc57796995797bb386db66289838602a42356eb327ce28cf9841be.
 No new scoring experiment is used for this map; commit/new-head CI pending.
+
+## Checkpoint55: static critical-section lifetimes and voice-list endpoint
+
+Checkpoint54 commit5d1cdbdd has all11 GitHub checks SUCCESS at its exact head.
+Four subsequent single-recipe Android trials retain all6293 exact identities:
+
+| Batch / original function | Before% | After% | Original-weighted gain B |
+| --- | ---: | ---: | ---: |
+| 490 / voice startup325B | 15.508474 | 99.559320 | 273.16524950 |
+| 491 / sample startup313B | 41.745453 | 99.527275 | 180.85710286 |
+| 492 / Android input startup313B | 12.363636 | 99.527275 | 272.82219007 |
+| 493 / StopAllVoices109B | 19.268293 | 53.390244 | 37.19292659 |
+
+The first three restore original-backed static recursive construction and
+registered destruction using the existing NuCriticalSection, not handwritten
+startup code or a new provider. Voice constructs state then release with the
+two exact original names; it adds the missing4B release static but invents no
+release locking. Sample uses NULL because the actual constructor ignores its
+name argument. Android input likewise uses NULL and preserves all ten direct
+pthread boundaries through the existing offset-zero mutex member. No instance
+layout, owner, optimization, signatures, flags or scorer changes are made.
+
+ROOT independently compares the entire ordinary voice15329B/sample1633B/
+input2874B text and their271/80/97 resolved relocations: byte-identical.
+The full emitted startup bodies were read, including destructor registration.
+Compact owner reviews explicitly enumerate canonical weak ctor/destructor
+emissions, U services, literal/vector packing and CFI changes. Sample's BSS
+and vtable remain exact; voice/input vector packing changes preserve all six
+values. No arbitrary literal, label, COMDAT or unwind exemption is used.
+
+Canonical before-build dependencies are pinned separately: voice87 paths
+(85 unchanged), sample68 (66 unchanged), input136 (135 unchanged), system91
+(90 unchanged). Later intentional header edits are not substituted for those
+captured candidate-build inputs. All four final Android objects retain their
+immutable candidate hashes after the host configuration round trips.
+
+StopAllVoices captures the initialized list's stable endpoint once, retaining
+Front, Stop(true), and the next-link read AFTER Stop. Empty and multiple-voice
+traversal have the same admitted order. This is an original-backed source form,
+not a claimed behavior bug; it does not retry the rejected shared GetLinks
+null-conversion family or expose private Links. Target80B becomes79B; custom
+subclass reentrancy, corrupt/dangling lists and the existing host64 biased
+sentinel debt are not certified.
+
+Android/native/WASM builds and all five repository tests pass for the retained
+combined state. These are build/diagnostic checks, not device audio/input,
+sample reentrancy, contention, gameplay or shutdown-thread-quiescence tests.
+The canonical mutex provider is unchanged; no artificial engine harness is
+added to manufacture a threading witness.
+
+Existing raw whole report
+e5ec5ff41b7092e563d5fa3a96cf3c9753c4aadd30c88ae0c671b0fb81cced42;
+metadata-only map412fe7a63b1603c5bdb7a3e861103fefc22b543d711c077cb419d9a5cf235acd.
+Mapped counts12661 assigned/260 ambiguous/533 unassigned reflect two further
+naturally duplicated weak ctor aliases, not removed original identities.
+Candidate69.024080%, +0.016170pp over checkpoint54, +1.021620pp over main;
+still below the70.002460% merge threshold. New-head CI remains pending.
+
+History triage must name its selection universe: this fixed CP52 band has237
+mapped-only600..3999B rows below40%, or289 when ambiguous/unassigned rows
+are included. Rank numbers from these universes are not interchangeable.
+Coverage is reconciled by original physical identity; numeric zero for an
+unpaired private compiler clone is not a certified current counterpart score.
+Unlocated receipts remain unknown, not automatically fresh or faithful.
+The original1967B Nu3D initializer now has a full census; its split current
+startup pairing remains unknown. A genuine texture-lock lifecycle fragment
+is nominated but not applied, reassembled or credited with matching gain.

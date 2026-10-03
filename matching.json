@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 69.00791,
+    "fuzzy_match_percent": 69.02408,
     "total_code": "4722419",
     "matched_code": "526280",
     "matched_code_percent": 11.144289,
@@ -96241,7 +96241,7 @@
           "address": 892176,
           "offset": 2208,
           "size": 313,
-          "match_percent": 12.363636
+          "match_percent": 99.527275
         },
         {
           "name": "_ZN15NuInputDevicePS11ClassInitPSEv",
@@ -116450,7 +116450,7 @@
           "address": 911792,
           "offset": 21824,
           "size": 313,
-          "match_percent": 41.745453
+          "match_percent": 99.527275
         },
         {
           "name": "_ZNK13NuSoundSample8IsLockedEv",
@@ -117207,7 +117207,7 @@
           "address": 3252528,
           "offset": 2362560,
           "size": 109,
-          "match_percent": 19.268293
+          "match_percent": 53.390244
         },
         {
           "name": "_ZN13NuSoundSystem10StopVoicesEi",
@@ -117870,7 +117870,7 @@
           "address": 912512,
           "offset": 22544,
           "size": 325,
-          "match_percent": 15.508474
+          "match_percent": 99.55932
         },
         {
           "name": "_ZN12NuSoundVoiceD1Ev",
@@ -118759,22 +118759,6 @@
           "match_percent": 45.172413
         },
         {
-          "name": "_ZN17NuCriticalSectionC1EPKc",
-          "demangled_name": "NuCriticalSection::NuCriticalSection(char const*)",
-          "address": 3270288,
-          "offset": 2380320,
-          "size": 88,
-          "match_percent": 100.0
-        },
-        {
-          "name": "_ZN17NuCriticalSectionC2EPKc",
-          "demangled_name": "NuCriticalSection::NuCriticalSection(char const*)",
-          "address": 3270288,
-          "offset": 2380320,
-          "size": 88,
-          "match_percent": 100.0
-        },
-        {
           "name": "_ZN14NuSoundWeakPtrI21NuSoundBufferCallbackE3SetEPS0_",
           "demangled_name": "NuSoundWeakPtr<NuSoundBufferCallback>::Set(NuSoundBufferCallback*)",
           "address": 3276544,
@@ -119012,7 +118996,10 @@
       "size": 34,
       "match_percent": 100.0,
       "candidate_units": [
+        "nu2api/nucore/android/NuInputDevice_android.cpp.o",
         "nu2api/nusound/nusound_memorymanager.cpp.o",
+        "nu2api/nusound/nusound_sample.cpp.o",
+        "nu2api/nusound/nusound_voice.cpp.o",
         "nu2api/nusound/nusound_weakptr.cpp.o"
       ]
     },
@@ -119024,7 +119011,10 @@
       "size": 34,
       "match_percent": 100.0,
       "candidate_units": [
+        "nu2api/nucore/android/NuInputDevice_android.cpp.o",
         "nu2api/nusound/nusound_memorymanager.cpp.o",
+        "nu2api/nusound/nusound_sample.cpp.o",
+        "nu2api/nusound/nusound_voice.cpp.o",
         "nu2api/nusound/nusound_weakptr.cpp.o"
       ]
     },
@@ -121718,6 +121708,30 @@
       "candidate_units": [
         "nu2api/nufile/NuFileDeviceAndroidAPK.cpp.o",
         "nu2api/nufile/nufiledevice.cpp.o"
+      ]
+    },
+    {
+      "name": "_ZN17NuCriticalSectionC1EPKc",
+      "demangled_name": "NuCriticalSection::NuCriticalSection(char const*)",
+      "address": 3270288,
+      "offset": 2380320,
+      "size": 88,
+      "match_percent": 100.0,
+      "candidate_units": [
+        "nu2api/nusound/nusound_voice.cpp.o",
+        "nu2api/nusound/nusound_weakptr.cpp.o"
+      ]
+    },
+    {
+      "name": "_ZN17NuCriticalSectionC2EPKc",
+      "demangled_name": "NuCriticalSection::NuCriticalSection(char const*)",
+      "address": 3270288,
+      "offset": 2380320,
+      "size": 88,
+      "match_percent": 100.0,
+      "candidate_units": [
+        "nu2api/nusound/nusound_voice.cpp.o",
+        "nu2api/nusound/nusound_weakptr.cpp.o"
       ]
     },
     {
@@ -127571,8 +127585,8 @@
   "summary": {
     "bazel_units": 452,
     "functions": 13454,
-    "assigned_functions": 12663,
-    "ambiguous_functions": 258,
+    "assigned_functions": 12661,
+    "ambiguous_functions": 260,
     "unassigned_functions": 533
   }
 }

@@ -617,7 +617,8 @@ void Hub_Update(WORLDINFO_s *world) {
     }
 
     const f32 pulse_time = NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.5f);
-    TJTYPEA = static_cast<i32>(NU_SIN_LUT(static_cast<u16>((pulse_time + pulse_time) * 65536.0f)) * 16.0f + 80.0f);
+    TJTYPEA = static_cast<i32>(
+        NU_SIN_LUT(static_cast<u16>(static_cast<i32>((pulse_time + pulse_time) * 65536.0f))) * 16.0f + 80.0f);
     if (menu == 8) {
         hub_jabbaawake = 1.0f;
     } else if (hub_jabbaawake > 0.0f) {
@@ -941,9 +942,11 @@ void Hub_Update(WORLDINFO_s *world) {
         }
     }
     i32 minikit_candidate = -1;
-    if (hub_minikitviewer_gizmo != NULL && GizmoGetOutput(world->gizmo_sys, hub_minikitviewer_gizmo, 1, 0) != 0 &&
-        hub_minikitviewer_area != -1 && FreePlayUnlocked()) {
-        minikit_candidate = hub_minikitviewer_area;
+    if (hub_minikitviewer_gizmo != NULL && GizmoGetOutput(world->gizmo_sys, hub_minikitviewer_gizmo, 1, 0) != 0) {
+        const i32 viewer_area = hub_minikitviewer_area;
+        if (viewer_area != -1 && FreePlayUnlocked()) {
+            minikit_candidate = viewer_area;
+        }
     }
     if (LevLock[4] != 0) {
         if (minikit_candidate == -1) {

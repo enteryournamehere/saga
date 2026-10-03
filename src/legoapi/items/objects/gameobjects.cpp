@@ -4837,7 +4837,10 @@ static void LightSabreStreakCode(GameObject_s *object, i32 blade, i32 effect) {
         return;
     object->blade_states[blade] = -1;
     NUVEC points[3];
-    points[0] = *NUMTX_GET_ROW_VEC(&object->joint_matrices[joint_a], 3);
+    memcpy(&points[0],
+           reinterpret_cast<const u8 *>(object) + offsetof(GameObject_s, joint_matrices) + joint_a * sizeof(NUMTX) +
+               offsetof(NUMTX, m30),
+           sizeof(points[0]));
     points[1] = *NUMTX_GET_ROW_VEC(&object->joint_matrices[joint_b], 3);
     if ((object->sabre_flags & 2) != 0) {
         i32 colour;

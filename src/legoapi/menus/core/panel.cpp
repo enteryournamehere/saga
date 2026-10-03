@@ -316,7 +316,8 @@ static void DrawHitPoints(GameObject_s *object, float x, float y, float scale, f
     i32 transitioning = 0;
     if (static_cast<u8>(object->apiobj.field_0x27c) <= 1 && hitpoints > 1 && object->apiobj.field_0x287 != 0 &&
         object->field_0x101c > 0.0f && object->field_0x101c < 1.0f) {
-        current_hp = static_cast<i32>(static_cast<float>(object->hitpoints) * (1.0f - object->field_0x101c));
+        current_hp =
+            static_cast<i32>(static_cast<float>(static_cast<i32>(object->hitpoints)) * (1.0f - object->field_0x101c));
         transitioning = 1;
     }
 

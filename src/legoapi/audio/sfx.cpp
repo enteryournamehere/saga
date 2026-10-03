@@ -1776,7 +1776,8 @@ void GameAudio_PlaySfx(i32 sfx, nuvec_s *position, i32 flags, i32 volume) {
 void GameAudio_Init(GAMEAUDIO *audio) {
     GameAudio = audio;
     for (i32 i = 0; i < 0x55; ++i) {
-        audio->sfx_ids[i] = static_cast<i16>(GetSfxId(audio->sfx_names[i]));
+        GAMEAUDIO *current_audio = GameAudio;
+        current_audio->sfx_ids[i] = static_cast<i16>(GetSfxId(current_audio->sfx_names[i]));
     }
 
     MenuRegisterSoundFX(GameAudio_GetSfxId(0x2f), GameAudio_GetSfxId(0x30), GameAudio_GetSfxId(0x31),

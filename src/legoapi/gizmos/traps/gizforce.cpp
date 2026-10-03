@@ -289,7 +289,11 @@ static void GizForce_RemoveFromGroup(GIZFORCE_s *force) {
 static void GizForces_Update(void *world_ptr, void *data, float) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
     GIZFORCESYS_s *force_sys = static_cast<GIZFORCESYS_s *>(data);
-    if (force_sys == NULL || world == NULL || world->gizmo_sys == NULL || world->gizmo_sys->sets == NULL) {
+    if (force_sys == NULL || world == NULL) {
+        return;
+    }
+    GIZMOSYS *gizmo_sys = world->gizmo_sys;
+    if (gizmo_sys == NULL || gizmo_sys->sets == NULL) {
         return;
     }
     for (i32 i = 0; i < 8; ++i) {
@@ -297,35 +301,50 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
     }
     force_sys->visible_force_count = 0;
     force_sys->hit_test_gizmo_count = 0;
-    GIZMOSET *set = &world->gizmo_sys->sets[force_gizmotype_id];
+    GIZMOSET *set = &gizmo_sys->sets[force_gizmotype_id];
     GIZMO *gizmo = set->gizmos;
     for (i32 index = 0; index < set->count; ++index, ++gizmo) {
         GIZFORCE_s *force = static_cast<GIZFORCE_s *>(gizmo->object);
         GameObject_s *user = force->using_object;
-        if (user != NULL && force->group != NULL && (force->progress_flags & GIZFORCE_PROGRESS_GROUP_MEMBER) == 0 &&
-            (force->group->field_0x24 & GIZFORCE_GROUP_ACTIVE) != 0 && user->character_context == 8) {
-            user->character_context = -1;
-            user->gizforce_target = NULL;
-            user = NULL;
+        bool being_used = false;
+        if (user != NULL) {
+            being_used = true;
+            GIZFORCEGROUP_s *group = force->group;
+            if (group != NULL && (force->progress_flags & GIZFORCE_PROGRESS_GROUP_MEMBER) == 0 &&
+                (group->field_0x24 & GIZFORCE_GROUP_ACTIVE) != 0 && user->character_context == 8) {
+                user->character_context = -1;
+                force->using_object->gizforce_target = NULL;
+                being_used = false;
+                user = NULL;
+            }
         }
-        const bool being_used = user != NULL;
-        force->field_0xaa = static_cast<u8>((force->field_0xaa & ~GIZFORCE_STATE_BEING_USED) |
-                                            (being_used ? GIZFORCE_STATE_BEING_USED : 0));
+        force->state_being_used = being_used;
         force->using_object = NULL;
         force->progress_flags &= static_cast<u8>(~GIZFORCE_PROGRESS_DRAW_ACTIVE);
-        const bool was_moving = (force->anim_set->flags & 2) != 0;
+        const i32 was_moving = force->anim_set->flag_stop_requested;
         if ((force->runtime_flags & GIZFORCE_RUNTIME_OFFSET_APPLIED) != 0 && force->field_0x50 == 0.0f) {
-            NUVEC offset = {0.0f, 0.0f, 0.0f};
-            if ((force->progress_flags & GIZFORCE_PROGRESS_GROUP_MEMBER) != 0) {
-                offset.y = GameAnimSet_GetCompletionRatio(force->anim_set) * force->group->combined_height;
-            }
+            NUVEC offset;
+            offset.x = 0.0f;
+            offset.y = (force->progress_flags & GIZFORCE_PROGRESS_GROUP_MEMBER) != 0
+                           ? GameAnimSet_GetCompletionRatio(force->anim_set) * force->group->combined_height
+                           : 0.0f;
+            offset.z = 0.0f;
             GameAnimSet_SetOffset(force->anim_set, &offset);
             force->runtime_flags &= static_cast<u8>(~GIZFORCE_RUNTIME_OFFSET_APPLIED);
         }
-        if ((force->progress_flags & (GIZFORCE_PROGRESS_VISIBLE | GIZFORCE_PROGRESS_ENABLED)) !=
-                (GIZFORCE_PROGRESS_VISIBLE | GIZFORCE_PROGRESS_ENABLED) ||
-            force->anim_set == NULL || (force->progress_flags & GIZFORCE_PROGRESS_REVERSE_ACTIVE) != 0 ||
-            (force->field_0xaa & GIZFORCE_STATE_DESTROYED_OR_THROWN) != 0) {
+        if ((force->progress_flags & GIZFORCE_PROGRESS_VISIBLE) == 0) {
+            continue;
+        }
+        if ((force->progress_flags & GIZFORCE_PROGRESS_ENABLED) == 0) {
+            continue;
+        }
+        if (force->anim_set == NULL) {
+            continue;
+        }
+        if ((force->progress_flags & GIZFORCE_PROGRESS_REVERSE_ACTIVE) != 0) {
+            continue;
+        }
+        if ((force->field_0xaa & GIZFORCE_STATE_DESTROYED_OR_THROWN) != 0) {
             continue;
         }
         if (NuCameraClipTestSphere(&force->position, force->radius, &numtx_identity) == 0) {
@@ -353,10 +372,7 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
         if (playing_forwards) {
             force->runtime_flags &= static_cast<u8>(~GIZFORCE_RUNTIME_COMPLETION_RELEASED);
             GizForce_PlayForwards(force);
-            if ((force->progress_flags & GIZFORCE_PROGRESS_ANIMATION_REVERSED) != 0) {
-                force->field_0x48 = 0.0f;
-                force->field_0x50 = 0.0f;
-            } else {
+            if ((force->progress_flags & GIZFORCE_PROGRESS_ANIMATION_REVERSED) == 0) {
                 force->field_0x48 = force->force_strength;
                 if (force->force_range > 0.0f && (force->runtime_flags & GIZFORCE_RUNTIME_FORCE_RANGE_COMPLETE) == 0 &&
                     force->anim_set->state == GAMEANIMSET_STATE_AT_END) {
@@ -376,6 +392,9 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
                     GameAnimSet_SetVisibility(force->anim_set, 0);
                     force->runtime_flags |= 8;
                 }
+            } else {
+                force->field_0x48 = 0.0f;
+                force->field_0x50 = 0.0f;
             }
         } else {
             force->field_0x50 = 0.0f;
@@ -413,7 +432,7 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
             }
         }
 
-        if ((force->anim_set->flags & 5) != 0 || was_moving) {
+        if (force->anim_set->flag_no_visibility_test || was_moving || force->anim_set->flag_in_system_list) {
             if (force->group != NULL &&
                 ((force->progress_flags & GIZFORCE_PROGRESS_GROUP_MEMBER) != 0 || force->group->count < 8)) {
                 GizForce_AddToGroup(force);
@@ -447,10 +466,12 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
                     }
                 }
             }
-        } else if (force->anim_set->state == GAMEANIMSET_STATE_AT_START &&
-                   (force->progress_flags & GIZFORCE_PROGRESS_GROUP_MEMBER) != 0) {
-            GizForce_RemoveFromGroup(force);
-            force->progress_flags &= static_cast<u8>(~GIZFORCE_PROGRESS_ANIMATION_REVERSED);
+        } else if (force->anim_set->state != GAMEANIMSET_STATE_AT_END) {
+            if (force->anim_set->state == GAMEANIMSET_STATE_AT_START &&
+                (force->progress_flags & GIZFORCE_PROGRESS_GROUP_MEMBER) != 0) {
+                GizForce_RemoveFromGroup(force);
+                force->progress_flags &= static_cast<u8>(~GIZFORCE_PROGRESS_ANIMATION_REVERSED);
+            }
         }
 
         if (force->anim_set->state == GAMEANIMSET_STATE_AT_END) {
@@ -495,7 +516,9 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
         if (group != NULL) {
             if (force->anim_set->state == GAMEANIMSET_STATE_AT_END) {
                 if (was_moving && group->count == group->configured_count) {
-                    group->field_0x24 |= GIZFORCE_GROUP_STACK_COMPLETE | GIZFORCE_GROUP_STACK_COMPLETE_IN_ORDER;
+                    group->field_0x24 |= GIZFORCE_GROUP_STACK_COMPLETE;
+                    force->group->field_0x24 |= GIZFORCE_GROUP_STACK_COMPLETE_IN_ORDER;
+                    group = force->group;
                     for (i32 i = 0; i < group->configured_count; ++i) {
                         i32 order_mask = static_cast<i8>(group->forces[i]->collision_mask);
                         if (order_mask != 0 && (order_mask & (1 << i)) == 0) {
@@ -505,8 +528,8 @@ static void GizForces_Update(void *world_ptr, void *data, float) {
                     }
                 }
             } else {
-                group->field_0x24 &=
-                    static_cast<u8>(~(GIZFORCE_GROUP_STACK_COMPLETE | GIZFORCE_GROUP_STACK_COMPLETE_IN_ORDER));
+                group->field_0x24 &= static_cast<u8>(~GIZFORCE_GROUP_STACK_COMPLETE);
+                force->group->field_0x24 &= static_cast<u8>(~GIZFORCE_GROUP_STACK_COMPLETE_IN_ORDER);
             }
         }
         if ((force->runtime_flags & GIZFORCE_RUNTIME_PENDING_COMPLETION) != 0 && GizForce_Complete(force)) {

@@ -12640,3 +12640,78 @@ native and WASM builds pass. Raw report
 ee9ae1f375c74506e190a7873552ea2ef9e0c72bccb8dee48689c76877425f2b;
 mapped report0ba2b446dae213595f7a483e7d401ccd348228528628301b007c09f461017fab.
 The70.002460% merge threshold remains unmet; new-head CI is not yet claimed.
+
+Checkpoint47 commit efb0b45c7f7f7b142f15159f545585af90080824 subsequently
+passes all11 exact-head GitHub checks (build37080807129/report37080805279).
+The score remains68.826630%; green CI does not authorize merging below the
+70.002460% threshold.
+
+### Batches464/465/467 — bounded source-form trials closed negative
+
+These are source-form experiments, not newly discovered gameplay bugs. ROOT
+reuses the completed canonical/helper/history closure, reviews each actual
+unchanged O2/O3 action and finite dependency catalog, and executes exactly one
+full-owner pair and two original/object reports per candidate. Both actual
+preprocessed streams differ only by the approved source unit; all inputs are
+hash-checked. No compiler flags, attributes, ABI, ownership or helpers change.
+
+* Batch464 `UpdatePartEmits` final deferred switch-pair cursor/end: actualO2,
+  172 consumed identities. Known original-byte weighted delta−15.577089;
+  target64.092180%→63.746790%, both3778B. All126 backed names and7 exacts
+  retain; U retains. Two12-byte compiler switch objects rename
+  CSWTCH.618/.630→.619/.631 without qualification; bx/cx remain unknown.
+  Capture5d5d8255be863724951eb9360ea6231194c06c6bf3db1671965179f1081a032f,
+  packet `/tmp/saga-part-emits463.AVY8T3/gate464`.
+* Batch465 `NewScanRot` outer platform-group cursor/end: actualO3,
+  154 consumed identities. Known weighted delta−786.66861689;
+  target29.893126%→18.269787%,5880→5912B. All125 backed names and4 exacts
+  retain; U retains. Minor NewRayCastScaleYMask/TerrainPlatformEmbedded
+  report changes and four local text-label renames are captured, not waived.
+  Six unbacked/private/startup/thunk representations remain unknown.
+  Capturecc51c2d42a22892f639d5b7ce55aab15f167b5c1ec4f05d795278752d92cd742,
+  packet `/tmp/saga-newscanrot-platform-cursor.auZv4z/gate465`.
+* Batch467 `instNuGCutRigidSysUpdate` second actual visibility query after
+  SetDrawMtx: actualO2,152 consumed identities. Known weighted delta
+  −100.1885388; target17.273886%→qualified report-v2 scalar default0%,
+  562→578B. All82 backed names and2 exacts retain; full Counter/U retain.
+  Six unbacked/private/startup/thunk representations remain unknown.
+  Capture2c99a57058404fcb9255d3c9f848ff0ecdef6cde89bfdc88850280f891159ba4,
+  packet `/tmp/saga-rigid-visible-sourceform.tSyx7s/gate467`.
+
+All three candidates close immediately: no source variant, object/report
+retry, representation proof, runtime fixture or production integration.
+Unknown scores/deltas are not imputed to zero; each negative is a known
+subtotal sufficient to reject this fixed candidate, not full retail-fidelity
+certification. Preserve the source/raw/action/closure/object/report artifacts
+and these histories before screening a future frontier.
+
+Batch466 `CustomiserMenu_Draw` terminal closing-bracket/break source form
+also closes negative. ActualO2 consumes192 ordered dependency spellings,
+189 unique identities (139 project/50 external). Known original-byte weighted
+delta−65.16632421; target19.114380%→17.236929%,3106→3161B. All18 backed
+owner names retain,0 existing exacts, full Counter/U retain; bx/cx remain
+unknown. Capture6b987ec7ec8ecf7a4a370f530f49857c7c13d5be2914eeeaa7104f930e188296,
+packet `/tmp/saga-custom-name-terminal-prep.ujqRhh/gate466`. ROOT verifies
+the exact finite name-slot/letter/active-side records and actual Text3D
+helper behavior, without a changing-callback witness or gameplay claim.
+No variant, retry, proof, runtime fixture or production integration follows.
+All four bounded source-form trials leave production matching unchanged.
+
+Batch468's sole post-NuVecNorm typed force-system reload is provisionally
+positive: known weighted delta+36.07794844B, target48.113636%→50.227272%,
+1638→1654B, with all48 backed names,8 exacts and full Counter/U retained.
+Its private Hit clone and bx/cx thunk representations remain unqualified;
+no runtime or production integration is authorized by this subtotal alone.
+Packet `/tmp/saga-force-system-reload468.EUKC6U/gate468` retains both reports.
+
+A bounded original4395-byte Squish Compress3 audit finds subtraction-based
+endpoint clamp predicates and double floor/ceil service calls differing from
+the current scalar helpers. This is a concrete source-contract lead, not a
+measured gain or final compressed-output divergence. Shared-consumer review
+must precede any candidate; library versions, flags and algorithms stay fixed.
+
+Metadata staging exposed the tmpfs per-user quota despite reported free space.
+Eight inactive disassemblies (293578745B) are losslessly relocated into the
+ignored `.cache/saga-evidence-archive-20261002` directory, with verified SHA256
+and original-path links. Both interrupted metadata copies are preserved;
+no compiler or report ran until the original frozen stage completed normally.

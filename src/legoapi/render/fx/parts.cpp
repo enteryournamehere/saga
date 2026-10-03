@@ -31,6 +31,7 @@
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/characters/motion/gameanim.h"
 #include "nu2api/nu3d/nuportal.h"
+#include "nu2api/numath/numtx_inline.h"
 #include "nu2api/nu3d/android/nuptl_android.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/motion.h"
@@ -1374,10 +1375,10 @@ extern "C" {
 
     void AddVariableShotDebrisEffectMtx(i32 effect, NUVEC *position, i32 count, i16 z_rotation, i16 y_rotation,
                                         NUMTX *particle_orientation) {
-        NUMTX orientation;
+        NUMTX_ALIGNED16 orientation;
         NuMtxSetIdentity(&orientation);
-        NuMtxRotateZ(&orientation, z_rotation);
-        NuMtxRotateY(&orientation, y_rotation);
+        NuMtxRotateZInline(&orientation, z_rotation);
+        NuMtxRotateYInline(&orientation, y_rotation);
         AddVariableShotDebrisEffectMtx3(effect, position, &nuvec_zero, count, &orientation, particle_orientation);
     }
 
@@ -1412,10 +1413,10 @@ extern "C" {
 
     void AddVariableShotDebrisEffectTimed1(i32 effect, NUVEC *position, i32 count, f32 time, i16 z_rotation,
                                            i16 y_rotation, NUMTX *particle_orientation) {
-        NUMTX orientation;
+        NUMTX_ALIGNED16 orientation;
         NuMtxSetIdentity(&orientation);
-        NuMtxRotateZ(&orientation, z_rotation);
-        NuMtxRotateY(&orientation, y_rotation);
+        NuMtxRotateZInline(&orientation, z_rotation);
+        NuMtxRotateYInline(&orientation, y_rotation);
         AddVariableShotDebrisEffectTimed3(effect, position, &nuvec_zero, count, time, &orientation,
                                           particle_orientation);
     }

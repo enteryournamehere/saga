@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.09735,
+    "fuzzy_match_percent": 68.133575,
     "total_code": "4722419",
-    "matched_code": "526358",
-    "matched_code_percent": 11.145941,
+    "matched_code": "527519",
+    "matched_code_percent": 11.170526,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6291,
-    "matched_functions_percent": 46.741955,
+    "matched_functions": 6293,
+    "matched_functions_percent": 46.756817,
     "total_units": 1
   },
   "text": {
@@ -62620,7 +62620,7 @@
           "address": 4719392,
           "offset": 3829424,
           "size": 1389,
-          "match_percent": 54.61905
+          "match_percent": 87.2
         },
         {
           "name": "_Z17BoltType_FindByIDiP11WORLDINFO_s",
@@ -79806,7 +79806,7 @@
           "address": 3456608,
           "offset": 2566640,
           "size": 2413,
-          "match_percent": 64.56076
+          "match_percent": 74.30035
         },
         {
           "name": "DebrisSetup",
@@ -80523,7 +80523,7 @@
           "address": 3484160,
           "offset": 2594192,
           "size": 586,
-          "match_percent": 12.434483
+          "match_percent": 100.0
         },
         {
           "name": "AddVariableShotDebrisEffectMtx",
@@ -80531,7 +80531,7 @@
           "address": 3484752,
           "offset": 2594784,
           "size": 575,
-          "match_percent": 11.363636
+          "match_percent": 100.0
         },
         {
           "name": "AddVariableShotDebrisEffect",

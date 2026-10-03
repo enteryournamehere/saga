@@ -2691,6 +2691,13 @@ static inline bool pathEditor_ConnectNodes(EDAIPATHNODE_s *node, EDAIPATHNODE_s 
     return true;
 }
 
+static inline bool pathEditor_HasConnection(EDAIPATHNODE_s *node, EDAIPATHNODE_s *other) {
+    return node->connections[0].node == other || node->connections[1].node == other ||
+           node->connections[2].node == other || node->connections[3].node == other ||
+           node->connections[4].node == other || node->connections[5].node == other ||
+           node->connections[6].node == other || node->connections[7].node == other;
+}
+
 eduimenu_s *pathEditor_Process(nupad_s *pad) {
     if (pad->digital_buttons_pressed & 0x80) {
         eduimenu_s *menu = eduiMenuCreate(200, 70, 240, 270, ed_fnt, aieditor_cbCancelMainMenu, "Options");
@@ -2872,12 +2879,7 @@ eduimenu_s *pathEditor_Process(nupad_s *pad) {
         path = aieditor->current_path;
         EDAIPATHNODE_s *node = path->current_node, *nearest = path->nearest_node;
         if (node && nearest && node != nearest) {
-            bool connected = false;
-            for (i32 i = 0; i < 8; ++i)
-                if (node->connections[i].node == nearest) {
-                    connected = true;
-                    break;
-                }
+            bool connected = pathEditor_HasConnection(node, nearest);
             if (connected) {
                 eduimenu_s *menu = eduiMenuCreate(200, 70, 240, 270, ed_fnt, pathEditor_cbCancelDisconnectNodeMenu,
                                                   "Disconnect current path node??");

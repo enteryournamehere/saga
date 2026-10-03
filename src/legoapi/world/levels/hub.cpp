@@ -777,12 +777,11 @@ void Hub_Update(WORLDINFO_s *world) {
             if (episode.door == NULL) {
                 continue;
             }
-            GIZOBSTACLE_s *door = static_cast<GIZOBSTACLE_s *>(episode.door->object);
             if (selected_episode != -1 && selected_episode != episode.episode) {
-                door->runtime_flags |= 8;
+                static_cast<GIZOBSTACLE_s *>(episode.door->object)->runtime_flags |= 8;
             } else if (static_cast<u8>(episode.force_open) != 0 ||
                        Episode_CountOpenAreas(episode.episode, -1, Game_AreaSave) != 0) {
-                door->runtime_flags &= static_cast<u8>(~8);
+                static_cast<GIZOBSTACLE_s *>(episode.door->object)->runtime_flags &= static_cast<u8>(~8);
             }
         }
         if (missions_available != 0) {

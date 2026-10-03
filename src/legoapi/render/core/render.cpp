@@ -2833,19 +2833,20 @@ void DrawPanel3DObjectMtx(nuhspecial_s *special, numtx_s *matrix, float alpha) {
 }
 
 void Draw_AUTOSAVEWARNING() {
-    const f32 scale = MENUTEXTSCALE * 0.8f;
+    f32 scale = MENUTEXTSCALE;
 
     if (memcard_drawasiconfn != NULL) {
         memcard_drawasiconfn();
     }
+    scale *= 0.8f;
 
-    const char *message = apitxt_SAVING;
     if (memcard_loadmessage_delay > 0.0f || memcard_loadresult_delay > 0.0f) {
-        message = apitxt_LOADING;
+        MenuSmartTextEx(apitxt_LOADING, AUTOSAVEICONX - AUTOSAVEICONSIZE * 1.8f, AUTOSAVEICONY, 1.0f, scale, scale,
+                        scale, 8, MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.2f, 1, NULL, 0, MenuA);
+    } else {
+        MenuSmartTextEx(apitxt_SAVING, AUTOSAVEICONX - AUTOSAVEICONSIZE * 1.8f, AUTOSAVEICONY, 1.0f, scale, scale,
+                        scale, 8, MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.2f, 1, NULL, 0, MenuA);
     }
-
-    MenuSmartTextEx(const_cast<char *>(message), AUTOSAVEICONX - AUTOSAVEICONSIZE * 1.8f, AUTOSAVEICONY, 1.0f, scale,
-                    scale, scale, 8, MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.2f, 1, NULL, 0, MenuA);
 }
 
 void Draw_NODATAAVAILABLE() {

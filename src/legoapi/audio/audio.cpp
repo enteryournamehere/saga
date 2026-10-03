@@ -108,27 +108,16 @@ void ProcessMusicChanges(LEVELDATA_s *level, OPTIONSSAVE_s *opts) {
     if (GameAudio_ActionMusicFn != NULL) {
         PlayersUnderAttack = GameAudio_ActionMusicFn();
     } else {
-        PlayersUnderAttack = 0;
-        if (DoubleScore != 0 || Cheat_PowerUpActive(-1) != 0) {
-            PlayersUnderAttack = 1;
-        } else {
-            for (i32 i = 0; i < 2; ++i) {
-                GameObject_s *player = Player[i];
-                if (player == NULL) {
-                    continue;
-                }
-                if (player->ai.opponent != NULL) {
-                    PlayersUnderAttack = 1;
-                    break;
-                }
-                GameObject_s *opponent = (GameObject_s *)player->ai.nearest_opponent;
-                if (opponent != NULL && opponent->apiobj.field_0x287 == 0 &&
-                    player->ai.nearest_opponent_metric < 3.0f) {
-                    PlayersUnderAttack = 1;
-                    break;
-                }
-            }
-        }
+        const auto player_under_attack = [](GameObject_s *player) {
+            if (player == NULL)
+                return false;
+            if (player->ai.opponent != NULL)
+                return true;
+            GameObject_s *opponent = static_cast<GameObject_s *>(player->ai.nearest_opponent);
+            return opponent != NULL && opponent->apiobj.field_0x287 == 0 && player->ai.nearest_opponent_metric < 3.0f;
+        };
+        PlayersUnderAttack = DoubleScore != 0 || Cheat_PowerUpActive(-1) != 0 || player_under_attack(Player[0]) ||
+                             player_under_attack(Player[1]);
     }
 
     MusicOther = CheckMusicOtherFn != NULL ? CheckMusicOtherFn() : 0;
@@ -156,23 +145,28 @@ void ProcessMusicChanges(LEVELDATA_s *level, OPTIONSSAVE_s *opts) {
     music_man.SelectTrackByHandle(TRACK_CLASS_ACTION, music_level->music_tracks[1][MusicOther]);
     music_man.SelectTrackByHandle(TRACK_CLASS_NOMUSIC, music_level->music_tracks[2][MusicOther]);
 
-    if (SuperOptions.music_enabled == 0) {
-        music_man.PlayTrack(TRACK_CLASS_NOMUSIC);
-    } else if (sticky_attack != 0) {
-        if (music_man.GetTrackHandle(TRACK_CLASS_ACTION, NULL) != -1) {
-            music_man.PlayTrack(TRACK_CLASS_ACTION);
-        } else if (music_man.GetTrackHandle(TRACK_CLASS_QUIET, NULL) != -1) {
-            music_man.PlayTrack(TRACK_CLASS_QUIET);
-        } else {
-            music_man.PlayTrack(TRACK_CLASS_NOMUSIC);
-        }
-    } else if (music_man.GetTrackHandle(TRACK_CLASS_QUIET, NULL) != -1) {
-        music_man.PlayTrack(TRACK_CLASS_QUIET);
-    } else if (music_man.GetTrackHandle(TRACK_CLASS_ACTION, NULL) != -1) {
-        music_man.PlayTrack(TRACK_CLASS_ACTION);
+    if (SuperOptions.music_enabled == 0)
+        goto play_nomusic;
+    if (sticky_attack != 0) {
+        if (music_man.GetTrackHandle(TRACK_CLASS_ACTION, NULL) != -1)
+            goto play_action;
+        if (music_man.GetTrackHandle(TRACK_CLASS_QUIET, NULL) == -1)
+            goto play_nomusic;
     } else {
-        music_man.PlayTrack(TRACK_CLASS_NOMUSIC);
+        if (music_man.GetTrackHandle(TRACK_CLASS_QUIET, NULL) == -1) {
+            if (music_man.GetTrackHandle(TRACK_CLASS_ACTION, NULL) != -1)
+                goto play_action;
+            goto play_nomusic;
+        }
     }
+    music_man.PlayTrack(TRACK_CLASS_QUIET);
+    goto process_music;
+play_action:
+    music_man.PlayTrack(TRACK_CLASS_ACTION);
+    goto process_music;
+play_nomusic:
+    music_man.PlayTrack(TRACK_CLASS_NOMUSIC);
+process_music:
 
     music_man.Process(FRAMETIME);
 }

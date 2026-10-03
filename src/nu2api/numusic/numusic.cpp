@@ -420,19 +420,13 @@ NuMusic::Voice *NuMusic::FindVoiceByClass(TRACK_CLASS clazz) {
 }
 
 NuMusic::Voice *NuMusic::FindIdleVoice() {
-    i32 index;
-    if (voices[0].status == VOICE_STATUS_READY) {
-        index = 0;
-    } else if (voices[1].status == VOICE_STATUS_READY) {
-        index = 1;
-    } else if (voices[0].status == VOICE_STATUS_STOPPED) {
-        index = 0;
-    } else if (voices[1].status == VOICE_STATUS_STOPPED) {
-        index = 1;
-    } else {
-        return NULL;
-    }
-    return &voices[index];
+    for (i32 index = 0; index < 2; ++index)
+        if (voices[index].status == VOICE_STATUS_READY)
+            return &voices[index];
+    for (i32 index = 0; index < 2; ++index)
+        if (voices[index].status == VOICE_STATUS_STOPPED)
+            return &voices[index];
+    return NULL;
 }
 
 bool NuMusic::SelectTrackByHandle(TRACK_CLASS clazz, i32 trackHandle) {

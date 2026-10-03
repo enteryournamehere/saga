@@ -3938,7 +3938,57 @@ void ScanWallSplineTerrain(i32, i32 terrain_mask, i32) {
     i16 *terminator = reinterpret_cast<i16 *>(entry_query->scan_list_storage);
     terminator[0] = 0;
     terminator[1] = 0;
-    TERRAIN_COLLECT_WALL_SPLINES(bounds, terrain_mask, true, true);
+    TerrainScanBounds wall_bounds = bounds;
+    const i32 wall_mask = terrain_mask;
+    wall_bounds.min_x -= 0.02f;
+    wall_bounds.min_z -= 0.02f;
+    wall_bounds.max_x += 0.02f;
+    wall_bounds.max_z += 0.02f;
+    WallSplCount = 0;
+    for (TERRAIN_SPATIAL_NODE *node = CurTerr->spatial_nodes; node != NULL;
+         node = *reinterpret_cast<TERRAIN_SPATIAL_NODE **>(reinterpret_cast<u8 *>(node) - sizeof(void *))) {
+        const u8 mask = node->field_0x02 >> 8;
+        if (mask != 0 && (mask & wall_mask) == 0)
+            continue;
+        const u8 material = static_cast<u8>(node->field_0x02);
+        for (i32 first = 0; first < node->point_count; first += 16) {
+            NUVEC *points = node->points + first;
+            i32 end = node->point_count;
+            if (points[0].y != 2147483648.0f) {
+                if (points[1].y >= wall_bounds.min_x && wall_bounds.max_x >= points[0].y &&
+                    points[3].y >= wall_bounds.min_z && wall_bounds.max_z >= points[2].y)
+                    end = MIN(end, first + 16);
+                else
+                    end = 0;
+            }
+            NUVEC *point = points;
+            for (i32 i = first; i < end; ++i, ++point) {
+                NUVEC &a = *point;
+                NUVEC &b = point[1];
+                if (!((a.x >= wall_bounds.min_x && wall_bounds.max_x >= b.x) ||
+                      (b.x >= wall_bounds.min_x && wall_bounds.max_x >= a.x)))
+                    continue;
+                if (!((a.z >= wall_bounds.min_z && wall_bounds.max_z >= b.z) ||
+                      (b.z >= wall_bounds.min_z && wall_bounds.max_z >= a.z)))
+                    continue;
+                const i32 wall_index = WallSplCount;
+                if (wall_index < 64) {
+                    WallSplList[wall_index].position = a;
+                    WallSplList[wall_index].material[2] = 0;
+                    WallSplList[wall_index].material[3] = 0;
+                    WallSplList[wall_index].material[0] = material;
+                    WallSplList[wall_index].material[1] = mask;
+                    WallSplList[wall_index + 1].position = b;
+                    WallSplList[wall_index + 1].material[0] = material;
+                    WallSplList[wall_index + 1].material[2] = 0;
+                    WallSplList[wall_index + 1].material[3] = 0;
+                    WallSplList[wall_index + 1].material[1] = mask;
+                    WallSplCount = wall_index + 2;
+                }
+            }
+        }
+    }
+    TerrOverRideScan = NULL;
 }
 
 #undef TERRAIN_GET_SCAN_BOUNDS

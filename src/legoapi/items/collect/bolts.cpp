@@ -32,6 +32,7 @@
 #include "gamelib/util/gamelib_util_types.h"
 #include "nu2api/numusic/sfx.h"
 #include "nu2api/numath/numtx.h"
+#include "nu2api/numath/numtx_inline.h"
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nurand.h"
@@ -499,8 +500,8 @@ void Bolts_Draw(WORLDINFO_s *world) {
         if (bolt->field_0xe4 != 2000000.0f) {
             scale.x = scale.z = scale.y;
             NuMtxSetScale(&matrix, &scale);
-            NuMtxRotateZ(&matrix, bolt->surface_z_rotation);
-            NuMtxRotateX(&matrix, bolt->surface_x_rotation);
+            NuMtxRotateZInline(&matrix, bolt->surface_z_rotation);
+            NuMtxRotateXInline(&matrix, bolt->surface_x_rotation);
             matrix.m30 = bolt->position.x;
             matrix.m31 = bolt->field_0xe4 + 0.005f;
             matrix.m32 = bolt->position.z;

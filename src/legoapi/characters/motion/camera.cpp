@@ -2101,6 +2101,7 @@ extern "C" {
     }
 
     void do_Pad_Standard_camera(edcam_s *camera, f32 delta_time, nupad_s *pad) {
+        NUVEC movement = {0.0f, 0.0f, 0.0f};
         if (!pad->is_valid)
             return;
 
@@ -2112,8 +2113,9 @@ extern "C" {
                                    ? 1.0f
                                    : NuFabs(camera->distance) * camera->auto_zoom_dist_scale + camera->auto_zoom_base;
 
-        const u8 freedoms = camera->freedoms;
-        if (freedoms & EDCAM_FREEDOM_DISTANCE) {
+        const u8 pad_yaw_axis = pad->analog_right_x;
+        const u8 pad_pitch_axis = pad->analog_right_y;
+        if (camera->freedoms & EDCAM_FREEDOM_DISTANCE) {
             f32 zoom_in = static_cast<f32>(pad->analog_r1) * camera->distance_speed * zoom_speed;
             if (zoom_in > 1.0f)
                 zoom_in = 1.0f;
@@ -2122,33 +2124,29 @@ extern "C" {
             if (zoom_out > 1.0f)
                 zoom_out = 1.0f;
             camera->distance -= zoom_out * frame_scale;
-            if (camera->distance > -camera->minimum_distance)
-                camera->distance = -camera->minimum_distance;
+            camera->distance = MIN(-camera->minimum_distance, camera->distance);
         }
-        if (freedoms & EDCAM_FREEDOM_PITCH) {
-            const i32 pitch_input = NuPs2ApplyDeadZone(pad->analog_right_y, 32);
+        if (camera->freedoms & EDCAM_FREEDOM_PITCH) {
+            const i32 pitch_input = NuPs2ApplyDeadZone(pad_pitch_axis, 32);
             camera->pitch -=
                 static_cast<i32>(static_cast<f32>(pitch_input * camera->pad_pitch_speed) * delta_time * 64.0f);
-            if (camera->pitch > 0x4000)
-                camera->pitch = 0x4000;
-            if (camera->pitch < -0x4000)
-                camera->pitch = -0x4000;
+            camera->pitch = MIN(0x4000, camera->pitch);
+            camera->pitch = MAX(-0x4000, camera->pitch);
         }
-        if (freedoms & EDCAM_FREEDOM_YAW) {
-            const i32 yaw_input = NuPs2ApplyDeadZone(pad->analog_right_x, 32);
+        if (camera->freedoms & EDCAM_FREEDOM_YAW) {
+            const i32 yaw_input = NuPs2ApplyDeadZone(pad_yaw_axis, 32);
             camera->yaw -= static_cast<i32>(static_cast<f32>(yaw_input * camera->pad_yaw_speed) * delta_time * 64.0f);
         }
 
-        NUVEC movement = {0.0f, 0.0f, 0.0f};
-        if (freedoms & EDCAM_FREEDOM_POSITION_Y) {
+        if (camera->freedoms & EDCAM_FREEDOM_POSITION_Y) {
             movement.y += static_cast<f32>(pad->analog_l1) * camera->position_speed.y * move_speed * frame_scale * 0.5f;
             movement.y -= static_cast<f32>(pad->analog_l2) * camera->position_speed.y * move_speed * frame_scale * 0.5f;
         }
-        if (freedoms & EDCAM_FREEDOM_POSITION_Z) {
+        if (camera->freedoms & EDCAM_FREEDOM_POSITION_Z) {
             movement.z = -static_cast<f32>(NuPs2ApplyDeadZone(pad->analog_left_y, 32)) * camera->position_speed.y *
                          move_speed * frame_scale;
         }
-        if (freedoms & EDCAM_FREEDOM_POSITION_X) {
+        if (camera->freedoms & EDCAM_FREEDOM_POSITION_X) {
             movement.x = static_cast<f32>(NuPs2ApplyDeadZone(pad->analog_left_x, 32)) * camera->position_speed.y *
                          move_speed * frame_scale;
         }
@@ -2157,12 +2155,12 @@ extern "C" {
 
         NUVEC snap_delta;
         NuVecSub(&snap_delta, &camera->position, &camera->snap_origin);
-        camera->snapped_position.x =
-            NuFloor(snap_delta.x / camera->snap_step.x) * camera->snap_step.x + camera->snap_origin.x;
-        camera->snapped_position.y =
-            NuFloor(snap_delta.y / camera->snap_step.y) * camera->snap_step.y + camera->snap_origin.y;
-        camera->snapped_position.z =
-            NuFloor(snap_delta.z / camera->snap_step.z) * camera->snap_step.z + camera->snap_origin.z;
+        snap_delta.x /= camera->snap_step.x;
+        snap_delta.y /= camera->snap_step.y;
+        snap_delta.z /= camera->snap_step.z;
+        camera->snapped_position.x = NuFloor(snap_delta.x) * camera->snap_step.x + camera->snap_origin.x;
+        camera->snapped_position.y = NuFloor(snap_delta.y) * camera->snap_step.y + camera->snap_origin.y;
+        camera->snapped_position.z = NuFloor(snap_delta.z) * camera->snap_step.z + camera->snap_origin.z;
     }
 
     void do_maya_mouse_camera(edcam_s *camera) {

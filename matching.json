@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.719025,
+    "fuzzy_match_percent": 68.73309,
     "total_code": "4722419",
     "matched_code": "527098",
     "matched_code_percent": 11.161611,
@@ -46590,7 +46590,7 @@
           "address": 3818944,
           "offset": 2928976,
           "size": 1189,
-          "match_percent": 61.928852
+          "match_percent": 99.13043
         },
         {
           "name": "do_maya_mouse_camera",
@@ -48054,7 +48054,7 @@
           "address": 1393456,
           "offset": 503488,
           "size": 2011,
-          "match_percent": 91.5718
+          "match_percent": 91.61097
         },
         {
           "name": "_Z14MovePlayer_PODP12GameObject_s",
@@ -63914,7 +63914,7 @@
           "address": 1351008,
           "offset": 461040,
           "size": 5689,
-          "match_percent": 53.079964
+          "match_percent": 53.71496
         },
         {
           "name": "_Z29GameObjectStuffAfterAnimationv",
@@ -75358,7 +75358,7 @@
           "address": 3839952,
           "offset": 2949984,
           "size": 1156,
-          "match_percent": 65.1659
+          "match_percent": 81.18894
         },
         {
           "name": "LocaledbitsDrawSolidCircleXY",

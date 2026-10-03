@@ -593,7 +593,7 @@ void DrawSuperStoryTime(f32 y, f32 timer, f32 target, i32 target_above, i32 show
 }
 
 void DrawBuildUpBar(float x, float y, i32 amount, i32 maximum, float scale, float width, float alpha, u16 angle) {
-    const f32 progress = static_cast<f32>(amount * 10) / maximum;
+    const f32 progress = static_cast<f32>(static_cast<i32>(static_cast<u32>(amount) * 10u)) / maximum;
     const i32 full = progress;
     const f32 fraction = NuFmod(progress, 1.0f);
     const i32 phase = static_cast<i32>(GlobalTimer.time_elapsed_mod_seconds * 10.0f);

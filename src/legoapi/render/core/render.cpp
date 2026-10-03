@@ -125,9 +125,21 @@ extern "C" void RndrOSquare(NUVEC *centre, f32 radius, i32 colour) {
     matrix.m30 = centre->x;
     matrix.m31 = centre->y;
     matrix.m32 = centre->z;
-    for (i32 i = 0; i < 4; ++i) {
-        NUVEC start = {corners[i][0] * radius, corners[i][1] * radius, 0.0f};
-        NUVEC end = {corners[(i + 1) & 3][0] * radius, corners[(i + 1) & 3][1] * radius, 0.0f};
+    for (i32 remaining = 4; remaining > 0; --remaining) {
+        const i32 i = 4 - remaining;
+        NUVEC start;
+        NUVEC end;
+        if (i == 0) {
+            start = NUVEC{-radius, -radius, 0.0f};
+            end = NUVEC{radius, -radius, 0.0f};
+        } else {
+            const f32 start_y = corners[i][1] * radius;
+            const f32 end_x = corners[(i + 1) & 3][0] * radius;
+            const f32 end_y = corners[(i + 1) & 3][1] * radius;
+            const f32 start_x = corners[i][0] * radius;
+            start = NUVEC{start_x, start_y, 0.0f};
+            end = NUVEC{end_x, end_y, 0.0f};
+        }
         NuVecMtxTransform(&start, &start, &matrix);
         NuVecMtxTransform(&end, &end, &matrix);
         NuRndrLine3dDbg(start.x, start.y, start.z, end.x, end.y, end.z, colour);

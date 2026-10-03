@@ -4958,10 +4958,9 @@ static void LightSabreStreakCode(GameObject_s *object, i32 blade, i32 effect) {
                         }
                         NuVecNorm(&difference, &difference);
                         target_data = static_cast<GAMECHARACTERDATA *>(target->apiobj.character_data->field11_0x24);
-                        target->apiobj.movement_direction.x =
-                            difference.x * target_data->walk_speed + target->apiobj.velocity.x;
-                        target->apiobj.movement_direction.z =
-                            target_data->walk_speed * difference.z + target->apiobj.velocity.z;
+                        const f32 walk_speed = target_data->walk_speed;
+                        target->apiobj.movement_direction.x = difference.x * walk_speed + target->apiobj.velocity.x;
+                        target->apiobj.movement_direction.z = walk_speed * difference.z + target->apiobj.velocity.z;
                         const f32 speed = target_data->run_speed;
                         const f32 speed_squared =
                             target->apiobj.movement_direction.x * target->apiobj.movement_direction.x +

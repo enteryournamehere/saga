@@ -2212,9 +2212,7 @@ void MovePlayer_ROLLING(GameObject_s *object) {
         matrix.m32 = matrix.m32 * cosine - m30 * sine;
     };
     rotate_y(-angles.y);
-    {
-        const i32 rotation =
-            static_cast<i32>(((local_velocity.z * FRAMETIME) / object->apiobj.collision_radius) * 10430.3779296875f);
+    const auto rotate_x = [&matrix](i32 rotation) {
         const f32 sine = NU_SIN_LUT(rotation);
         const f32 cosine = NU_SIN_LUT(static_cast<i32>(static_cast<u32>(rotation) + 0x4000u));
         const f32 m01 = matrix.m01;
@@ -2229,7 +2227,8 @@ void MovePlayer_ROLLING(GameObject_s *object) {
         matrix.m22 = m21 * sine + matrix.m22 * cosine;
         matrix.m31 = m31 * cosine - matrix.m32 * sine;
         matrix.m32 = m31 * sine + matrix.m32 * cosine;
-    }
+    };
+    rotate_x(static_cast<i32>(((local_velocity.z * FRAMETIME) / object->apiobj.collision_radius) * 10430.3779296875f));
     rotate_y(angles.y);
     NuMtxGetEulerXYZ(&matrix, &angles.x, &angles.y, &angles.z);
     object->apiobj.pitch_angle = angles.x;

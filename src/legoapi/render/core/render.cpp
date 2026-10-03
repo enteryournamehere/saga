@@ -1909,17 +1909,24 @@ void DrawStatusText(char *text, u16 angle, float x, float y, float scale, u32 co
     NuQFntSetScale(QFont3DZ, scale, scale);
     Text3DStringEncode(text, encoded);
 
-    if (alignment == 2) {
-        const f32 height = NuQFntHeight(QFont3DZ);
-        NuQFntMove(QFont3DZ, 0.0f, -height * 0.5f, 0.0f);
-    } else if (alignment == 8) {
-        const f32 height = NuQFntHeight(QFont3DZ);
-        const f32 width = NuQFntPrintLenW(QFont3DZ, encoded);
-        NuQFntMove(QFont3DZ, -width, -height * 0.5f, 0.0f);
-    } else {
-        const f32 height = NuQFntHeight(QFont3DZ);
-        const f32 width = NuQFntPrintLenW(QFont3DZ, encoded);
-        NuQFntMove(QFont3DZ, -width * 0.5f, -height * 0.5f, 0.0f);
+    switch (alignment) {
+        case 2: {
+            const f32 height = NuQFntHeight(QFont3DZ);
+            NuQFntMove(QFont3DZ, 0.0f, -height * 0.5f, 0.0f);
+            break;
+        }
+        case 8: {
+            const f32 height = NuQFntHeight(QFont3DZ);
+            const f32 width = NuQFntPrintLenW(QFont3DZ, encoded);
+            NuQFntMove(QFont3DZ, -width, -height * 0.5f, 0.0f);
+            break;
+        }
+        default: {
+            const f32 height = NuQFntHeight(QFont3DZ);
+            const f32 width = NuQFntPrintLenW(QFont3DZ, encoded);
+            NuQFntMove(QFont3DZ, -width * 0.5f, -height * 0.5f, 0.0f);
+            break;
+        }
     }
     NuQFntPrintW(QFont3DZ, encoded);
     NuQFntPopPrintMode();

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.80572,
+    "fuzzy_match_percent": 68.81141,
     "total_code": "4722419",
     "matched_code": "527252",
     "matched_code_percent": 11.164871,
@@ -42410,7 +42410,7 @@
           "address": 3449840,
           "offset": 2559872,
           "size": 255,
-          "match_percent": 46.85965
+          "match_percent": 67.947365
         },
         {
           "name": "MusicState",
@@ -46678,7 +46678,7 @@
           "address": 5079920,
           "offset": 4189952,
           "size": 309,
-          "match_percent": 73.583336
+          "match_percent": 99.97222
         },
         {
           "name": "_Z17GameCam_HitJudderv",
@@ -75206,7 +75206,7 @@
           "address": 2425600,
           "offset": 1535632,
           "size": 721,
-          "match_percent": 81.4125
+          "match_percent": 99.95
         },
         {
           "name": "_Z22DrawStatusTextFractioniifftfjff",

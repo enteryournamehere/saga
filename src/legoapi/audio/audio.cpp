@@ -271,15 +271,15 @@ extern "C" {
     }
 
     void MusicPreSeekNow(i32 track) {
-        const f32 seek_offset = Music.seek_offset;
         if (track < 0 || track >= SFX_MUSIC_COUNT) {
             return;
         }
 
+        const f32 seek_offset = Music.seek_offset;
         const i32 primary_stream = Music.primary_stream;
+        Music.queued_track = static_cast<i16>(track);
         Music.requested_track = static_cast<i16>(track);
         Music.pause_requested = false;
-        Music.queued_track = Music.requested_track;
         reinterpret_cast<u8 *>(&Music)[primary_stream + 0x12] = 0;
         if (NOSOUND == 0 && NOMUSIC == 0) {
             const i32 stream = 1 - primary_stream;

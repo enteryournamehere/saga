@@ -138,32 +138,28 @@ void GameCam_Reset(GAMECAMERA_s *camera) {
 }
 
 void GameCam_Judder(GAMECAMERA_s *camera, float amount, i32 axis, nuvec_s *source) {
-    if (camera == NULL) {
+    if (camera == NULL)
         camera = GameCam;
-    }
-
     const f32 absolute_amount = NuFabs(amount);
-    if (absolute_amount <= camera->judder_time) {
+    if (!(absolute_amount > camera->judder_time))
         return;
-    }
-
-    f32 attenuated_amount = absolute_amount;
     if (source != NULL) {
         const f32 distance = NuVecDist(&camera->pos, source, NULL);
         const f32 maximum_distance = static_cast<f32>(static_cast<u8>(WORLD->current_level->camera_judder_distance));
-        if (distance >= maximum_distance) {
-            return;
+        if (maximum_distance > distance) {
+            const f32 attenuated_amount = ((maximum_distance - distance) / maximum_distance) * absolute_amount;
+            if (attenuated_amount > camera->judder_time) {
+                camera->judder_reverse = amount < 0.0f;
+                camera->judder_duration = attenuated_amount;
+                camera->judder_time = attenuated_amount;
+            }
         }
-        attenuated_amount *= (maximum_distance - distance) / maximum_distance;
-        if (attenuated_amount <= camera->judder_time) {
-            return;
-        }
+    } else {
+        camera->judder_duration = absolute_amount;
+        camera->judder_time = absolute_amount;
+        camera->judder_reverse = amount < 0.0f;
     }
-
-    camera->judder_reverse = amount < 0.0f;
     camera->judder_axis = static_cast<u8>(axis);
-    camera->judder_duration = attenuated_amount;
-    camera->judder_time = attenuated_amount;
 }
 
 void GameCam_HitRoll() {

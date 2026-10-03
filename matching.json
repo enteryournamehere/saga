@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.745575,
+    "fuzzy_match_percent": 68.74915,
     "total_code": "4722419",
     "matched_code": "527252",
     "matched_code_percent": 11.164871,
@@ -46606,7 +46606,7 @@
           "address": 3821488,
           "offset": 2931520,
           "size": 1178,
-          "match_percent": 97.84274
+          "match_percent": 99.46371
         },
         {
           "name": "cbNearClipAtCursor",
@@ -68176,7 +68176,7 @@
           "address": 1329600,
           "offset": 439632,
           "size": 568,
-          "match_percent": 83.40164
+          "match_percent": 99.96722
         },
         {
           "name": "_Z18CoinsGoToMainTotalv",
@@ -78585,7 +78585,7 @@
           "address": 3710864,
           "offset": 2820896,
           "size": 4872,
-          "match_percent": 23.463076
+          "match_percent": 24.588184
         },
         {
           "name": "_Z19NewScanHandelSubsetPsP7nuvec_sS1_fi",
@@ -78601,7 +78601,7 @@
           "address": 3718176,
           "offset": 2828208,
           "size": 372,
-          "match_percent": 96.91954
+          "match_percent": 95.56322
         },
         {
           "name": "NewRaySetDisablePalt",
@@ -86644,7 +86644,7 @@
           "address": 1766272,
           "offset": 876304,
           "size": 10455,
-          "match_percent": 43.731625
+          "match_percent": 43.793785
         },
         {
           "name": "_Z14Hub_ResetPanelv",

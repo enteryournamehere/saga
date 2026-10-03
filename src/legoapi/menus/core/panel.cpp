@@ -34,6 +34,7 @@
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nuprim_internal.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/nupad.h"
 #include "nu2api/numath/nufloat.h"
@@ -1364,27 +1365,10 @@ void PanelRender(WORLDINFO_s *) {
         NuPrimSetCoordinateSystem(NUPRIM_SCALEMODE_ABSOLUTE);
         NuPrim2DBegin(4, 5, FadeMtl2);
 
-        struct PanelFadeVertex {
-            f32 x;
-            f32 y;
-            f32 z;
-            u32 colour;
-        };
-
-        PanelFadeVertex *vertex = reinterpret_cast<PanelFadeVertex *>(g_NuPrim_StreamBufferPtr->void_ptr);
-        if (g_NuPrim_NeedsOverbrightening == 0) {
-            vertex->colour = colour & 0xff000000u;
-        } else {
-            vertex->colour = colour;
-        }
+        NuRndrPrimSetColour(colour);
         NuPrim2DAddXYZ(0.0f, 0.0f, 0.0f);
 
-        vertex = reinterpret_cast<PanelFadeVertex *>(g_NuPrim_StreamBufferPtr->void_ptr);
-        if (g_NuPrim_NeedsOverbrightening == 0) {
-            vertex->colour = colour & 0xff000000u;
-        } else {
-            vertex->colour = colour;
-        }
+        NuRndrPrimSetColour(colour);
         NuPrim2DAddXYZ(1.0f, 1.0f, 0.0f);
 
         NuPrim2DEnd();

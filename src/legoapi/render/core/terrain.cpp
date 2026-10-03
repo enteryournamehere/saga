@@ -556,7 +556,7 @@ namespace {
     } while (0)
 
     // These wall-spline traversals are part of all three retail scan bodies.
-#define TERRAIN_COLLECT_WALL_SPLINES(bounds_arg, mask_arg, clear_arg)                                                  \
+#define TERRAIN_COLLECT_WALL_SPLINES(bounds_arg, mask_arg, clear_arg, reset_empty_arg)                                 \
     do {                                                                                                               \
         TerrainScanBounds wall_bounds = (bounds_arg);                                                                  \
         const i32 wall_mask = (mask_arg);                                                                              \
@@ -565,7 +565,8 @@ namespace {
         wall_bounds.min_z -= 0.02f;                                                                                    \
         wall_bounds.max_x += 0.02f;                                                                                    \
         wall_bounds.max_z += 0.02f;                                                                                    \
-        WallSplCount = 0;                                                                                              \
+        if ((reset_empty_arg) || CurTerr->spatial_nodes != NULL)                                                       \
+            WallSplCount = 0;                                                                                          \
         for (TERRAIN_SPATIAL_NODE *node = CurTerr->spatial_nodes; node != NULL;                                        \
              node = *reinterpret_cast<TERRAIN_SPATIAL_NODE **>(reinterpret_cast<u8 *>(node) - sizeof(void *))) {       \
             const u8 mask = node->field_0x02 >> 8;                                                                     \
@@ -3935,7 +3936,7 @@ void ScanWallSplineTerrain(i32, i32 terrain_mask, i32) {
     i16 *terminator = reinterpret_cast<i16 *>(TerI->scan_list_storage);
     terminator[0] = 0;
     terminator[1] = 0;
-    TERRAIN_COLLECT_WALL_SPLINES(bounds, terrain_mask, true);
+    TERRAIN_COLLECT_WALL_SPLINES(bounds, terrain_mask, true, true);
 }
 
 #undef TERRAIN_GET_SCAN_BOUNDS
@@ -6932,10 +6933,10 @@ i16 *NewScanHandelFull(nuvec_s *position, nuvec_s *movement, f32 radius, i32 sca
     }
     i16 *terminator = reinterpret_cast<i16 *>(writer.group_header);
     terminator[0] = terminator[1] = 0;
-    TERRAIN_COLLECT_WALL_SPLINES(bounds, terrain_mask, false);
+    TERRAIN_COLLECT_WALL_SPLINES(bounds, terrain_mask, false, false);
     TERRAIN_WALL_POINT **walls = reinterpret_cast<TERRAIN_WALL_POINT **>(writer.group_header + sizeof(void *));
     u8 *arena_end = static_cast<u8 *>(TempScanStack) + 0x2000;
-    i32 wall_count = WallSplCount / 2;
+    i32 wall_count = CurTerr->spatial_nodes == NULL ? 0 : WallSplCount / 2;
     while (wall_count > 0 &&
            reinterpret_cast<u8 *>(walls + wall_count + 1) + wall_count * 2 * sizeof(TERRAIN_WALL_POINT) > arena_end)
         --wall_count;

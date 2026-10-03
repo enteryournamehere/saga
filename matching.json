@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 68.82591,
+    "fuzzy_match_percent": 68.82792,
     "total_code": "4722419",
-    "matched_code": "527323",
-    "matched_code_percent": 11.166374,
+    "matched_code": "527589",
+    "matched_code_percent": 11.172008,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 6298,
-    "matched_functions_percent": 46.79397,
+    "matched_functions": 6301,
+    "matched_functions_percent": 46.816257,
     "total_units": 1
   },
   "text": {
@@ -111172,7 +111172,7 @@
           "address": 3206400,
           "offset": 2316432,
           "size": 76,
-          "match_percent": 85.6
+          "match_percent": 100.0
         },
         {
           "name": "_ZN7NuMusic16FindVoiceByClassEj",
@@ -111180,7 +111180,7 @@
           "address": 3206480,
           "offset": 2316512,
           "size": 84,
-          "match_percent": 56.964287
+          "match_percent": 100.0
         },
         {
           "name": "_ZN7NuMusic25FindVoiceByClassAndStatusEjNS_12VOICE_STATUSE",
@@ -111188,7 +111188,7 @@
           "address": 3206576,
           "offset": 2316608,
           "size": 106,
-          "match_percent": 55.424244
+          "match_percent": 100.0
         },
         {
           "name": "_ZN7NuMusic13FindIdleVoiceEv",

@@ -5554,14 +5554,14 @@ __attribute__((force_align_arg_pointer)) void EdValueControl<f32>::cbButton(edui
     nupad_s *pad = EdControl::Input->pad;
     f32 change = 0.0f;
     if (pad && (pad->digital_buttons & EDUI_CURSOR_PRIMARY)) {
-        if (pad->analog_right_y > 128)
-            change = 10.0f * sensitivity * (pad->analog_right_y - 128.0f);
-        else if (pad->analog_right_y < 128)
-            change = -10.0f * sensitivity * (128.0f - pad->analog_right_y);
         if (pad->analog_left_y > 128)
-            change = 0.1f * sensitivity * (pad->analog_left_y - 128.0f);
+            change = 10.0f * sensitivity * (pad->analog_left_y - 128.0f);
         else if (pad->analog_left_y < 128)
-            change = -0.1f * sensitivity * (128.0f - pad->analog_left_y);
+            change = -10.0f * sensitivity * (128.0f - pad->analog_left_y);
+        if (pad->analog_right_y > 128)
+            change = 0.1f * sensitivity * (pad->analog_right_y - 128.0f);
+        else if (pad->analog_right_y < 128)
+            change = -0.1f * sensitivity * (128.0f - pad->analog_right_y);
     } else {
         f32 dx = 0.0f;
         f32 dy = 0.0f;

@@ -13075,3 +13075,77 @@ retain. The existing integrated raw report is
 metadata-only mapping3eb7d38c4c8c485db61356e190da3e9a68858bb24b0136656bfa9a4ea04ca43a.
 Checkpoint52 candidate68.997060%, +0.003840pp over checkpoint51 and
 +0.994600pp over main; commit workflow/new-head CI remain pending.
+
+Checkpoint52 is committed as b438fd395f4ad9b338e4ba022055e23c8a26bf69;
+all eleven GitHub checks pass for that exact head. It remains below this PR's
++2pp merge threshold.
+
+### Batch481: voice destructor cached sentinel rejected
+
+The complete630-byte D1/D2 alias body already includes its cleanup through
+explicit and automatic destruction. One retail-backed typed end-sentinel
+capture reduces both alias rows39.870370%→37.722220%, report net
+−27.066690 weighted bytes (one physical body, −13.533345 bytes).
+All6293 exact identities retain. The sole candidate is reverted; source and
+canonical owner object restore byte-identically. No variant or runtime claim.
+
+### Batches482/485/486: fixed candidates rejected
+
+Teleport_Find's retail-backed carried table cursor and serviced-exit signed
+count recipe reduces36.098038%→23.519608% (−99.369597 weighted bytes).
+cbPtlCopyEffect's captured capacity/carried vacancy-slot cursor reduces
+37.254333%→36.092487% (−7.41257748 weighted bytes). Each changes only its
+target report row, retains all6293 exact identities and is reverted without
+variants. Both source and canonical owner objects restore byte-identically.
+
+PodRaceAUpdate's complete629-byte audit finds missing pacemaker updates,
+non-sentinel mine-spawn thresholds, successful lap-distance increments and
+the common final mine update. The actual original LOCAL16-byte float table
+is verified, not synthetic. The sole combined portable restoration reduces
+39.500000%→32.146152% (−46.25570392 weighted bytes), with no other report
+row changed and all6293 exact identities retained. It is reverted for this
+matching-only unit; these finite behavioral omissions remain explicit debt,
+not a faithful closure. No variant or runtime certification follows.
+
+### Batch483: verified editor axis correction, score-neutral
+
+The complete635-byte retail float-property callback uses canonical leftY
+at pad+0xa3 for coarse10*sensitivity, then rightY at+a1 for fine0.1*sensitivity.
+Current source swapped those roles. Eight typed member references are corrected
+without changing arithmetic, center128 overwrite policy, clamps, formatting,
+reparse or virtual setter services. Existing real spline Step controls admit
+finite distinguishing inputs; no executed editor/device session is claimed.
+
+The unchanged O2 owner emits an equal228552-byte ELF differing at exactly
+three fixed target field-displacement bytes. Every other ELF byte, including
+services, REL, CFI, storage, literals and symbol binding, is identical. Retail
+binding is WEAK; the already existing emitted GLOBAL binding remains unchanged.
+The full linked report is byte-identical to the baseline, all6293 exact
+identities retain, and net gain is zero. This ordinary behavior correction is
+retained, not counted as a matching gain. Final target/native/WASM builds and
+all five repository checks pass for the retained source state.
+
+### Batch484: retail-backed interface-cleanup cursors
+
+The full675-byte retail cleanup captures and carries nine canonical typed
+collection pointers, retaining live count reads; its final PART pass instead
+reloads/indexes the base. Only those nine portable cursor forms are restored.
+All existing NULL guards, global-WORLD obstacle selection, collection order,
+actual typed destruction and the final particle loop remain unchanged.
+Admission requires initialized, stable contiguous pools with valid owned
+interfaces and counts within capacity; malformed assets are not certified.
+
+The sole changed linked row improves35.245193%→52.682693%, net
++117.703125 weighted bytes. All6293 exact identities retain. Actual O3 owner
+review retains all50 other function names/48 physical bodies and their REL,
+storage/literals, startup/thunks, symbol surface and padding. Target size
+643→595 shifts20 subsequent entries/FDE coordinates by−48; its changed
+stack-CFA and epilogue advance agree with actual emitted instructions.
+ROOT independently corroborates retained body/REL and frozen object hashes.
+Final Android/native/WASM builds and all five repository checks pass.
+
+Checkpoint53 candidate68.999560%, +0.002500pp over checkpoint52 and
++0.997100pp over main. Existing raw report
+b0bda82acb7619dc5fd4b858c70b47cdde3e79d541513a4ff1e30b9847273b41;
+metadata-only map39ac7af1b89440586e9e856b8f0f4678492177feb50d7983361f6003e4d2c7f9.
+No new score generation is used for this mapping; commit/new-head CI pending.

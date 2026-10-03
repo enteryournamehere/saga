@@ -996,13 +996,8 @@ template <typename T> void NuSoundMemory::PushNuListNode(NuList<T> &list, T cons
 template void NuSoundMemory::PushNuListNode<NuSoundEffect *>(NuList<NuSoundEffect *> &, NuSoundEffect *const &);
 
 void NuSoundSystem::StopAllVoices() {
-    NuSoundVoice *begin = voice_list.begin;
-    NuSoundVoice *last = voice_list.End();
-    NuSoundVoice *first = *reinterpret_cast<NuSoundVoice **>(reinterpret_cast<u8 *>(begin) + 0x28);
-    u8 *link = first != NULL ? reinterpret_cast<u8 *>(first) + 0x24 : NULL;
-    u8 *end_link = last != NULL ? reinterpret_cast<u8 *>(last) + 0x24 : NULL;
-    while (link != end_link) {
-        NuSoundVoice *voice = reinterpret_cast<NuSoundVoice *>(link - 0x24);
+    NuSoundVoice *end = voice_list.End();
+    for (NuSoundVoice *voice = voice_list.Front(); voice != end; voice = voice->field_0x28) {
         voice->Stop(true);
         NuSoundVoice *next = *reinterpret_cast<NuSoundVoice **>(link + 4);
         link = next != NULL ? reinterpret_cast<u8 *>(next) + 0x24 : NULL;

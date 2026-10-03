@@ -563,22 +563,26 @@ void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
                 continue;
             }
             CUTINFO *cut = system->cuts[i];
-            instNUGCUTSCENE_s *instance = static_cast<instNUGCUTSCENE_s *>(cut->instance);
-            if (instance->rate <= 0.0f) {
+            if (cut == NULL || cut->instance == NULL) {
                 continue;
             }
-            for (CUTSCENESFX &sfx : cut->sfx) {
-                if (sfx.id != -1 && cut->previous_frame <= sfx.frame && sfx.frame != cut->previous_frame &&
-                    sfx.frame <= instance->current_frame) {
-                    PlaySfxById(sfx.id, (sfx.flags & 1) != 0 ? &sfx.position : NULL);
+            instNUGCUTSCENE_s *instance = static_cast<instNUGCUTSCENE_s *>(cut->instance);
+            if (instance->rate > 0.0f) {
+                for (CUTSCENESFX &sfx : cut->sfx) {
+                    if (sfx.id != -1 && cut->previous_frame < sfx.frame &&
+                        sfx.frame <= static_cast<instNUGCUTSCENE_s *>(cut->instance)->current_frame) {
+                        PlaySfxById(sfx.id, (sfx.flags & 1) != 0 ? &sfx.position : NULL);
+                    }
                 }
             }
 
-            if ((i != stop_index || stop_index == -1) && instNuGCutSceneIsFinished(instance) != 0) {
+            if ((i != stop_index || stop_index == -1) &&
+                instNuGCutSceneIsFinished(static_cast<instNUGCUTSCENE_s *>(cut->instance)) != 0) {
                 if (CutScene_StoppedFn != NULL) {
                     CutScene_StoppedFn(cut);
                 }
                 if (CutInstEndCount < 4) {
+                    instance = static_cast<instNUGCUTSCENE_s *>(cut->instance);
                     CutInstEnd[CutInstEndCount++] = instance;
                     instance->flags_88 |= 2;
                 }

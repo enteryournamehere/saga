@@ -554,6 +554,7 @@ load_type_done:
         readpads_always = 1;
         ReadPads();
 
+        draw_touch_prompt = false;
         if (load_type == 2) {
             if (AreaDataLoaded != 0 && !character_load_active && LoadWait == LOADWAITTIME && !(LoadTime >= 45.0f) &&
                 !skip_text_scroll && (NuSound3LoadingSfx() == 0 || LoadTime >= 20.0f)) {
@@ -581,13 +582,14 @@ load_type_done:
         Game.field30_0x7c2c += FRAMETIME;
         LoadTime += FRAMETIME;
 
+        const i32 previous_icon_stage = icon_stage;
         if (icon_stage == 0 &&
             (CharacterDataLoad == 2 || (CharacterDataLoad != 0 && APICharacterLoaded(PlayerID[0]) != NULL &&
                                         APICharacterLoaded(PlayerID[1]) != NULL))) {
             icon_stage = 1;
         }
 
-        if (icon_stage == 1) {
+        if (previous_icon_stage == 1) {
             icon_time += FRAMETIME;
             if (!(icon_time <= 0.6f) && CharacterDataLoad != 2) {
                 icon_time = 0.6f;
@@ -598,7 +600,6 @@ load_type_done:
             }
         }
         if (load_type == 2) {
-            icon_stage = 2;
             f32 backdrop_dt_scale = 1.0f;
             if (AreaDataLoaded != 0 && !character_load_active) {
                 if (!(LoadWait <= 0.0f) && (!(LoadTime < 45.0f) || skip_text_scroll)) {

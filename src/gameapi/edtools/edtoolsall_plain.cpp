@@ -2662,31 +2662,7 @@ extern "C" {
             effect->last_render_time = 0.0f;
             effect->page = static_cast<u8>(page_index);
             debtab[index] = effect;
-            f32 elapsed_time = 0.0f;
-            f32 active_time = 0.0f;
-            while (effect->particle_lifetime > elapsed_time) {
-                f32 remaining_time = effect->particle_lifetime - elapsed_time;
-                f32 emission_time = effect->emission_period_random + effect->emission_pause;
-                f32 emitted = remaining_time < emission_time ? remaining_time : emission_time;
-                active_time += emitted;
-                elapsed_time += emitted;
-                remaining_time = effect->particle_lifetime - elapsed_time;
-                elapsed_time +=
-                    remaining_time < effect->emission_pause_random ? remaining_time : effect->emission_pause_random;
-            }
-            i16 particle_count = static_cast<i16>(static_cast<i32>(
-                static_cast<f32>(effect->frequency) * (active_time / elapsed_time) * effect->particle_lifetime));
-            if (particle_count < 1)
-                particle_count = 1;
-            effect->max_particles = static_cast<i16>(particle_count * (effect->trail_count + 1));
-            for (i32 particle_index = 0; particle_index < 512; ++particle_index) {
-                i32 instance_id = edpp_ptls[particle_index].instance_id;
-                if (instance_id == -1 || instance_id == 99999)
-                    continue;
-                debkeydatatype_s *key = &debkeydata[instance_id];
-                if (debtab[key->effect_index] == effect)
-                    DebReAlloc(key, effect->max_particles);
-            }
+            UpdateTotalPtls(debtab[index]);
             edpp_types_used++;
         }
 
@@ -4310,8 +4286,7 @@ extern "C" {
         eduiitem_s *item = menu->field_0c;
         i32 max_item_height = 0;
         if (item) {
-            eduiitem_s *selected = menu->selected;
-            bool find_selected = selected != NULL;
+            bool find_selected = menu->selected != NULL;
 
             if (item != menu->first) {
                 const i32 scroll_height = static_cast<i32>(NuQFntHeight(edui_font) * 0.125f);
@@ -4330,12 +4305,13 @@ extern "C" {
                 if (!edui_donotdraw) {
                     NuRndrRect2di(x << 4, y << 3, menu->width << 4, scroll_height << 3, 0x80000000, uimtls[ui_bgmtl]);
                 }
-                const i32 centre = (x * 2 + menu->width) << 3;
+                i32 centre = (x * 2 + menu->width) << 3;
                 const i32 top = (y << 3) + 8;
                 const i32 bottom = ((y + scroll_height) << 3) - 16;
                 if (!edui_donotdraw) {
                     NuRndrLine2di(centre, top, centre - ((scroll_height - 2) << 4), bottom, 0x80ffffff, uimtls[0]);
                 }
+                centre = (x * 2 + menu->width) << 3;
                 if (!edui_donotdraw) {
                     NuRndrLine2di(centre, top, centre + ((scroll_height - 2) << 4), bottom, 0x80ffffff, uimtls[0]);
                 }
@@ -4345,7 +4321,7 @@ extern "C" {
             menu->field_10 = item;
             while (item) {
                 i32 is_selected = 0;
-                if (item == selected) {
+                if (item == menu->selected) {
                     find_selected = false;
                     if (!menu->child)
                         is_selected = 1;
@@ -4394,12 +4370,13 @@ extern "C" {
                         NuRndrRect2di(x << 4, y << 3, menu->width << 4, scroll_height << 3, 0x80000000,
                                       uimtls[ui_bgmtl]);
                     }
-                    const i32 centre = (x * 2 + menu->width) << 3;
+                    i32 centre = (x * 2 + menu->width) << 3;
                     const i32 top = (y << 3) + 8;
                     const i32 bottom = ((y + scroll_height - 2) << 3);
                     if (!edui_donotdraw) {
                         NuRndrLine2di(centre, bottom, centre - ((scroll_height - 2) << 4), top, 0x80ffffff, uimtls[0]);
                     }
+                    centre = (x * 2 + menu->width) << 3;
                     if (!edui_donotdraw) {
                         NuRndrLine2di(centre, bottom, centre + ((scroll_height - 2) << 4), top, 0x80ffffff, uimtls[0]);
                     }
@@ -4413,7 +4390,7 @@ extern "C" {
         }
 
         if (!(menu->flags & 2))
-            x += menu->width;
+            x = menu->x + menu->width;
         else
             y += max_item_height;
         menu->field_24 = x - menu->x;
@@ -5411,12 +5388,11 @@ extern "C" {
         u8 increase = pad->analog_r1;
         if (decrease)
             goto decrease_time;
-        if (increase)
-            goto increase_time;
         decrease = left2;
         if (decrease)
             goto decrease_time;
-        increase = right2;
+        if (!increase)
+            increase = right2;
         if (!increase)
             return 0;
     increase_time:
@@ -6010,7 +5986,7 @@ extern "C" {
             NuRndrLine2di(x << 4, value_y, (x + width - 1) << 4, value_y, 0x80ffffff, uimtls[0]);
             NuRndrLine2di(hue_x, y << 3, hue_x, ((y + main_height) << 3) - 8, 0x80ffffff, uimtls[0]);
         }
-        i32 bar_height = (width + 7) >> 3;
+        i32 bar_height = width / 8;
         f32 full_red, full_green, full_blue;
         eduiHSVToRGB(picker->hue, 1.0f, picker->value, full_red, full_green, full_blue);
         i32 grey_byte = static_cast<i32>(picker->value * 255.0f);
@@ -6022,14 +5998,16 @@ extern "C" {
         if (!edui_donotdraw)
             NuRndrGradRect2di(x << 4, saturation_y << 3, width << 4, bar_height << 3, saturation_colours,
                               uimtls[ui_bgmtl]);
-        i32 marker_x = static_cast<i32>(x + picker->saturation * (width - 2));
         if (!edui_donotdraw) {
             i32 marker_mid = saturation_y + (bar_height >> 1);
-            for (i32 offset = -1; offset <= 1; ++offset) {
-                NuRndrLine2di((marker_x + offset) << 4, saturation_y << 3, (marker_x + offset) << 4,
-                              (marker_mid << 3) - 8, 0x80ffffff, uimtls[0]);
-                NuRndrLine2di((marker_x + offset) << 4, marker_mid << 3, (marker_x + offset) << 4,
-                              ((saturation_y + bar_height) << 3) - 8, 0x80000000, uimtls[0]);
+            for (i32 offset = 1; offset >= -1 && !edui_donotdraw; --offset) {
+                i32 marker_x = static_cast<i32>(static_cast<f32>(x + offset) + picker->saturation * (width - 2)) << 4;
+                NuRndrLine2di(marker_x, saturation_y << 3, marker_x, (marker_mid << 3) - 8, 0x80ffffff, uimtls[0]);
+            }
+            for (i32 offset = 1; offset >= -1 && !edui_donotdraw; --offset) {
+                i32 marker_x = static_cast<i32>(static_cast<f32>(x + offset) + picker->saturation * (width - 2)) << 4;
+                NuRndrLine2di(marker_x, marker_mid << 3, marker_x, ((saturation_y + bar_height) << 3) - 8, 0x80000000,
+                              uimtls[0]);
             }
         }
         f32 red, green, blue;
@@ -6192,15 +6170,24 @@ extern "C" {
             eduiFntPrintEx(edui_font, (width + x * 2) << 3, (y << 3) + baseline, 64, item->text);
 
         i32 half_height = height >> 1;
-        for (edui_gradient_node_s *stage = gradient->first_stage; stage && stage->next; stage = stage->next) {
-            i32 colours[4] = {static_cast<i32>(stage->colour), static_cast<i32>(stage->next->colour),
-                              static_cast<i32>(stage->colour), static_cast<i32>(stage->next->colour)};
+        edui_gradient_node_s *stage = gradient->first_stage;
+        if (!stage)
+            return height;
+        f32 stage_time = stage->time;
+        u32 stage_colour = stage->colour;
+        edui_gradient_node_s *next = stage->next;
+        while (next) {
+            i32 colours[4] = {static_cast<i32>(stage_colour), static_cast<i32>(next->colour),
+                              static_cast<i32>(stage_colour), static_cast<i32>(next->colour)};
             if (!edui_donotdraw) {
-                i32 left = static_cast<i32>((width << 4) * stage->time);
-                i32 right = static_cast<i32>((width << 4) * stage->next->time);
+                i32 left = static_cast<i32>((width << 4) * stage_time);
+                i32 right = static_cast<i32>((width << 4) * next->time);
                 NuRndrGradRect2di((x << 4) + left, (y + half_height) << 3, right - left, half_height << 3, colours,
                                   uimtls[ui_bgmtl]);
             }
+            stage_time = next->time;
+            stage_colour = next->colour;
+            next = next->next;
         }
         for (edui_gradient_node_s *stage = gradient->first_stage; stage; stage = stage->next) {
             i32 marker_x = (x + static_cast<i32>(width * stage->time) - 2) << 4;

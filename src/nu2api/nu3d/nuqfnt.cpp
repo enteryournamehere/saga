@@ -738,19 +738,31 @@ void NuQFntPopPrintMode(void) {
 i32 UnicodeToIndexFast(vucharidx_s *map, i32 count, u16 unicode) {
     if (count <= 0 || map[count - 1].unicode < unicode)
         return -1;
+    if (count == 1)
+        return map[0].unicode == unicode ? map[0].index : -1;
 
     i32 low = 0;
     i32 high = count - 1;
-    while (low <= high) {
-        i32 middle = (low + high) >> 1;
-        if (map[middle].unicode == unicode)
-            return map[middle].index;
-        if (map[middle].unicode < unicode)
-            low = middle + 1;
-        else
-            high = middle - 1;
+    i32 middle = count / 2;
+    u16 middle_unicode = map[middle].unicode;
+    while (middle_unicode != unicode) {
+        if (low + 1 == high) {
+            if (map[high].unicode == unicode)
+                return map[high].index;
+            if (map[low].unicode == unicode)
+                return map[low].index;
+            return -1;
+        }
+        if (middle_unicode > unicode) {
+            high = middle;
+            middle = (low + middle) >> 1;
+        } else {
+            low = middle;
+            middle = (high + middle) >> 1;
+        }
+        middle_unicode = map[middle].unicode;
     }
-    return -1;
+    return map[middle].index;
 }
 
 u16 NuQFntEncodeUnicodeChar(NUQFNT *font, u16 character) {

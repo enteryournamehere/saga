@@ -207,10 +207,8 @@ static NUFRUSTRUM *buildPortalFrustrum(NUPORTAL *portal, i16 room_id) {
 
 static NUFRUSTRUM *copyFrustrum(NUFRUSTRUM *source, i16 room_id) {
     NUFRUSTRUM *copy = allocateFrustrum(source->plane_count, room_id);
-    memcpy(copy->transposed_planes, source->transposed_planes, sizeof(copy->transposed_planes));
-    copy->minimum = source->minimum;
-    copy->maximum = source->maximum;
-    memcpy(copy->planes, source->planes, sizeof(NUPLANE) * source->plane_count);
+    *copy = *source;
+    copy->room_id = room_id;
     return copy;
 }
 

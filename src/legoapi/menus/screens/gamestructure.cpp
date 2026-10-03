@@ -272,9 +272,9 @@ void NetworkSyncPause() {
         GameObject_s *player = Player[i];
         if (player != NULL) {
             player->pause_input_state = 0;
-            asm volatile("" ::: "memory");
+            
             player->pause_context_state = 0;
-            asm volatile("" ::: "memory");
+            
             player->input_toggle_hold_time = hold_time;
         }
     }
@@ -427,7 +427,7 @@ void Store_RestorePurchases() {
 
 i32 StoreBundle_FindByName(char *name) {
     STOREBUNDLE *bundles = StoreBundle;
-    asm volatile("" : "+D"(bundles));
+    
     i32 result;
     char *second_name;
     char *third_name;
@@ -436,16 +436,16 @@ i32 StoreBundle_FindByName(char *name) {
         goto done;
     }
     second_name = bundles[1].name;
-    asm volatile("" : "+a"(second_name));
+    
     if (__builtin_expect(NuStrICmp(second_name, name) == 0, 0)) {
         result = 1;
         goto done;
     }
     third_name = bundles[2].name;
-    asm volatile("" : "+a"(third_name));
+    
     result = NuStrICmp(third_name, name) == 0 ? 2 : -1;
 done:
-    asm volatile("" : "+a"(result));
+    
     return result;
 }
 
@@ -752,7 +752,7 @@ void MenuInitStore(MENU_s *) {
 
 void MenuUpdateStore(MENU_s *menu) {
     char stack_spacer[16];
-    asm volatile("" :: "m"(stack_spacer[0]), "m"(stack_spacer[15]));
+    
     if (__builtin_expect(menu->cancel_pressed != 0 || StoreIAP[0].text[0] == 'x', 0)) {
         GameAudio_PlaySfx(0x31, NULL, 0, 0);
         GameCam_Blend(GameCam, 0.5f, 0.0f, 1);
@@ -1102,7 +1102,7 @@ void MenuDrawStoreRestoring(MENU_s *menu) {
 
 void MenuExitStoreRestoring(MENU_s *) {
     u8 pack_count = restoring_pack_count;
-    asm volatile("" : "+c"(pack_count));
+    
     if (pack_count != 0) {
         u8 *item = restoring_pack_list;
         u8 *end = item + pack_count;
@@ -1113,7 +1113,7 @@ void MenuExitStoreRestoring(MENU_s *) {
         SuperOptions.store_pack_flags = flags;
     }
     u8 bundle_count = restoring_bundle_count;
-    asm volatile("" : "+c"(bundle_count));
+    
     if (bundle_count != 0) {
         u8 *item = restoring_bundle_list;
         u8 *end = item + bundle_count;
@@ -1144,26 +1144,26 @@ void Store_RootPackCustodian(i32, GameObject_s *custodian) {
     flags |= 0x12;
     custodian->field_0xefe |= 0x40;
     custodian->field_0xefc = flags;
-    asm volatile("" ::: "memory");
+    
     u32 object_flags = custodian->apiobj.field_0x1f4;
     object_flags &= ~1u;
-    asm volatile("" : "+r"(object_flags));
+    
     object_flags |= 0x80000004u;
     custodian->apiobj.field_0x1f4 = object_flags;
 }
 
 void Store_UprootPackCustodian(i32, GameObject_s *custodian) {
     CHARACTERDATA **character_list = &CDataList;
-    asm volatile("" : "+c"(character_list));
+    
     u8 flags = custodian->field_0xefc;
     custodian->apiobj.flags_low &= ~2u;
     flags &= ~0x12u;
     custodian->field_0xefe &= ~0x40u;
     custodian->field_0xefc = flags;
-    asm volatile("" ::: "memory");
+    
 
     CHARACTERDATA *characters = *character_list;
-    asm volatile("" : "+c"(characters) :: "memory");
+    
     if ((reinterpret_cast<u8 *>(characters)[custodian->id * sizeof(CHARACTERDATA) + 5] & 2) == 0 &&
         (apicharsys->char_data[custodian->id].model_flags & 4) != 0) {
         custodian->apiobj.field_0x1f4 |= 1;
@@ -1184,7 +1184,7 @@ void MenuUpdateStorePurchase(MENU_s *) {
     if ((StoreBundle[menu_i_bundle].pack_mask & (1u << INDEX)) != 0) {                                         \
         Store_UnlockPack(INDEX, false);                                                                        \
     }                                                                                                           \
-    asm volatile("" ::: "memory")
+    
             UNLOCK_BUNDLE_PACK(0);
             UNLOCK_BUNDLE_PACK(1);
             UNLOCK_BUNDLE_PACK(2);

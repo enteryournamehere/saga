@@ -85,7 +85,7 @@ void MechInputTouchDeathStarTurretController::Update(NuInputTouchData const *) {
         i32 camera_angle = NuAtan2D(GameCam->pos.z - GameCam->target.z,
                                     GameCam->pos.x - GameCam->target.x);
         camera_angle -= 0x8000;
-        asm volatile("" : "+a"(camera_angle));
+        
         i32 yaw_target = horizontal_angle - camera_angle;
         if (vertical_offset > 0.0f) {
             const u16 pitch_target = static_cast<u16>(static_cast<i32>(vertical_offset * 3641.0f));

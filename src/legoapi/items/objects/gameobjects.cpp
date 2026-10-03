@@ -2321,18 +2321,18 @@ void GameAIProcess() {
     AISysProcess(WORLD->ai_sys, reinterpret_cast<APIOBJECT *>(player), reinterpret_cast<APIOBJECT *>(player2));
 
     GameObject_s *object = Obj;
-    asm volatile("" : : "r"(object));
+    
     u8 high_flags;
     i32 object_limit = HIGHGAMEOBJECT;
-    asm volatile("" : : "r"(object_limit));
+    
     // Keep the first-loop counter available in edx at the latch and body entry.
     for (i32 index = 0; index < object_limit;
-         ++object, index = ({ i32 next = index + 1; asm volatile("" : "+d"(next)); next; })) {
+         ++object, index = ({ i32 next = index + 1;  next; })) {
         f32 frame_time = FRAMETIME;
-        asm volatile("" : : "x"(frame_time));
-        asm volatile("" : : "d"(index));
+        
+        
         high_flags = object->apiobj.flags_high;
-        asm volatile("" : : "c"(high_flags));
+        
         if (!__builtin_expect((high_flags & 0x10) != 0 && object->apiobj.field_0x287 == 0, 1)) {
             continue;
         }
@@ -2362,11 +2362,11 @@ void GameAIProcess() {
         object->apiobj.visibility_range_extension =
             (object->ai.field_0x1e5 & 0x40) != 0 ? draw_attention_distance : 0.0f;
         i32 mini_cut_cam = MiniCutCam;
-        asm volatile("" : "+r"(mini_cut_cam));
+        
         if (mini_cut_cam != 0 && (high_flags & 1) != 0) {
             i32 gamepad_start = GAMEPAD_START;
             GAMEPAD_s *pad = object->pad_gamepad;
-            asm volatile("" : "+r"(gamepad_start));
+            
             pad->buttons_held &= gamepad_start;
             pad->buttons_pressed &= gamepad_start;
         }
@@ -2379,14 +2379,14 @@ void GameAIProcess() {
         }
     }
     f32 follow_offset = 0.0f;
-    asm volatile("" : : "r"(&VADER_ADATA), "r"(&active_neutral_count), "r"(&FreePlay), "r"(&party_under_cover));
+    
     party_under_cover = 0;
     active_neutral_count = 0;
     i32 cover_result = 0;
-    asm volatile("" : "+m"(cover_result));
+    
     i32 all_under_cover = 1;
     GameObject_s **player_slots = Player;
-    asm volatile("" : "+r"(player_slots));
+    
     for (i32 index = 0; index < 8; ++index) {
         GameObject_s *object = player_slots[index];
         if (object != NULL && (object->apiobj.field_0x1f8 & 0x1001) == 0x1001 &&
@@ -2413,7 +2413,7 @@ void GameAIProcess() {
     APIOBJECT *object_lists[4][64];
     // Keep the original stack frame and pointer-list offsets while scratch slots are identified.
     char stack_padding_a[32];
-    asm volatile("" : "=m"(stack_padding_a));
+    
     APIOBJECT **neutral_objects = object_lists[0];
     APIOBJECT **interactive_objects = object_lists[1];
     APIOBJECT **goodies = object_lists[2];
@@ -2553,11 +2553,11 @@ void GameAIProcess() {
         if ((ai_update_flags & GAME_OBJECT_AI_UPDATE_PROCESS) != 0) {
             object->script_fire_target = NULL;
             shifted_flag = (object->field_0xef9 << 1) & 4;
-            asm volatile("" : "+m"(shifted_flag));
+            
             cleared_flag = object->field_0xef9 & ~4;
-            asm volatile("" : "+m"(cleared_flag));
+            
             cleared_flag |= shifted_flag;
-            asm volatile("" : "+m"(cleared_flag));
+            
             object->field_0xef9 = cleared_flag;
             object->field_0xef8 &= ~0x20;
             if (__builtin_expect((cleared_flag & 0x80) != 0, 1)) {
@@ -2978,7 +2978,7 @@ void GameAIProcess() {
                         } else if (second->collision_priority > first->resolved_collision_priority) {
                             first->resolved_collision_priority = second->collision_priority;
                             TestWalkAround(first, second, &difference, radius);
-                            asm volatile("");
+                            
                         }
                     } else if (first->collision_priority > second->resolved_collision_priority) {
                         second->resolved_collision_priority = first->collision_priority;
@@ -3017,7 +3017,7 @@ void GameAIProcess() {
     if (TimingBarSet == 4)
         TBCLOSEFN("(Avoid)", 4);
     GameObject_s **cleanup_players = Player;
-    asm volatile("" : "+r"(cleanup_players));
+    
     if (party_under_cover != 0) {
         for (i32 index = 0; index < 8; ++index) {
             GameObject_s *cover_player = cleanup_players[index];

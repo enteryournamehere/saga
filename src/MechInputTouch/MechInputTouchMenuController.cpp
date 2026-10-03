@@ -257,11 +257,11 @@ __attribute__((optimize("O3"))) void MechInputTouchMenuController::Update(NuInpu
     }
     if (input != NULL) {
         i32 *counter = &AnyTouchesThisFrame;
-        asm volatile("" : "+a"(counter) : : "memory");
+        
         i32 zero = 0;
-        asm volatile("" : "+d"(zero) : : "memory");
+        
         i32 remaining = *counter - 1;
-        asm volatile("" : "+c"(remaining) : : "cc");
+        
         *counter = remaining < 0 ? zero : remaining;
     }
 }

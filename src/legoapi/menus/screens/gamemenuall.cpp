@@ -2508,7 +2508,7 @@ extern "C" {
         VARIPTR **stream = &g_NuPrim_StreamBufferPtr;
         char *overbright = &g_NuPrim_NeedsOverbrightening;
         u32 colour = static_cast<u32>(menufadelevel) << 24;
-        asm volatile("" : "+r"(colour));
+        
         MenuFadeVertex *vertex = reinterpret_cast<MenuFadeVertex *>((*stream)->void_ptr);
         if (__builtin_expect(*overbright == 0, 1))
             colour &= 0xff000000u;
@@ -2517,7 +2517,7 @@ extern "C" {
 
         vertex = reinterpret_cast<MenuFadeVertex *>((*stream)->void_ptr);
         colour = static_cast<u32>(menufadelevel) << 24;
-        asm volatile("" : "+r"(colour));
+        
         if (__builtin_expect(*overbright == 0, 1))
             colour &= 0xff000000u;
         vertex->colour = colour;

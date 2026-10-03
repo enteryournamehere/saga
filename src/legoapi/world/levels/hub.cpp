@@ -2924,13 +2924,13 @@ static void Hub_DrawArcadeStats(float alpha) {
     Hub_DrawImportantBrick(211, 0.0f, HUB_EPISODETITLEY, alpha, complete_count, area_count);
 
     if (GetMenuID() == 16) {
-        asm volatile("" ::: "memory");
+        
         return;
     }
     if (menu_id != -1 || Arcade_BothPlayersActive())
         return;
     i32 text_id = tARCADE_NEEDTWOPLAYERS;
-    asm volatile("" : "+r"(text_id));
+    
     if (text_id == -1)
         return;
     const f32 pulse = 0.75f +

@@ -1036,7 +1036,7 @@ void GizmoSysSetGame() {
 
 i32 GizmoSys_BoltHit(GIZMOSYS_s *gizmo_sys, void *world_info, BOLT_s *bolt, nuvec_s *points,
                      nuvec_s *minimum, nuvec_s *maximum, float radius, unsigned char *hit_flags) {
-    asm volatile("" : "+d"(bolt), "+D"(gizmo_sys));
+    
     nuvec_s *hit_points;
     i32 hit_mode;
     if ((bolt->flags & 0x200) != 0) {

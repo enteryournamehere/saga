@@ -180,7 +180,7 @@ SAVELOAD_TARGET_OPT i32 FS_PrevNameLen(char *name) {
     for (;;) {
         --previous;
         ++length;
-        asm("" : "+a"(length));
+        
         if (*previous == '\0') {
             return length + 1;
         }
@@ -197,7 +197,7 @@ static inline __attribute__((always_inline)) u32 FS_EncodedDateKey(const char *n
     key = key + ((key + (key << 1)) << 3) + static_cast<u8>(name[3]) - 'A';
     key *= 61;
     key += static_cast<u8>(name[2]);
-    asm("" : "+d"(key));
+    
     key -= 'A';
     key *= 61;
     return key + static_cast<u8>(name[1]) - 'A';
@@ -205,7 +205,7 @@ static inline __attribute__((always_inline)) u32 FS_EncodedDateKey(const char *n
 
 SAVELOAD_TARGET_OPT void FS_SortStrings(char *start, char *end, i32 mode) {
     char tmp[256];
-    asm("" : "+d"(start));
+    
 
     if (static_cast<u32>(mode) > 1) {
         const i32 direction = mode == 2 ? 1 : -1;

@@ -39,6 +39,6 @@ __attribute__((optimize("O3,omit-frame-pointer"), aligned(16))) void ChrisUnallo
     if (AnakinC != NULL) {
         return;
     }
-    asm volatile(".p2align 3");
+    
     AnakinC = NULL;
 }

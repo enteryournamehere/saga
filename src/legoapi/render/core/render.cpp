@@ -2014,7 +2014,7 @@ void DrawPaintLights() {
     u8 third_colour;
     if (first_colour == 3)
         goto first_visible;
-    asm volatile("" : "+q"(first_colour));
+    
     if (first_colour != 0)
         goto first_hidden;
 first_visible:
@@ -2024,7 +2024,7 @@ first_done:
     second_colour = static_cast<const u8 *>(factoryb_netpacket)[3];
     if (second_colour == 4)
         goto second_visible;
-    asm volatile("" : "+q"(second_colour));
+    
     if (second_colour != 0)
         goto second_hidden;
 second_visible:
@@ -2034,7 +2034,7 @@ second_done:
     third_colour = static_cast<const u8 *>(factoryb_netpacket)[3];
     if (third_colour == 5)
         goto third_visible;
-    asm volatile("" : "+q"(third_colour));
+    
     if (third_colour != 0)
         goto third_hidden;
 third_visible:
@@ -3429,7 +3429,7 @@ SwipeDecalRenderer::SwipeDecalRenderer(TouchHolder &holder, i32 index, SwipeDeca
     alpha.Initialize();
     width.Initialize();
     this->style = style;
-    asm volatile("" ::: "memory");
+    
 
     const NuVec2 &swipe_point = holder.swipe_samples[index].position;
     const f32 swipe_x = (swipe_point.x + 1.0f) * 0.5f;

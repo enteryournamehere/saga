@@ -109,9 +109,9 @@ i32 LineCrossedXZ(f32 ax, f32 az, f32 bx, f32 bz, f32 cx, f32 cz, f32 dx, f32 dz
     if (!(third >= 0.0f))
         return 1;
     f32 az_to_dz = az;
-    asm volatile ("" : "+x"(az_to_dz));
+    
     i32 result = 2;
-    asm volatile ("" : "+a"(result));
+    
     az_to_dz -= dz;
     f32 fourth = (bx - dx) * az_to_dz + (bz - dz) * (dx - ax);
     if (fourth >= 0.0f)
@@ -498,11 +498,11 @@ f32 LineToPlaneDistance(VuVec &origin, VuVec &direction, VuVec &plane) {
     f32 second = (origin.x + direction.x) * plane.x + (origin.y + direction.y) * plane.y +
                  (origin.z + direction.z) * plane.z + plane.w;
     if (first < 0.0f && second < 0.0f) {
-        asm ("maxss %1, %0" : "+x"(first) : "x"(second));
+        
         return first;
     }
     if (first > 0.0f && second > 0.0f) {
-        asm ("minss %1, %0" : "+x"(first) : "x"(second));
+        
         return first;
     }
     return 0.0f;
@@ -677,7 +677,7 @@ char *IToX(char *output, i32 value) {
     char hex[] = "0123456789abcdef";
     output[0] = hex[(static_cast<u32>(value) >> 28) & 15];
     output[1] = hex[(value >> 24) & 15];
-    asm volatile("" ::: "memory");
+    
     i32 shifted = value << 8;
     output[2] = hex[(static_cast<u32>(shifted) >> 28) & 15];
     output[3] = hex[(shifted >> 24) & 15];
@@ -742,11 +742,11 @@ void CapVec(nuvec_s *input, float maximum, nuvec_s *output) {
 char *I64ToX(char *output, i64 value) {
     i32 high;
     __builtin_memcpy(&high, reinterpret_cast<const char *>(&value) + 4, sizeof(high));
-    asm volatile ("" : "+S"(high), "+a"(output) : : "memory");
+    
     char hex[] = "0123456789abcdef";
     output[0] = hex[(static_cast<u32>(high) >> 28) & 15];
     output[1] = hex[(high >> 24) & 15];
-    asm volatile ("" ::: "memory");
+    
     i32 shifted_high = high << 8;
     output[2] = hex[(static_cast<u32>(shifted_high) >> 28) & 15];
     output[3] = hex[(shifted_high >> 24) & 15];
@@ -771,7 +771,7 @@ char *I64ToX(char *output, i64 value) {
 }
 
 i64 XToI64(char *input) {
-    asm volatile ("" : "+c"(input));
+    
     char digit = input[0];
     i32 decimal = digit - '0';
     i32 letter = digit - 'W';
@@ -871,13 +871,7 @@ i32 __attribute__((force_align_arg_pointer)) rawClip(VuVec const *input, VuVec *
                 count += 2;
 #if defined(__i386__) || defined(__x86_64__)
                 VuVec *dest = &output[count - 1];
-                asm volatile (
-                    "xorps %%xmm0, %%xmm0\n\t"
-                    "movlps (%1), %%xmm0\n\t"
-                    "movhps 8(%1), %%xmm0\n\t"
-                    "movlps %%xmm0, (%0)\n\t"
-                    "movhps %%xmm0, 8(%0)"
-                    : : "r"(dest), "r"(&b) : "xmm0", "memory");
+                
 #else
                 output[count - 1] = b;
 #endif

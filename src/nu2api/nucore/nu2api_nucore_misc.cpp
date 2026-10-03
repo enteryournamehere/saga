@@ -331,7 +331,7 @@ void NuVpSetSourceRect(float left, float top, float right, float bottom) {
     const float source_height = bottom - top;
     const float scaled_width = (width / source_width) * width;
     float position_scale_x = scaled_width / source_width;
-    asm volatile("" : "+x"(position_scale_x));
+    
     const float scaled_height = (height / source_height) * height;
     const float position_x = -left * position_scale_x * 0.5f;
     const float position_y = -top * (scaled_height / source_height) * 0.5f;

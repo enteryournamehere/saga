@@ -208,25 +208,24 @@ extern "C" {
     }
 
     void MusicPreSeek(i32 track) {
-        const i16 transition_frames = Music.transition_frames;
-        const MusicPlaybackState state = Music.state;
-
         if (NOSOUND != 0 || NOMUSIC != 0 || track < 0 || track >= SFX_MUSIC_COUNT) {
             return;
         }
 
-        if ((Music.state & ~MUSIC_PLAYBACK_ACTIVE) == MUSIC_PLAYBACK_STOPPED &&
+        const MusicPlaybackState state = Music.state;
+        if ((state & ~MUSIC_PLAYBACK_ACTIVE) == MUSIC_PLAYBACK_STOPPED &&
             (track != Music.requested_track || Music.pause_requested)) {
+            const i16 transition_frames = Music.transition_frames;
             const i32 primary_stream = Music.primary_stream;
-            Music.requested_track = static_cast<i16>(track);
-            Music.queued_track = static_cast<i16>(track);
             Music.resume_track = static_cast<i16>(track);
+            Music.queued_track = static_cast<i16>(track);
+            Music.requested_track = static_cast<i16>(track);
             reinterpret_cast<u8 *>(&Music)[primary_stream + 0x12] = 0;
-            const f32 seek_offset = Music.seek_offset;
             if (transition_frames < 64 && state != MUSIC_PLAYBACK_STOPPED) {
                 Music.pause_requested = true;
             } else {
                 Music.pause_requested = false;
+                const f32 seek_offset = Music.seek_offset;
                 const i32 stream = 1 - primary_stream;
                 NuSound3StopStereoStream(stream);
                 NuSound3PlayStereoV(NUSOUNDPLAYTOK_STEREOSTREAM, stream, NUSOUNDPLAYTOK_SAMPLE, track,
@@ -244,16 +243,16 @@ extern "C" {
         if (static_cast<u16>(Music.state - MUSIC_PLAYBACK_DUAL_STREAM) < 3 &&
             (track != Music.current_track || Music.pause_requested)) {
             const i32 primary_stream = Music.primary_stream;
-            Music.state = MUSIC_PLAYBACK_DUAL_STREAM;
-            Music.requested_track = static_cast<i16>(track);
             Music.current_track = static_cast<i16>(track);
             Music.queued_track = static_cast<i16>(track);
+            Music.requested_track = static_cast<i16>(track);
+            Music.state = MUSIC_PLAYBACK_DUAL_STREAM;
             reinterpret_cast<u8 *>(&Music)[primary_stream + 0x12] = 0;
-            const f32 seek_offset = Music.seek_offset;
             if (Music.transition_frames < 64) {
                 Music.pause_requested = true;
             } else {
                 Music.pause_requested = false;
+                const f32 seek_offset = Music.seek_offset;
                 if (NOSOUND == 0 && NOMUSIC == 0) {
                     NuSound3StopStereoStream(primary_stream);
                     NuSound3PlayStereoV(NUSOUNDPLAYTOK_STEREOSTREAM, primary_stream, NUSOUNDPLAYTOK_SAMPLE, track,

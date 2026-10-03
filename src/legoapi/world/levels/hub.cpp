@@ -510,6 +510,21 @@ i32 Hub_InMenu() {
     return 0;
 }
 
+static void Hub_UpdatePackObstacle(i32 pack) {
+    if (LevGizObst[12 - pack] == NULL) {
+        return;
+    }
+    if (Store_IsPackUnlocked(pack)) {
+        GIZOBSTACLE_s *obstacle = LevGizObst[12 - pack];
+        obstacle->progress_flags |= 1;
+        obstacle->runtime_flags &= static_cast<u8>(~8);
+    } else {
+        GIZOBSTACLE_s *obstacle = LevGizObst[12 - pack];
+        obstacle->progress_flags &= static_cast<u8>(~1);
+        obstacle->runtime_flags |= 8;
+    }
+}
+
 void Hub_Update(WORLDINFO_s *world) {
     const i32 menu = GetMenuID();
 
@@ -745,18 +760,8 @@ void Hub_Update(WORLDINFO_s *world) {
         NewMenu(8, -1, -1);
         Hint_CancelCurrent();
     }
-    for (i32 pack = 5; pack <= 6; ++pack) {
-        GIZOBSTACLE_s *obstacle = LevGizObst[12 - pack];
-        if (obstacle != NULL) {
-            if (Store_IsPackUnlocked(pack) != 0) {
-                obstacle->progress_flags |= 1;
-                obstacle->runtime_flags &= static_cast<u8>(~8);
-            } else {
-                obstacle->progress_flags &= static_cast<u8>(~1);
-                obstacle->runtime_flags |= 8;
-            }
-        }
-    }
+    Hub_UpdatePackObstacle(5);
+    Hub_UpdatePackObstacle(6);
     if (FadeSys.fade == 0.0f) {
         i32 selected_episode = -1;
         for (i32 i = 0; static_cast<u16>(HubEpisodeInfo[i].episode) <= 8; ++i) {

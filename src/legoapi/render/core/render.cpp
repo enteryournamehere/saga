@@ -2637,11 +2637,7 @@ void DrawFadeScreenWipe() {
     NuRndrBeginScene(-1);
     extern numtl_s *SolidMtl;
 
-    // The original routine unconditionally dereferences the shared fade
-    // pointer after beginning a scene.  `pFadeInfo` is installed by
-    // LoadPermData and points at FadeSys; retaining that indirection keeps
-    // this call ABI-identical to the original.
-    FadeSystem &fade_info = *pFadeInfo;
+    FadeSystem &fade_info = FadeSys;
     const f32 fade_amount = fade_info.fade;
     const u32 direction = fade_info.direction;
     i32 gradient[4];
@@ -2651,48 +2647,52 @@ void DrawFadeScreenWipe() {
     i32 solid_height = 3584;
 
     if ((direction & 3) != 0) {
+        i32 gradient_x;
         const bool positive = (direction & 1) != 0;
-        if ((positive && fade_info.rate > 0.0f) || (!positive && fade_info.rate <= 0.0f)) {
+        if ((positive && fade_info.rate > 0.0f) || (!positive && !(fade_info.rate > 0.0f))) {
             gradient[0] = static_cast<i32>(0x80000000u);
             gradient[1] = 0;
             gradient[2] = static_cast<i32>(0x80000000u);
             gradient[3] = 0;
             solid_width = static_cast<i32>(fade_amount * 10240.0f);
-            NuRndrGradRect2di(solid_width, 0, 1024, 3584, gradient, FadeMtl2);
+            gradient_x = solid_width;
         } else {
             gradient[0] = 0;
             gradient[1] = static_cast<i32>(0x80000000u);
             gradient[2] = 0;
             gradient[3] = static_cast<i32>(0x80000000u);
-            const i32 edge = static_cast<i32>((1.0f - fade_amount) * 10240.0f);
-            NuRndrGradRect2di(edge - 1024, 0, 1024, 3584, gradient, FadeMtl2);
-            solid_x = edge;
-            solid_width = 10240 - edge;
+            const f32 edge = (1.0f - fade_amount) * 10240.0f;
+            solid_x = static_cast<i32>(edge);
+            solid_width = 10240 - solid_x;
+            gradient_x = static_cast<i32>(edge - 1024.0f);
         }
+        NuRndrGradRect2di(gradient_x, 0, 1024, 3584, gradient, FadeMtl2);
     } else if ((direction & 0xc) != 0) {
         // The vertical sign test is the same two-way rate/direction test as
         // the horizontal one, with bit 2 selecting the opposite side.
-        const bool edge_first = (direction & 4) != 0 ? fade_info.rate <= 0.0f : fade_info.rate > 0.0f;
-        if (edge_first) {
-            gradient[0] = static_cast<i32>(0x80000000u);
-            gradient[1] = static_cast<i32>(0x80000000u);
-            gradient[2] = 0;
-            gradient[3] = 0;
-            const i32 edge = static_cast<i32>((1.0f - fade_amount) * 3584.0f);
-            NuRndrGradRect2di(0, edge - 358, 10240, 358, gradient, FadeMtl2);
-            solid_y = edge;
-            solid_height = 3584 - edge;
-        } else {
+        i32 gradient_y;
+        const bool positive = (direction & 4) == 0;
+        if ((positive && fade_info.rate > 0.0f) || (!positive && !(fade_info.rate > 0.0f))) {
             gradient[0] = 0;
             gradient[1] = 0;
             gradient[2] = static_cast<i32>(0x80000000u);
             gradient[3] = static_cast<i32>(0x80000000u);
+            const f32 edge = (1.0f - fade_amount) * 3584.0f;
+            solid_y = static_cast<i32>(edge);
+            solid_height = 3584 - solid_y;
+            gradient_y = static_cast<i32>(edge - 358.0f);
+        } else {
+            gradient[0] = static_cast<i32>(0x80000000u);
+            gradient[1] = static_cast<i32>(0x80000000u);
+            gradient[2] = 0;
+            gradient[3] = 0;
             solid_height = static_cast<i32>(fade_amount * 3584.0f);
-            NuRndrGradRect2di(0, solid_height, 10240, 358, gradient, FadeMtl2);
+            gradient_y = solid_height;
         }
+        NuRndrGradRect2di(0, gradient_y, 10240, 358, gradient, FadeMtl2);
     }
 
-    if (fade_amount >= 0.0f) {
+    if (!(fade_amount < 0.0f)) {
         NuRndrRect2di(solid_x, solid_y, solid_width, solid_height, 0, SolidMtl);
     }
     NuRndrEndScene();

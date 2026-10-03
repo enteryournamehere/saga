@@ -353,15 +353,16 @@ i32 GamePlayMusic(LEVELDATA_s *level, i32 check, OPTIONSSAVE_s *options) {
         music_other = CheckMusicOtherFn();
     }
 
-    if (check == 0) {
+    MusicOther = music_other;
+
+    if (check != 0) {
+        if (music_other == other)
+            return music_other;
+    } else {
         sticky_attack_time = 0;
         sticky_attack = PlayersUnderAttack;
-    } else if (music_other == other) {
-        MusicOther = music_other;
-        return music_other;
     }
 
-    MusicOther = music_other;
     // music_tracks is [class][pair]: the quiet slot of the selected pair,
     // plus the action/ambient slots of the MusicOther pair.
     music_man.SelectTrackByHandle(TRACK_CLASS_QUIET, level->music_tracks[0][music_other]);
@@ -372,26 +373,21 @@ i32 GamePlayMusic(LEVELDATA_s *level, i32 check, OPTIONSSAVE_s *options) {
         return music_man.PlayTrack(TRACK_CLASS_NOMUSIC);
     }
 
-    // Attack mode: prefer the pair matching the attack state.
-    if (sticky_attack == 0) {
-        i32 handle = music_man.GetTrackHandle(TRACK_CLASS_QUIET, NULL);
-        if (handle != -1) {
+    if (sticky_attack != 0) {
+        if (music_man.GetTrackHandle(TRACK_CLASS_ACTION, NULL) != -1) {
+            return music_man.PlayTrack(TRACK_CLASS_ACTION);
+        }
+        if (music_man.GetTrackHandle(TRACK_CLASS_QUIET, NULL) != -1) {
             return music_man.PlayTrack(TRACK_CLASS_QUIET);
         }
-        handle = music_man.GetTrackHandle(TRACK_CLASS_ACTION, NULL);
-        if (handle == -1) {
-            return music_man.PlayTrack(TRACK_CLASS_NOMUSIC);
-        }
-        return music_man.PlayTrack(TRACK_CLASS_ACTION);
+        return music_man.PlayTrack(TRACK_CLASS_NOMUSIC);
     } else {
-        i32 handle = music_man.GetTrackHandle(TRACK_CLASS_ACTION, NULL);
-        if (handle == -1) {
-            handle = music_man.GetTrackHandle(TRACK_CLASS_QUIET, NULL);
-            if (handle != -1) {
-                return music_man.PlayTrack(TRACK_CLASS_QUIET);
-            }
-            return music_man.PlayTrack(TRACK_CLASS_NOMUSIC);
+        if (music_man.GetTrackHandle(TRACK_CLASS_QUIET, NULL) != -1) {
+            return music_man.PlayTrack(TRACK_CLASS_QUIET);
         }
-        return music_man.PlayTrack(TRACK_CLASS_ACTION);
+        if (music_man.GetTrackHandle(TRACK_CLASS_ACTION, NULL) != -1) {
+            return music_man.PlayTrack(TRACK_CLASS_ACTION);
+        }
+        return music_man.PlayTrack(TRACK_CLASS_NOMUSIC);
     }
 }

@@ -2772,8 +2772,8 @@ void DrawGameObjectsDraw(i32) {
     extern f32 FORCEGLOWTIME;
     EnableShadowMapRendering(0);
 
-    for (i32 index = 0; index < HIGHGAMEOBJECT; ++index) {
-        GameObject_s *object = &Obj[index];
+    GameObject_s *object = Obj;
+    for (i32 index = 0; index < HIGHGAMEOBJECT; ++index, ++object) {
 
         if ((object->apiobj.field_0x1f4 & 0x800) != 0) {
             if (object->field_0xcc0 != NULL && object->field_0x7a5 == 0x3b) {
@@ -2782,11 +2782,12 @@ void DrawGameObjectsDraw(i32) {
             continue;
         }
 
-        NUMTX *secondary_matrix = (object->field_0xefe & 2) != 0 ? &object->apiobj.field_0xf8 : NULL;
+        CHARACTERMODEL_s *model = object->apiobj.character_model;
         NUMTX *tertiary_matrix = object->field_0x1088 != 0 ? &object->apiobj.field_0x138 : NULL;
-        const i32 drawn = GameDrawCharacterModel(object->apiobj.character_model, &object->apiobj.anim_packet,
-                                                 &object->apiobj.field_0xb8, secondary_matrix, tertiary_matrix,
-                                                 &object->field_0x7f4, object, object->field_0x1054);
+        NUMTX *secondary_matrix = (object->field_0xefe & 2) != 0 ? &object->apiobj.field_0xf8 : NULL;
+        const u8 drawn = static_cast<u8>(
+            GameDrawCharacterModel(model, &object->apiobj.anim_packet, &object->apiobj.field_0xb8, secondary_matrix,
+                                   tertiary_matrix, &object->field_0x7f4, object, object->field_0x1054));
 
         object->apiobj.model_draw_result = static_cast<u8>(drawn);
         object->field_0xe24 =
@@ -2810,7 +2811,7 @@ void DrawGameObjectsDraw(i32) {
             object->field_0xefe |= 4;
         }
 
-        if (Paused == 0 && object->apiobj.character_data != NULL && object->apiobj.character_data->draw_fn != NULL) {
+        if (Paused == 0 && object->apiobj.character_data->draw_fn != NULL) {
             object->apiobj.character_data->draw_fn(object);
         }
     }

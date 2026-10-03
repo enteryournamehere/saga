@@ -267,7 +267,7 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
                 models.state_on = 0x110;
                 models.target = 0x113;
                 models.arm = 0x112;
-                models.arm_offset = {0.0f, 0.245f, 0.19f};
+                models.arm_offset = {0.0f, 0.245f, -0.19f};
                 break;
             case 3:
                 models.base = 0x114;
@@ -277,7 +277,7 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
                 models.state_on = 0x117;
                 models.target = 0x11a;
                 models.arm = 0x119;
-                models.arm_offset = {0.0f, 0.34f, 0.17f};
+                models.arm_offset = {0.0f, 0.34f, -0.17f};
                 break;
             default:
                 break;
@@ -304,9 +304,8 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
             NuVecRotateY(&picture_offset, &picture_offset, panel.y_rotation);
             NuVecRotateY(&transition_offset, &transition_offset, panel.y_rotation);
 
-            NUMTX animation_base = base_matrix;
             NUMTX transition_base = base_matrix;
-            NuMtxTranslate(&animation_base, &picture_offset);
+            NuMtxTranslate(&base_matrix, &picture_offset);
             NuMtxTranslate(&transition_base, &transition_offset);
 
             NUMTX animated_matrix;
@@ -327,7 +326,7 @@ static void GizPanel_Draw(void *world_ptr, void *, float) {
             animated_matrix.m30 = 0.0f;
             animated_matrix.m31 = 0.0f;
             animated_matrix.m32 = 0.0f;
-            NuMtxMulVU0(&animated_matrix, &animated_matrix, &animation_base);
+            NuMtxMulVU0(&animated_matrix, &animated_matrix, &base_matrix);
             NuSpecialDrawAtAlpha(&world->lev_objs[models.animated].special, &animated_matrix, 1.0f);
         }
 

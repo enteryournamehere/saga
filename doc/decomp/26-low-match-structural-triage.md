@@ -12715,3 +12715,64 @@ Eight inactive disassemblies (293578745B) are losslessly relocated into the
 ignored `.cache/saga-evidence-archive-20261002` directory, with verified SHA256
 and original-path links. Both interrupted metadata copies are preserved;
 no compiler or report ran until the original frozen stage completed normally.
+
+Checkpoint48 commit e6c7e51d9407756c3889d3e1124a38e02fe7d8ad passes
+all11 exact-head GitHub checks. It records the bounded trials without changing
+the68.826630% linked score or permitting a below-threshold merge.
+
+### Batch468 qualification and checkpoint49 integration
+
+ROOT qualifies the same sole objects/reports, without a compiler or report
+retry. The private Hit clone and bx/cx thunks retain their exact bodies,
+incoming/outgoing roles and CFI; absolute unknown scores remain None. The first
+metadata proof stops on four shifted callback words in the existing40-byte
+NUFPCOMJMP table. Its failed script/log are preserved. A fresh additive proof
+checks exactly offsets4/12/20/28 against the same uniquely identified function
+entries, all eight REL rows, the sole Configure/NuFParPushCom consumer and
+actual typed parser dispatcher. The other24 table bytes and every other
+non-executable storage byte remain exact. This is representation admission,
+not a generic data-section exemption or parser-runtime certificate.
+Successful receipt77856e2754efb1a36f78682eb52ea8fff92e7f840326a56a00f591cbcbdae93c.
+
+Actual canonical records and unmodified vector/Fsqrt/atan/trig helpers support
+four GNU64/i386 O3/SSE ASan/UBSan/LSan diagnostics. Each covers696 finite
+cases across three actual threshold profiles, directional/planar/horizontal
+modes, flags, bounds, strict nearest/range/ties and previous-target fallback.
+The stable typed bolt query cannot mutate records; both sources must pass.
+The initial fixture incorrectly rejects a diagonal target in the60-degree
+profile. ROOT preserves that failed run and reviews a fresh sibling changing
+only this independent expected answer; every other scenario is analytically
+checked. All four corrected runs pass696 cases/6571 checks with empty stderr.
+Resultb6632f0b66a9f648f81608de5ee03ee931bf74bc6c6e42d23857ccb16ed8d712.
+No callback-mutation witness, gameplay bug, private ABI or full-engine claim.
+
+ROOT integrates only the post-NuVecNorm typed set->unknown reload. The complete
+source owner hash is73b283c709fa00bf87440e681952ab823e8ce22e874bf7b82481d59b5861f78e.
+Android/native/WASM builds and all five repository checks pass. Independent
+linked checkpoint49 is68.827390%, +0.000760pp over checkpoint47 and+0.824930pp
+over main. Only the target48.241478%→50.355114% and completesfx
+99.433334%→99.933334% change. All6293 raw exact identities, original identity
+multiset, ownership summary and4722419-byte denominator retain. Raw report
+29aa82efc7d75ec74f87c55021ae8314b8c49bb8ba679701c45476c61e30128a;
+mapped report2fa5903d4739a0b8912a54460c445fb2aa6d4e651667f3be6f4e8b5f1be74711.
+New-head CI is not yet claimed;70.002460% remains the merge threshold.
+
+### Batch469 scalar Squish contract — isolated positive, not integrated
+
+The original Compress3 and Compress4 bodies independently confirm float
+subtraction-based Vec4 clamps and double floor/ceil arguments with narrowing.
+The fixed header candidate retains version1.10, scalar configuration, O3,
+class/algorithm/loop structure and every other input. ROOT repairs two PREP
+packaging issues before execution (EOF preservation and frozen action copy),
+then reviews both actual preprocessed streams and all145 consumed inputs.
+The unsuffixed Squish -iquote argument resolves to the cache, but all ten
+actually consumed Squish inputs remain the exact staged local files; this
+path-resolution limitation is recorded, not concealed or retried.
+The sole object pair and two original reports yield known+6542.06775762B:
+Compress3 26.444748%→99.733970%,3627→4395B; Compress4
+33.527912%→99.696600%,4408→5019B. All five backed names and one exact retain.
+Capture931239b2d5b06120d5ed0a7314aa067299d1ab4f27bb5ed9ab0eea17ded24ee9.
+Strict Counter/U checks stop on the expected floorf/ceilf→floor/ceil and
+explicit coefficient-storage changes. Original-backed service/literal/thunk
+qualification and finite codec diagnostics are pending. No source integration,
+unknown-score imputation or final compressed-output divergence is claimed.

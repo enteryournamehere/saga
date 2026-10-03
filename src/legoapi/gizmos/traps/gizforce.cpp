@@ -845,6 +845,7 @@ static i32 *GizForces_GetBestBoltTarget(GIZMOSET *set, float *result_distance, N
     if (directional != 0 && (bolt_type->field_60 & 0x20000) != 0) {
         aim.y = 0.0f;
         NuVecNorm(&aim, &aim);
+        system = static_cast<GIZFORCESYS_s *>(set->unknown);
     }
     if (system->hit_test_gizmo_count == 0) {
         return NULL;

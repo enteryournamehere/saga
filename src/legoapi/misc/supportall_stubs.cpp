@@ -10,6 +10,9 @@
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/nucore/bgproc.h"
 
-__attribute__((optimize("O2", "omit-frame-pointer"))) i32 bgprocIsFrozen() {
+#if defined(__GNUC__) && !defined(__clang__)
+__attribute__((optimize("omit-frame-pointer")))
+#endif
+i32 bgprocIsFrozen() {
     return bgproc_frozen;
 }

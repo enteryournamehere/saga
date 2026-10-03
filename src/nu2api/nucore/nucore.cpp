@@ -248,7 +248,6 @@ void NuPostFilter::initSharedResources(i32, i32) {
 }
 
 void NuPostFilter::renderFrustum(numtx_s *) {
-    STUBBED();
 }
 
 void NuDynamicLight::addShadowCasterScene(nugscn_s *scene) {
@@ -1121,7 +1120,6 @@ void NuMainFilterGen::destroyResources() {
 }
 
 void NuMainFilterGen::destroyTextureResources() {
-    STUBBED();
 }
 
 void NuMainFilterGen::initResources() {
@@ -1598,7 +1596,6 @@ void NuPostFilterGen::copy(nueffecttex_s *, nuframebuffer_s *output) {
 }
 
 void NuPostFilterGen::copyDepth(nueffecttex_s *, nuframebuffer_s *) {
-    STUBBED();
 }
 
 void NuPostFilterGen::destroyResources() {
@@ -1607,11 +1604,9 @@ void NuPostFilterGen::destroyResources() {
 }
 
 void NuPostFilterGen::destroySharedResources() {
-    STUBBED();
 }
 
 void NuPostFilterGen::destroySharedTextureResources() {
-    STUBBED();
 }
 
 void NuPostFilterGen::initResources() {
@@ -1638,15 +1633,12 @@ void NuPostFilterGen::initSharedTextureResources(i32 width, i32 height) {
 }
 
 void NuPostFilterGen::renderFrustum(numtx_s *) {
-    STUBBED();
 }
 
 void NuPostFilterGen::renderQuad() {
-    STUBBED();
 }
 
 void NuPostFilterGen::renderQuadGrid() {
-    STUBBED();
 }
 
 __attribute__((weak)) void NuPostFilterGen::reset() {
@@ -1837,7 +1829,6 @@ void NuDeferredFilterGen::render() {
 }
 
 void NuDeferredFilterGen::renderStencilMask(NuDynamicLight &) {
-    STUBBED();
 }
 
 void NuDeferredFilterGen::resetAll() {
@@ -1882,7 +1873,6 @@ void NuSpeedBlurFilterGen::computeSpeedBlur(VuVec &result) {
 }
 
 void NuSpeedBlurFilterGen::destroyTextureResources() {
-    STUBBED();
 }
 
 void NuSpeedBlurFilterGen::initTextureResources(i32 width, i32 height) {
@@ -1945,7 +1935,6 @@ void NuMotionAccumFilterGen::destroyResources() {
 }
 
 void NuMotionAccumFilterGen::destroyTextureResources() {
-    STUBBED();
 }
 
 void NuMotionAccumFilterGen::initResources() {

@@ -247,7 +247,6 @@ extern "C" {
         return NuFile_SwapEndianOnWrite;
     }
     i32 NuFileGetMediaMode(void) {
-        STUBBED();
         return 0;
     }
     void NuFileInitAddress(i32 capacity) {
@@ -446,7 +445,7 @@ extern "C" {
         NuFileWrite(file, &pad, 4);
     }
     void NuFileWriteString(NUFILE file, const char *text) {
-        i32 length = strlen(text);
+        volatile i32 length = strlen(text);
         NuFileWrite(file, const_cast<char *>(text), length);
     }
     i32 NuFileWriteStringV(NUFILE file, const char *format, ...) {

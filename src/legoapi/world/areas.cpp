@@ -970,23 +970,29 @@ void ClearAreaProgress(i32 a, i32 b) {
 }
 
 void Areas_CompleteAllBuildUps(AREASAVE_s *save) {
+    if (save == NULL) {
+        return;
+    }
     i32 count = AREACOUNT;
     u8 *area;
     u8 *end;
 
-    if (save == NULL || count <= 0) {
+    if (count <= 0) {
         return;
     }
     area = *(u8 **)&ADataList;
     end = area + count * 0x9c;
-    while (area != end) {
+    do {
         if ((*(u16 *)(area + 0x7a) & (AREAFLAG_TRUE_JEDI | AREAFLAG_MINIKIT)) && *((u8 *)save) != 0) {
             ((u8 *)save)[2] = 1;
             ((u8 *)save)[3] = 1;
         }
         area += 0x9c;
         save = (AREASAVE_s *)((u8 *)save + 0xc);
-    }
+        if (area == end) {
+            break;
+        }
+    } while (true);
 }
 
 void NewArea() {

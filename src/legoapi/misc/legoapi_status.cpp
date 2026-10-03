@@ -8,14 +8,20 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
+#if defined(__GNUC__) && !defined(__clang__) && defined(__i386__)
+#define STATUS_OMIT_FRAME_POINTER __attribute__((optimize("omit-frame-pointer")))
+#else
+#define STATUS_OMIT_FRAME_POINTER
+#endif
+
 extern "C" {
 
-    __attribute__((optimize("O2", "omit-frame-pointer"))) i32 DEVCDDVDROM_Interrogate(NUFILE_DEVICE *device) {
+    STATUS_OMIT_FRAME_POINTER i32 DEVCDDVDROM_Interrogate(NUFILE_DEVICE *device) {
         device->status = 1;
         return 1;
     }
 
-    __attribute__((optimize("O2", "omit-frame-pointer"))) i32 DEVMEMORYCARD_Interrogate(NUFILE_DEVICE *device) {
+    STATUS_OMIT_FRAME_POINTER i32 DEVMEMORYCARD_Interrogate(NUFILE_DEVICE *device) {
         device->status = 1;
         return 1;
     }

@@ -19,6 +19,7 @@
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/characters/motion.h"
+#include "legoapi/gizmo/base/gizmo.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/core/input/timer.h"
@@ -28,11 +29,13 @@
 #include "legoapi/render/fx/parts.h"
 #include "legoapi/render/light/lighting.h"
 #include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nuvec.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/nu3d/nugscn.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/numusic/sfx.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -690,48 +693,65 @@ void EffectOffProgress_Reset(LEVEL_PROGRESS_s *progress) {
     }
 }
 
+void GameCameraMakeMiniCut2(NUVEC *, NUVEC *, i32, f32, f32, f32, f32, i32, i32, i32);
+
 void IncrementMinikitCounter(GameObject_s *) {
-    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+    WORLDINFO *world = WorldInfo_CurrentlyActive();
     NUVEC average;
     Players_AveragePos(&average, NULL);
+
+    GIZMO *gizmo;
+    GIZMOPICKUP_s *pickup;
     u8 *counter;
-    i32 gizmo_index;
-    NUVEC camera;
+    NUVEC camera_position;
     if (world->current_level == HOTHBATTLEA_LDATA) {
-        gizmo_index = 0;
+        gizmo = LevGizmo[0];
+        if (gizmo == NULL || gizmo->object == NULL) {
+            return;
+        }
+        pickup = static_cast<GIZMOPICKUP_s *>(gizmo->object);
+        if ((pickup->state_flags & 0x48) != 0) {
+            return;
+        }
         counter = &minikitCounter_A;
-        camera = {0.0f, 0.0f, 10.0f};
+        if (*counter > 9) {
+            return;
+        }
+        ++*counter;
+        if (*counter != 10) {
+            AddGameMsgCount(&average, *counter, 10, 200, 100, 30, 0.75f);
+            return;
+        }
+        camera_position = {0.0f, 0.0f, 10.0f};
+        NuVecRotateX(&camera_position, &camera_position, -0xe38);
+        NuVecRotateY(&camera_position, &camera_position, -0x2000);
     } else if (world->current_level == HOTHBATTLEC_LDATA) {
-        gizmo_index = 1;
+        gizmo = LevGizmo[1];
+        if (gizmo == NULL || gizmo->object == NULL) {
+            return;
+        }
+        pickup = static_cast<GIZMOPICKUP_s *>(gizmo->object);
+        if ((pickup->state_flags & 0x48) != 0) {
+            return;
+        }
         counter = &minikitCounter_C;
-        camera = {0.0f, 0.0f, 25.0f};
+        if (*counter > 9) {
+            return;
+        }
+        ++*counter;
+        if (*counter != 10) {
+            AddGameMsgCount(&average, *counter, 10, 200, 100, 30, 0.75f);
+            return;
+        }
+        camera_position = {0.0f, 0.0f, 25.0f};
+        NuVecRotateX(&camera_position, &camera_position, -0x1555);
+        NuVecRotateY(&camera_position, &camera_position, -0x871c);
     } else {
         return;
     }
-    GIZMO *gizmo = LevGizmo[gizmo_index];
-    if (gizmo == NULL || gizmo->object == NULL) {
-        return;
-    }
-    GIZMOPICKUP_s *pickup = static_cast<GIZMOPICKUP_s *>(gizmo->object);
-    if ((pickup->state_flags & (GIZMOPICKUP_STATE_COLLECTED | GIZMOPICKUP_STATE_ALTERNATE_TYPE)) != 0 ||
-        *counter >= 10) {
-        return;
-    }
-    ++*counter;
-    if (*counter == 10) {
-        if (gizmo_index == 0) {
-            NuVecRotateX(&camera, &camera, 0xf1c8);
-            NuVecRotateY(&camera, &camera, 0xe000);
-        } else {
-            NuVecRotateX(&camera, &camera, 0xeaab);
-            NuVecRotateY(&camera, &camera, 0x78e4);
-        }
-        NuVecAdd(&camera, &camera, &pickup->position);
-        GameCameraMakeMiniCut2(&camera, &pickup->position, 0, 0.0f, 4.0f, 0.0f, 0.0f, 0, 0, 0);
-        GizmoActivate(world->gizmo_sys, LevGizmo[gizmo_index], 1, 1);
-    }
-    // The reference's completion branch passes an uninitialized temporary.
-    // Keep the message at the same valid averaged position as earlier counts.
+    NuVecAdd(&camera_position, &camera_position, &pickup->position);
+    GameCameraMakeMiniCut2(&camera_position, &pickup->position, 0, 0.0f, 4.0f, 0.0f, 0.0f, 0, 0, 0);
+    GizmoActivate(world->gizmo_sys, gizmo, 1, 1);
     AddGameMsgCount(&average, *counter, 10, 200, 100, 30, 0.75f);
 }
 

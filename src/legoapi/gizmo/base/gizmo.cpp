@@ -1097,7 +1097,7 @@ void ResetPaintPuzzle(WORLDINFO_s *) {
     do {
         randpaints[1] = qrand() / 21846;
     } while (randpaints[1] == randpaints[0]);
-    randpaints[2] = 3 - randpaints[0] - randpaints[1];
+    randpaints[2] = 3 - (randpaints[0] + randpaints[1]);
 }
 
 void InitPaintPuzzle(WORLDINFO_s *world) {

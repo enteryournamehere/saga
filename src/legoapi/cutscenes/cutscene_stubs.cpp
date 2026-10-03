@@ -302,8 +302,7 @@ extern "C" {
     }
 
     i32 instNuGCutSceneIsFinished(instNUGCUTSCENE_s *instance) {
-        i8 finished = static_cast<i8>(instance->flags_89 << 3);
-        return finished >> 7;
+        return instance->finished;
     }
 
     void instNuGCutScenePlay(instNUGCUTSCENE_s *instance, i32 forward) {
@@ -410,9 +409,7 @@ extern "C" {
     }
 
     void instNuGCutSceneSetRepeat(instNUGCUTSCENE_s *instance, i32 repeat) {
-        i32 capped = repeat <= 31 ? repeat : 31;
-        u32 *flags = reinterpret_cast<u32 *>(&instance->flags_88);
-        *flags = (*flags & ~0x3e000u) | ((capped & 31) << 13);
+        instance->repeat_count = repeat <= 31 ? repeat : 31;
     }
 
     void instNuGCutSceneStop(instNUGCUTSCENE_s *instance) {
@@ -501,8 +498,7 @@ extern "C" {
     }
 
     void instNuGCutSceneWaitAtEnd(instNUGCUTSCENE_s *instance, u8 enabled) {
-        u8 bits = (enabled & 1) << 6;
-        instance->flags_8c = (instance->flags_8c & ~0x40) | bits;
+        instance->wait_at_end = enabled;
     }
 
     void instNuGCutSoundStream(void) {

@@ -5304,7 +5304,7 @@ EDTOOLS_DTOR_INLINE EdControl::~EdControl() {
 EdMatrixControl::EdMatrixControl() {
 }
 
-EdMatrixControl::~EdMatrixControl() {
+inline EdMatrixControl::~EdMatrixControl() {
     Destroy();
 }
 
@@ -5478,9 +5478,6 @@ void EdStringControl::AddMenuItem(eduimenu_s *menu, EdRef *member, void *target)
 EdStringControl::EdStringControl() {
 }
 
-EDTOOLS_DTOR_INLINE EdStringControl::~EdStringControl() {
-}
-
 inline void EdStringControl::operator delete(void *memory) {
     theMemoryManager.FreePool(memory, sizeof(EdStringControl));
 }
@@ -5514,14 +5511,15 @@ void EdStringControl::cbPress(eduimenu_s *menu, eduiitem_s *item, u32) {
 
 template <> f32 EdValueControl<f32>::MouseScale = 100.0f;
 
-template <> EDTOOLS_DTOR_INLINE EdValueControl<f32>::~EdValueControl() {
+template <> SAGA_HOST_LINKABLE_DTOR EdValueControl<f32>::~EdValueControl() {
 }
 
 template <> inline void EdValueControl<f32>::operator delete(void *memory) {
     theMemoryManager.FreePool(memory, sizeof(EdValueControl<f32>));
 }
 
-EDTOOLS_DTOR_INLINE EdFloatControl::~EdFloatControl() {
+SAGA_HOST_LINKABLE_DTOR
+EdFloatControl::~EdFloatControl() {
 }
 
 inline void EdFloatControl::operator delete(void *memory) {
@@ -5638,7 +5636,7 @@ void EdVectorControl::Destroy() {
 EdVectorControl::EdVectorControl() {
 }
 
-EdVectorControl::~EdVectorControl() {
+inline EdVectorControl::~EdVectorControl() {
     Destroy();
 }
 
@@ -6172,7 +6170,7 @@ EdClassObjectNameControl::EdClassObjectNameControl()
     : selected_class(NULL), selected_object(NULL), selected_reference(NULL) {
 }
 
-EDTOOLS_DTOR_INLINE EdClassObjectNameControl::~EdClassObjectNameControl() {
+inline EdClassObjectNameControl::~EdClassObjectNameControl() {
 }
 
 #undef EDTOOLS_DTOR_INLINE
@@ -6507,7 +6505,7 @@ void EdSystem::Reset() {
     }
 }
 
-EdSubSystem::~EdSubSystem() {
+inline EdSubSystem::~EdSubSystem() {
 }
 
 __attribute__((weak)) void EdSubSystem::SubInitialise(variptr_u &, variptr_u &, i32) {
@@ -6520,6 +6518,10 @@ __attribute__((weak)) void EdSubSystem::SubProcess(float) {
 }
 
 __attribute__((weak)) void EdSubSystem::SubRender() {
+}
+
+SAGA_HOST_LINKABLE_DTOR
+EdControl::~EdControl() {
 }
 
 inline void EdControl::operator delete(void *memory) {

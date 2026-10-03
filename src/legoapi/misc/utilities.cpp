@@ -93,13 +93,8 @@ void FindAnglesZX(nuvec_s *normal, u16 *x_rotation, u16 *z_rotation) {
 
 i32 getNumDigits(i32 value) {
     i32 digits = 1;
-    if (__builtin_expect(value <= 9, 0))
-        return digits;
-    i32 threshold = 10;
-    do {
-        threshold *= 10;
-        ++digits;
-    } while (value >= threshold);
+    for (i32 threshold = 10; value >= threshold; threshold *= 10)
+        digits++;
     return digits;
 }
 
@@ -122,21 +117,6 @@ i32 LineCrossedXZ(f32 ax, f32 az, f32 bx, f32 bz, f32 cx, f32 cz, f32 dx, f32 dz
     if (fourth >= 0.0f)
         return result;
     return 1;
-}
-
-#if defined(__GNUC__) && !defined(__clang__)
-__attribute__((optimize("no-omit-frame-pointer")))
-#endif
-i32 ScaleAndClamp(volatile i32 value) {
-    i32 scaled = value << 7;
-    i32 shifted = scaled << 5;
-    scaled += shifted;
-    value = scaled / 1048576;
-    if (value < -128)
-        value = -128;
-    if (value > 127)
-        value = 127;
-    return value + 128;
 }
 
 void VecRotateAxis(nuvec_s *vector, u16 angle, nuvec_s *axis) {

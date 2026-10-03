@@ -13331,3 +13331,69 @@ Unlocated receipts remain unknown, not automatically fresh or faithful.
 The original1967B Nu3D initializer now has a full census; its split current
 startup pairing remains unknown. A genuine texture-lock lifecycle fragment
 is nominated but not applied, reassembled or credited with matching gain.
+
+## Checkpoint56: pool/file/handle lifetimes and warning-color restoration
+
+Checkpoint55 head caf7771b has all 11 GitHub checks SUCCESS. Four fixed
+Android trials retain all 6,293 exact functions and the complete original
+identity set, without changing ABI, owners, options or scoring:
+
+| Batch / original function | Before % | After % | Original-weighted gain B |
+| --- | ---: | ---: | ---: |
+| 494 / pool startup, 313 B | 0 | 51.618183 | 161.56491279 |
+| 495 / handle startup, 313 B | 41.745453 | 99.527275 | 180.85710286 |
+| 496 / file-device startup, 313 B | 0 | 51.618183 | 161.56491279 |
+| 497 / DrawPanel, 12,845 B | 54.664720 | 54.667225 | 0.32176725 |
+
+The first three restore named original recursive-mutex construction and
+registered destruction through the existing NuCriticalSection. Pool and
+file-device headers only forward-declare the class; its definition is included
+in their CPPs. Handle already obtains the canonical definition. All existing
+direct pthread boundaries use its offset-zero mutex member; instance layouts,
+instance mutex lifetimes and ordinary method code remain unchanged.
+
+Full ordinary pool/handle/file-device text (3,718/2,617/3,518 B) and resolved
+references are independently byte-exact. Compact owner receipts account for
+all old functions/storage, literal/vtable/group surfaces, added weak destructor
+aliases, U services and concrete CFI allocation. Handle's sole startup-only
+cx thunk disappears with its exact single code consumer; no unrelated callable
+is removed. Its emitted 313 B startup reproduces all original vector/lifetime
+roles. Pool/file-device emit only the 108 B lifetime fragment: their original
+six private vector records and prefix remain unreconstructed, not fabricated.
+
+DrawPanel restores player 0 blue (63,127,255), player 1 green (0,255,0), as
+proved by original indices/stack RGB arguments, actual SmartTextEx forwarding
+and the earlier accepted fixture. Git history 2a57d7b7 introduced the first
+call's reversal; the second accepted correction also was not retained. This is
+restoration drift, not another rejected expression variant. The entire 58,724 B
+object differs at precisely six immediate low bytes; every other byte, symbol,
+relocation, storage shape, literal, CFI record and padding byte is identical.
+
+Before-build actual dependencies are pinned separately: pool 50 (48 unchanged),
+handle 83 (81), file-device 57 (55), panel 188 (187). Added nuthread.h dependencies
+for pool/file-device are explicit post-build inventories, not retroactive pins.
+Android/native/WASM builds and all five repository tests pass; all four Android
+objects retain their frozen candidate hashes after configuration round trips.
+These checks do not certify device audio/IO, concurrency or shutdown ordering.
+
+The distinct sound-loader lifetime recipe 498 restores an original-backed
+recursive lifecycle but lowers its composite 721 B startup from 51.271427 to
+50.892857 (-2.72948970 weighted B). All exacts survive; nevertheless the entire
+three-line recipe is reverted to its exact source/object baseline. It remains
+recorded reconstruction debt, with no runtime, source-order or subset retry.
+
+Raw retained whole report
+f29593f82b9f4fe2b6c5dafea7512b3c3cb61deb096174af56cb768c98220e25;
+metadata-only map 76a273c038b898b2116a2af4161ea23cad19f4d54388f8d23964019ef30fdd82.
+Counts: 452 units, 12,663 assigned / 260 ambiguous / 531 unassigned rows;
+denominator 4,722,419 B. Two newly emitted startup counterparts move out of
+unassigned status without changing original identities. Candidate 69.034750%,
++0.010670 pp over checkpoint55, +1.032290 pp over main; still below the
+70.002460% merge threshold. Commit/new-head checks remain pending.
+
+The fixed CP55 large-low selection has 57 finite physical bodies below 40%,
+size >=4,000 B (55 assigned, two unassigned). Exact history reconciliation is
+complete for those 55 assigned bodies, not a universal fidelity claim. A new
+complete Hub_Update census finds no finite-domain omission; focused historical
+mock replacement tests are not evidence of actual helper mutations. Separate
+RenderGraph six-word callback-contract recovery is still source-only review.

@@ -2,13 +2,13 @@
 
 #include <new>
 
-pthread_mutex_t NuSoundHandle::sCriticalSection;
+NuCriticalSection NuSoundHandle::sCriticalSection(NULL);
 
 NuSoundHandle::NuSoundHandle() : intrusive_prev(NULL), intrusive_next(NULL), voice(NULL) {
 }
 
 NuSoundHandle::~NuSoundHandle() {
-    pthread_mutex_lock(&sCriticalSection);
+    pthread_mutex_lock(&sCriticalSection.mutex);
     if (voice != NULL) {
         if ((voice->flags2 & 8) != 0) {
             voice->Stop(true);
@@ -20,7 +20,7 @@ NuSoundHandle::~NuSoundHandle() {
     for (; node != end; node = node->next) {
         static_cast<NuListNode<NuSoundEffect *> *>(node)->value->Shutdown();
     }
-    pthread_mutex_unlock(&sCriticalSection);
+    pthread_mutex_unlock(&sCriticalSection.mutex);
 }
 
 bool NuSoundHandle::operator==(NuSoundHandle const &other) {

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 69.02408,
+    "fuzzy_match_percent": 69.03475,
     "total_code": "4722419",
     "matched_code": "526280",
     "matched_code_percent": 11.144289,
@@ -68168,7 +68168,7 @@
           "address": 1316752,
           "offset": 426784,
           "size": 12845,
-          "match_percent": 54.66472
+          "match_percent": 54.667225
         },
         {
           "name": "_Z11PanelRenderP11WORLDINFO_s",
@@ -95855,6 +95855,14 @@
       "object": "bazel-out/k8-fastbuild/bin/src/_objs/saga_target_nu2api/NuMemoryPool.o",
       "functions": [
         {
+          "name": "_GLOBAL__sub_I_NuMemoryPool.cpp",
+          "demangled_name": "_GLOBAL__sub_I_NuMemoryPool.cpp",
+          "address": 893648,
+          "offset": 3680,
+          "size": 313,
+          "match_percent": 51.618183
+        },
+        {
           "name": "_ZN12NuMemoryPool14InterlockedAddEPVjj",
           "demangled_name": "NuMemoryPool::InterlockedAdd(unsigned int volatile*, unsigned int)",
           "address": 1011216,
@@ -107658,6 +107666,14 @@
       "object": "bazel-out/k8-fastbuild/bin/src/_objs/saga_target_nu2api/nufiledevice.o",
       "functions": [
         {
+          "name": "_GLOBAL__sub_I_nufiledevice.cpp",
+          "demangled_name": "_GLOBAL__sub_I_nufiledevice.cpp",
+          "address": 909328,
+          "offset": 19360,
+          "size": 313,
+          "match_percent": 51.618183
+        },
+        {
           "name": "_ZN12NuFileDeviceD1Ev",
           "demangled_name": "NuFileDevice::~NuFileDevice()",
           "address": 3244864,
@@ -114067,7 +114083,7 @@
           "address": 913504,
           "offset": 23536,
           "size": 313,
-          "match_percent": 41.745453
+          "match_percent": 99.527275
         },
         {
           "name": "_ZN13NuSoundHandleC1Ev",
@@ -118996,7 +119012,10 @@
       "size": 34,
       "match_percent": 100.0,
       "candidate_units": [
+        "nu2api/nucore/NuMemoryPool.cpp.o",
         "nu2api/nucore/android/NuInputDevice_android.cpp.o",
+        "nu2api/nufile/nufiledevice.cpp.o",
+        "nu2api/nusound/nusound_handle.cpp.o",
         "nu2api/nusound/nusound_memorymanager.cpp.o",
         "nu2api/nusound/nusound_sample.cpp.o",
         "nu2api/nusound/nusound_voice.cpp.o",
@@ -119011,7 +119030,10 @@
       "size": 34,
       "match_percent": 100.0,
       "candidate_units": [
+        "nu2api/nucore/NuMemoryPool.cpp.o",
         "nu2api/nucore/android/NuInputDevice_android.cpp.o",
+        "nu2api/nufile/nufiledevice.cpp.o",
+        "nu2api/nusound/nusound_handle.cpp.o",
         "nu2api/nusound/nusound_memorymanager.cpp.o",
         "nu2api/nusound/nusound_sample.cpp.o",
         "nu2api/nusound/nusound_voice.cpp.o",
@@ -123414,14 +123436,6 @@
       "match_percent": 0.0
     },
     {
-      "name": "_GLOBAL__sub_I_NuMemoryPool.cpp",
-      "demangled_name": "_GLOBAL__sub_I_NuMemoryPool.cpp",
-      "address": 893648,
-      "offset": 3680,
-      "size": 313,
-      "match_percent": 0.0
-    },
-    {
       "name": "_GLOBAL__sub_I_menu.cpp",
       "demangled_name": "_GLOBAL__sub_I_menu.cpp",
       "address": 894352,
@@ -123675,14 +123689,6 @@
       "address": 909232,
       "offset": 19264,
       "size": 93,
-      "match_percent": 0.0
-    },
-    {
-      "name": "_GLOBAL__sub_I_nufiledevice.cpp",
-      "demangled_name": "_GLOBAL__sub_I_nufiledevice.cpp",
-      "address": 909328,
-      "offset": 19360,
-      "size": 313,
       "match_percent": 0.0
     },
     {
@@ -127585,8 +127591,8 @@
   "summary": {
     "bazel_units": 452,
     "functions": 13454,
-    "assigned_functions": 12661,
+    "assigned_functions": 12663,
     "ambiguous_functions": 260,
-    "unassigned_functions": 533
+    "unassigned_functions": 531
   }
 }

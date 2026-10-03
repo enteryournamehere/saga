@@ -221,8 +221,7 @@ bool MechInputTouchGestureBasedController::OnClick(GameObject_s &object, TouchHo
         case 3:
         case 4:
         case 11: {
-            GIZOBSTACLE_s *obstacle = target->GetGizObstacle();
-            if (obstacle != NULL && reinterpret_cast<u8 *>(obstacle)[0x91] == 2) {
+            if (target->GetGizObstacle() != NULL && target->GetGizObstacle()->mode == 2) {
                 StartNewTask(new MechTouchTaskPlannedGoTo(*this, target, NULL), holder, false, true);
             } else {
                 StartNewTask(new MechTouchTaskAttack(*this, target, position), holder, false, true);

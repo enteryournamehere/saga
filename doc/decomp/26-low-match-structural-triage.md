@@ -12535,8 +12535,9 @@ identity multiset,4722419-byte denominator and full ownership summary retain.
 Raw report69f601fb4f6e1ab41e2ad34b94ec83dfa1894ed32a38d700a54a5c3bbe62853c;
 mapped report8364335d7d888e9b82be6c0eb7901b3a5dd466f1adc4d578891e7f9b30048fac.
 Checkpoint44's infrastructure retry and checkpoint45's exact pushed head now
-have all11 checks COMPLETED/SUCCESS. The new checkpoint requires its own
-exact-head CI; the70.002460% merge threshold remains unmet.
+have all11 checks COMPLETED/SUCCESS. Checkpoint46's pushed head
+92fc7741800e5c7bb71e3c6688c6e0752f9b498e also has all11 checks
+COMPLETED/SUCCESS; the70.002460% merge threshold remains unmet.
 
 The sole batch461 OnClick two-getter/canonical obstacle-mode pair has a known
 38.24376024-byte gain,43.050420%→44.160866%,2884→2899 emitted bytes.
@@ -12545,3 +12546,97 @@ changes one local text label.L466→.L548. This is not automatically exempted;
 exact label/reference, symbol-string permutation, adjusting-thunk and unknown
 PC-thunk qualification remains separate pending work. No runtime or integration
 is claimed, and no source variant or object/report retry is authorized.
+
+### Checkpoint47 preparation: OnClick qualification and graph triage
+
+The separate batch461 same-object qualification now passes: all44 emitted names,
+40 physical bodies/FDEs,14 COMDAT groups, storage, incoming dependencies and
+all REL/control records are covered. The exact renamed false-return label's two
+switch-table references, nine UND/string-allocation permutation and natural
+adjust-this108/JMP-to-entry role are explicitly qualified. Raw thunk bytes remain
+separately unequal; the two private PC thunks receive no invented absolute score
+or original weight. Qualification result
+1cbbccad058dedd780c1dfd3cd8f8a411adea6ff6a7f532e0f2b219828efb9f6.
+The original gate disposition and sole object/report pair remain preserved.
+Runtime validation and production integration are still pending.
+
+A separate read-only agent audit completes eduicbProcessGraph's supported body,
+three direct graph services, creator/init/free-temp and selected-menu dispatcher.
+The LOCAL1367-byte function at0x3903c0 remains38.012657% in checkpoint46;
+no supported omission or candidate is nominated, so no compiler experiment runs.
+This is distinct from the reserved RenderGraph callback-parameter ABI issue,
+which remains unresolved. Malformed controls, invalid indices and arbitrary
+allocator/nonfinite behavior are not certified. ROOT reviewed the readable
+closure and immutable inventory, not an independent full raw-body re-audit.
+Audit96b3cd75965c97bcce34ee6b1172179c76eb0db92588eb2ae7e4dbf20f21865e;
+freeze61f6a1d32e9d9d3de8d280a6aee60a875c1eeca2be477a0ec3df350ddfbd03de.
+
+Batch462 PlayRadio's sole minimal matched-source cleanup correction is reserved:
+the whole-owner actualO3 pair loses76.86803215 original-weighted bytes,
+44.300716%→39.818615%,1656→1624 emitted bytes. All four original-backed
+rows are uniquely qualified; no exact is lost and full Counter/U retain.
+Both private PC thunks remain explicitly unscored; no additional qualification
+or runtime is pursued after the negative known gain. Production stays unchanged,
+with no variant, repeated object/report or speculative fanout rewrite.
+Capturefd410d49538e95b77d0df58ca58c80c9c7ad0515de01d2025491d38813325b48.
+ROOT first checked the full actualO3 argv/environment and both143-input E
+closures against the frozen94-project/49-external catalog. A read-only review
+assertion initially compared raw dependency spellings too strictly; the43
+external names intentionally become absolute under the already-reviewed command.
+Their exact resolved identities, order and hashes retain. Only that metadata
+comparison was corrected; no preprocessing, compilation or matching was repeated.
+
+Batch463's history-first ProbeSemantics check stops before a new raw audit:
+the concrete checkpoint41 census already covers the complete898-byte body,
+canonical parameter/type/semantic/cache helpers and critical-section services,
+with no omitted operation found. Its owner hash remains exactly
+03a7fb3b6ab4a44d2dc1b7c64daeae85c87a06fae48ed5bdbeb1f02e326a22f7.
+That actual closure supersedes the later medium shortlist's source-only UNKNOWN
+label; a missing ledger name is not freshness evidence. ROOT read the complete
+historical census08acf9e70300497fed27be535042361f58bd8f9200ccd698df108430950f0a52.
+No candidate, export, raw re-audit, compiler experiment or runtime runs.
+
+Checkpoint47's OnClick runtime PREP passes both metadata preflights, but its
+first GNU64/i386 old-side links stop on missing LEGOCONTEXT_JUMP and
+LEGOCONTEXT_BIGJUMP definitions. No runtime has run. The original fixture,
+catalog and failed link logs remain immutable; an additive fixture-only repair
+must use the real context definitions, with no target candidate variation.
+
+The cost-frontier metadata shortlist is corrected by the concrete flat-text
+checkpoint24 census: both DrawGameObjectsProcess and UpdatePartEmits already
+have complete original-body/helper/producer audits. Their entire owners and
+canonical layout headers retain the recorded hashes. The later bounded Markdown
+history query missed that TXT authority; it is not evidence of a new omission.
+ROOT read the complete historical census before requesting any repeated raw
+audit. DrawGameObjectsProcess closes without export or experiment. The documented
+small typed pair-cursor opportunity in UpdatePartEmits's final switch flush may
+receive one grounded source-form proposal; no gain is predicted. DrawWeapons's
+batch110 reconstruction likewise remains a historical authority, not a fresh
+callback-mutation proposal. These exclusions do not certify exact matching or
+exhaust the wider source-form frontier.
+
+OnClick's additive runtime461 fixture repair now passes all four GNU O2 SSE
+ASan/UBSan/LSan diagnostics. Each executes22 cases with603/605 native64 checks
+and627/627 i386 checks; all four stderr files are empty. The two old64 byte-policy
+controls remain explicitly distinct from canonical typed mode selection; i386
+asserts the actual mode offset0x91. Actual stable getters, obstacle publication,
+task constructors/destructors and managed references execute. StartNewTask is
+only a typed handoff recorder, not engine task activation or gameplay; native
+multiple inheritance is not retail private-ABI certification. No changing-query
+witness, fake task position storage or unrelated field mutation is introduced.
+Both failed original links remain preserved; only the two real context globals
+were added in the separately frozen repair. Catalog
+a7116476978bef577b9b00129cdcede521afbe9cea4cc30cb9500bfe1d49d7d0;
+four-run result1fa10bdfcf9e4a5efac30b60c65b1c91e8476854f7de91806e69c7621d2c6fa7.
+ROOT integrated the exact qualified candidate owner90e2539b057ad4fcdfe354661e894d5b61e711bb3776508a9e31260433dfa29a.
+Production build and independent linked checkpoint47 verification follow;
+no additional source-form proposal is integrated in this checkpoint yet.
+
+Checkpoint47's independent linked verification passes at68.826630%,
++0.000810pp over checkpoint46 and+0.824170pp over main. Only OnClick changes,
+43.061226%→44.166866%; all6293 raw exact identities, the4722419-byte denominator,
+original identity multiset and complete ownership summary retain. Android,
+native and WASM builds pass. Raw report
+ee9ae1f375c74506e190a7873552ea2ef9e0c72bccb8dee48689c76877425f2b;
+mapped report0ba2b446dae213595f7a483e7d401ccd348228528628301b007c09f461017fab.
+The70.002460% merge threshold remains unmet; new-head CI is not yet claimed.

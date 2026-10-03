@@ -866,8 +866,8 @@ void MechTouchTaskPlannedGoTo::SetupForAnalysis() {
     analysis_state = 0;
     field_6ff = 1;
     const GAMECHARACTERDATA *character = player->apiobj.character_data->game_character;
-    step_y = -(character->jump_speed * character->jump_speed) /
-                 (character->gravity + character->gravity) * 1.5f + 0.01f;
+    step_y =
+        -(character->jump_speed * character->jump_speed) / (character->gravity + character->gravity) * 1.5f + 0.01f;
     start_position.y += step_y;
     if (completion != NULL) {
         *completion = true;
@@ -939,8 +939,8 @@ bool MechTouchTaskPlannedGoTo::Update() {
 
     JumpTriggerPacket packet;
     packet.type = 2;
-    packet.field_4[0] = reinterpret_cast<u32>(player);
-    packet.field_4[1] = reinterpret_cast<u32>(touch_holder);
+    packet.player = player;
+    packet.touch_holder = touch_holder;
     packet.velocity.x = velocity_x;
     packet.velocity.y = velocity_y;
     packet.velocity.z = velocity_z;
@@ -1044,8 +1044,8 @@ void MechTouchTaskPlannedDoubleClickGoTo::OnResume() {
     const f32 dy = position.y - player->apiobj.position.y;
     const f32 dz = position.z - player->apiobj.position.z;
     const GAMECHARACTERDATA *character = player->apiobj.character_data->game_character;
-    const f32 max_rise = -(character->jump_speed * character->jump_speed) /
-                         (character->gravity + character->gravity) * 2.5f;
+    const f32 max_rise =
+        -(character->jump_speed * character->jump_speed) / (character->gravity + character->gravity) * 2.5f;
     if (dy > max_rise) {
         finished = true;
         return;
@@ -1083,8 +1083,8 @@ void MechTouchTaskPlannedDoubleClickGoTo::OnResume() {
 
     JumpTriggerPacket packet;
     packet.type = 2;
-    packet.field_4[0] = reinterpret_cast<u32>(player);
-    packet.field_4[1] = reinterpret_cast<u32>(touch_holder);
+    packet.player = player;
+    packet.touch_holder = touch_holder;
     packet.velocity.x = velocity_x;
     packet.velocity.y = velocity_y;
     packet.velocity.z = velocity_z;

@@ -37,7 +37,7 @@ extern "C" {
     i32 nuspecial_shadowLightHaveClipOverrides;
 }
 
-extern "C" void NuSpecialList(void) {
+extern "C" void NuSpecialList(NUGSCN *) {
     // The original body is an intentional no-op.
 }
 
@@ -259,24 +259,24 @@ extern "C" i32 NuSpecialExistsFn(void *special_ptr) {
 }
 
 extern "C" void NuSpecialMtlMap(i32 count, NUMTL **materials) {
-    if (count == 0) {
+    if (count != 0) {
+        nurndr_nforced_mtls = count;
+        nuspecial_draw_state |= NUSPECIAL_DRAW_MATERIAL_MAP;
+        nurndr_forced_mtl_table = materials;
+        return;
+    } else {
         nuspecial_draw_state &= ~NUSPECIAL_DRAW_MATERIAL_MAP;
         nurndr_forced_mtl_table = NULL;
         return;
     }
-    nurndr_nforced_mtls = count;
-    nuspecial_draw_state |= NUSPECIAL_DRAW_MATERIAL_MAP;
-    nurndr_forced_mtl_table = materials;
 }
 
 extern "C" void NuSpecialForceMtl(NUMTL *material) {
-    i32 draw_state = nuspecial_draw_state;
-    if (__builtin_expect(material != NULL, 1)) {
-        draw_state |= NUSPECIAL_DRAW_FORCE_MATERIAL;
+    if (material != NULL) {
+        nuspecial_draw_state |= NUSPECIAL_DRAW_FORCE_MATERIAL;
     } else {
-        draw_state &= ~NUSPECIAL_DRAW_FORCE_MATERIAL;
+        nuspecial_draw_state &= ~NUSPECIAL_DRAW_FORCE_MATERIAL;
     }
-    nuspecial_draw_state = draw_state;
     nurndr_forced_mtl = material;
 }
 

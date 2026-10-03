@@ -25,7 +25,6 @@
 #include "legoapi/misc/utilities.h"
 #include "legoapi/render/fx.h"
 #include "legoapi/render/fx/parts.h"
-#include "legoapi/render/fx/edsplines.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/levels/levels.h"
 #include "legoapi/world/levels/podrace.h"
@@ -96,8 +95,6 @@ extern "C" {
     float test_factor = 10.0f;
     float sebulba_lerpf = 0.5f;
     float sockstep = 10.0f;
-    float dthrow_time = 1.0f;
-    float throw_time = 2.0f;
     i32 do_mine;
 }
 extern f32 CurrentSpeed;
@@ -106,7 +103,49 @@ void CalcSplinePointFromDist(flightspline_s *, _vuv_s *, float);
 
 // --- File-local layout types -----------------------------------------------
 
-static void RacePodAlign(racepod_s *pod, _vuv_s *direction, float amount, i32 mode);
+struct _vuv_s {
+    float x, y, z, w;
+};
+
+// One pod in the pod race state (0x98-byte stride). The first 0x40 bytes
+// are its current transform; the second position is used by race alignment.
+struct racepod_s {
+    NUMTX matrix;            // 0x00
+    _vuv_s previous_axis;    // 0x40
+    _vuv_s previous_position; // 0x50
+    char pad_0x60[0x10];     // 0x60
+    i32 pitch;               // 0x70
+    i32 yaw;                 // 0x74
+    i32 pad_0x78;            // 0x78
+    float speed;             // 0x7c
+    u32 *data;               // 0x80 (flightspline_s *)
+    float start;             // 0x84
+    i16 model_id;            // 0x88
+    i16 pad_0x8a;            // 0x8a
+    float distance;          // 0x8c
+    GameObject_s *object;    // 0x90
+    void *next;              // 0x94 (active marker)
+};
+using PODRACE_LAPENTRY_s = racepod_s;
+static_assert(sizeof(racepod_s) == 0x98, "racepod layout");
+static __attribute__((noinline)) void RacePodAlign(racepod_s *pod, _vuv_s *direction, float amount, i32 mode);
+
+// Per-level PodRace state block held at WORLDINFO.podrace (0x5120), 0xaf24
+// bytes total (size of the memset in PodRaceInit).
+struct PODRACE_s {
+    char pad_0x0000[0xa580];
+    PODRACE_LAPENTRY_s lap_entries[0x10]; // 0xa580 .. 0xaf00 (zeroed by PodRaceReset)
+    float lap_countdown;                  // 0xaf00
+    float mushroom_timer;                 // 0xaf04
+    float lap_display;                    // 0xaf08
+    float prev_lap_display;               // 0xaf0c
+    float max_lap_time;             // 0xaf10
+    float lap_time_increment;       // 0xaf14
+    i32 lap_attempts_per_increment; // 0xaf18
+    char pad_0xaf1c[0xaf20 - 0xaf1c];
+    u8 flags; // 0xaf20 bit1/bit0 cleared by PodRaceReset
+    char pad_0xaf21[0xaf24 - 0xaf21];
+};
 
 // Pacemaker display data stored at LevObjs[0] for the pacemaker object.
 struct PACEMAKERDATA_s {
@@ -255,7 +294,7 @@ static __used__ void PodRaceSnipersReset(void) {
     }
 }
 
-static void *CreatePodRaceMine(nuvec_s *pos) {
+static __attribute__((noinline, regparm(1))) void *CreatePodRaceMine(nuvec_s *pos) {
     float y = GameShadow(NULL, pos, 5.0f, -1);
     if (y == 2000000.0f)
         y = pos->y;
@@ -296,12 +335,12 @@ static void *CreatePodRaceMine(nuvec_s *pos) {
     pod_mines_bitfield[0] |= bit;
     pod_mines_bitfield[1] |= bit >> 31;
     i32 clear = ~bit;
-    client_mines.present_words[0] &= clear;
-    client_mines.present_words[1] &= clear >> 31;
+    client_mines[0x300 / 4] &= clear;
+    client_mines[0x304 / 4] &= clear >> 31;
     return entry;
 }
 
-static void RacePodAlign(racepod_s *pod, _vuv_s *direction, float blend, i32) {
+static __attribute__((noinline)) void RacePodAlign(racepod_s *pod, _vuv_s *direction, float blend, i32) {
     NUVEC local __attribute__((aligned(16)));
     NuVecInvMtxRotate(&local, (NUVEC *)direction, &pod->matrix);
     i32 yaw = (i16)NuAtan2D(local.x, local.z);
@@ -628,8 +667,7 @@ void RescueA_Init(WORLDINFO_s *world) {
         g->field_0xa0 |= 2;
 }
 
-void RescueB_Init(WORLDINFO_s *) {
-}
+void RescueB_Init(WORLDINFO_s *) {}
 
 void RescueC_Init(WORLDINFO_s *world) {
     GIZMOBLOWUP_s *g;
@@ -1230,8 +1268,8 @@ i32 Action_SetLapTime(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *
     return 1;
 }
 
-i32 Action_CreatePod(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char **params, i32 param_count, i32 first_time,
-                     float) {
+i32 Action_CreatePod(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char **params, i32 param_count,
+                     i32 first_time, float) {
     if (first_time == 0 || param_count <= 0)
         return 1;
 
@@ -1269,10 +1307,10 @@ i32 Action_CreatePod(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char **
         return 1;
 
     i32 spline_index = 0;
-    flightspline_s *spline = PodRace->splines;
-    while (spline_index < 31 && spline->id != spline_id) {
+    flightspline_s *spline = (flightspline_s *)PodRace;
+    while (spline_index < 31 && *(i32 *)((u8 *)spline + 0x524) != spline_id) {
         spline_index++;
-        ++spline;
+        spline = (flightspline_s *)((u8 *)spline + 0x52c);
     }
 
     if (start < 0.0f)
@@ -1283,7 +1321,7 @@ i32 Action_CreatePod(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char **
         end = 0.0f;
     else if (end > 1.0f)
         end = 1.0f;
-    if (spline->point_count == 0 || start == end)
+    if (*(i32 *)((u8 *)spline + 0x400) == 0 || start == end)
         return 1;
 
     i32 slot = 0;
@@ -1295,7 +1333,7 @@ i32 Action_CreatePod(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char **
     pod->model_id = model_id;
     pod->next = (void *)1;
 
-    float spline_length = spline->length;
+    float spline_length = *(float *)((u8 *)spline + 0x410);
     float duration = time_factor * PodRace->prev_lap_display;
     pod->speed = duration > 0.0f ? ((end - start) * spline_length) / duration : 1.0f;
 
@@ -1308,15 +1346,15 @@ i32 Action_CreatePod(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char **
     pod->matrix.m31 = position.y;
     pod->matrix.m32 = position.z;
     pod->matrix.m33 = position.w;
-    _vuv_s direction __attribute__((aligned(16))) = {next_position.x - position.x, next_position.y - position.y,
-                                                     next_position.z - position.z, 0.0f};
+    _vuv_s direction __attribute__((aligned(16))) = {
+        next_position.x - position.x, next_position.y - position.y, next_position.z - position.z, 0.0f};
     RacePodAlign(pod, &direction, 1.0f, 0);
     pod->previous_axis = {0.0f, 0.0f, 0.0f, 1.0f};
     pod->previous_position = position;
     pod->distance = start;
 
-    GameObject_s *object =
-        AddDynamicCreature((i32)pod->model_id, (NUVEC *)spline, 0, NULL, NULL, NULL, 1, NULL, NULL, 0, 0);
+    GameObject_s *object = AddDynamicCreature((i32)pod->model_id, (NUVEC *)spline, 0, NULL, NULL, NULL, 1, NULL, NULL,
+                                              0, 0);
     pod->object = object;
     if (object == NULL)
         return 1;
@@ -2047,22 +2085,23 @@ i32 Action_NewSebulba(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *packet, char *
                 }
             }
 
-        catchup: {
-            float ratio = distance / sebulba_catchup_dist;
-            float base = 0.0f;
-            if (ratio > 1.0f)
-                ratio = 1.0f;
-            else
-                base = 1.0f - ratio;
-            float target = (sebulba_catchup_speed_mul * ratio + base) * base_speed;
-            object->run_speed_override = SeekValF(object->run_speed_override, target, sebulba_catchup_lerpf);
-        }
+        catchup:
+            {
+                float ratio = distance / sebulba_catchup_dist;
+                float base = 0.0f;
+                if (ratio > 1.0f)
+                    ratio = 1.0f;
+                else
+                    base = 1.0f - ratio;
+                float target = (sebulba_catchup_speed_mul * ratio + base) * base_speed;
+                object->run_speed_override = SeekValF(object->run_speed_override, target, sebulba_catchup_lerpf);
+            }
         } else {
             float base_speed = object->apiobj.character_data->game_character->run_speed;
             float target = base_speed;
             if (ps->max_speed_msg != NULL && ps->min_speed_msg != NULL && ps->speed_step_msg != NULL) {
-                float reduced_maximum =
-                    ps->max_speed_msg->value - (float)*(i16 *)&ps->pad_0x8c[0] * ps->speed_step_msg->value;
+                float reduced_maximum = ps->max_speed_msg->value -
+                                        (float)*(i16 *)&ps->pad_0x8c[0] * ps->speed_step_msg->value;
                 target = ps->min_speed_msg->value > reduced_maximum ? ps->min_speed_msg->value : reduced_maximum;
             }
             object->run_speed_override = SeekValF(object->run_speed_override, target, 5.0f);
@@ -2210,8 +2249,7 @@ void RetakeG_Init(WORLDINFO_s *world) {
         f->strength_0x6c = 0.85f;
 }
 
-void RetakeG_Reset(WORLDINFO_s *) {
-}
+void RetakeG_Reset(WORLDINFO_s *) {}
 
 void RetakeG_Update(WORLDINFO_s *world) {
     (void)world;
@@ -2287,8 +2325,7 @@ void MaulA_Reset(WORLDINFO_s *world) {
     Maul_obj = FindGameObject(id_DARTHMAUL, 1, 1, 0, 0);
 }
 
-void MaulA_Update(WORLDINFO_s *) {
-}
+void MaulA_Update(WORLDINFO_s *) {}
 
 void MaulA_Panel(WORLDINFO_s *world) {
     if (netclient == 0) {
@@ -2311,17 +2348,13 @@ void MaulB_Init(WORLDINFO_s *world) {
         o->field_a1_0xa1 |= 1;
 }
 
-void MaulD_Init(WORLDINFO_s *) {
-}
+void MaulD_Init(WORLDINFO_s *) {}
 
-void MaulD_Update(WORLDINFO_s *) {
-}
+void MaulD_Update(WORLDINFO_s *) {}
 
-void MaulE_Init(WORLDINFO_s *) {
-}
+void MaulE_Init(WORLDINFO_s *) {}
 
-void MaulE_Update(WORLDINFO_s *) {
-}
+void MaulE_Update(WORLDINFO_s *) {}
 
 void MaulF_Init(WORLDINFO_s *world) {
     MaulA_ai_message = CheckGizAIMessage(gizaimessagesys, "ShowHearts", NULL);
@@ -2335,8 +2368,7 @@ void MaulF_Reset(WORLDINFO_s *world) {
     Maul_obj = FindGameObject(id_DARTHMAUL, 1, 1, 0, 0);
 }
 
-void MaulF_Update(WORLDINFO_s *) {
-}
+void MaulF_Update(WORLDINFO_s *) {}
 
 void MaulF_Panel(WORLDINFO_s *world) {
     if (netclient == 0) {
@@ -2365,8 +2397,7 @@ void AnakinsFlightB_Init(WORLDINFO_s *world) {
         hothtroopers = (nuhspecial_s *)LevHSpecial;
 }
 
-void AnakinsFlightB_Update(WORLDINFO_s *) {
-}
+void AnakinsFlightB_Update(WORLDINFO_s *) {}
 
 void AnakinsFlightB_Draw(WORLDINFO_s *world) {
     if (TimingBarSet == 5) {

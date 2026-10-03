@@ -140,8 +140,7 @@ void UpdateSnakeBody(GameObject_s *object) {
         angle += (-0.07500000298023224f * t2) * t3;
         angle += (-0.04464289918541908f * t3) * t4;
         angle += (-0.03038189932703972f * t4) * t5;
-        object->snake_body->segments[segment_index].pitch =
-            static_cast<i16>(static_cast<i32>(angle * 10430.400390625f));
+        object->snake_body->segments[segment_index].pitch = static_cast<i16>(static_cast<i32>(angle * 10430.400390625f));
     } while (object->snake_body->segment_count > ++segment_index);
 }
 

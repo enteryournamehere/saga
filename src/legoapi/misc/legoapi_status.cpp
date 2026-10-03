@@ -10,20 +10,20 @@ struct SHOPINPUT;
 
 extern "C" {
 
-    i32 DEVCDDVDROM_Interrogate(NUFILE_DEVICE *device) {
+    __attribute__((optimize("O2", "omit-frame-pointer"))) i32 DEVCDDVDROM_Interrogate(NUFILE_DEVICE *device) {
         device->status = 1;
         return 1;
     }
 
-    i32 DEVMEMORYCARD_Interrogate(NUFILE_DEVICE *device) {
+    __attribute__((optimize("O2", "omit-frame-pointer"))) i32 DEVMEMORYCARD_Interrogate(NUFILE_DEVICE *device) {
         device->status = 1;
         return 1;
     }
 
-    void DebugLog(void) {
+    __attribute__((optimize("O2", "omit-frame-pointer"))) void DebugLog(void) {
     }
 
-    void Debug_Print(void) {
+    __attribute__((optimize("O2", "omit-frame-pointer"))) void Debug_Print(void) {
     }
 
 } // extern "C"

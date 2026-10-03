@@ -416,8 +416,10 @@ static void PartCollide(PART_s *part, i32 three_dimensional) {
 void TiePart_Kill(PART_s *, i32) asm("_ZL12TiePart_KillP6PART_si") __attribute__((visibility("hidden")));
 void TiePart_Move(PART_s *, f32) asm("_ZL12TiePart_MoveP6PART_sf") __attribute__((visibility("hidden")));
 void TiePart_Impact(PART_s *) asm("_ZL14TiePart_ImpactP6PART_s") __attribute__((visibility("hidden")));
-void TiePart_KillExplode(PART_s *, i32) asm("_ZL19TiePart_KillExplodeP6PART_si") __attribute__((visibility("hidden")));
-void TieSpinZPart_Move(PART_s *, f32) asm("_ZL17TieSpinZPart_MoveP6PART_sf") __attribute__((visibility("hidden")));
+void TiePart_KillExplode(PART_s *, i32) asm("_ZL19TiePart_KillExplodeP6PART_si")
+    __attribute__((visibility("hidden")));
+void TieSpinZPart_Move(PART_s *, f32) asm("_ZL17TieSpinZPart_MoveP6PART_sf")
+    __attribute__((visibility("hidden")));
 
 __used__ void TiePart_Kill(PART_s *part, i32) {
     AddGameDebris(WORLD->debris_sys, 0x6a, &part->position);

@@ -350,15 +350,7 @@ struct GCutLookAtState {
     NUGCUTLOCATOR_s *locator;
 };
 
-i32 FindMtlInHGObj(nugscn_s *scene, i32 material_type) {
-    for (i32 index = 0; index < scene->nummtl; ++index) {
-        if (scene->mtls[index]->unknown_9a[0] == material_type) {
-            return index + 1;
-        }
-    }
-    return 0;
-}
-
+i32 FindMtlInHGObj(nugscn_s *, i32);
 i32 FindTexAnimFromMtl(nugscn_s *, numtl_s *);
 
 void instGetLookAtLocatorInfo(instNUGCUTSCENE_s *instance, instNUGCUTLOOKAT_s *opaque_state) {
@@ -401,13 +393,16 @@ void instGetLookAtLocatorInfo(instNUGCUTSCENE_s *instance, instNUGCUTLOOKAT_s *o
 }
 
 i32 instNuGCutGetNextRigidInfo(instNUGCUTSCENE_s *instance, float frame, i32 index, numtx_s *matrix,
-                               nuhspecial_s *special) {
+                              nuhspecial_s *special) {
     NUGCUTRIGIDSYS_s *rigid_system = instance->cutscene->rigid_system;
     instNUGCUTRIGIDSYS_s *instance_rigid_system = instance->rigid_instance;
+    asm volatile("" : "+c"(instance_rigid_system), "+d"(rigid_system));
     if (rigid_system == NULL || index >= rigid_system->count)
         return 0;
     NUGCUTRIGID_s *rigid = &rigid_system->rigids[index];
+    asm volatile("" : "+a"(rigid) : : "memory");
     instNUGCUTRIGID_s *instance_rigids = instance_rigid_system->rigids;
+    asm volatile("" : "+r"(instance_rigids));
     if ((rigid->flags & 6) != 0) {
         extern void NuGCutRigidCalcMtx(NUGCUTRIGID_s *, float, numtx_s *);
         NuGCutRigidCalcMtx(rigid, frame, matrix);

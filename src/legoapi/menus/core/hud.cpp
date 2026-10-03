@@ -123,6 +123,16 @@ void HudRadarPulse::Render() {
     }
 }
 
+void DrawSpaceLevel(spacelevel_s *) __asm__("_ZL14DrawSpaceLevelP12spacelevel_s")
+    __attribute__((used, visibility("hidden"), regparm(1)));
+void DrawSpaceLevel(spacelevel_s *) {
+    STUBBED();
+}
+
+static __used__ void DrawEpisodesMenu(int, float) {
+    STUBBED();
+}
+
 namespace {
     void _NuTimeBarSlotBegin(void) {
         STUBBED();

@@ -37,7 +37,7 @@ extern "C" {
     i32 nuspecial_shadowLightHaveClipOverrides;
 }
 
-extern "C" void NuSpecialList(NUGSCN *) {
+extern "C" void NuSpecialList(void) {
     // The original body is an intentional no-op.
 }
 

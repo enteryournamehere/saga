@@ -4,7 +4,6 @@
 #include "gameapi/ai/aisys/aipath.h"
 #include "legoapi/ai/core/ai_sys_stubs.h"
 #include "legoapi/ai/core/legoai.h"
-#include "legoapi/ai/game/creature.h"
 #include "legoapi/audio/sfx.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/characters/motion.h"
@@ -65,8 +64,8 @@ void ResetTrooperCannons(WORLDINFO_s *, i32);
 void InitTrooperCannons(WORLDINFO_s *);
 void HothBattleE_UpdateWave();
 void HothBattle_Melee_init(HOTHBATTLE_MELEE_s *);
-i32 HothBattle_StartNewWave();
 void HothBattle_ManageBackgroundCreatures();
+void SpawnMeleeCreatureType(i32);
 void UpdateTrooperCannons(WORLDINFO_s *);
 EXPLOSION *Detonate(NUVEC *, u16);
 extern "C" void NewPartRotation(PART_s *);
@@ -89,16 +88,7 @@ extern "C" {
     HOTHBATTLE_MELEE_s melee;
     u8 dagobahA_nodesNeedUpdating = 1;
 }
-struct HOTHBATTLEE_NETPACKET_s {
-    i16 targets[12];
-    char defeated[12];
-    f32 alpha[12];
-    i32 count;
-};
-DECOMP_ASSERT(sizeof(HOTHBATTLEE_NETPACKET_s) == 0x58, "Hoth panel packet size");
-DECOMP_ASSERT(offsetof(HOTHBATTLEE_NETPACKET_s, alpha) == 0x24, "Hoth panel packet alpha offset");
-DECOMP_ASSERT(offsetof(HOTHBATTLEE_NETPACKET_s, count) == 0x54, "Hoth panel packet count offset");
-HOTHBATTLEE_NETPACKET_s *hothbattlee_netpacket;
+void *hothbattlee_netpacket;
 
 void DagobahA_Init(WORLDINFO_s *world) {
     LevGizForce[0] = GizForce_FindByName(world->giz_force_sys, "force3");
@@ -472,8 +462,8 @@ void HothBattleC_Draw(WORLDINFO_s *world) {
 void HothBattleC_Init(WORLDINFO_s *world) {
     LevAIMessage[0] = CheckGizAIMessage(gizaimessagesys, "BombGen_ATAT_Killed", NULL);
     i32 direction;
-    LevPathCnx[0] =
-        AIPAthFindPathCnx(world->ai_sys, world->ai_sys->path_sys->active_path, "ice_a", "ice_b", &direction);
+    LevPathCnx[0] = AIPAthFindPathCnx(world->ai_sys, world->ai_sys->path_sys->active_path, "ice_a", "ice_b",
+                                      &direction);
     LevGizmo[0] = GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, "obstacle3");
     LevGizmo[1] = GizmoFindByName(world->gizmo_sys, gizmopickup_typeid, "m_pup7");
     NuSpecialSetVisibility(&LevHSpecial[10], 0);
@@ -520,7 +510,7 @@ void HothBattleE_Init(WORLDINFO_s *world) {
     trooper_side[9] = 1;
     if (NuIOS_IsLowEndDevice() == 0)
         InitMiniSnowTroopers(world, 10, 32, 0);
-    memset(melee.waves, 0, sizeof(melee) - offsetof(HOTHBATTLE_MELEE_s, waves));
+    memset(reinterpret_cast<u8 *>(&melee) + 0xc, 0, sizeof(melee) - 0xc);
     HothBattle_Melee_init(&melee);
     i32 count = NuSpecialFind(world->current_gscn, &LevHSpecial[0], "minifig_1_1", 1);
     count += NuSpecialFind(world->current_gscn, &LevHSpecial[1], "minifig_1_2", 1);
@@ -532,7 +522,7 @@ void HothBattleE_Init(WORLDINFO_s *world) {
         hothtroopers = LevHSpecial;
     if (netclient == 0)
         HothBattle_ManageBackgroundCreatures();
-    hothbattlee_netpacket = static_cast<HOTHBATTLEE_NETPACKET_s *>(SetLevelHack(sizeof(HOTHBATTLEE_NETPACKET_s)));
+    hothbattlee_netpacket = SetLevelHack(0x58);
 }
 
 void HothEscapeA_Init(WORLDINFO_s *world) {
@@ -804,8 +794,8 @@ void CloudCityTrapC_Panel(WORLDINFO_s *) {
 void CloudCityTrapC_Reset(WORLDINFO_s *world) {
     LevGameObject[0] = FindGameObject(id_DARTHVADER, 1, 1, 0, 0);
     LevAIMessage[0] = CheckGizAIMessage(gizaimessagesys, "ShowHearts", NULL);
-    LevPathCnx[0] =
-        AIPAthFindPathCnx(world->ai_sys, world->ai_sys->path_sys->active_path, "gap1_a", "gap1_b", &LevPathCnxDir);
+    LevPathCnx[0] = AIPAthFindPathCnx(world->ai_sys, world->ai_sys->path_sys->active_path, "gap1_a", "gap1_b",
+                                      &LevPathCnxDir);
     GIZMO *gizmo = GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, "obstacle3");
     LevGizmo[0] = gizmo;
     if (gizmo != NULL && gizmo->object != NULL)
@@ -907,7 +897,8 @@ void CloudCityTrapC_Update(WORLDINFO_s *) {
     u32 glide = LEGO_AIPATHCNX_R2D2GLIDE;
     u32 flags = connection->traversal_flags[direction] & ~(big_jump | glide | 0x80000000);
     u32 active;
-    if (LevGizObst[1] != NULL && LevGizObst[1]->anim_set->state != 0 && player->apiobj.collision_position.z < -20.0f)
+    if (LevGizObst[1] != NULL && LevGizObst[1]->anim_set->state != 0 &&
+        player->apiobj.collision_position.z < -20.0f)
         active = big_jump;
     else
         active = player->apiobj.collision_position.z < -21.0f ? big_jump : 0;
@@ -1064,8 +1055,8 @@ void CloudCityEscapeA_Update(WORLDINFO_s *) {
         }
     }
     GIZMO *gizmo = LevGizmo[0];
-    if (gizmo != NULL && LevAIMessage[1] != NULL && LevAIMessage[1]->value == 0.0f && gizmo->object != NULL &&
-        static_cast<GIZBUILDIT_s *>(gizmo->object)->build_state == 2)
+    if (gizmo != NULL && LevAIMessage[1] != NULL && LevAIMessage[1]->value == 0.0f &&
+        gizmo->object != NULL && static_cast<GIZBUILDIT_s *>(gizmo->object)->build_state == 2)
         LevAIMessage[1]->value = 1.0f;
 }
 
@@ -1085,56 +1076,56 @@ void CloudCityEscapeC_Update(WORLDINFO_s *) {
 i32 HothBattle_StartNewWave() {
     if (melee.field_0x2 != 0) {
         switch (melee.field_0x1) {
-            case 1:
-                melee.waves[0].field_0x18 = 9;
-                melee.waves[0].field_0x19 = 9;
-                melee.waves[0].character_id = id_PROBEDROID;
-                NuStrCpy(melee.waves[0].name, "Probe");
-                melee.creature_count = 1;
-                if (g_lowEndLevelBehaviour != 0) {
-                    melee.waves[0].field_0x18 = 5;
-                    melee.waves[0].field_0x19 = 5;
-                }
-                break;
-            case 2:
-                melee.waves[0].field_0x18 = 9;
-                melee.waves[0].field_0x19 = 9;
-                melee.waves[0].character_id = id_ATST_LOWRES;
-                NuStrCpy(melee.waves[0].name, "rider");
-                melee.creature_count = 1;
-                if (g_lowEndLevelBehaviour != 0) {
-                    melee.waves[0].field_0x18 = 5;
-                    melee.waves[0].field_0x19 = 5;
-                }
-                break;
-            case 3:
+        case 1:
+            melee.waves[0].field_0x18 = 9;
+            melee.waves[0].field_0x19 = 9;
+            melee.waves[0].character_id = id_PROBEDROID;
+            NuStrCpy(melee.waves[0].name, "Probe");
+            melee.creature_count = 1;
+            if (g_lowEndLevelBehaviour != 0) {
+                melee.waves[0].field_0x18 = 5;
+                melee.waves[0].field_0x19 = 5;
+            }
+            break;
+        case 2:
+            melee.waves[0].field_0x18 = 9;
+            melee.waves[0].field_0x19 = 9;
+            melee.waves[0].character_id = id_ATST_LOWRES;
+            NuStrCpy(melee.waves[0].name, "rider");
+            melee.creature_count = 1;
+            if (g_lowEndLevelBehaviour != 0) {
+                melee.waves[0].field_0x18 = 5;
+                melee.waves[0].field_0x19 = 5;
+            }
+            break;
+        case 3:
+            melee.waves[0].field_0x18 = 2;
+            melee.waves[0].field_0x19 = 2;
+            melee.waves[0].character_id = id_ATAT;
+            NuStrCpy(melee.waves[0].name, "ATAT");
+            melee.creature_count = 1;
+            break;
+        case 4:
+            melee.waves[0].field_0x18 = 3;
+            melee.waves[0].field_0x19 = 3;
+            melee.waves[0].character_id = id_PROBEDROID;
+            NuStrCpy(melee.waves[0].name, "Probe");
+            melee.waves[1].field_0x18 = 5;
+            melee.waves[1].field_0x19 = 5;
+            melee.waves[1].character_id = id_ATST_LOWRES;
+            NuStrCpy(melee.waves[1].name, "rider");
+            melee.waves[2].field_0x18 = 1;
+            melee.waves[2].field_0x19 = 1;
+            melee.waves[2].character_id = id_ATAT;
+            NuStrCpy(melee.waves[2].name, "ATAT");
+            melee.creature_count = 3;
+            if (g_lowEndLevelBehaviour != 0) {
                 melee.waves[0].field_0x18 = 2;
                 melee.waves[0].field_0x19 = 2;
-                melee.waves[0].character_id = id_ATAT;
-                NuStrCpy(melee.waves[0].name, "ATAT");
-                melee.creature_count = 1;
-                break;
-            case 4:
-                melee.waves[0].field_0x18 = 3;
-                melee.waves[0].field_0x19 = 3;
-                melee.waves[0].character_id = id_PROBEDROID;
-                NuStrCpy(melee.waves[0].name, "Probe");
-                melee.waves[1].field_0x18 = 5;
-                melee.waves[1].field_0x19 = 5;
-                melee.waves[1].character_id = id_ATST_LOWRES;
-                NuStrCpy(melee.waves[1].name, "rider");
-                melee.waves[2].field_0x18 = 1;
-                melee.waves[2].field_0x19 = 1;
-                melee.waves[2].character_id = id_ATAT;
-                NuStrCpy(melee.waves[2].name, "ATAT");
-                melee.creature_count = 3;
-                if (g_lowEndLevelBehaviour != 0) {
-                    melee.waves[0].field_0x18 = 2;
-                    melee.waves[0].field_0x19 = 2;
-                    melee.waves[1].field_0x18 = 2;
-                    melee.waves[1].field_0x19 = 2;
-                }
-                break;
+                melee.waves[1].field_0x18 = 2;
+                melee.waves[1].field_0x19 = 2;
+            }
+            break;
         }
     }
     melee.field_0x2 = 0;

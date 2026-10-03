@@ -130,12 +130,6 @@ DECOMP_ASSERT(offsetof(JumpTriggerPacket, velocity) == 0xc, "Jump trigger veloci
 DECOMP_ASSERT(offsetof(JumpTriggerPacket, start) == 0x2c, "Jump trigger start offset");
 DECOMP_ASSERT(offsetof(JumpTriggerPacket, end) == 0x34, "Jump trigger end offset");
 struct TouchSwipeSample {
-    TouchSwipeSample() {
-        position.x = 0.0f;
-        position.y = 0.0f;
-        time = 0.0f;
-    }
-
     NuVec2 position;
     f32 time;
     VuVec object_position;
@@ -143,24 +137,6 @@ struct TouchSwipeSample {
 };
 DECOMP_ASSERT(sizeof(TouchSwipeSample) == 0x2c, "Touch swipe sample ABI");
 struct TouchHolder {
-    TouchHolder() {
-        touch_id = -1;
-        is_down = 0;
-        field_0x6 = 0;
-        consumed = 0;
-        click_candidate = 0;
-        clicked = 0;
-        down_position.x = 0.0f;
-        down_position.y = 0.0f;
-        previous_target_object = NuMechPtr<MechObjectInterface, 4>();
-        sample_countdown = 0.0f;
-        held_time = 0.0f;
-        click_timer = 0.0f;
-        double_click_timer = 0.0f;
-        release_timer = 0.0f;
-        oldest_click_timer = 0.0f;
-    }
-
     i32 touch_id;
     u8 clicked;
     u8 is_down;
@@ -379,13 +355,12 @@ struct MechInputTouchGestureTrackingSystem : NuTouchInputElement {
     }
     ~MechInputTouchGestureTrackingSystem() override;
 
-    // Retail constructs each holder in order and destroys the array in reverse.
-    TouchHolder holders[10];
+    u8 holder_storage[sizeof(TouchHolder) * 10];
     GestureTrackerRegistration trackers[10];
 };
 DECOMP_ASSERT(sizeof(MechInputTouchGestureTrackingSystem) == 0x25d8, "Gesture tracking system ABI");
-DECOMP_ASSERT(offsetof(MechInputTouchGestureTrackingSystem, holders) == 0x30, "Gesture touch holder offset");
-DECOMP_ASSERT(offsetof(MechInputTouchGestureTrackingSystem, trackers) == 0x2588, "Gesture tracker registration offset");
+DECOMP_ASSERT(offsetof(MechInputTouchGestureTrackingSystem, trackers) == 0x2588,
+              "Gesture tracker registration offset");
 struct MechInputTouchMainController : NuTouchInputElement {
     enum eButtonTypes : u32 {};
     f32 stick_values[4];
@@ -441,9 +416,12 @@ struct MechInputTouchDeathStarTurretController : MechInputTouchMainController, M
     GIZTURRET_s *turret;
 };
 DECOMP_ASSERT(sizeof(MechInputTouchDeathStarTurretController) == 0x7c, "Death Star turret touch controller ABI");
-DECOMP_ASSERT(offsetof(MechInputTouchDeathStarTurretController, active) == 0x70, "Death Star turret active offset");
-DECOMP_ASSERT(offsetof(MechInputTouchDeathStarTurretController, aim_touch) == 0x74, "Death Star turret touch offset");
-DECOMP_ASSERT(offsetof(MechInputTouchDeathStarTurretController, turret) == 0x78, "Death Star turret object offset");
+DECOMP_ASSERT(offsetof(MechInputTouchDeathStarTurretController, active) == 0x70,
+              "Death Star turret active offset");
+DECOMP_ASSERT(offsetof(MechInputTouchDeathStarTurretController, aim_touch) == 0x74,
+              "Death Star turret touch offset");
+DECOMP_ASSERT(offsetof(MechInputTouchDeathStarTurretController, turret) == 0x78,
+              "Death Star turret object offset");
 
 struct MechInputTouchBonusCavalryController : MechInputTouchMainController, MechInputTouchGestureTracker {
     void Activate() override;
@@ -459,8 +437,10 @@ struct MechInputTouchBonusCavalryController : MechInputTouchMainController, Mech
     TouchHolder *touch;
 };
 DECOMP_ASSERT(sizeof(MechInputTouchBonusCavalryController) == 0x78, "Bonus cavalry touch controller ABI");
-DECOMP_ASSERT(offsetof(MechInputTouchBonusCavalryController, active) == 0x70, "Bonus cavalry touch active offset");
-DECOMP_ASSERT(offsetof(MechInputTouchBonusCavalryController, touch) == 0x74, "Bonus cavalry touch pointer offset");
+DECOMP_ASSERT(offsetof(MechInputTouchBonusCavalryController, active) == 0x70,
+              "Bonus cavalry touch active offset");
+DECOMP_ASSERT(offsetof(MechInputTouchBonusCavalryController, touch) == 0x74,
+              "Bonus cavalry touch pointer offset");
 
 struct MechInputTouchMainDummyButton : NuTouchInputElement {
     MechInputTouchMainController *controller;
@@ -639,7 +619,8 @@ struct MechInputTouchVirtualConsoleController : MechInputTouchMainController, Me
 DECOMP_ASSERT(sizeof(MechInputTouchVirtualConsoleController) == 0x98, "virtual controller ABI");
 DECOMP_ASSERT(offsetof(MechInputTouchVirtualConsoleController, dpad_touch) == 0x74,
               "virtual controller D-pad touch offset");
-DECOMP_ASSERT(offsetof(MechInputTouchVirtualConsoleController, dpad) == 0x8c, "virtual controller D-pad offset");
+DECOMP_ASSERT(offsetof(MechInputTouchVirtualConsoleController, dpad) == 0x8c,
+              "virtual controller D-pad offset");
 struct MechJumpAutoPilotAddon : MechAddon {
     static HashedKey s_hashId;
     void AnalyseJumpTrajectory();
@@ -924,6 +905,88 @@ struct MechAddonCollection {
 };
 DECOMP_ASSERT(sizeof(MechAddonCollection) == 0x14, "MechAddonCollection ABI");
 DECOMP_ASSERT(offsetof(MechAddonCollection, first) == 0x10, "MechAddonCollection head offset");
+// MechSystems is a BaseThing: AddOnceOnlyThings registers it on the
+// GameThingManager and ProcessThings dispatches into it every frame.
+// Virtual order = vtable for MechSystems @0x66b320 (rel slots):
+//   0x08 GetName, 0x18 Reset, 0x1c Process, 0x20 ProcessEvenWhenPaused,
+//   0x24 ProcessOnlyWhenPaused, 0x28 Render, 0x2c Display,
+//   0x34 EnterLevel(WORLDINFO), 0x38 ExitLevel(WORLDINFO)
+// (RemoveDependancies/EnterLevel(ThingLevelData)/ExitLevel(ThingLevelData)/
+//  Effects keep the BaseThing slots).
+struct MechSystems : BaseThing {
+    static u8 SkipTextScroll;
+    static MechSystems *Get();
+    virtual ~MechSystems();
+    char const *GetName() override;
+    void Reset(ThingResetData *) override;
+    void Process(ThingProcessData *) override;
+    void ProcessEvenWhenPaused(ThingProcessData *) override;
+    void ProcessOnlyWhenPaused(ThingProcessData *) override;
+    void Render(ThingRenderData *) override;
+    void Display(ThingRenderData *) override;
+    virtual void EnterLevel(WORLDINFO_s *);
+    virtual void ExitLevel(WORLDINFO_s *);
+    MoveToMarker *FindMoveToMarkerAtPos(VuVec const &, bool);
+    void HookUpClickToPressStart();
+    void Init();
+    void LoadPerm();
+    MechSystems();
+    MoveToMarker *NewMoveToMarker(MechObjectInterface &);
+    void NewRadarPulse(VuVec const &, bool);
+    void NewSwipeMarker(TouchHolder &, i32, SwipeDecalRenderer::Style);
+    MechTouchUITagButton *NewTagButton(GameObject_s &, TouchHolder &);
+    void RenderCurrentPlayerHighlight();
+    void UnhookClickToPressStart();
+
+    union {
+        u32 unknown_0x10[6];
+        struct {
+            struct numtl_s *location_ping_material;
+            struct numtl_s *swipe_material;
+            struct numtl_s *tag_hold_background_material;
+            struct numtl_s *radar_pulse_material;
+            union {
+                MechInputTouchGestureBasedController *gesture_controller;
+                MechInputTouchMainController *active_main_controller;
+            };
+            MechInputTouchMenuController *menu_controller;
+        };
+    };
+    MechInputTouchSystem input_touch_system;
+    MechInputTouchGestureTrackingSystem gesture_tracking_system;
+    u8 ui_storage[0x84];
+    u8 player_button_storage[0x164];
+    u8 pause_button_storage[0x44];
+    // Constructed after the UI controls, as in the original MechSystems ctor.
+    u32 click_to_press_start_tracker_storage;
+    MoveToMarker *move_to_markers[32];
+    SwipeDecalRenderer *swipe_markers[4];
+    MechTouchUITagButton *level_ui_elements[3];
+    HudRadarPulse *radar_pulses[4];
+    u8 initialized;
+    u8 field_0x2939[3];
+
+    MechTouchUI &TouchUI() {
+        return *reinterpret_cast<MechTouchUI *>(ui_storage);
+    }
+    MechTouchUIPlayerButton &PlayerButton() {
+        return *reinterpret_cast<MechTouchUIPlayerButton *>(player_button_storage);
+    }
+    MechTouchUIPauseButton &PauseButton() {
+        return *reinterpret_cast<MechTouchUIPauseButton *>(pause_button_storage);
+    }
+    ClickToPressStartGestureTracker &ClickToPressStartTracker() {
+        return *reinterpret_cast<ClickToPressStartGestureTracker *>(&click_to_press_start_tracker_storage);
+    }
+};
+DECOMP_ASSERT(sizeof(ClickToPressStartGestureTracker) == sizeof(u32), "click-to-start tracker size");
+DECOMP_ASSERT(offsetof(MechSystems, click_to_press_start_tracker_storage) == 0x2888, "click-to-start tracker offset");
+DECOMP_ASSERT(offsetof(MechSystems, gesture_tracking_system) == 0x84, "MechSystems gesture tracking system offset");
+DECOMP_ASSERT(offsetof(MechSystems, gesture_controller) == 0x20, "MechSystems gesture controller offset");
+DECOMP_ASSERT(offsetof(MechSystems, move_to_markers) == 0x288c, "MechSystems move markers offset");
+DECOMP_ASSERT(offsetof(MechSystems, swipe_markers) == 0x290c, "MechSystems swipe marker slots offset");
+DECOMP_ASSERT(offsetof(MechSystems, level_ui_elements) == 0x291c, "MechSystems level UI elements offset");
+DECOMP_ASSERT(offsetof(MechSystems, radar_pulses) == 0x2928, "MechSystems radar pulse slots offset");
 struct MechTempPosInterface : MechObjectInterface {
     VuVec position;
     f32 radius;

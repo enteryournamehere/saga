@@ -558,11 +558,13 @@ void CollectAllCharacters(i32 only_story) {
 
     if (only_story == 0) {
         for (i32 i = 0; i < CollectCount; ++i) {
+            __asm__ __volatile__("" : "+r"(i));
             if (CollectList[i].type != 8)
                 AddToCollection(CollectList[i].id);
         }
     } else {
         for (i32 i = 0; i < CollectCount; ++i) {
+            __asm__ __volatile__("" : "+r"(i));
             if (CollectList[i].type == 1)
                 AddToCollection(CollectList[i].id);
         }
@@ -572,7 +574,8 @@ void CollectAllCharacters(i32 only_story) {
 extern i32 freeplaymode;
 extern i32 freeplay_selected[2];
 static __used__ void Collection_GetSelectingPlayerIDs(i16 *ids) {
-    if (WORLD->area != NULL && WORLD->area == HUB_ADATA && GetMenuID() == 17 && static_cast<u32>(freeplaymode) <= 3) {
+    if (WORLD->area != NULL && WORLD->area == HUB_ADATA && GetMenuID() == 17 &&
+        static_cast<u32>(freeplaymode) <= 3) {
         i32 offset = 0;
         if (MenuPacket.active_player[0] != 0 && freeplay_selected[0] <= 2) {
             ids[0] = MenuPacket.player_model[0];
@@ -599,6 +602,31 @@ void ReleaseEat(GameObject_s *object) {
         object->field_0x7a5 = 0xff;
     }
     object->field_0xe24 = flags & ~1;
+}
+
+i32 ShipDropCoins(starfighter_s *fighter) {
+    u8 *space = reinterpret_cast<u8 *>(WORLD->space_level);
+    i32 *count = reinterpret_cast<i32 *>(space + 0x62ef0);
+    struct ShipCoinRecord {
+        i32 id;
+        f32 height;
+        u8 reserved[8];
+    };
+    ShipCoinRecord *records = reinterpret_cast<ShipCoinRecord *>(space + 0x62ef4);
+    u8 *fighter_data = reinterpret_cast<u8 *>(fighter);
+    u8 *object = *reinterpret_cast<u8 **>(fighter_data + 0xd4);
+    i32 id = *reinterpret_cast<i32 *>(object + 0x524);
+    f32 height = *reinterpret_cast<f32 *>(fighter_data + 0xf8);
+    for (i32 i = 0; i < *count; ++i) {
+        if (records[i].id == id && records[i].height == height)
+            return 0;
+    }
+    if (*count > 255)
+        return 0;
+    records[*count].id = id;
+    records[*count].height = height;
+    ++*count;
+    return 1;
 }
 
 i32 AddToCollection(i32 id) {

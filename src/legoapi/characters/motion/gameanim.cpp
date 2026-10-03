@@ -643,8 +643,8 @@ void Animate_BEAST(GameObject_s *object) {
             const bool has_run = object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_RUN] != NULL;
             if (has_run && has_walk) {
                 const f32 threshold = (character->walk_speed + character->run_speed) * 0.5f;
-                packet.requested_animation =
-                    threshold < pad->input_magnitude ? CHARACTER_ANIMATION_RUN : CHARACTER_ANIMATION_WALK;
+                packet.requested_animation = threshold < pad->input_magnitude ? CHARACTER_ANIMATION_RUN
+                                                                              : CHARACTER_ANIMATION_WALK;
             } else if (has_run) {
                 packet.requested_animation = CHARACTER_ANIMATION_RUN;
             } else if (has_walk) {

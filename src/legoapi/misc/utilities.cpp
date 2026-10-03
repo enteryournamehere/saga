@@ -95,6 +95,7 @@ i32 getNumDigits(i32 value) {
     if (__builtin_expect(value <= 9, 0))
         return 1;
     i32 threshold = 10;
+    asm volatile("" : "+d"(threshold) : : "eax");
     i32 digits = 1;
     do {
         threshold *= 10;
@@ -114,7 +115,9 @@ i32 LineCrossedXZ(f32 ax, f32 az, f32 bx, f32 bz, f32 cx, f32 cz, f32 dx, f32 dz
     if (!(third >= 0.0f))
         return 1;
     f32 az_to_dz = az;
+    asm volatile ("" : "+x"(az_to_dz));
     i32 result = 2;
+    asm volatile ("" : "+a"(result));
     az_to_dz -= dz;
     f32 fourth = (bx - dx) * az_to_dz + (bz - dz) * (dx - ax);
     if (fourth >= 0.0f)
@@ -122,8 +125,9 @@ i32 LineCrossedXZ(f32 ax, f32 az, f32 bx, f32 bz, f32 cx, f32 cz, f32 dx, f32 dz
     return 1;
 }
 
-i32 ScaleAndClamp(volatile i32 value) {
+__attribute__((optimize("no-omit-frame-pointer"))) i32 ScaleAndClamp(volatile i32 value) {
     i32 scaled = value << 7;
+    asm volatile("" : "+r"(scaled));
     scaled += scaled << 5;
     value = scaled / 1048576;
     if (value < -128)
@@ -394,7 +398,8 @@ i32 MatrixReflection(numtx_s *matrix, i32 axis, f32 plane, f32 override_plane, n
 }
 
 i32 OnOrOutsidePlane(nuvec_s *point, nuvec_s *plane_point, nuvec_s *normal) {
-    f32 distance = (point->x - plane_point->x) * normal->x + (point->y - plane_point->y) * normal->y +
+    f32 distance = (point->x - plane_point->x) * normal->x +
+                   (point->y - plane_point->y) * normal->y +
                    (point->z - plane_point->z) * normal->z;
     return distance >= 0.0f;
 }
@@ -512,10 +517,12 @@ f32 LineToPlaneDistance(VuVec &origin, VuVec &direction, VuVec &plane) {
     f32 second = (origin.x + direction.x) * plane.x + (origin.y + direction.y) * plane.y +
                  (origin.z + direction.z) * plane.z + plane.w;
     if (first < 0.0f && second < 0.0f) {
-        return first > second ? first : second;
+        asm ("maxss %1, %0" : "+x"(first) : "x"(second));
+        return first;
     }
     if (first > 0.0f && second > 0.0f) {
-        return first < second ? first : second;
+        asm ("minss %1, %0" : "+x"(first) : "x"(second));
+        return first;
     }
     return 0.0f;
 }
@@ -549,7 +556,8 @@ f32 LineToPointDistance(VuVec &origin, VuVec &direction, VuVec &point, VuVec *cl
     return distance;
 }
 
-f32 RatioBetweenEdgesXZ(nuvec_s *point, nuvec_s *edge_a0, nuvec_s *edge_a1, nuvec_s *edge_b0, nuvec_s *edge_b1) {
+f32 RatioBetweenEdgesXZ(nuvec_s *point, nuvec_s *edge_a0, nuvec_s *edge_a1, nuvec_s *edge_b0,
+                        nuvec_s *edge_b1) {
     f32 distance_a = DistanceToLineXZ(point, edge_a0, edge_a1);
     f32 distance_b = DistanceToLineXZ(point, edge_b0, edge_b1);
     return distance_a / (distance_a + distance_b);
@@ -680,7 +688,8 @@ char *IToX(char *output, i32 value) {
     char hex[] = "0123456789abcdef";
     output[0] = hex[(static_cast<u32>(value) >> 28) & 15];
     output[1] = hex[(value >> 24) & 15];
-    i32 shifted = static_cast<u32>(value) << 8;
+    asm volatile("" ::: "memory");
+    i32 shifted = value << 8;
     output[2] = hex[(static_cast<u32>(shifted) >> 28) & 15];
     output[3] = hex[(shifted >> 24) & 15];
     i8 byte = static_cast<i8>(value >> 8);
@@ -744,10 +753,12 @@ void CapVec(nuvec_s *input, float maximum, nuvec_s *output) {
 char *I64ToX(char *output, i64 value) {
     i32 high;
     __builtin_memcpy(&high, reinterpret_cast<const char *>(&value) + 4, sizeof(high));
+    asm volatile ("" : "+S"(high), "+a"(output) : : "memory");
     char hex[] = "0123456789abcdef";
     output[0] = hex[(static_cast<u32>(high) >> 28) & 15];
     output[1] = hex[(high >> 24) & 15];
-    i32 shifted_high = static_cast<u32>(high) << 8;
+    asm volatile ("" ::: "memory");
+    i32 shifted_high = high << 8;
     output[2] = hex[(static_cast<u32>(shifted_high) >> 28) & 15];
     output[3] = hex[(shifted_high >> 24) & 15];
     i8 byte_high = static_cast<i8>(high >> 8);
@@ -759,7 +770,7 @@ char *I64ToX(char *output, i64 value) {
     __builtin_memcpy(&low, &value, sizeof(low));
     output[8] = hex[(static_cast<u32>(low) >> 28) & 15];
     output[9] = hex[(low >> 24) & 15];
-    i32 shifted_low = static_cast<u32>(low) << 8;
+    i32 shifted_low = low << 8;
     output[10] = hex[(static_cast<u32>(shifted_low) >> 28) & 15];
     output[11] = hex[(shifted_low >> 24) & 15];
     i8 byte_low = static_cast<i8>(low >> 8);
@@ -771,6 +782,7 @@ char *I64ToX(char *output, i64 value) {
 }
 
 i64 XToI64(char *input) {
+    asm volatile ("" : "+c"(input));
     char digit = input[0];
     i32 decimal = digit - '0';
     i32 letter = digit - 'W';
@@ -849,10 +861,12 @@ i32 RotDiff(u16 current, u16 target) {
 }
 
 static const i32 cubeEdgeIndices[12][2] = {
-    {0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7},
+    {0, 1}, {1, 2}, {2, 3}, {3, 0},
+    {4, 5}, {5, 6}, {6, 7}, {7, 4},
+    {0, 4}, {1, 5}, {2, 6}, {3, 7},
 };
 
-i32 rawClip(VuVec const *input, VuVec *output, i32, VuVec const &plane) {
+i32 __attribute__((force_align_arg_pointer)) rawClip(VuVec const *input, VuVec *output, i32, VuVec const &plane) {
     i32 count __attribute__((aligned(16))) = 0;
     for (i32 edge = 0; edge < 12; ++edge) {
         VuVec const &a = input[cubeEdgeIndices[edge][0]];
@@ -866,7 +880,18 @@ i32 rawClip(VuVec const *input, VuVec *output, i32, VuVec const &plane) {
             output[count].w = a.w;
             if (db > 0.0f) {
                 count += 2;
+#if defined(__i386__) || defined(__x86_64__)
+                VuVec *dest = &output[count - 1];
+                asm volatile (
+                    "xorps %%xmm0, %%xmm0\n\t"
+                    "movlps (%1), %%xmm0\n\t"
+                    "movhps 8(%1), %%xmm0\n\t"
+                    "movlps %%xmm0, (%0)\n\t"
+                    "movhps %%xmm0, 8(%0)"
+                    : : "r"(dest), "r"(&b) : "xmm0", "memory");
+#else
                 output[count - 1] = b;
+#endif
             } else {
                 count += 2;
                 f32 t = da / (da - db);
@@ -909,7 +934,7 @@ i32 findrange(nugscn_s *scene, i32 first_joint) {
     return end_joint - 1;
 }
 
-static __used__ i32 MatchExtension(char *candidate, char *extension, i32 remaining) {
+static __used__ __attribute__((optimize("O0,no-omit-frame-pointer"))) i32 MatchExtension(char *candidate, char *extension, i32 remaining) {
     while (*candidate != 0) {
         --extension;
         if (remaining == 0)

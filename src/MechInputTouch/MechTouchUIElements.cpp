@@ -699,7 +699,8 @@ void MechTouchUIPlayerButton::Process(float) {
         }
         for (i32 slot = 0; slot < 8; ++slot) {
             GameObject_s *target = Player[slot];
-            if (target != NULL && target->id == target_ids[target_index] && TouchHacks::CanTagTo(*player, *target)) {
+            if (target != NULL && target->id == target_ids[target_index] &&
+                TouchHacks::CanTagTo(*player, *target)) {
                 field_0x144[target_index] = 1;
                 MechSystems::Get()->NewRadarPulse(position, false);
                 break;

@@ -369,14 +369,14 @@ extern "C" {
                 return 2;
             }
 
-            distance0 = center->x * ScissorPlanes.m00 + center->y * ScissorPlanes.m10 + center->z * ScissorPlanes.m20 +
-                        ScissorPlanes.m30;
-            distance1 = center->x * ScissorPlanes.m01 + center->y * ScissorPlanes.m11 + center->z * ScissorPlanes.m21 +
-                        ScissorPlanes.m31;
-            distance2 = center->x * ScissorPlanes.m02 + center->y * ScissorPlanes.m12 + center->z * ScissorPlanes.m22 +
-                        ScissorPlanes.m32;
-            distance3 = center->x * ScissorPlanes.m03 + center->y * ScissorPlanes.m13 + center->z * ScissorPlanes.m23 +
-                        ScissorPlanes.m33;
+            distance0 = center->x * ScissorPlanes.m00 + center->y * ScissorPlanes.m10 +
+                        center->z * ScissorPlanes.m20 + ScissorPlanes.m30;
+            distance1 = center->x * ScissorPlanes.m01 + center->y * ScissorPlanes.m11 +
+                        center->z * ScissorPlanes.m21 + ScissorPlanes.m31;
+            distance2 = center->x * ScissorPlanes.m02 + center->y * ScissorPlanes.m12 +
+                        center->z * ScissorPlanes.m22 + ScissorPlanes.m32;
+            distance3 = center->x * ScissorPlanes.m03 + center->y * ScissorPlanes.m13 +
+                        center->z * ScissorPlanes.m23 + ScissorPlanes.m33;
             NuVecMtxTransform(reinterpret_cast<NUVEC *>(&radius), extent, &AbsScissorPlanes);
 
             if (distance0 > radius.x || distance1 > radius.y || distance2 > radius.z || distance3 > radius.w) {
@@ -2305,6 +2305,37 @@ extern "C" {
     // Math / geometry
     // ---------------------------------------------------------------------------
 
+    f32 NuLog2(f32 value) {
+        return NuLog10(value) * 3.321928f;
+    }
+    static f32 pow_x[32], pow_y[32], pow_rv[32];
+    static i32 pow_cache_free;
+    f32 NuPow(f32 x, f32 y) {
+        if (x == 0.0f)
+            return 0.0f;
+        static i32 first_time = 1;
+        if (first_time != 0) {
+            first_time = 0;
+            for (i32 i = 0; i < 32; ++i)
+                pow_x[i] = FLT_MAX;
+        }
+        for (i32 i = 0; i < 32; ++i) {
+            if (pow_x[i] == x && pow_y[i] == y)
+                return pow_rv[i];
+        }
+        f32 result = static_cast<f32>(exp(static_cast<double>(y) * log(static_cast<double>(x))));
+        pow_x[pow_cache_free] = x;
+        pow_y[pow_cache_free] = y;
+        pow_rv[pow_cache_free] = result;
+        pow_cache_free = (pow_cache_free + 1) & 31;
+        return result;
+    }
+    i32 NuPower2(i32 value) {
+        i32 power = value > 127 ? 128 : 1;
+        while (power < value)
+            power += power;
+        return power;
+    }
     // ---------------------------------------------------------------------------
     // Quick-font platform rendering (the generic font run lives in nuqfnt.cpp)
     // ---------------------------------------------------------------------------
@@ -3229,7 +3260,7 @@ extern "C" {
         light->setupCustomCameraFrustum(camera, splits, count);
     }
     i32 NuDynamicLightTestShadowExtrusionExtent(NuDynamicLight *light, const NUVEC *center, const NUVEC *extent,
-                                                i32 render_set) {
+                                              i32 render_set) {
         VuVec minimum;
         VuVec maximum;
         minimum.x = center->x - extent->x;
@@ -4194,7 +4225,7 @@ extern "C" {
         }
         return 0;
     }
-    static inline void NuPadCopyTouchFields(volatile u8 *source_x) {
+    static inline __attribute__((always_inline)) void NuPadCopyTouchFields(volatile u8 *source_x) {
         f32 x = *reinterpret_cast<volatile f32 *>(source_x);
         u8 active = source_x[-4];
         *reinterpret_cast<volatile f32 *>(source_x - 24) = x;
@@ -4211,6 +4242,136 @@ extern "C" {
         u32 id = *reinterpret_cast<volatile u32 *>(source_x + 16);
         *reinterpret_cast<volatile f32 *>(source_x - 12) = old_y;
         *reinterpret_cast<volatile u32 *>(source_x - 8) = id;
+    }
+    void NuPad_Interface_TouchScreenInput(i32 x, i32 y, i32 prior_x, i32 prior_y, i32 is_down, i32 is_up,
+                                          i32 is_move, i32 is_cancelled) {
+        NuInputDevice *device = inputManager->GetDevice(0);
+        if (device == NULL) {
+            return;
+        }
+
+        // The retail routine writes directly to the touch data at device+0x198.
+        NuInputTouchData *data = reinterpret_cast<NuInputTouchData *>(reinterpret_cast<u8 *>(device) + 0x198);
+        f32 width = static_cast<f32>(g_backingWidth);
+        f32 height = static_cast<f32>(g_backingHeight);
+        f32 old_x = static_cast<f32>(prior_x) / width;
+        f32 old_y = static_cast<f32>(prior_y) / height;
+
+        if (is_cancelled != 0) {
+            f32 aspect = width / height;
+            i32 count = data->touch_count;
+            if (count > 0) {
+                f32 nearest_distance = FLT_MAX;
+                i32 nearest = 0;
+                for (i32 i = 0; i < count; ++i) {
+                    f32 dx = (data->touch_events[i].unknown_04 - old_x) * aspect;
+                    f32 dy = data->touch_events[i].unknown_08 - old_y;
+                    f32 distance = dx * dx + dy * dy;
+                    if (distance < nearest_distance) {
+                        nearest_distance = distance;
+                        nearest = i;
+                    }
+                }
+                if (!(nearest_distance > 0.04f)) {
+                    used_touch_IDs[data->touch_events[nearest].unknown_14] = false;
+                    volatile u8 *source_x =
+                        reinterpret_cast<volatile u8 *>(&data->touch_events[nearest + 1].unknown_04);
+                    for (i32 i = nearest + 1; i < count; ++i) {
+                        NuPadCopyTouchFields(source_x);
+                        source_x += sizeof(NuInputTouch);
+                    }
+                    NuInputTouch *last = &data->touch_events[--data->touch_count];
+                    last->unknown_00 = 0;
+                    last->unknown_01 = 0;
+                    last->unknown_02 = 0;
+                    last->unknown_04 = 0.0f;
+                    last->unknown_08 = 0.0f;
+                    last->unknown_0c = 0.0f;
+                    last->unknown_10 = 0.0f;
+                    last->unknown_14 = 0;
+                    return;
+                }
+            }
+            memset(data->touch_events, 0, sizeof(data->touch_events));
+            data->touch_count = 0;
+            memset(used_touch_IDs, 0, sizeof(used_touch_IDs));
+            return;
+        }
+
+        f32 new_x = static_cast<f32>(x) / width;
+        f32 new_y = static_cast<f32>(y) / height;
+        if (is_move != 0) {
+            i32 free_id = 0;
+            while (free_id < 10 && used_touch_IDs[free_id]) {
+                ++free_id;
+            }
+            for (i32 i = 0; i < 10; ++i) {
+                NuInputTouch *touch = &data->touch_events[i];
+                if (!touch->unknown_00 && !touch->unknown_01 && !touch->unknown_02) {
+                    touch->unknown_00 = 0;
+                    touch->unknown_01 = 0;
+                    touch->unknown_02 = 1;
+                    touch->unknown_04 = new_x;
+                    touch->unknown_08 = new_y;
+                    touch->unknown_0c = 0.0f;
+                    touch->unknown_10 = 0.0f;
+                    touch->unknown_14 = free_id;
+                    used_touch_IDs[free_id] = true;
+                    ++data->touch_count;
+                    return;
+                }
+            }
+            return;
+        }
+
+        if (is_up != 0) {
+            i32 selected = 10;
+            for (i32 i = 0; i < 10; ++i) {
+                volatile NuInputTouch *touch = &data->touch_events[i];
+                if ((touch->unknown_00 || touch->unknown_02) &&
+                    ((touch->unknown_04 == old_x && touch->unknown_08 == old_y) ||
+                     (touch->unknown_0c == old_x && touch->unknown_10 == old_y))) {
+                    selected = i;
+                    break;
+                }
+            }
+            used_touch_IDs[data->touch_events[selected].unknown_14] = false;
+            volatile u8 *source_x = reinterpret_cast<volatile u8 *>(&data->touch_events[selected + 1].unknown_04);
+            for (i32 i = selected + 1; i < static_cast<i32>(data->touch_count); ++i) {
+                NuPadCopyTouchFields(source_x);
+                source_x += sizeof(NuInputTouch);
+            }
+            NuInputTouch *last = &data->touch_events[--data->touch_count];
+            last->unknown_00 = 0;
+            last->unknown_01 = 0;
+            last->unknown_02 = 0;
+            last->unknown_04 = 0.0f;
+            last->unknown_08 = 0.0f;
+            last->unknown_0c = 0.0f;
+            last->unknown_10 = 0.0f;
+            last->unknown_14 = 0;
+            return;
+        }
+
+        if (is_down != 0) {
+            i32 selected = 10;
+            for (i32 i = 0; i < 10; ++i) {
+                volatile NuInputTouch *touch = &data->touch_events[i];
+                if ((touch->unknown_00 || touch->unknown_02) && touch->unknown_04 == old_x &&
+                    touch->unknown_08 == old_y) {
+                    selected = i;
+                    break;
+                }
+            }
+            NuInputTouch *touch = &data->touch_events[selected];
+            touch->unknown_00 = 1;
+            touch->unknown_01 = 0;
+            touch->unknown_02 = 0;
+            touch->unknown_04 = new_x;
+            touch->unknown_08 = new_y;
+            touch->unknown_0c = old_x;
+            touch->unknown_10 = old_y;
+        }
     }
     void NuPad_Interface_TouchScreenInput(i32 x, i32 y, i32 prior_x, i32 prior_y, i32 is_down, i32 is_up, i32 is_move,
                                           i32 is_cancelled) {
@@ -4726,6 +4887,15 @@ struct nuframebuffer_s;
 struct nushaderobject_s;
 union variptr_u;
 
+static char g_smbPath[256];
+
+void Nu360ConfigureSMBSharing(char **path) {
+    NuFileSetCurrentDirectory("d:\\");
+    if (static_cast<bool>(NuFileLoadBuffer("smbpath.txt", g_smbPath, sizeof(g_smbPath)))) {
+        NuFileSetCurrentDirectory(g_smbPath);
+        *path = g_smbPath;
+    }
+}
 void NuLgtSetArcMatEx(i32 type, numtl_s *material, f32 u0, f32 v0, f32 u1, f32 v1) {
     if (type > 3)
         return;

@@ -10,7 +10,7 @@ struct SHOPINPUT;
 
 extern NUMEMFILE memfiles[20];
 
-void StillMemRestore() {
+__attribute__((optimize("O2", "omit-frame-pointer"))) void StillMemRestore() {
     // No operation in the Android build.
 }
 

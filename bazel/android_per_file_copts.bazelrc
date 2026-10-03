@@ -247,7 +247,7 @@ build:target --per_file_copt=^src/legoapi/cutscenes/cutscene_stubs\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/render/light/fade\.cpp$@-O2
 build:target --per_file_copt=^src/legoapi/render/light/lighting\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/render/light/faders\.cpp$@-O3
-build:target --per_file_copt=^src/legoapi/render/fx/parts\.cpp$@-O2
+build:target --per_file_copt=^src/legoapi/render/fx/parts\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/render/light/shadow\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/render/light/surfaces\.cpp$@-O3
 build --per_file_copt=^src/nu2api/nu3d/glutils\.c$@-x,c++,-std=gnu++11

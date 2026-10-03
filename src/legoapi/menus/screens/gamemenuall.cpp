@@ -18,8 +18,6 @@
 #include "legoapi/menus/screens/gamestructure.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/level.h"
-#include "legoapi/world/levels/episode.h"
-#include "legoapi/cutscenes/cutscenes.h"
 #include "legoapi/world/mission.h"
 #include "legoapi/world/world.h"
 #include "legoapi/audio/audio.h"
@@ -30,11 +28,9 @@
 #include "nu2api/nu3d/nugscn.h"
 #include "nu2api/nu3d/nuqfnt.h"
 #include "nu2api/nu3d/nuprim.h"
-#include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nucore/nustring.h"
-#include "nu2api/nucore/nupad.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/nufloat.h"
 
@@ -50,18 +46,6 @@ static f32 MissionIconScale[20];
 static f32 MissionIconTargetX[20];
 static f32 MissionIconX[20];
 extern i32 NextArea_FreePlay;
-extern char FS_LastFileName[64];
-extern char *FS_CurrentCursorPos;
-extern "C" i32 MenuASCancelFinished;
-extern f32 memcard_autosavecanceldelay;
-extern i32 FS_NumFiles;
-extern i32 FS_SortMode;
-void FS_GetDirList(char *, char *, char *);
-i32 FS_GetPadWithRepeat(nupad_s *, f32, f32);
-void FS_MoveCursorDown(i32);
-void FS_MoveCursorUp(i32);
-void FS_SetCursorToLastFileName();
-f32 FS_GetDirTextWidth();
 void InitMission(MISSIONSYS *, i32);
 extern f32 ICONSIZE, ICONX, DROPINALPHA, HUB_EPISODETITLEY;
 extern i16 tSELECT, tSELECTED, tSELECTING, tEXIT, tCANCEL;
@@ -71,8 +55,8 @@ f32 GetAspectRatio();
 extern "C" void BackupMenu(void);
 extern "C" void BackupMenuNoFn(void);
 extern "C" void PlaySfxById(i32 sfx_id, nuvec_s *position);
-extern "C" void SmartText(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment,
-                           u8 red, u8 green, u8 blue, f32 max_width, i32 max_lines);
+extern "C" void SmartText(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment, u8 red,
+                          u8 green, u8 blue, f32 max_width, i32 max_lines);
 extern "C" void NuIOS_RecordFlurryEvent(char *event_name);
 extern "C" void DrawMenuButtonPrompts(i32 confirm_prompt, i32 cancel_prompt, i32 enabled, u8 red, u8 green, u8 blue,
                                       u8 alpha);
@@ -168,10 +152,9 @@ extern "C" void Draw_SPACENEEDED(void);
 extern "C" void Draw_CHECKINGMEMORYCARD(void);
 extern "C" void Draw_DONOTREMOVEMEMORYCARD(void);
 void Draw_OK(MENU_s *menu);
-void RenderFileSel3(i32);
-void ProcessFileSel3(float, nupad_s *);
 
 i32 memcard_cardchanged;
+i32 MenuASCancelFinished;
 i32 MenuCardWarningState;
 i32 ButtonScaleMode;
 i32 Menu_InLoadFlow;
@@ -410,11 +393,6 @@ void MenuExitSave(MENU_s *) {
 void MenuDrawClips(MENU_s *) {
 }
 
-void MenuDrawHints(MENU_s *menu) {
-    NuStrCpy(MenuHeader, TTab[tHOWTOPLAY]);
-    GameDrawMenuEntry(menu, TTab[tBACK]);
-}
-
 void MenuEnterLoad(MENU_s *menu) {
     memcard_cardchanged = 0;
     i32 last_column = SAVESLOTS - 1;
@@ -542,25 +520,22 @@ void MenuDrawExtras(MENU_s *menu) {
             const i16 text_id = entry.text_id != NULL ? *entry.text_id : -1;
             const char *name = text_id >= 0 && TTab[text_id] != NULL ? TTab[text_id] : entry.name;
             snprintf(text, sizeof(text), "%s: %s", name != NULL ? name : "", value);
-        }
-
-        if (cheat > 7) {
+        } else {
             dme_rgb = 1;
+            dme_r = 0xdf;
+            dme_g = 0x3f;
+            dme_b = 0;
         }
-        dme_r = 0xdf;
-        dme_g = 0x3f;
-        dme_b = 0;
 
-        const f32 distance = NuFabs(menu->draw_y);
-        if (distance > 0.15f) {
-            alpha = distance > 0.6f ? 0.0f : alpha * (1.0f - (distance - 0.15f) / 0.45000002f);
+        if (menu->draw_y > 0.6f) {
+            alpha = menu->draw_y > 0.9f ? 0.0f : alpha * (1.0f - (menu->draw_y - 0.6f) / 0.3f);
         }
         if (Paused != 0) {
             dme_align = PauseMenus_Align;
             menu->draw_x = PauseMenus_X;
         }
         dme_sy = menu->item_scale;
-        DrawMenuEntryEx(menu, text, static_cast<u8>(static_cast<i32>(static_cast<f32>(MenuA) * alpha)));
+        DrawMenuEntryEx(menu, text, static_cast<i32>(static_cast<f32>(MenuA) * alpha));
     }
 }
 
@@ -635,121 +610,8 @@ void MenuUpdateSave(MENU_s *menu) {
     }
 }
 
-extern "C" void NuRndrRect2d(f32, f32, f32, f32, f32, i32, NUMTL *);
-extern char *FS_CurrentPos, *FS_FileListEnd;
-extern i32 FS_CurrentPosFileNum;
-void FS_MakeTimeString(FS_FILEENTRYHDR *, char *);
-void FS_MakeDateString(FS_FILEENTRYHDR *, char *);
-
-static __attribute__((noinline, used)) void RenderFileSel3Part(i32 mode) {
-
-    f32 x = FS_X;
-    f32 y = FS_Y;
-    f32 width = FS_Width;
-    NuQFntPushPrintMode(2);
-    NuQFntPushCoordinateSystem(NUQFNT_CSMODE_PS2);
-    NuQFntSet(system_qfont);
-    NuQFntSetPointSize(system_qfont, 1.0f, 1.0f);
-    f32 font_height = NuQFntHeight(system_qfont);
-    f32 baseline = NuQFntBaseline(system_qfont);
-    f32 list_width = width + (FS_NumFiles > 14 ? 8.0f : 0.0f);
-    f32 height = mode == 0 ? font_height * 16.0f + 4.0f : font_height * 17.0f + 8.0f;
-    NuRndrRect2d(x, y, 0.0f, list_width + 4.0f, height, 0xff808080, NULL);
-    FS_W = list_width + 4.0f;
-    FS_H = height;
-    x += 8.0f;
-    y += 1.0f;
-    if (mode != 0) {
-        NuRndrRect2d(x, y, 0.0f, list_width, font_height + 2.0f, 0xff404040, NULL);
-        NuRndrLine3dDbg(x, y, 0.0f, x + width, y, 0.0f, 0xff808080);
-        NuQFntSetColour(system_qfont, 0x80808080);
-        NuQFntMove(system_qfont, x + 2.0f, y + baseline, 0.0f);
-        NuQFntPrintU(system_qfont, FS_Title);
-        y += font_height + 2.0f;
-    }
-    NuRndrRect2d(x, y, 0.0f, list_width, font_height + 2.0f, 0x20202020, NULL);
-    char display_path[264];
-    if (FS_ShowVolumes != 0)
-        NuStrCpy(display_path, "Volumes:-");
-    else {
-        NuStrCpy(display_path, FS_Path);
-        f32 length = NuQFntPrintLenU(system_qfont, display_path);
-        if (length > list_width - 8.0f) {
-            char *separator = NuStrChr(display_path, '\\');
-            if (separator != NULL) {
-                char *next = NuStrChr(separator + 1, '\\');
-                if (next != NULL) {
-                    char suffix[132];
-                    char *last = NuStrRChr(display_path, '\\');
-                    if (last != NULL && last > next) {
-                        NuStrCpy(suffix, last);
-                        *next = 0;
-                        NuStrCat(display_path, "\\....");
-                        NuStrCat(display_path, suffix);
-                    }
-                }
-            }
-            length = NuQFntPrintLenU(system_qfont, display_path);
-            if (length > list_width - 8.0f)
-                NuQFntSetPointSize(system_qfont, (list_width - 8.0f) / length, 1.0f);
-        }
-    }
-    NuQFntSetColour(system_qfont, 0x80408080);
-    NuQFntMove(system_qfont, x + 2.0f, y + baseline, 0.0f);
-    NuQFntPrintU(system_qfont, display_path);
-    NuQFntSetPointSize(system_qfont, 1.0f, 1.0f);
-    y += font_height + 2.0f;
-
-    NuRndrRect2d(x, y, 0.0f, width, font_height * 14.0f, 0x20202020, NULL);
-    if (FS_NumFiles > 14) {
-        NuRndrRect2d(x + width, y, 0.0f, 8.0f, font_height * 14.0f, 0xff646464, NULL);
-        f32 thumb_height = font_height * 14.0f * 14.0f / FS_NumFiles;
-        if (thumb_height < 4.0f)
-            thumb_height = 4.0f;
-        f32 thumb_y = y + (font_height * 14.0f - thumb_height) * FS_CurrentPosFileNum / (FS_NumFiles - 14);
-        NuRndrRect2d(x + width, thumb_y, 0.0f, 8.0f, thumb_height, 0xffc8c8c8, NULL);
-    }
-    char *entry = FS_CurrentPos;
-    for (i32 row = 0; row < 14 && entry < FS_FileListEnd; ++row) {
-        f32 row_y = y + font_height * row;
-        if (entry == FS_CurrentCursorPos)
-            NuRndrRect2d(x, row_y, 0.0f, width, font_height, 0xff202060, NULL);
-        NuQFntSetColour(system_qfont, *entry == 'V' ? 0x80204080 : *entry == 'D' ? 0x80804020 : 0x80408080);
-        NuQFntMove(system_qfont, x + 2.0f, row_y + baseline, 0.0f);
-        NuQFntPrintU(system_qfont, entry + 7);
-        if (entry[6] != '#') {
-            char date_time[264];
-            NuQFntSetPointSize(system_qfont, 0.8f, 1.0f);
-            FS_MakeTimeString(reinterpret_cast<FS_FILEENTRYHDR *>(entry), date_time);
-            f32 text_x = x + width - NuQFntPrintLenU(system_qfont, date_time);
-            NuQFntSetColour(system_qfont, 0x80208080);
-            NuQFntMove(system_qfont, text_x, row_y + baseline, 0.0f);
-            NuQFntPrintU(system_qfont, date_time);
-            FS_MakeDateString(reinterpret_cast<FS_FILEENTRYHDR *>(entry), date_time);
-            text_x -= NuQFntPrintLenU(system_qfont, date_time);
-            NuQFntSetColour(system_qfont, 0x80808020);
-            NuQFntMove(system_qfont, text_x, row_y + baseline, 0.0f);
-            NuQFntPrintU(system_qfont, date_time);
-            NuQFntSetPointSize(system_qfont, 1.0f, 1.0f);
-        }
-        entry += NuStrLen(entry + 7) + 8;
-    }
-    static char *sort_labels[] = {const_cast<char *>("Name"), const_cast<char *>("Date"), const_cast<char *>("Size"),
-                                  const_cast<char *>("Type")};
-    f32 footer_y = y + font_height * 15.0f + baseline;
-    NuQFntSetColour(system_qfont, 0x80808080);
-    NuQFntMove(system_qfont, x, footer_y, 0.0f);
-    NuQFntPrintU(system_qfont, FS_Filter);
-    i32 sort = FS_SortMode >= 0 && FS_SortMode < 4 ? FS_SortMode : 0;
-    NuQFntMove(system_qfont, x + list_width - NuQFntPrintLenU(system_qfont, sort_labels[sort]), footer_y, 0.0f);
-    NuQFntPrintU(system_qfont, sort_labels[sort]);
-    NuQFntPopCoordinateSystem();
-    NuQFntPopPrintMode();
-}
-
-void RenderFileSel3(i32 mode) {
-    if (FS_Active != 0)
-        RenderFileSel3Part(mode);
+void RenderFileSel3(i32) {
+    STUBBED();
 }
 
 void EndMissionsMenu() {
@@ -883,49 +745,12 @@ i32 MenuIsAvailable() {
 void MenuUpdateClips(MENU_s *) {
 }
 
-void MenuUpdateHints(MENU_s *menu) {
-    if (menu->cancel_pressed != 0 || menu->confirm_pressed != 0) {
-        BackupMenu();
-        MenuSFX = GameAudio_GetSfxId(0x31);
-    }
-}
-
-void ProcessFileSel3(float, nupad_s *) {
-    STUBBED();
-}
-
 void MenuDrawDeleting(MENU_s *) {
     static i32 messageswitched;
     NuStrCpy(MenuHeader, apitxt_DELETEGAME);
     header_r = MENUHEADERR;
     header_g = MENUHEADERG;
     header_b = MENUHEADERB;
-
-    if (memcard_deleteneeded != 0 || memcard_deletestarted != 0 || memcard_deletemessage_delay > 0.0f) {
-        messageswitched = 0;
-        MenuSmartTextEx(apitxt_DELETING, 0.0f, 0.2f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0,
-                        MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.5f, 2, NULL, 0, MenuA);
-        Draw_DONOTREMOVEMEMORYCARD();
-        return;
-    }
-
-    if (memcard_deletefailed != 0) {
-        if (messageswitched == 0) {
-            messageswitched = 1;
-            MenuAlpha = 0.0f;
-            MenuA = 0;
-        }
-        return;
-    }
-
-    if (messageswitched == 0) {
-        messageswitched = 1;
-        MenuAlpha = 0.0f;
-        MenuA = 0;
-    }
-    MenuSmartTextEx(apitxt_DELETECOMPLETE, 0.0f, 0.0f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0,
-                    MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.5f, 3, NULL, 0, MenuA);
-}
 
     if (memcard_deleteneeded != 0 || memcard_deletestarted != 0 || memcard_deletemessage_delay > 0.0f) {
         messageswitched = 0;
@@ -1223,15 +1048,15 @@ void MenuDrawEndMission(MENU_s *) {
         return;
     if (MissionSys->field8_0x1d != 2) {
         SmartText(TTab[tOUTOFTIME], 0.0f, STATSPOSY, 1.0f, 1.0f, 1.0f, 1.0f, 0,
-                  191 + (static_cast<u32>(menu_flash) < 1 ? 64 : 0),
-                  31 + (static_cast<u32>(menu_flash) < 1 ? 32 : 0), 0, 1.7f, 1);
+                  191 + (static_cast<u32>(menu_flash) < 1 ? 64 : 0), 31 + (static_cast<u32>(menu_flash) < 1 ? 32 : 0),
+                  0, 1.7f, 1);
         return;
     }
     if (NuFmod(GameTimer.time_elapsed, 0.3f) < 0.2f) {
         char text[32];
         i32 mission_index = static_cast<i8>(MissionSys->mission->count);
-        f32 remaining = static_cast<f32>(static_cast<i32>(MissionSys->missions[mission_index].time)) -
-                        BonusTimer.time_elapsed;
+        f32 remaining =
+            static_cast<f32>(static_cast<i32>(MissionSys->missions[mission_index].time)) - BonusTimer.time_elapsed;
         if (remaining < 0.0f)
             remaining = 0.0f;
         Text_MakeTime(remaining, 0, 1, 1, text);
@@ -1304,148 +1129,6 @@ void MenuUpdateDeleting(MENU_s *) {
     if (memcard_cardchanged != 0) {
         memcard_deleteneeded = 0;
         memcard_deletefailed = 1;
-    }
-}
-
-i8 i_clip[6];
-extern f32 episodestime, episodesduration;
-extern i8 episodesmode, lastepisodesmode, i_episodes;
-i32 hub_goto_clipsmenu_episode;
-extern f32 MainRenderTime;
-
-void MenuUpdateEpisodes(MENU_s *menu) {
-    if (FadeSys.fade > 0.0f || MainRenderTime > 0.0f)
-        return;
-    episodestime += FRAMETIME;
-    if (episodesmode == 1) {
-        episodestime += FRAMETIME;
-        if (episodestime >= episodesduration)
-            WipeBackToHub();
-        return;
-    }
-    if (episodesmode < 0 || episodesmode > 3)
-        return;
-
-    u32 pressed = 0;
-    u32 directions = 0;
-    for (i32 index = 0; index < 2; ++index) {
-        if (MenuPacket.active_player[index] == 0)
-            continue;
-        pressed |= GamePad[index].buttons_pressed;
-        directions |= GamePad[index].left_directions;
-    }
-    bool confirm = (pressed & GAMEPAD_MENUSELECT) != 0;
-    bool cancel = (pressed & GAMEPAD_MENUCANCEL) != 0;
-    bool up = ((pressed | directions) & GAMEPAD_DUP) != 0;
-    bool down = ((pressed | directions) & GAMEPAD_DDOWN) != 0;
-    bool left = ((pressed | directions) & GAMEPAD_DLEFT) != 0;
-    bool right = ((pressed | directions) & GAMEPAD_DRIGHT) != 0;
-    if (menu != NULL && menu->input_activity != 0) {
-        confirm |= menu->confirm_pressed != 0;
-        cancel |= menu->cancel_pressed != 0;
-    }
-    if (up && down)
-        up = down = false;
-    if (left && right)
-        left = right = false;
-
-    if (episodesmode == 0) {
-        if (menu != NULL && menu->input_activity != 0 && menu->confirm_pressed != 0)
-            i_episodes = menu->selected_item;
-        if (menu != NULL && menu->input_activity != 0 && menu->cancel_pressed != 0)
-            cancel = true;
-        if (cancel) {
-            GameAudio_PlaySfx(0x31, NULL, 0, 0);
-            lastepisodesmode = episodesmode;
-            episodesmode = 1;
-            episodestime = 0.0f;
-            episodesduration = 0.6f;
-            return;
-        }
-        i8 previous = i_episodes;
-        if (up || down)
-            i_episodes = previous < 3 ? previous + 3 : previous - 3;
-        else if (left && previous % 3 != 0)
-            --i_episodes;
-        else if (right && previous % 3 != 2)
-            ++i_episodes;
-        if (i_episodes != previous) {
-            GameAudio_PlaySfx(0x2f, NULL, 0, 0);
-            return;
-        }
-        if (!confirm)
-            return;
-        if (Game_AreaSave == NULL || Game_AreaSave[EDataList[i_episodes].area_ids[0]].complete == 0) {
-            GameAudio_PlaySfx(0x32, NULL, 0, 0);
-            return;
-        }
-        GameAudio_PlaySfx(0x30, NULL, 0, 0);
-        lastepisodesmode = episodesmode;
-        episodesmode = 2;
-        episodestime = 0.0f;
-        episodesduration = 0.6f;
-        return;
-    }
-
-    i16 clips[128] = {};
-    i32 include_guests = hub_new_level == -1 || LDataList[hub_new_level].episode_index == -1;
-    i32 count = CutScenePlayer_CountEpisodeClips(i_episodes, include_guests, clips);
-    if (count <= 0)
-        return;
-    i32 selected = static_cast<i8>(i_clip[i_episodes]);
-    if (selected < 0 || selected >= count) {
-        selected = count - 1;
-        i_clip[i_episodes] = selected;
-    }
-    if (episodesmode == 2) {
-        i32 next = selected;
-        if (up)
-            next = selected >= 7 ? selected - 7 : (count - 1) / 7 * 7 + selected % 7;
-        else if (down)
-            next = (selected + 7) % count;
-        else if (left)
-            next = selected % 7 == 0 ? selected + 6 : selected - 1;
-        else if (right)
-            next = selected % 7 == 6 ? selected - 6 : selected + 1;
-        if (next >= count)
-            next = count - 1;
-        if (next != selected) {
-            i_clip[i_episodes] = next;
-            GameAudio_PlaySfx(0x2f, NULL, 0, 0);
-        }
-        if (cancel) {
-            GameAudio_PlaySfx(0x31, NULL, 0, 0);
-            lastepisodesmode = episodesmode;
-            episodesmode = hub_new_level != -1 && LDataList[hub_new_level].episode_index != -1 ? 1 : 0;
-            episodestime = 0.0f;
-            episodesduration = 0.6f;
-            return;
-        }
-        if (!confirm)
-            return;
-        if (CutScenePlayer_CanStart(clips[i_clip[i_episodes]]) == 0) {
-            GameAudio_PlaySfx(0x32, NULL, 0, 0);
-            return;
-        }
-        GameAudio_PlaySfx(0x30, NULL, 0, 0);
-        lastepisodesmode = episodesmode;
-        episodesmode = 3;
-        episodestime = 0.0f;
-        episodesduration = 0.6f;
-        return;
-    }
-    if (episodesmode == 3) {
-        if (cancel || (menu != NULL && menu->cancel_pressed != 0)) {
-            GameAudio_PlaySfx(0x31, NULL, 0, 0);
-            lastepisodesmode = episodesmode;
-            episodesmode = 2;
-            episodestime = 0.0f;
-            episodesduration = 0.6f;
-        } else if (confirm) {
-            GameAudio_PlaySfx(0x30, NULL, 0, 0);
-            CutScenePlayer_Start(clips[i_clip[i_episodes]], hub_new_level);
-            hub_goto_clipsmenu_episode = 99;
-        }
     }
 }
 
@@ -1631,8 +1314,8 @@ void MenuDrawEndChallenge(MENU_s *) {
         return;
     if (ChallengeMode != 2) {
         SmartText(TTab[tOUTOFTIME], 0.0f, STATSPOSY, 1.0f, 1.0f, 1.0f, 1.0f, 0,
-                  191 + (static_cast<u32>(menu_flash) < 1 ? 64 : 0),
-                  31 + (static_cast<u32>(menu_flash) < 1 ? 32 : 0), 0, 1.7f, 1);
+                  191 + (static_cast<u32>(menu_flash) < 1 ? 64 : 0), 31 + (static_cast<u32>(menu_flash) < 1 ? 32 : 0),
+                  0, 1.7f, 1);
     } else if (NuFmod(GameTimer.time_elapsed, 0.3f) < 0.2f) {
         char text[64];
         f32 remaining = static_cast<f32>(static_cast<i32>(ADataList[WORLD->level_sub_id].challenge_trial_time)) -
@@ -1646,8 +1329,8 @@ void MenuDrawEndChallenge(MENU_s *) {
 }
 
 void MenuDrawFormatCancel(MENU_s *menu) {
-    MenuSmartTextEx(apitxt_DOYOUWANTTOABORTFORMAT, 0.0f, -0.3f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE,
-                    MENUTEXTSCALE, 0, MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.5f, 2, NULL, 0, MenuA);
+    MenuSmartTextEx(apitxt_DOYOUWANTTOABORTFORMAT, 0.0f, -0.3f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0,
+                    MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.5f, 2, NULL, 0, MenuA);
     menu->draw_y = MENUBOTY - MENUDY;
     DrawMenuEntry(menu, apitxt_YES);
     DrawMenuEntry(menu, apitxt_NO);
@@ -1742,8 +1425,8 @@ void MenuUpdateSaveCancel(MENU_s *menu) {
 }
 
 void MenuDrawDeleteConfirm(MENU_s *menu) {
-    MenuSmartTextEx(apitxt_CONFIRMDELETE, 0.0f, 0.0f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0,
-                    MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.2f, 2, NULL, 0, MenuA);
+    MenuSmartTextEx(apitxt_CONFIRMDELETE, 0.0f, 0.0f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0, MENUNORMALR,
+                    MENUNORMALG, MENUNORMALB, 1.2f, 2, NULL, 0, MenuA);
     menu->draw_y = MENUBOTY - MENUDY;
     DrawMenuEntry(menu, apitxt_YES);
     DrawMenuEntry(menu, apitxt_NO);
@@ -2050,33 +1733,8 @@ void MenuEnterAutoSaveWarning(MENU_s *) {
     memcard_autosavedisabled = 0;
 }
 
-__attribute__((optimize("no-reorder-blocks"))) void MenuUpdateAutoSaveCancel(MENU_s *menu) {
-    static u8 firstTimeIn = 1;
-    if (MenuASCancelFinished != 0) {
-        MenuASCancelFinished = 0;
-        BackupMenu();
-        return;
-    }
-    if (memcard_savefailed != 0) {
-        if (firstTimeIn != 0) {
-            firstTimeIn = 0;
-            memcard_autosavecanceldelay = 5.0f;
-            g_enableButtonPrompts = 0;
-            return;
-        }
-        if (memcard_autosavecanceldelay > 0.0f) {
-            return;
-        }
-        g_enableButtonPrompts = 1;
-        NewMenu(1000, -1, -1);
-        MenuASCancelFinished = 1;
-        firstTimeIn = 1;
-        memcard_autosavecanceldelay = 5.0f;
-    }
-    if (menu->confirm_pressed != 0 || menu->cancel_pressed != 0) {
-        MenuASCancelFinished = 1;
-        MenuSFX = MENUSFX_MENUSELECT;
-    }
+void MenuUpdateAutoSaveCancel(MENU_s *) {
+    STUBBED();
 }
 
 void MenuUpdateNotEnoughSpace(MENU_s *menu) {
@@ -2323,8 +1981,8 @@ extern "C" {
     }
 
     void DrawMenuBottomMessage(char *text, u8 red, u8 green, u8 blue) {
-        MenuSmartTextEx(text, 0.0f, -0.3f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0, red, green, blue,
-                        1.5f, 4, NULL, 0, MenuA);
+        MenuSmartTextEx(text, 0.0f, -0.3f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0, red, green, blue, 1.5f,
+                        4, NULL, 0, MenuA);
     }
 
     void DrawMenuButtonPrompts(i32 confirm_prompt, i32 cancel_prompt, i32 enabled, u8 red, u8 green, u8 blue,
@@ -2439,13 +2097,13 @@ extern "C" {
     }
 
     void DrawMenuHeaderMessage(char *text, u8 red, u8 green, u8 blue) {
-        MenuSmartTextEx(text, 0.0f, MENUTOPY, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 1, red, green,
-                        blue, 1.5f, 3, NULL, 0, MenuA);
+        MenuSmartTextEx(text, 0.0f, MENUTOPY, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 1, red, green, blue,
+                        1.5f, 3, NULL, 0, MenuA);
     }
 
     void DrawMenuTopMessage(char *text, u8 red, u8 green, u8 blue) {
-        MenuSmartTextEx(text, 0.0f, 0.15f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0, red, green, blue,
-                        1.5f, 4, NULL, 0, MenuA);
+        MenuSmartTextEx(text, 0.0f, 0.15f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0, red, green, blue, 1.5f,
+                        4, NULL, 0, MenuA);
     }
 
     void Draw_CANCEL(MENU *menu) {
@@ -2508,7 +2166,6 @@ extern "C" {
         VARIPTR **stream = &g_NuPrim_StreamBufferPtr;
         char *overbright = &g_NuPrim_NeedsOverbrightening;
         u32 colour = static_cast<u32>(menufadelevel) << 24;
-        
         MenuFadeVertex *vertex = reinterpret_cast<MenuFadeVertex *>((*stream)->void_ptr);
         if (__builtin_expect(*overbright == 0, 1))
             colour &= 0xff000000u;
@@ -2517,7 +2174,6 @@ extern "C" {
 
         vertex = reinterpret_cast<MenuFadeVertex *>((*stream)->void_ptr);
         colour = static_cast<u32>(menufadelevel) << 24;
-        
         if (__builtin_expect(*overbright == 0, 1))
             colour &= 0xff000000u;
         vertex->colour = colour;
@@ -2655,10 +2311,6 @@ extern "C" {
         GameMenuLevel = 0;
     }
 
-    void ProcessFileSel2(f32 elapsed, nupad_s *pad) {
-        ProcessFileSel3(elapsed, pad);
-    }
-
     void RemapAddr(void *new_base, void *old_base, void **address) {
         *address = static_cast<u8 *>(new_base) + (static_cast<u8 *>(*address) - static_cast<u8 *>(old_base));
     }
@@ -2667,15 +2319,11 @@ extern "C" {
         ButtonScaleMode = mode;
     }
 
-    void StartFileSel(void) {
-        STUBBED();
-    }
-
     i32 UpdateMenu(u32 primary_held, u32 primary_pressed, u32 alternate_held, u32 alternate_pressed, f32 elapsed,
                    u32 confirm_mask, u32 cancel_mask, u32 start_mask, u32 select_mask) {
         MenuResult = 0;
         if (MenuValidated == 0)
-            return 0;
+            return MenuResult;
 
         MENU *menu = &GameMenu[GameMenuLevel];
         if (MenuFadeEnabled == 0) {
@@ -2706,7 +2354,7 @@ extern "C" {
         if (sfx_wait > 0.0f)
             sfx_wait -= elapsed;
         if (menu->menu == -1)
-            return 0;
+            return MenuResult;
 
         const u32 directions = 0xf000;
         u32 held = primary_held | alternate_held;
@@ -2721,23 +2369,19 @@ extern "C" {
             pressed = 0;
         }
 
-        i32 up_pressed = pressed & 0x1000;
-        i32 down_pressed = pressed & 0x4000;
-        i32 left_pressed = pressed & 0x8000;
-        i32 right_pressed = pressed & 0x2000;
-        i32 up_held = held & 0x1000;
-        i32 down_held = held & 0x4000;
-        i32 left_held = held & 0x8000;
-        i32 right_held = held & 0x2000;
+        i32 up_pressed = (pressed & 0x1000) != 0;
+        i32 down_pressed = (pressed & 0x4000) != 0;
+        i32 left_pressed = (pressed & 0x8000) != 0;
+        i32 right_pressed = (pressed & 0x2000) != 0;
+        i32 up_held = (held & 0x1000) != 0;
+        i32 down_held = (held & 0x4000) != 0;
+        i32 left_held = (held & 0x8000) != 0;
+        i32 right_held = (held & 0x2000) != 0;
 
         if (up_pressed != 0 && down_pressed != 0)
             up_pressed = down_pressed = 0;
         if (left_pressed != 0 && right_pressed != 0)
             left_pressed = right_pressed = 0;
-        if (up_held != 0 && down_held != 0)
-            up_held = down_held = 0;
-        if (left_held != 0 && right_held != 0)
-            left_held = right_held = 0;
 
         menu->input_activity = 0;
         if (menu->move_left != 0) {
@@ -2761,19 +2405,18 @@ extern "C" {
             menu->input_activity = 1;
         }
 
-        i32 confirm_pressed = pressed & confirm_mask;
-        i32 cancel_pressed = pressed & cancel_mask;
+        i32 confirm_pressed = (pressed & confirm_mask) != 0;
+        i32 cancel_pressed = (pressed & cancel_mask) != 0;
         u32 start_pressed = pressed & start_mask;
         const u32 select_pressed = pressed & select_mask;
         u32 action_04_pressed = pressed & 4;
         u32 action_08_pressed = pressed & 8;
         if (action_04_pressed != 0 && action_08_pressed != 0)
             action_04_pressed = action_08_pressed = 0;
+        if (confirm_pressed != 0 && cancel_pressed != 0)
+            confirm_pressed = cancel_pressed = 0;
         if (menu->unk == 0.0f)
             confirm_pressed = cancel_pressed = 0;
-
-        const i32 output_up_pressed = up_pressed;
-        const i32 output_down_pressed = down_pressed;
 
         if (menu->input_disabled != 0) {
             up_pressed = down_pressed = 0;
@@ -2786,14 +2429,6 @@ extern "C" {
         MenuRepeat(&left_held, &left_pressed, &menu->repeat_left_time, &menu->repeat_left_count, 0.1f, elapsed);
         MenuRepeat(&right_held, &right_pressed, &menu->repeat_right_time, &menu->repeat_right_count, 0.1f, elapsed);
 
-        const i16 first_column = menu->first_column;
-        const i16 last_column = menu->last_column;
-        const i16 first_row = menu->first_row;
-        const i16 last_row = menu->last_row;
-        const i32 column_count = last_column - first_column + 1;
-        const i32 row_count = last_row - first_row + 1;
-        i32 previous_item = 0;
-        f32 item_time = 0.0f;
         if (menu->transition_duration > menu->transition_time) {
             menu->transition_time += elapsed;
             if (menu->transition_time >= menu->transition_duration) {
@@ -2801,72 +2436,76 @@ extern "C" {
                 if (menu->flags_17 != -1)
                     NewMenu(menu->flags_17, -1, -1);
             }
-            confirm_pressed = cancel_pressed = 0;
-            item_time = menu->unk;
-        } else {
-            const i16 old_row = menu->selected_row;
-            const MENUFNINFO &info = MenuInfo[menu->menu];
-            const bool wrap = info.wrap != 0;
-            bool row_clamped = false;
-            if (menu->selected_row < first_row) {
-                menu->selected_row = first_row;
-                row_clamped = true;
-            } else if (menu->selected_row > last_row) {
-                menu->selected_row = last_row;
-                row_clamped = true;
-            } else if (down_pressed != 0 && (wrap || menu->selected_row < last_row)) {
-                if (wrap) {
-                    ++menu->selected_row;
-                    if (menu->selected_row > last_row)
-                        menu->selected_row = first_row;
-                } else {
-                    ++menu->selected_row;
-                }
-            } else if (up_pressed != 0 && (wrap || menu->selected_row > first_row)) {
-                if (wrap) {
-                    --menu->selected_row;
-                    if (menu->selected_row < first_row)
-                        menu->selected_row = last_row;
-                } else {
-                    --menu->selected_row;
-                }
-            }
-            if (menu->selected_row != old_row) {
-                menu->unk = 0.0f;
-                if (!row_clamped)
-                    MenuSFX = MENUSFX_MENUMOVE;
-            }
-            previous_item = old_row;
-            const bool column_navigation = menu->state == 1 || (menu->state == 2 && menu->selected_row == 0) ||
-                                           (menu->state == 3 && menu->selected_row != last_row);
-            if (column_navigation) {
-                const i16 old_column = menu->selected_column;
-                previous_item = old_column;
-                if (menu->selected_column < first_column)
-                    menu->selected_column = first_column;
-                else if (menu->selected_column > last_column)
-                    menu->selected_column = last_column;
-                if (right_pressed != 0 && menu->selected_column < last_column)
-                    ++menu->selected_column;
-                else if (left_pressed != 0 && menu->selected_column > first_column)
-                    --menu->selected_column;
-                if (menu->selected_column != old_column)
-                    MenuSFX = MENUSFX_MENUMOVE;
-                else
-                    item_time = menu->unk;
-            } else {
-                item_time = menu->unk;
+        }
+
+        const i16 old_column = menu->selected_column;
+        const i16 old_row = menu->selected_row;
+        const MENUFNINFO &info = MenuInfo[menu->menu];
+        const bool wrap = info.wrap != 0;
+
+        bool row_clamped = false;
+        if (menu->selected_row < menu->first_row) {
+            menu->selected_row = menu->first_row;
+            row_clamped = true;
+        } else if (menu->selected_row > menu->last_row) {
+            menu->selected_row = menu->last_row;
+            row_clamped = true;
+        }
+
+        bool row_moved = false;
+        if (down_pressed != 0) {
+            if (wrap) {
+                ++menu->selected_row;
+                if (menu->selected_row > menu->last_row)
+                    menu->selected_row = menu->first_row;
+                row_moved = true;
+            } else if (menu->selected_row < menu->last_row) {
+                ++menu->selected_row;
+                row_moved = true;
             }
         }
+        if (up_pressed != 0) {
+            if (wrap) {
+                --menu->selected_row;
+                if (menu->selected_row < menu->first_row)
+                    menu->selected_row = menu->last_row;
+                row_moved = true;
+            } else if (menu->selected_row > menu->first_row) {
+                --menu->selected_row;
+                row_moved = true;
+            }
+        }
+        if (menu->selected_row != old_row) {
+            menu->unk = 0.0f;
+            if (!row_clamped && row_moved)
+                MenuSFX = MENUSFX_MENUMOVE;
+        }
+
+        const bool column_navigation = menu->state == 1 || (menu->state == 2 && menu->selected_row == 0) ||
+                                       (menu->state == 3 && menu->selected_row != menu->last_row);
+        if (column_navigation) {
+            if (menu->selected_column < menu->first_column)
+                menu->selected_column = menu->first_column;
+            else if (menu->selected_column > menu->last_column)
+                menu->selected_column = menu->last_column;
+
+            if (right_pressed != 0 && menu->selected_column < menu->last_column)
+                ++menu->selected_column;
+            if (left_pressed != 0 && menu->selected_column > menu->first_column)
+                --menu->selected_column;
+            if (menu->selected_column != old_column)
+                MenuSFX = MENUSFX_MENUMOVE;
+        }
+
         menu->selected_item = menu->selected_row;
         menu->selected_item_column = menu->selected_column;
-        menu->previous_item = previous_item;
+        menu->previous_item = column_navigation ? old_column : old_row;
         menu->buttons_held = held;
         menu->buttons_pressed = pressed;
-        menu->column_count = column_count;
-        menu->row_count = row_count;
-        menu->up_pressed = output_up_pressed;
-        menu->down_pressed = output_down_pressed;
+        menu->column_count = menu->last_column - menu->first_column + 1;
+        menu->row_count = menu->last_row - menu->first_row + 1;
+        menu->up_pressed = up_pressed;
+        menu->down_pressed = down_pressed;
         menu->left_pressed = left_pressed;
         menu->right_pressed = right_pressed;
         menu->confirm_pressed = confirm_pressed;
@@ -2880,7 +2519,7 @@ extern "C" {
         menu->action_04_pressed = action_04_pressed;
         menu->action_08_pressed = action_08_pressed;
         menu->menu_time += elapsed;
-        menu->unk = item_time + elapsed;
+        menu->unk += elapsed;
 
         if (menu->queued_item != -1) {
             menu->selected_item = menu->queued_item;
@@ -2896,8 +2535,8 @@ extern "C" {
             menu->input_activity = 1;
         }
 
-        if (MenuInfo[menu->menu].update_fn != NULL)
-            MenuInfo[menu->menu].update_fn(menu);
+        if (info.update_fn != NULL)
+            info.update_fn(menu);
         if (MenuSFX != -1 && menu->input_disabled == 0) {
             PlaySfxById(MenuSFX, 0);
             MenuSFX = -1;

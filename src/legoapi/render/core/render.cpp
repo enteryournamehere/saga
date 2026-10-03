@@ -3,8 +3,6 @@
 #include "gameapi/edtools/edstubs.h"
 #include "legoapi/render/core/render.h"
 #include "legoapi/items/collect/torpedo.h"
-#include "legoapi/items/collect/spacelevel.h"
-#include "legoapi/world/levels/podrace.h"
 #include "legoapi/actions/character/transform.h"
 #include "legoapi/actions/movement/carrying.h"
 #include "legoapi/actions/character/snake.h"
@@ -795,27 +793,6 @@ static NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path, ch
 
 // --- Extern "C": NuGScn functions have C linkage in original ---
 extern "C" {
-    NUGSCN *NuGScnReadForMultiRender(VARIPTR *buf, VARIPTR buf_end, char *path, i32 render_count) {
-        NUGSCN *scene = NuReadGraphicsData(buf, &buf_end, path, NULL, NULL);
-        if (scene == NULL || render_count <= 1) {
-            return scene;
-        }
-
-        buf->addr = ALIGN(buf->addr, 0x20);
-        NUGSCN **additional = reinterpret_cast<NUGSCN **>(buf->void_ptr);
-        buf->addr += render_count * sizeof(NUGSCN *);
-        for (i32 i = 0; i < render_count - 1; ++i) {
-            additional[i] = reinterpret_cast<NUGSCN *>(ALIGN(buf->addr, 0x20));
-            buf->addr = ALIGN(buf->addr, 0x20) + sizeof(NUGSCN);
-            memcpy(additional[i], scene, sizeof(NUGSCN));
-            additional[i]->display_list = NuDisplaySceneClone(scene->display_list, buf, &buf_end);
-            additional[i]->display_list->gscene = additional[i];
-        }
-        additional[render_count - 1] = NULL;
-        scene->additional_scenes = additional;
-        return scene;
-    }
-
     NUGSCN *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path) {
         RemoveDirectionalMaps = 1;
         RemoveNormalMaps = 1;
@@ -994,8 +971,8 @@ void DrawAreaBox(nuvec_s *position, nuvec_s *size, i32 rotation, i32 colour) {
         rotated_x[i] = cosine * local_x[i] + sine * local_z[i];
         rotated_z[i] = cosine * local_z[i] - sine * local_x[i];
     }
-#define DRAW_AREA_BOX_EDGE(a, b, y0, y1)                                                                                  \
-    AiRndrLine3dDbg(position->x + rotated_x[a], y0, position->z + rotated_z[a], position->x + rotated_x[b], y1,         \
+#define DRAW_AREA_BOX_EDGE(a, b, y0, y1)                                                                               \
+    AiRndrLine3dDbg(position->x + rotated_x[a], y0, position->z + rotated_z[a], position->x + rotated_x[b], y1,        \
                     position->z + rotated_z[b], colour)
     DRAW_AREA_BOX_EDGE(0, 1, position->y, position->y);
     DRAW_AREA_BOX_EDGE(1, 2, position->y, position->y);
@@ -1054,8 +1031,8 @@ void DrawLocator(nuvec_s *position, float radius, i32 rotation, i32 colour) {
 }
 
 void Draw_LOADED() {
-    MenuSmartTextEx(apitxt_GAMELOADED, 0.0f, -0.4f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0,
-                    MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.5f, 2, NULL, 0, MenuA);
+    MenuSmartTextEx(apitxt_GAMELOADED, 0.0f, -0.4f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0, MENUNORMALR,
+                    MENUNORMALG, MENUNORMALB, 1.5f, 2, NULL, 0, MenuA);
 }
 
 void Draw3DObject(WORLDINFO_s *world, i32 object_index, nuvec_s *position, u16 x_rotation, u16 y_rotation,
@@ -1143,9 +1120,9 @@ extern const u8 HintRGB[5][3] = {
     {255, 0, 0}, {0, 255, 0}, {0, 127, 255}, {127, 0, 255}, {255, 255, 0},
 };
 
-static void DrawHint_LSW_clone(HINT_s *, i32) __asm__("_Z12DrawHint_LSWP6HINT_si.part.19")
-    __attribute__((noinline, regparm(2)));
-static void DrawHint_LSW_clone(HINT_s *hint, i32 max_lines) {
+void DrawHint_LSW(HINT_s *hint, i32 max_lines) {
+    if (hint == NULL || FadeSys.fade != 0.0f)
+        return;
     const f32 alpha = CurrentHintAlpha();
     if (!(alpha > 0.0f))
         return;
@@ -1167,8 +1144,7 @@ static void DrawHint_LSW_clone(HINT_s *hint, i32 max_lines) {
         char expanded[1024];
         Text_ExpandAllButtonStrings(hint_text, expanded);
 
-        const u16 pulse_angle = static_cast<u16>(NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.5f) *
-                                                  2.0f * 65536.0f);
+        const u16 pulse_angle = static_cast<u16>(NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.5f) * 2.0f * 65536.0f);
         const f32 colour_pulse = NU_SIN_LUT(pulse_angle) * 0.5f + 0.5f;
         i32 colour_index = static_cast<i8>(hint->pad_0x05[0]);
         if (colour_index == -1)
@@ -1176,15 +1152,14 @@ static void DrawHint_LSW_clone(HINT_s *hint, i32 max_lines) {
         u8 colours[3];
         for (i32 channel = 0; channel < 3; ++channel) {
             const f32 base = static_cast<f32>(HintRGB[colour_index][channel]);
-            colours[channel] = static_cast<u8>(static_cast<i32>(
-                ((base + 255.0f) * 0.5f - base) * colour_pulse + base));
+            colours[channel] = static_cast<u8>(static_cast<i32>(((base + 255.0f) * 0.5f - base) * colour_pulse + base));
         }
 
         g_buttonFontScalePulse = CurrentHintButtonScale();
         const u8 text_alpha = static_cast<u8>(static_cast<i32>(alpha * 128.0f));
         const f32 max_width = mirrored ? 1.4f : 2.0f - (1.0f + text_x) - 0.15f;
-        SmartTextEx(expanded, text_x, text_y, 1.0f, 0.5f, 0.5f, 0.5f, 0, colours[0], colours[1],
-                    colours[2], max_width, text_lines, NULL, 0, text_alpha);
+        SmartTextEx(expanded, text_x, text_y, 1.0f, 0.5f, 0.5f, 0.5f, 0, colours[0], colours[1], colours[2], max_width,
+                    text_lines, NULL, 0, text_alpha);
         if (mirrored)
             icon_x = -0.5f * smarttextex_longestwidth - 0.075f;
         g_buttonFontScalePulse = 1.0f;
@@ -1206,19 +1181,13 @@ static void DrawHint_LSW_clone(HINT_s *hint, i32 max_lines) {
         const f32 bounce = NU_SIN_LUT(static_cast<i32>(hintYPop.value));
         const f32 bounce_scale = TouchHacks::TouchControlsActive ? 0.2f : 0.8f;
         const f32 scale = hintIconScale.value;
-        DrawPanel3DObjectNoAlpha(hintIconPos.value.x, hintIconPos.value.y + bounce_scale * bounce,
-                                 hintIconPos.value.z, scale, scale, scale, 0, rotation, 0, &icon->special, 2);
+        DrawPanel3DObjectNoAlpha(hintIconPos.value.x, hintIconPos.value.y + bounce_scale * bounce, hintIconPos.value.z,
+                                 scale, scale, scale, 0, rotation, 0, &icon->special, 2);
     }
     if (mirrored) {
-        const u16 mirrored_rotation =
-            static_cast<u16>((NuFmod(GameTimer.time_elapsed, 2.5f) / 2.5f) * 65536.0f);
+        const u16 mirrored_rotation = static_cast<u16>((NuFmod(GameTimer.time_elapsed, 2.5f) / 2.5f) * 65536.0f);
         DrawPanel3DObjectNoAlpha(-wave_x, text_y, 1.0f, 0.5f, 0.5f, 0.5f, 0, mirrored_rotation, 0, &icon->special, 2);
     }
-}
-
-void DrawHint_LSW(HINT_s *hint, i32 max_lines) {
-    if (hint != NULL && FadeSys.fade == 0.0f)
-        DrawHint_LSW_clone(hint, max_lines);
 }
 
 void DrawLine_Now(_vuv_s *, _vuv_s *, i32, i32) {
@@ -1271,8 +1240,7 @@ void DrawRectRGBA(float x, float y, float width, float height, u32 colour, numtl
     else if ((alignment & 10) == 0)
         x -= scaled_width * 0.5f;
     NuRndrRect2di(static_cast<i32>((x + 1.0f) * 0.5f * 10240.0f),
-                   static_cast<i32>((2.0f - (y + 1.0f)) * 0.5f * 3584.0f), rect_width, rect_height, colour,
-                   material);
+                  static_cast<i32>((2.0f - (y + 1.0f)) * 0.5f * 3584.0f), rect_width, rect_height, colour, material);
 }
 
 void DrawItem(nuhspecial_s *special, nuvec_s *position, float scale_value, float unused, float y_push, u16 x_rot,
@@ -1333,8 +1301,8 @@ static inline void ShopRotateZ(NUMTX *m, NUANG a) {
     m->m31 = m30 * sinx + m->m31 * cosx;
 }
 void Draw_LOADING() {
-    MenuSmartTextEx(apitxt_GAMELOADING, 0.0f, -0.4f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0,
-                    MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.5f, 2, NULL, 0, MenuA);
+    MenuSmartTextEx(apitxt_GAMELOADING, 0.0f, -0.4f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0, MENUNORMALR,
+                    MENUNORMALG, MENUNORMALB, 1.5f, 2, NULL, 0, MenuA);
 }
 
 #include "nu2api/nu3d/nuprim.h"
@@ -1566,16 +1534,14 @@ void DrawPauseFade() {
     if (editor_active != 0 || screendump != 0)
         return;
 
-    i32 paused = Paused;
-    f32 current_fade = pause_fade;
     f32 step = FRAMETIME * 2.0f;
     i32 fade;
-    if (paused == 0 && NetPaused == 0) {
-        fade = static_cast<i32>(current_fade - step);
+    if (Paused == 0 && NetPaused == 0) {
+        fade = static_cast<i32>(pause_fade - step);
         if (fade < 0)
             fade = 0;
     } else {
-        fade = static_cast<i32>(current_fade + step);
+        fade = static_cast<i32>(pause_fade + step);
         if (fade > 0) {
             pause_fade = 1.0f;
             return;
@@ -1711,7 +1677,6 @@ void DrawAlphaImage(i32 rows, i32 cols, numtl_s *material, i32 use_pixel_offsets
     for (row = 0; row < rows - 1; ++row) {
         const i32 cache_row = row;
         NuPrim2DBegin(1, 7, material);
-        const f32 direction_x = (1.0f + x0) - 1.0f;
         f32 y0 = y_start;
         for (col = 0; col < cols; ++col) {
             NUVEC direction;
@@ -1968,20 +1933,20 @@ void DrawStatusText(char *text, u16 angle, float x, float y, float scale, u32 co
     NuQFntSetCoordinateSystem(NUQFNT_CSMODE_NORMALISED);
 }
 
-i32 Draw3DObjectMtx(WORLDINFO_s *world, i32 object_index, numtx_s *mtx) {
-    if (object_index != -1) {
+void Draw3DObjectMtx(WORLDINFO_s *world, i32 object_index, numtx_s *mtx) {
+    if (object_index == -1) {
+        return;
+    }
+    if (world == NULL) {
+        world = WorldInfo_CurrentlyActive();
         if (world == NULL) {
-            world = WorldInfo_CurrentlyActive();
-        }
-        if (world != NULL) {
-            LEVEL_OBJECT_RUNTIME &object = world->lev_objs[object_index];
-            if (object.active != 0) {
-                return NuSpecialDrawAt(&object.special, mtx);
-            }
-            return 0;
+            return;
         }
     }
-    return 1;
+    LEVEL_OBJECT_RUNTIME &object = world->lev_objs[object_index];
+    if (object.active != 0) {
+        NuSpecialDrawAt(&object.special, mtx);
+    }
 }
 
 void DrawGameObjects() {
@@ -2014,7 +1979,6 @@ void DrawPaintLights() {
     u8 third_colour;
     if (first_colour == 3)
         goto first_visible;
-    
     if (first_colour != 0)
         goto first_hidden;
 first_visible:
@@ -2024,7 +1988,6 @@ first_done:
     second_colour = static_cast<const u8 *>(factoryb_netpacket)[3];
     if (second_colour == 4)
         goto second_visible;
-    
     if (second_colour != 0)
         goto second_hidden;
 second_visible:
@@ -2034,7 +1997,6 @@ second_done:
     third_colour = static_cast<const u8 *>(factoryb_netpacket)[3];
     if (third_colour == 5)
         goto third_visible;
-    
     if (third_colour != 0)
         goto third_hidden;
 third_visible:
@@ -2125,8 +2087,8 @@ void DrawTouchPrompt(char *prompt, char *unused_label, bool hovered, bool large)
 }
 
 void Draw_LOADFAILED() {
-    MenuSmartTextEx(apitxt_FAILEDTOLOAD, 0.0f, 0.0f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0,
-                    MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.5f, 3, NULL, 0, MenuA);
+    MenuSmartTextEx(apitxt_FAILEDTOLOAD, 0.0f, 0.0f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0, MENUNORMALR,
+                    MENUNORMALG, MENUNORMALB, 1.5f, 3, NULL, 0, MenuA);
 }
 
 void DrawAreaCylinder(nuvec_s *centre, nuvec_s *size, i32 colour) {
@@ -2297,8 +2259,8 @@ void DrawStatusBG_LSW(STATUSPACKET_s *status) {
 }
 
 void Draw_LOADCORRUPT() {
-    MenuSmartTextEx(apitxt_CORRUPTLOAD, 0.0f, 0.0f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0,
-                    MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.5f, 3, NULL, 0, MenuA);
+    MenuSmartTextEx(apitxt_CORRUPTLOAD, 0.0f, 0.0f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0, MENUNORMALR,
+                    MENUNORMALG, MENUNORMALB, 1.5f, 3, NULL, 0, MenuA);
 }
 
 void Draw3DObjectAlpha(WORLDINFO_s *world, i32 object_index, nuvec_s *position, u16 x_rotation, u16 y_rotation,
@@ -2346,8 +2308,8 @@ extern i32 currentminikit;
 extern f32 slideseek;
 
 i32 DrawPanel3DObjectMtxNoAlpha(nuhspecial_s *special, numtx_s *matrix);
-void DrawStatusMiniKit(float x, float y, float z, float built_scale, float new_scale, i32 count,
-                       STATUSPACKET_s *packet, float slide) {
+void DrawStatusMiniKit(float x, float y, float z, float built_scale, float new_scale, i32 count, STATUSPACKET_s *packet,
+                       float slide) {
     if (WORLD->minikit.gscn == NULL || WORLD->minikit.field_0x4 == NULL)
         return;
 
@@ -2860,8 +2822,8 @@ void DrawGameObjectsDraw(i32) {
 void Draw_AUTOSAVECANCEL() {
 }
 
-i32 DrawPanel3DObjectMtx(nuhspecial_s *special, numtx_s *matrix, float alpha) {
-    if (0.0f < alpha) {
+void DrawPanel3DObjectMtx(nuhspecial_s *special, numtx_s *matrix, float alpha) {
+    if (alpha > 0.0f) {
         NUVEC scale = {1.0f / CameraZoom, 1.0f / CameraZoom, 1.0f / CameraZoom};
         NuMtxPreScale(matrix, &scale);
         if (special != NULL && NuSpecialExistsFn(special) != 0) {
@@ -2869,7 +2831,6 @@ i32 DrawPanel3DObjectMtx(nuhspecial_s *special, numtx_s *matrix, float alpha) {
             NuSpecialDrawAtAlpha(special, matrix, alpha);
         }
     }
-    return 0;
 }
 
 void Draw_AUTOSAVEWARNING() {
@@ -3429,7 +3390,6 @@ SwipeDecalRenderer::SwipeDecalRenderer(TouchHolder &holder, i32 index, SwipeDeca
     alpha.Initialize();
     width.Initialize();
     this->style = style;
-    
 
     const NuVec2 &swipe_point = holder.swipe_samples[index].position;
     const f32 swipe_x = (swipe_point.x + 1.0f) * 0.5f;
@@ -3466,56 +3426,6 @@ static __used__ i32 MatrixReflection_CanOverride() {
         }
     }
     return result;
-}
-
-static __used__ __attribute__((regparm(1))) void DrawStarFighter(starfighter_s *starfighter) {
-    struct StarFighterLayout {
-        NUMTX matrix;
-        u8 reserved[0xb0];
-        f32 scale;
-        u8 more_reserved[8];
-        i16 draw_flags;
-        i16 model_id;
-    };
-    StarFighterLayout *fighter = reinterpret_cast<StarFighterLayout *>(starfighter);
-    const i32 model_id = fighter->model_id;
-    NUMTX_ALIGNED16 matrices[2];
-    NUMTX &scaled_special_matrix = matrices[0];
-    NUMTX &scaled_model_matrix = matrices[1];
-    if (model_id >= 0) {
-        const f32 scale = fighter->scale;
-        const i16 draw_flags = fighter->draw_flags;
-        const i16 model_index = apicharsys->playermodelids[model_id];
-        if (model_index == -1)
-            return;
-        NUMTX *matrix = &fighter->matrix;
-        if (scale != 1.0f) {
-            scaled_model_matrix = fighter->matrix;
-            NuMtxPreScaleUVU0(&scaled_model_matrix, scale);
-            matrix = &scaled_model_matrix;
-        }
-        GameDrawCharacterModel(&apicharsys->models[model_index], NULL, matrix, NULL, NULL, NULL, NULL,
-                               draw_flags);
-    } else {
-        NUMTX *matrix = &fighter->matrix;
-        if (model_id == -299 || model_id == -297 || model_id == -298 || model_id == -307) {
-            scaled_special_matrix = fighter->matrix;
-            scaled_special_matrix.m00 *= 1.15f;
-            scaled_special_matrix.m01 *= 1.15f;
-            scaled_special_matrix.m02 *= 1.15f;
-            scaled_special_matrix.m10 *= 1.15f;
-            scaled_special_matrix.m11 *= 1.15f;
-            scaled_special_matrix.m12 *= 1.15f;
-            scaled_special_matrix.m20 *= 1.15f;
-            scaled_special_matrix.m21 *= 1.15f;
-            scaled_special_matrix.m22 *= 1.15f;
-            matrix = &scaled_special_matrix;
-        }
-        NuSpecialDrawAt(&WORLD->lev_objs[-model_id].special, matrix);
-        if (model_id == -307)
-            AddVariableShotDebrisEffect(WORLD->debris_sys->entries[49].effect,
-                                        reinterpret_cast<NUVEC *>(&fighter->matrix.m30), 1, 0, 0);
-    }
 }
 
 static void DrawWeapon_SetSabreObjects(GameObject_s *object, i32 red, i32 green, i32 blue, i32 purple, i32 *models,
@@ -4258,39 +4168,7 @@ static void DrawParaphernalia(GameObject_s *object) {
     }
 }
 
-static f32 spotLightA_yrot[2];
-static f32 spotLightA_zrot[2];
-static f32 spotLightB_yrot[2] = {0.5f, 0.5f};
-static f32 spotLightB_zrot[2] = {0.5f, 0.5f};
-
-static __used__ __attribute__((regparm(1))) void DrawFalconSpotLights(GameObject_s *object) {
-    if (static_cast<u8>(object->apiobj.field_0x27c) > 1 || object->id != id_MILLENNIUMFALCON ||
-        WORLD->lev_objs[0x127].active == 0)
-        return;
-    NUMTX matrix __attribute__((aligned(16)));
-    if (object->apiobj.character_model->points_of_interest[4] != NULL) {
-        matrix = object->joint_matrices[4];
-        NuSpecialDrawAt(&WORLD->lev_objs[0x127].special, &matrix);
-    }
-    spotLightA_yrot[object->apiobj.field_0x27c] += FRAMETIME / 5.0f;
-    if (spotLightA_yrot[object->apiobj.field_0x27c] > 1.0f)
-        spotLightA_yrot[object->apiobj.field_0x27c] -= 1.0f;
-    spotLightA_zrot[object->apiobj.field_0x27c] += FRAMETIME / 5.0f;
-    if (spotLightA_zrot[object->apiobj.field_0x27c] > 1.0f)
-        spotLightA_zrot[object->apiobj.field_0x27c] -= 1.0f;
-    if (object->apiobj.character_model->points_of_interest[5] != NULL) {
-        matrix = object->joint_matrices[5];
-        NuSpecialDrawAt(&WORLD->lev_objs[0x127].special, &matrix);
-    }
-    spotLightB_yrot[object->apiobj.field_0x27c] += FRAMETIME / 5.0f;
-    if (spotLightB_yrot[object->apiobj.field_0x27c] > 1.0f)
-        spotLightB_yrot[object->apiobj.field_0x27c] -= 1.0f;
-    spotLightB_zrot[object->apiobj.field_0x27c] += FRAMETIME / 5.0f;
-    if (spotLightB_zrot[object->apiobj.field_0x27c] > 1.0f)
-        spotLightB_zrot[object->apiobj.field_0x27c] -= 1.0f;
-}
-
-static __used__ __attribute__((regparm(1))) void DisplayListMaterialClipUpdate(nudisplayscene_s *scene) {
+static __used__ void DisplayListMaterialClipUpdate(nudisplayscene_s *scene) {
     if (scene == NULL || scene->mtls == NULL || scene->mtls[0] == NULL)
         return;
     u8 buffer = scene->render_buffer;
@@ -4353,31 +4231,12 @@ i32 backdrop_black = 0;
 void (*BackDrop_AlphaFn)(float *) = nullptr;
 
 static __used__ void BackDrop_Alpha(float *alpha) {
-    extern STATUSPACKET_s StatusPacket;
-    extern i32 selectmodemode;
-    extern f32 selectmodetime;
     if (alpha == nullptr)
         return;
-    if (WORLD != NULL && WORLD->current_level != NULL) {
-        LEVELDATA *level = WORLD->current_level;
-        if (level == TITLES_LDATA) {
-            *alpha *= newgamealpha;
-            return;
-        }
-        if (level == CREDITS_LDATA && CreditsFlag == 3) {
-            *alpha *= CreditsAlpha;
-            return;
-        }
-        if ((level->flags & 0x400) != 0 && StatusPacket.status_flags != 0 && StatusPacket.stage != NULL &&
-            StatusPacket.stage->type == 12 && (StatusPacket.mode_flags & 0x10) == 0) {
-            const f32 time = StatusPacket.stage->field_0x18;
-            *alpha = time < 0.5f ? 1.0f - (time + time) : 0.0f;
-            return;
-        }
-    }
-    if (GetMenuID() == 15 && selectmodemode == 4) {
-        const f32 time = selectmodetime;
-        *alpha = time < 0.5f ? 1.0f - (time + time) : 0.0f;
+    if (backdrop_black) {
+        *alpha *= 0.0f;
+    } else if (backdrop_back_wait > 0.0f) {
+        *alpha *= 0.5f;
     }
 }
 
@@ -4398,9 +4257,8 @@ void BackDrop_Init(char *path, variptr_u *buf, variptr_u *buf_end) {
 }
 
 void BackDrop_Dump() {
-    if (backdrop_scene != NULL) {
-        NuGScnRemove(backdrop_scene);
-    }
+    backdrop_scene = nullptr;
+    memset(s_backdrop_hspecial, 0, sizeof(s_backdrop_hspecial));
 }
 
 void BackDrop_Update(float dt) {
@@ -4503,51 +4361,5 @@ void BackDrop_Draw(float alpha, i32 flags) {
             NuSpecialDrawAtAlpha(special, &mtx, alpha);
             angle = (u16)(angle + 0x5555);
         }
-    }
-}
-
-void DrawSpaceLevel(spacelevel_s *) __asm__("_ZL14DrawSpaceLevelP12spacelevel_s")
-    __attribute__((used, visibility("hidden")));
-void DrawSpaceLevel(spacelevel_s *space) {
-    if (space->player_matrix_state != 0) {
-        NuVecMtxTransform(reinterpret_cast<NUVEC *>(&space->player_matrix.m30),
-                          reinterpret_cast<NUVEC *>(&space->player_matrix.m10), &GameCam->render_mtx);
-        DrawCross_Now(reinterpret_cast<_vuv_s *>(&space->player_matrix.m30), 1.0f, space->player_colour, 1);
-    }
-    if (space->camera_matrix_state != 0) {
-        NuVecMtxTransform(reinterpret_cast<NUVEC *>(&space->camera_matrix.m30),
-                          reinterpret_cast<NUVEC *>(&space->camera_matrix.m10), &GameCam->render_mtx);
-        DrawCross_Now(reinterpret_cast<_vuv_s *>(&space->camera_matrix.m30), 1.0f, space->camera_colour, 1);
-    }
-
-    for (i32 group_index = 0; group_index < 7; ++group_index) {
-        spacelevel_fighter_group_s &group = space->fighter_groups[group_index];
-        if (group.trooper_team.reset_effect == 0)
-            continue;
-        for (i32 fighter_index = 0; fighter_index < 4; ++fighter_index) {
-            spacelevel_starfighter_s &fighter = group.fighters[fighter_index];
-            if (fighter.reset_timer != 0)
-                DrawStarFighter(reinterpret_cast<starfighter_s *>(&fighter));
-        }
-        if (group.trooper_team.reset_effect_timer != 0) {
-            u8 *team = reinterpret_cast<u8 *>(&group.trooper_team);
-            DrawCross_Now(reinterpret_cast<_vuv_s *>(team + 0x78), 3.0f, 0xffffff, 1);
-        }
-    }
-    if (space->last_starfighter.reset_effect != 0) {
-        for (i32 fighter_index = 0; fighter_index < 4; ++fighter_index) {
-            spacelevel_starfighter_s &fighter = space->final_fighters[fighter_index];
-            if (fighter.reset_timer != 0)
-                DrawStarFighter(reinterpret_cast<starfighter_s *>(&fighter));
-        }
-        if (space->last_starfighter.reset_effect_timer != 0) {
-            u8 *last = reinterpret_cast<u8 *>(&space->last_starfighter);
-            DrawCross_Now(reinterpret_cast<_vuv_s *>(last + 0x78), 3.0f, 0xffffff, 1);
-        }
-    }
-    for (i32 index = 0; index < 96; ++index) {
-        spacelevel_starfighter_s &fighter = space->queued_starfighters[index];
-        if (fighter.reset_state != 0)
-            DrawStarFighter(reinterpret_cast<starfighter_s *>(&fighter));
     }
 }

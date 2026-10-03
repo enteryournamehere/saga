@@ -55,7 +55,7 @@ extern void Customiser_Update(CUSTOMISER *, WORLDINFO_s *);
 void Hub_ResetPanel();
 extern void InitShop(WORLDINFO_s *);
 extern void DrawShop3D(WORLDINFO_s *);
-extern i32 Draw3DObjectMtx(WORLDINFO_s *, i32, NUMTX *);
+extern void Draw3DObjectMtx(WORLDINFO_s *, i32, NUMTX *);
 extern void CutScenePlayer_Reset();
 extern FadeSystem FadeSys;
 extern GAMESAVE_s TempGame;
@@ -1010,7 +1010,7 @@ void Hub_Update(WORLDINFO_s *world) {
             GIZMO *gizmo = HubAreaInfo[i].bonus_gizmo;
             if (gizmo != NULL && GizmoGetOutput(world->gizmo_sys, gizmo, 0, 0) == 0 && Player[0] != NULL &&
                 static_cast<i8>(Player[0]->apiobj.flags_low) < 0 && Player[0]->field_0x7a5 != 0x2d) {
-                GIZBUILDIT_s *buildit = static_cast<GIZBUILDIT_s *>(HubAreaInfo[i].bonus_gizmo->object);
+                GIZBUILDIT_s *buildit = static_cast<GIZBUILDIT_s *>(gizmo->object);
                 if ((buildit->availability_flags & GIZBUILDIT_AVAILABILITY_INTERACTING) != 0 ||
                     (nearest_buildit != NULL && nearest_buildit == buildit)) {
                     selected_buildit = i;
@@ -2847,13 +2847,7 @@ void Hub_Reset(WORLDINFO_s *world) {
     }
 
     for (i32 i = 20; i < 52; ++i) {
-        if (((LevHSpecialExists >> (i & 63)) & 1) != 0) {
-            NuSpecialSetVisibility(&LevHSpecial[i], 1);
-        }
-        const i32 hidden = i + 32;
-        if (((LevHSpecialExists >> (hidden & 63)) & 1) != 0) {
-            NuSpecialSetVisibility(&LevHSpecial[hidden], 0);
-        }
+        NuSpecialSetVisibility(&LevHSpecial[i], static_cast<i32>((LevHSpecialExists >> i) & 1));
     }
 
     if (NuSpecialExistsFn(&LevHSpecial[84]) != 0) {
@@ -2872,9 +2866,9 @@ void Hub_Reset(WORLDINFO_s *world) {
         if (info->door == NULL) {
             continue;
         }
-        i32 open = Episode_CountOpenAreas(info->episode, -1, Game_AreaSave);
+        i32 open = info->force_open;
         if (open == 0) {
-            open = info->force_open;
+            open = Episode_CountOpenAreas(info->episode, -1, Game_AreaSave);
         }
         Hub_SetDoorState(info->door, &info->lock_on, open);
     }
@@ -2904,8 +2898,8 @@ static void Hub_DrawArcadeStats(float alpha) {
     const i32 opacity = static_cast<i32>(alpha_scaled);
     const f32 title_scale = HUB_EPISODESUBTITLESIZE;
     SmartTextEx(TTab[tARCADE_NAME], 0.0f, HUB_EPISODESUBTITLEY, 1.0f, title_scale, title_scale, title_scale, 0,
-                static_cast<u8>(HUB_EPISODER), static_cast<u8>(HUB_EPISODEG), static_cast<u8>(HUB_EPISODEB),
-                1.7f, 1, 0, 0, opacity);
+                static_cast<u8>(HUB_EPISODER), static_cast<u8>(HUB_EPISODEG), static_cast<u8>(HUB_EPISODEB), 1.7f, 1, 0,
+                0, opacity);
 
     i32 complete_count = 0;
     i32 area_count = 0;
@@ -2916,29 +2910,25 @@ static void Hub_DrawArcadeStats(float alpha) {
                 continue;
             ++area_count;
             AREASAVE_s *save = &Game_AreaSave[area->index];
-            if (save->area_complete || static_cast<f32>(static_cast<i32>(area->challenge_trial_time)) >
-                                           save->challenge_trial_time)
+            if (save->area_complete ||
+                static_cast<f32>(static_cast<i32>(area->challenge_trial_time)) > save->challenge_trial_time)
                 ++complete_count;
         }
     }
     Hub_DrawImportantBrick(211, 0.0f, HUB_EPISODETITLEY, alpha, complete_count, area_count);
 
     if (GetMenuID() == 16) {
-        
         return;
     }
     if (menu_id != -1 || Arcade_BothPlayersActive())
         return;
     i32 text_id = tARCADE_NEEDTWOPLAYERS;
-    
     if (text_id == -1)
         return;
-    const f32 pulse = 0.75f +
-                      0.25f * NU_SIN_LUT(static_cast<u16>(static_cast<i32>(NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.5f) *
-                                                                           2.0f * 65536.0f)));
-    SmartTextEx(TTab[text_id], 0.0f, HUB_EPISODETITLEY, 1.0f, HUB_EPISODETITLESIZE,
-                HUB_EPISODETITLESIZE, HUB_EPISODETITLESIZE, 0, 255, 0, 0, 1.7f, 1, 0, 0,
-                static_cast<i32>(pulse * alpha_scaled));
+    const f32 pulse = 0.75f + 0.25f * NU_SIN_LUT(static_cast<u16>(static_cast<i32>(
+                                          NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.5f) * 2.0f * 65536.0f)));
+    SmartTextEx(TTab[text_id], 0.0f, HUB_EPISODETITLEY, 1.0f, HUB_EPISODETITLESIZE, HUB_EPISODETITLESIZE,
+                HUB_EPISODETITLESIZE, 0, 255, 0, 0, 1.7f, 1, 0, 0, static_cast<i32>(pulse * alpha_scaled));
 }
 
 static void Hub_DrawMiniKitCount(f32 x, f32 y, i32 count, i32 total, f32 alpha) {
@@ -3621,52 +3611,60 @@ void MenuUpdateBonusMode(MENU_s *) {
         return;
 
     const f32 blip_frame_time = *reinterpret_cast<volatile const f32 *>(&FRAMETIME);
-    if (BlipL[0] > 0.0f) BlipL[0] -= blip_frame_time;
-    if (BlipR[0] > 0.0f) BlipR[0] -= blip_frame_time;
-    if (BlipU[0] > 0.0f) BlipU[0] -= blip_frame_time;
-    if (BlipD[0] > 0.0f) BlipD[0] -= blip_frame_time;
+    if (BlipL[0] > 0.0f)
+        BlipL[0] -= blip_frame_time;
+    if (BlipR[0] > 0.0f)
+        BlipR[0] -= blip_frame_time;
+    if (BlipU[0] > 0.0f)
+        BlipU[0] -= blip_frame_time;
+    if (BlipD[0] > 0.0f)
+        BlipD[0] -= blip_frame_time;
     i32 player_up[2] = {}, player_down[2] = {};
-    if (BlipL[1] > 0.0f) BlipL[1] -= blip_frame_time;
-    if (BlipR[1] > 0.0f) BlipR[1] -= blip_frame_time;
-    if (BlipU[1] > 0.0f) BlipU[1] -= blip_frame_time;
-    if (BlipD[1] > 0.0f) BlipD[1] -= blip_frame_time;
+    if (BlipL[1] > 0.0f)
+        BlipL[1] -= blip_frame_time;
+    if (BlipR[1] > 0.0f)
+        BlipR[1] -= blip_frame_time;
+    if (BlipU[1] > 0.0f)
+        BlipU[1] -= blip_frame_time;
+    if (BlipD[1] > 0.0f)
+        BlipD[1] -= blip_frame_time;
     i32 player_left[2] = {}, player_right[2] = {};
 
     switch (bonusmodemode) {
-    case 1:
-        bonusmodetime += FRAMETIME;
-        if (bonusmodetime < bonusmodeduration)
+        case 1:
+            bonusmodetime += FRAMETIME;
+            if (bonusmodetime < bonusmodeduration)
+                return;
+            InitSuperStory(SuperStoryEpisode);
+            NewLData = &LDataList[hub_new_level];
+            FadeSys.fade = 1.0f;
+            FinishLoop_On = 0;
+            loadareacharacters_no_backdrop_reset = 1;
             return;
-        InitSuperStory(SuperStoryEpisode);
-        NewLData = &LDataList[hub_new_level];
-        FadeSys.fade = 1.0f;
-        FinishLoop_On = 0;
-        loadareacharacters_no_backdrop_reset = 1;
-        return;
-    case 2:
-    case 3:
-        bonusmodetime += FRAMETIME;
-        if (bonusmodetime < bonusmodeduration)
+        case 2:
+        case 3:
+            bonusmodetime += FRAMETIME;
+            if (bonusmodetime < bonusmodeduration)
+                return;
+            MakeFreePlayModelList(MenuPacket.player_model[0], MenuPacket.player_model[1],
+                                  LDataList[hub_new_level].area_index, -1, 1);
+            makeplayerlist_freeplay = 2;
+            NextArea_FreePlay = 1;
+            FreePlay = 1;
+            NewLData = &LDataList[hub_new_level];
+            FadeSys.fade = 1.0f;
+            FinishLoop_On = 0;
+            loadareacharacters_no_backdrop_reset = 1;
             return;
-        MakeFreePlayModelList(MenuPacket.player_model[0], MenuPacket.player_model[1],
-                              LDataList[hub_new_level].area_index, -1, 1);
-        makeplayerlist_freeplay = 2;
-        NextArea_FreePlay = 1;
-        FreePlay = 1;
-        NewLData = &LDataList[hub_new_level];
-        FadeSys.fade = 1.0f;
-        FinishLoop_On = 0;
-        loadareacharacters_no_backdrop_reset = 1;
-        return;
-    case 4:
-        bonusmodetime += FRAMETIME;
-        if (bonusmodetime >= bonusmodeduration)
-            WipeBackToHub();
-        return;
-    case 0:
-        break;
-    default:
-        return;
+        case 4:
+            bonusmodetime += FRAMETIME;
+            if (bonusmodetime >= bonusmodeduration)
+                WipeBackToHub();
+            return;
+        case 0:
+            break;
+        default:
+            return;
     }
 
     i32 confirm = 0, cancel = 0, up = 0, down = 0, left = 0, right = 0;
@@ -3720,14 +3718,22 @@ void MenuUpdateBonusMode(MENU_s *) {
             cancel = 1;
     }
 
-    if (player_up[0]) BlipU[0] = 0.1f;
-    if (player_down[0]) BlipD[0] = 0.1f;
-    if (player_left[0]) BlipL[0] = 0.1f;
-    if (player_right[0]) BlipR[0] = 0.1f;
-    if (player_up[1]) BlipU[1] = 0.1f;
-    if (player_down[1]) BlipD[1] = 0.1f;
-    if (player_left[1]) BlipL[1] = 0.1f;
-    if (player_right[1]) BlipR[1] = 0.1f;
+    if (player_up[0])
+        BlipU[0] = 0.1f;
+    if (player_down[0])
+        BlipD[0] = 0.1f;
+    if (player_left[0])
+        BlipL[0] = 0.1f;
+    if (player_right[0])
+        BlipR[0] = 0.1f;
+    if (player_up[1])
+        BlipU[1] = 0.1f;
+    if (player_down[1])
+        BlipD[1] = 0.1f;
+    if (player_left[1])
+        BlipL[1] = 0.1f;
+    if (player_right[1])
+        BlipR[1] = 0.1f;
 
     if (bonusmodearcade) {
         if (confirm) {
@@ -3831,8 +3837,7 @@ void MenuDrawBonusMode(MENU_s *) {
     if (MainRenderTime <= 0.0f) {
         Hub_DrawBonusModeMenu(1, alpha);
     } else if (MainRenderTime < 1.0f) {
-        const f32 menu_alpha =
-            1.0f - NU_SIN_LUT(static_cast<i32>((1.0f - MainRenderTime) * 16384.0f + 16384.0f));
+        const f32 menu_alpha = 1.0f - NU_SIN_LUT(static_cast<i32>((1.0f - MainRenderTime) * 16384.0f + 16384.0f));
         Hub_DrawBonusModeMenu(0, menu_alpha * alpha);
     }
 

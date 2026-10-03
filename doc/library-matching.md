@@ -57,6 +57,14 @@ GNU64/i386 O3/SSE sanitizer lanes pass, each with100 actual ColourSet-produced
 cases and6,196 version-specific arithmetic checks. These bounded diagnostics
 do not certify arbitrary matrices, complete compression or private target ABI.
 
+The ColourSet constructor follow-up likewise restores a double sqrt argument
+and existing float assignment. Both constructor aliases rise90.316580% to
+99.969850%; overall matching reaches68.996500%, retaining all6,293 exacts.
+Actual producer/Remap diagnostics pass on both revisions and both GNU ABIs:
+4,160 cases and282,943 checks per lane, including every initialized q/256
+weight for q1..4096. No weight-bit divergence is observed in this finite
+catalog; the instruction-fidelity improvement is not a codec-output claim.
+
 ## Validation and remaining work
 
 In the earlier integration against main `3b3e5bb`, the x86 build increased overall

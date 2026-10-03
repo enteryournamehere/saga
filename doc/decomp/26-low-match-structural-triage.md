@@ -12967,7 +12967,111 @@ pass; the normal commit workflow and new-head GitHub checks remain pending.
 Mapped report9316d88f0ebc3bbb4fa95e32cadad1b2778434b76d0c9f36160c64f8ad678433.
 The70.002460% merge threshold remains unchanged.
 
+Checkpoint51 commit0b4b0cc65394155490cb9a3b23e884615d411fac passes the
+complete normal hook, including all five tests, declaration validation,
+three clang-tidy modes, target/symbol checks and report generation. The
+committed report is byte-identical to the independently mapped report.
+Human author and Codex attribution retain; push succeeds. New-head GitHub
+checks are still pending at this receipt, not inherited from checkpoint50.
+
+All11 exact-head checkpoint51 GitHub checks subsequently complete successfully.
+The+0.990760pp cycle gain remains below+2pp, so the PR is not merged.
+
+### Batch475: constructor double square-root boundary
+
+The complete803-byte original ColourSet C1/C2 alias body promotes each
+initialized float weight to double, computes SQRTSD (cold sqrt(double)),
+then narrows into the same float array. One argument cast restores that
+source-local boundary without changing producer admission, accumulation,
+layout, ABI, version or options. Canonical O3 build passes; all138 actual
+pre-build dependency pins retain except the exactly qualified source owner.
+
+The sole linked report changes only C1/C2:90.316580%→99.969850%, keeping
+all6293 exact identities. The existing alias-row report counts+155.0315162B;
+the one physical constructor contributes77.5157581B. No report normalization
+is changed. Full retained Remap/thunk, storage/literals/PIC/CFI and precise
+sqrt service/target-alignment qualification passes. Receipt
+498b6cfafebbdd9399f2bbe7284a9d22be88dc042754281e784b6d3bd2c6c93c.
+
+Four GNU64/i386 O3/SSE ASan/UBSan/float-cast-overflow/LSan lanes pass,
+each4160 actual constructor/Remap cases and282943 checks. Directed actual
+producers cover every initialized q/256 weight (q1..4096); mask/transparency,
+duplicate/first-record/remap and live-storage guards also pass. Both versions
+agree with their own sqrt boundary oracle; observed precision differences
+are zero in this catalog, not an invented codec-output witness or global
+equivalence claim. Runtime receipt
+9b74f6e21ca9e6082913249f60d880667e8c27c569382dbe05a8c1c11779d549.
+
+Mapped checkpoint52 is68.996500%, +0.003280pp over checkpoint51 and
++0.994040pp over main. Full original identities, ownership summary and
+4722419-byte denominator retain. Android/native/WASM and all five checks
+pass. Normal commit workflow/new-head CI remain pending. Sole raw report
+1ccc95773ac20fbe2a89d207f9c05c3fc50fd402989ca190a50792eff97e1181;
+mapped1a8e952603e55423629ee5184fa29c706d045a06737f6f495042916ffbd736b4.
+
 A complete11528-byte CompressAlphaDxt5 behavioral and emitted-structure
 audit finds no grounded candidate. Current first-fit fixed16-pixel expansion
 and second-fit16-iteration loop already match the original structures; manual
 unrolling would not restore an observed omission. No trial is executed.
+
+### Batch476: space free-fighter cursor rejected
+
+One original-backed typed cursor recipe for ProcessSpaceLevel's96-slot
+free-fighter search reduces the linked score:26.112532%→25.758312%.
+Together with two collateral changes the net is−36.8120336 weighted bytes;
+all6293 exact identities retain. The candidate is reverted and the canonical
+owner object restores byte-identically to its pre-trial baseline. No variant,
+runtime qualification or additional score report is attempted.
+
+### Batch478: shop first-dispatch source form rejected
+
+Replacing only the first shop-item switch with original-ordered byte tests
+retains all branch bodies and the separate live price dispatch, but its sole
+canonical trial reduces DrawSubItemMenu2D35.854256%→23.457432%.
+Linked net is−464.50899528 weighted bytes, with all6293 exact identities
+retained. The source is reverted without variants or runtime qualification.
+
+### Batch480: footstep semantic unit measured, not integrated
+
+The complete658-byte retail AddFootSteps body admits only forward/forward-
+wrap directions from LOOPED and uses slots2/3 unless config0x10000 selects
+all four. Canonical parser/timer producers support finite distinguishing
+states; current extra reverse traversal and unconditional four slots are
+recorded reconstruction debt, not declared faithful. The sole combined
+portable correction reduces27.479769%→26.791908% (−4.52612538 weighted
+bytes); no other linked row changes and all6293 exact identities retain.
+It is reverted for this matching-only unit, with no variant/runtime claim.
+
+### Batches477/479: result-score selection and pause predicates
+
+FinishStatusPacket's732-byte retail body selects HUB zeros versus BonusScore
+before its two OldBonusScore stores. Moving the existing copies into the
+non-HUB else restores that ordinary source form, preserving final distinct
+initialized i32[2] values and service order. The sole linked change is
+25.191860%→28.616280% (+25.0667544 weighted bytes). Actual O3 owner review
+retains all eight other bodies/relative relocations, storage/literals, public
+surface and CFI instructions; only target size769→761, two subsequent
+function coordinates, associated unwind coordinates and alignment gap change.
+There is no concurrency or exact instruction-order equivalence claim.
+
+SystemPauseCallback's741-byte retail body rejects unordered game_time at
+both player gates, but admits unordered post-delay at the player1 gate just
+as at player0. Three source predicates restore that precise policy; all
+finite behavior/equalities and services retain. The sole linked score change
+is38.375000%→38.613094% (+1.76427654 weighted bytes). Its complete9968-byte
+owner ELF differs at only six target instruction bytes; every other byte,
+including symbols/storage/literals/relocations/unwind/thunks, is unchanged.
+No shipped NaN producer or end-to-end OS/audio runtime claim is made.
+
+An initial dependency capture rejected three repeated header names before
+recording input pins. The pause source/object were restored exactly; a fresh
+baseline records178 unique actual inputs and their three repeated occurrences
+before the unchanged candidate. No failed capture is claimed as authority.
+
+Both canonical candidates pass Android/native/WASM and all five repository
+tests. All6293 exact identities, ownership summary and4722419-byte denominator
+retain. The existing integrated raw report is
+3e2ecaa724c301e9c45405a78762c654c85196d61ffdd9bbecc403ebc11ca6a6;
+metadata-only mapping3eb7d38c4c8c485db61356e190da3e9a68858bb24b0136656bfa9a4ea04ca43a.
+Checkpoint52 candidate68.997060%, +0.003840pp over checkpoint51 and
++0.994600pp over main; commit workflow/new-head CI remain pending.

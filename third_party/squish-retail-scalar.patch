@@ -66,3 +66,9 @@ diff --git a/maths.cpp b/maths.cpp
 @@ -214,1 +214,1 @@
 -			rt = std::pow( 0.5f*b, 1.0f/3.0f );
 +			rt = std::pow( static_cast<double>( 0.5f*b ), static_cast<double>( 1.0f/3.0f ) );
+diff --git a/colourset.cpp b/colourset.cpp
+--- a/colourset.cpp
++++ b/colourset.cpp
+@@ -106,1 +106,1 @@
+-		m_weights[i] = std::sqrt( m_weights[i] );
++		m_weights[i] = std::sqrt( static_cast<double>( m_weights[i] ) );

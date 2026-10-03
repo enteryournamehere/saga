@@ -92,7 +92,7 @@ jobs:
       - name: Check target symbols
         run: >-
           bazel run //scripts/checks:check_symbols --
-          --original-symbols matching.json
+          --original-symbols matching.json --list
 
   wasm:
     name: WebAssembly / ${{ matrix.name }}

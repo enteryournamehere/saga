@@ -965,11 +965,12 @@ void Hub_Update(WORLDINFO_s *world) {
             !(hub_area != -1 && hub_area_time > 0.0f &&
               (E1VEHICLE_ADATA == NULL || hub_area != E1VEHICLE_ADATA->index)) &&
             minikit_candidate != -1) {
-            for (i32 i = 0; i < 2; ++i) {
-                if (Player[i] != NULL && static_cast<i8>(Player[i]->apiobj.flags_low) < 0 &&
-                    Player[i]->pad_gamepad->input_magnitude == 0.0f) {
-                    selected_minikit = hub_minikitviewer_area;
-                }
+            const auto player_ready = [](GameObject_s *object) {
+                return object != NULL && static_cast<i8>(object->apiobj.flags_low) < 0 &&
+                       object->pad_gamepad->input_magnitude == 0.0f;
+            };
+            if (player_ready(Player[0]) || player_ready(Player[1])) {
+                selected_minikit = hub_minikitviewer_area;
             }
         }
         if (hub_minikitarea_time == 0.0f) {

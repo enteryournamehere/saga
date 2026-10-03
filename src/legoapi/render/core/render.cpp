@@ -1786,10 +1786,10 @@ void DrawBezierLine(VuVec &start, VuVec &start_control, VuVec &end, VuVec &end_c
     const f32 start_x = start.x - camera_x;
     const f32 start_y = start.y - camera_y;
     const f32 start_z = start.z - camera_z;
+    const f32 start_distance = start_x * start_x + start_y * start_y + start_z * start_z;
     const f32 end_x = end.x - camera_x;
     const f32 end_y = end.y - camera_y;
     const f32 end_z = end.z - camera_z;
-    const f32 start_distance = start_x * start_x + start_y * start_y + start_z * start_z;
     const f32 end_distance = end_x * end_x + end_y * end_y + end_z * end_z;
     const f32 distance = end_distance < start_distance ? end_distance : start_distance;
     const f32 threshold = distance < 5.5f ? 5.5f * 0.001f : distance * 0.001f;
@@ -1807,10 +1807,10 @@ void DrawBezierLine(VuVec &start, VuVec &start_control, VuVec &end, VuVec &end_c
     const f32 end_control_x = end_control.x;
     const f32 end_control_y = end_control.y;
     const f32 end_control_z = end_control.z;
-    VuVec first = {(start.x + control_x) * 0.5f, (start.y + start_control.y) * 0.5f, (start_control.z + start.z) * 0.5f,
-                   0.0f};
     VuVec second = {(control_x + end_control_x) * 0.5f, (end_control_y + start_control.y) * 0.5f,
                     (end_control_z + start_control.z) * 0.5f, 0.0f};
+    VuVec first = {(start.x + control_x) * 0.5f, (start.y + start_control.y) * 0.5f, (start_control.z + start.z) * 0.5f,
+                   0.0f};
     VuVec third = {(end.x + end_control_x) * 0.5f, (end.y + end_control_y) * 0.5f, (end.z + end_control_z) * 0.5f,
                    0.0f};
     VuVec fourth = {(first.x + second.x) * 0.5f, (first.y + second.y) * 0.5f, (first.z + second.z) * 0.5f, 0.0f};

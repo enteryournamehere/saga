@@ -565,7 +565,7 @@ namespace {
         wall_bounds.min_z -= 0.02f;                                                                                    \
         wall_bounds.max_x += 0.02f;                                                                                    \
         wall_bounds.max_z += 0.02f;                                                                                    \
-        if ((reset_empty_arg) || CurTerr->spatial_nodes != NULL)                                                       \
+        if ((reset_empty_arg) || (CurTerr->spatial_nodes != NULL && WallSplCount < 64))                                \
             WallSplCount = 0;                                                                                          \
         for (TERRAIN_SPATIAL_NODE *node = CurTerr->spatial_nodes; node != NULL;                                        \
              node = *reinterpret_cast<TERRAIN_SPATIAL_NODE **>(reinterpret_cast<u8 *>(node) - sizeof(void *))) {       \
@@ -576,19 +576,19 @@ namespace {
                 NUVEC *points = node->points + first;                                                                  \
                 i32 end = node->point_count;                                                                           \
                 if (points[0].y != 2147483648.0f) {                                                                    \
-                    if (points[1].y < wall_bounds.min_x || points[0].y > wall_bounds.max_x ||                          \
-                        points[3].y < wall_bounds.min_z || points[2].y > wall_bounds.max_z)                            \
+                    if (!(points[1].y >= wall_bounds.min_x && wall_bounds.max_x >= points[0].y &&                      \
+                          points[3].y >= wall_bounds.min_z && wall_bounds.max_z >= points[2].y))                       \
                         continue;                                                                                      \
                     end = MIN(end, first + 16);                                                                        \
                 }                                                                                                      \
                 for (i32 i = first; i < end; ++i) {                                                                    \
                     NUVEC &a = node->points[i];                                                                        \
                     NUVEC &b = node->points[i + 1];                                                                    \
-                    if ((a.x < wall_bounds.min_x || b.x > wall_bounds.max_x) &&                                        \
-                        (b.x < wall_bounds.min_x || a.x > wall_bounds.max_x))                                          \
+                    if (!((a.x >= wall_bounds.min_x && wall_bounds.max_x >= b.x) ||                                    \
+                          (b.x >= wall_bounds.min_x && wall_bounds.max_x >= a.x)))                                     \
                         continue;                                                                                      \
-                    if ((a.z < wall_bounds.min_z || b.z > wall_bounds.max_z) &&                                        \
-                        (b.z < wall_bounds.min_z || a.z > wall_bounds.max_z))                                          \
+                    if (!((a.z >= wall_bounds.min_z && wall_bounds.max_z >= b.z) ||                                    \
+                          (b.z >= wall_bounds.min_z && wall_bounds.max_z >= a.z)))                                     \
                         continue;                                                                                      \
                     if (WallSplCount < 64) {                                                                           \
                         WallSplList[WallSplCount].position = a;                                                        \
@@ -6933,10 +6933,11 @@ i16 *NewScanHandelFull(nuvec_s *position, nuvec_s *movement, f32 radius, i32 sca
     }
     i16 *terminator = reinterpret_cast<i16 *>(writer.group_header);
     terminator[0] = terminator[1] = 0;
+    const bool wall_storage_full = WallSplCount >= 64;
     TERRAIN_COLLECT_WALL_SPLINES(bounds, terrain_mask, false, false);
     TERRAIN_WALL_POINT **walls = reinterpret_cast<TERRAIN_WALL_POINT **>(writer.group_header + sizeof(void *));
     u8 *arena_end = static_cast<u8 *>(TempScanStack) + 0x2000;
-    i32 wall_count = CurTerr->spatial_nodes == NULL ? 0 : WallSplCount / 2;
+    i32 wall_count = (CurTerr->spatial_nodes == NULL || wall_storage_full) ? 0 : WallSplCount / 2;
     while (wall_count > 0 &&
            reinterpret_cast<u8 *>(walls + wall_count + 1) + wall_count * 2 * sizeof(TERRAIN_WALL_POINT) > arena_end)
         --wall_count;

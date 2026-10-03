@@ -2,8 +2,6 @@
 #include "MechInputTouch_types.h"
 #include "legoapi/audio/audio.h"
 #include "legoapi/audio/sfx.h"
-#include "legoapi/misc/supportall.h"
-#include "legoapi/render/core/screen.h"
 
 #include <string.h>
 
@@ -26,6 +24,7 @@
 #include "nu2api/numath/nutrig.h"
 
 void RndrTexQuad(f32, f32, f32, f32, i32, numtl_s *, i32);
+i32 RndrUnfilledCircle(f32, f32, f32, f32, f32, i32, f32, f32, numtl_s *);
 
 extern i32 CutSceneWaiting;
 extern i32 editor_active;
@@ -42,6 +41,7 @@ extern "C" {
 }
 
 i32 GetMenuID();
+float GetAspectRatio();
 void PlayerButton_OnClick_Callback_NextButton(MechTouchUIElement &, TouchHolder &);
 void PlayerButton_OnHold_Callback(MechTouchUIElement &, TouchHolder &);
 void PlayerButton_OnLeave_Callback(MechTouchUIElement &, TouchHolder &);
@@ -701,7 +701,8 @@ void MechTouchUIPlayerButton::Process(float) {
         }
         for (i32 slot = 0; slot < 8; ++slot) {
             GameObject_s *target = Player[slot];
-            if (target != NULL && target->id == target_ids[target_index] && TouchHacks::CanTagTo(*player, *target)) {
+            if (target != NULL && target->id == target_ids[target_index] &&
+                TouchHacks::CanTagTo(*player, *target)) {
                 field_0x144[target_index] = 1;
                 MechSystems::Get()->NewRadarPulse(position, false);
                 break;

@@ -29,20 +29,16 @@ void NuTimeWait(f32 milliseconds) {
     }
 }
 
-static u32 frameStartTime;
-extern "C" u32 NuTimeGetTime(void);
-
 extern "C" void NuTimeStartFrame(void) {
-    frameStartTime = NuTimeGetTime();
+    STUBBED();
 }
 
-extern "C" u32 NuTimeGetStartFrame(void) {
-    return frameStartTime;
+extern "C" void NuTimeGetStartFrame(void) {
+    STUBBED();
 }
 
-extern "C" u32 NuTimeGetSinceStartFrame(void) {
-    u32 currentTime = NuTimeGetTime();
-    return currentTime - frameStartTime;
+extern "C" void NuTimeGetSinceStartFrame(void) {
+    STUBBED();
 }
 
 f32 NuTimeScanlines(NUTIME *t) {

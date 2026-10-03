@@ -1,5 +1,4 @@
 #include "decomp.h"
-#include "legoapi/core/net/netplay.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/core/input/qrand.h"
 #include "nu2api/nu3d/nutex.h"
@@ -19,14 +18,8 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
-APICHARACTERMODELLIST_s NetFreePlayModelList[49];
-i8 net_FreePlayModelCount;
-u8 net_recievedFreePlayList;
-
-void GetClientMineInfo(nuvec_s **positions, u64 **present, u64 **exploded) {
-    *positions = client_mines.positions;
-    *present = &client_mines.present_mask;
-    *exploded = &client_mines.exploded_mask;
+void GetClientMineInfo(nuvec_s **, u64 **, u64 **) {
+    STUBBED();
 }
 
 extern void Player_ResetContexts(PLAYERPACKET_s *packet);

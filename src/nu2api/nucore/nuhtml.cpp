@@ -1,8 +1,4 @@
 #include "nu2api/nucore/nuhtml.h"
-#include "nu2api/nu3d/nudlist.h"
-
-#include <stdio.h>
-#include <string.h>
 
 #include <stdio.h>
 

@@ -5,7 +5,7 @@
 
 extern "C" {
 
-    void NuFramebufferInitEx(void) {
+    void NuFramebufferInitEx(u32, u32, VARIPTR *, VARIPTR) {
     }
 
     SAGA_HOST_WEAK nuframebuffer_s *NuFramebufferCreate(void) {
@@ -93,9 +93,12 @@ void NuFramebuffer360BeginZPass(i32) {
 void NuFramebuffer360EndZPass(void) {
 }
 
-void NuFramebuffer360HasZPass(void) {
+bool NuFramebuffer360HasZPass(void) {
+    STUBBED();
+    return false;
 }
 
-i32 NuFramebuffer360GetTileCount(nuframebuffer_s *framebuffer) {
-    return *reinterpret_cast<const i32 *>(reinterpret_cast<const u8 *>(framebuffer) + 0xf4);
+i32 NuFramebuffer360GetTileCount(nuframebuffer_s *) {
+    STUBBED();
+    return 0;
 }

@@ -780,6 +780,7 @@ void NuIOSDLLightsCallback(void *arg) {
 }
 
 void NuIOSDLDeferredMtlCallback(void *) {
+    STUBBED();
 }
 
 extern "C" void NuRndrPspDraw(void) {
@@ -847,12 +848,14 @@ extern "C" void NuWaterOverride(void) {
 }
 
 void NuRndrFlush(i32) {
+    STUBBED();
 }
 
 extern "C" void NuRndrShadowDirCol(const NUVEC *direction, u32 colour, f32 near_distance, f32 far_distance) {
 }
 
 extern "C" i32 NuRndrSetBlendData(void) {
+    STUBBED();
     return 0;
 }
 
@@ -1017,13 +1020,17 @@ extern "C" {
 }
 
 extern "C" void NuRndrScreenGrabTileInit(void *, i32, f32, f32, f32) {
+    STUBBED();
 }
 
 extern "C" void NuRndrScreenGrabTileDeInit(void *) {
+    STUBBED();
 }
 
 extern "C" void NuRndrScreenGrabTileBegin(void **) {
+    STUBBED();
 }
 
 extern "C" void NuRndrScreenGrabTileEnd(void **) {
+    STUBBED();
 }

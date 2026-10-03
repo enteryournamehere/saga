@@ -105,9 +105,11 @@ i32 NuThreadCreate(void (*function)(void *), void *argument) {
 #endif
 
 void NuThreadSignalSend(void) {
+    STUBBED();
 }
 
 void NuThreadSignalRecieve(void) {
+    STUBBED();
 }
 
 void NuEnableVBlank() {

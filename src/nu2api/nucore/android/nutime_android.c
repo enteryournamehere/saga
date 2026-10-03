@@ -49,5 +49,5 @@ u64 NuGetCurrentTimeMilisecondsPS(void) {
     return (u64)ts.tv_nsec + (u64)ts.tv_sec * 1000;
 }
 
-extern "C" u32 NuTimeGetTime(void) {
+extern "C" void NuTimeGetTime(void) {
 }

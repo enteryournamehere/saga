@@ -259,29 +259,26 @@ static f32 GizForce_GetAnimatedHeight(GIZFORCE_s *force) {
 }
 
 static void GizForce_AddToGroup(GIZFORCE_s *force) {
-    GIZFORCEGROUP_s *group = force->group;
-    if (group == NULL || (force->progress_flags & GIZFORCE_PROGRESS_GROUP_MEMBER) != 0 || group->count >= 8) {
-        return;
+    if (force->group != NULL && !force->progress_group_member && force->group->count < 8) {
+        if (force->group->count != 0) {
+            f32 height = GizForce_GetAnimatedHeight(force->group->forces[force->group->count - 1]);
+            force->group->combined_height += height;
+        }
+        force->group->forces[force->group->count++] = force;
+        force->progress_group_member = 1;
     }
-    if (group->count != 0) {
-        group->combined_height += GizForce_GetAnimatedHeight(group->forces[group->count - 1]);
-    }
-    group->forces[group->count++] = force;
-    force->progress_flags |= GIZFORCE_PROGRESS_GROUP_MEMBER;
 }
 
 static void GizForce_RemoveFromGroup(GIZFORCE_s *force) {
-    GIZFORCEGROUP_s *group = force->group;
-    if (group == NULL || (force->progress_flags & GIZFORCE_PROGRESS_GROUP_MEMBER) == 0) {
-        return;
-    }
-    if (group->count != 0 && group->forces[group->count - 1] == force) {
-        group->forces[group->count] = NULL;
-        --group->count;
-        if (group->count != 0) {
-            group->combined_height -= GizForce_GetAnimatedHeight(group->forces[group->count - 1]);
+    if (force->group != NULL && force->progress_group_member && force->group->count != 0 &&
+        force->group->forces[force->group->count - 1] == force) {
+        force->group->forces[force->group->count] = NULL;
+        --force->group->count;
+        if (force->group->count != 0) {
+            f32 height = GizForce_GetAnimatedHeight(force->group->forces[force->group->count - 1]);
+            force->group->combined_height -= height;
         }
-        force->progress_flags &= static_cast<u8>(~GIZFORCE_PROGRESS_GROUP_MEMBER);
+        force->progress_group_member = 0;
         GameAnimSet_SetOffset(force->anim_set, &v000);
     }
 }
@@ -868,8 +865,10 @@ static i32 *GizForces_GetBestBoltTarget(GIZMOSET *set, float *result_distance, N
     if (directional != 0 && (bolt_type->field_60 & 0x20000) != 0) {
         aim.y = 0.0f;
         NuVecNorm(&aim, &aim);
+        system = static_cast<GIZFORCESYS_s *>(set->unknown);
     }
-    if (system->hit_test_gizmo_count == 0) {
+    u16 hit_test_gizmo_count = system->hit_test_gizmo_count;
+    if (hit_test_gizmo_count == 0) {
         return NULL;
     }
 
@@ -877,7 +876,7 @@ static i32 *GizForces_GetBestBoltTarget(GIZMOSET *set, float *result_distance, N
     GIZMO *best = NULL, *previous = NULL;
     NUVEC *best_position = NULL, *previous_position = NULL;
     float nearest_distance = 100000000.0f;
-    for (i32 i = 0; i < system->hit_test_gizmo_count; ++i) {
+    for (i32 i = 0; i < hit_test_gizmo_count; ++i) {
         GIZMO *gizmo = system->hit_test_gizmos[i];
         GIZFORCE_s *force = static_cast<GIZFORCE_s *>(gizmo->object);
         if ((force->progress_flags & GIZFORCE_PROGRESS_VISIBLE) == 0 ||
@@ -1082,7 +1081,7 @@ static void GizForces_StoreProgress(void *, void *data, void *progress_ptr) {
             break;
         }
         const i32 word = index >> 5;
-        const u32 bit = 1 << index;
+        const u32 bit = 1u << (index & 31);
         if ((force->progress_flags & GIZFORCE_PROGRESS_VISIBLE) == 0) {
             progress->progress_flag_1[word] &= ~bit;
         }
@@ -1371,6 +1370,11 @@ static i32 GizForces_Load(void *world_ptr, void *data) {
             if (GizmoFileReadName(sfx_name) != 0) {
                 force.stop_sfx_id = static_cast<i16>(GetSfxId(sfx_name));
             }
+        }
+        if (version == 14) {
+            force.start_sfx_id = -1;
+            force.loop_sfx_id = -1;
+            force.stop_sfx_id = -1;
         }
 
         if ((force.config_flags & GIZFORCE_CONFIG_ALONG_SOCKET) != 0) {

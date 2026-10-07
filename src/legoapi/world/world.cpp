@@ -244,17 +244,20 @@ void StoreLevelProgressFn(WORLDINFO_s *world, LEVEL_PROGRESS_s *progress, i32 ar
     }
     GameAnimSys_StoreProgress(world->game_anim_sys, index);
     for (i32 i = 0; i < world->processor_count; ++i) {
-        if (progress == NULL || NuStrLen(world->processors[i].name) == 0)
+        if (progress == NULL)
+            continue;
+        LEVELSCRIPTPROCESS &processor = world->processors[i];
+        if (NuStrLen(processor.name) == 0)
             continue;
         for (i32 j = 0; j < 32; ++j) {
             if (NuStrLen(progress->scripts[j].name) == 0) {
-                NuStrCpy(world->level_progress->scripts[j].name, world->processors[i].name);
+                NuStrCpy(world->level_progress->scripts[j].name, processor.name);
                 for (i32 k = 0; k < 4; ++k)
-                    progress->scripts[j].params[k] = world->processors[i].processor.params[k];
+                    progress->scripts[j].params[k] = processor.processor.params[k];
                 break;
             }
-            if (NuStrICmp(progress->scripts[j].name, world->processors[i].name) == 0) {
-                memcpy(progress->scripts[j].params, world->processors[i].processor.params, 16);
+            if (NuStrICmp(progress->scripts[j].name, processor.name) == 0) {
+                memcpy(progress->scripts[j].params, processor.processor.params, 16);
                 break;
             }
         }
@@ -334,8 +337,6 @@ WORLDINFO WorldInfo[2];
 WORLDINFO *WORLD = &WorldInfo[0];
 
 f32 g_BgLoadDelayHackTimer;
-
-static i32 EditBufferEndSize = 0;
 
 volatile i32 waiting_for_level;
 i32 level_already_loaded = -1;
@@ -1067,20 +1068,21 @@ void WorldInfo_ReArrangeBuffers(i32 area1, i32 area2) {
     } else if ((ADataList[area1].flags & AREAFLAG_SINGLE_BUFFER) != 0) {
         LWORLD = &WorldInfo[0];
         WORLD = &WorldInfo[0];
-        if (WorldInfo[0].unknown_0108.addr < bufferEnd->addr) {
+        if (WorldInfo[0].unknown_0108.addr >= bufferEnd->addr) {
             return;
         }
+        usize end = bufferEnd->addr;
         bufferEnd->addr = WorldInfo[0].unknown_0108.addr;
-        WorldInfo[0].unknown_0108.addr = bufferEnd->addr - EditBufferEndSize;
+        WorldInfo[0].unknown_0108.addr = end - EDITBUFFERENDSIZE;
         return;
     }
 
-    if (WorldInfo[0].unknown_0108.addr < bufferEnd->addr) {
+    if (WorldInfo[0].unknown_0108.addr <= bufferEnd->addr) {
         return;
     }
     usize end = WorldInfo[0].unknown_0108.addr;
     WorldInfo[0].unknown_0108.addr = bufferEnd->addr;
-    bufferEnd->addr = end + EditBufferEndSize;
+    bufferEnd->addr = end + EDITBUFFERENDSIZE;
 }
 
 extern "C" {
@@ -1171,15 +1173,14 @@ void MakeFreePlayModelList(i32 model1, i32 model2, i32 area, i32 level, i32 para
                 if (InModelListDataFlags(FreePlayModelList, CharCategory[i].model_flags, CharCategory[i].game_flags, 0,
                                          1) != 0)
                     continue;
-                i32 model;
+                i32 model = -1;
                 if (hats == 0 || (CharCategory[i].model_flags & 0x80) != 0) {
                     model = RandomIDFromFlags(CharCategory[i].model_flags, CharCategory[i].game_flags, 1, NULL, 1);
                     if (model != -1) {
                         hats = 1;
-                    } else {
-                        model = RandomIDFromFlags(CharCategory[i].model_flags, CharCategory[i].game_flags, 0, NULL, 1);
                     }
-                } else {
+                }
+                if (model == -1) {
                     model = RandomIDFromFlags(CharCategory[i].model_flags, CharCategory[i].game_flags, 0, NULL, 1);
                 }
                 if (World_AddFreePlayModel(model) != 0)
@@ -1229,7 +1230,16 @@ void MakeFreePlayModelList(i32 model1, i32 model2, i32 area, i32 level, i32 para
     }
     for (EXTRAMODEL *extra = ExtraModelList; extra->model_list != NULL; ++extra) {
         const i32 source = *extra->model_list;
-        if (source != -1 && InModelList(FreePlayModelList, source, NULL) != 0 && extra->field_04 != NULL)
+        bool found = false;
+        if (source != -1) {
+            for (i32 i = 0; i < FreePlayModelCount; ++i) {
+                if (FreePlayModelList[i].model_id == source) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (found && extra->field_04 != NULL)
             World_AddFreePlayModel(*static_cast<i16 *>(extra->field_04));
     }
 }

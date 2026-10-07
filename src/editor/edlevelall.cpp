@@ -1277,11 +1277,12 @@ void ClassEditor::cbEdClassNewObject(eduimenu_s *parent, eduiitem_s *item, u32) 
         return;
     eduiMenuAddItem(error_menu, eduiItemSelCreate(1, &EdLevelAttr, 0, 0, cbEdLevelDestroyOnSelect,
                                                   const_cast<char *>("Failed to create new object")));
+    const char *error_text = "Unknown class id";
+    if (ed_class != NULL)
+        error_text = "No selected objects to clone";
     if (ed_class == NULL || (ed_class->flags & 0x04000000))
-        eduiMenuAddItem(error_menu,
-                        eduiItemSelCreate(1, &EdLevelAttr, 0, 0, cbEdLevelDestroyOnSelect,
-                                          const_cast<char *>(ed_class == NULL ? "Unknown class id"
-                                                                              : "No selected objects to clone")));
+        eduiMenuAddItem(error_menu, eduiItemSelCreate(1, &EdLevelAttr, 0, 0, cbEdLevelDestroyOnSelect,
+                                                      const_cast<char *>(error_text)));
     eduiMenuFitWidth(error_menu, 5);
     eduiMenuFitOnScreen(error_menu, 1);
     eduiMenuAttach(parent, error_menu);
@@ -2364,9 +2365,9 @@ i32 __attribute__((optimize("no-partial-inlining"))) LevelEditor::Save() {
         theClassEditor.PreSaveInitialisation();                                                                        \
         sprintf(save_filename, "%s/%s.led", scene.directory, scene.name);                                              \
         if (scene.editable) {                                                                                          \
-            editor_buffer_cursor = editor_buffer_begin;                                                                \
-            NUFILE memory_file = NuMemFileOpen(editor_buffer_begin.void_ptr,                                           \
-                                               editor_buffer_end.addr - editor_buffer_begin.addr, NUFILE_WRITE);       \
+            variptr_u buffer = editor_buffer_begin;                                                                    \
+            editor_buffer_cursor = buffer;                                                                             \
+            NUFILE memory_file = NuMemFileOpen(buffer.void_ptr, editor_buffer_end.addr - buffer.addr, NUFILE_WRITE);   \
             if (memory_file) {                                                                                         \
                 EdFileOutputStream stream;                                                                             \
                 stream.Open(memory_file, 4);                                                                           \
@@ -2379,7 +2380,7 @@ i32 __attribute__((optimize("no-partial-inlining"))) LevelEditor::Save() {
                 if (!output_file) {                                                                                    \
                     scene.saved = 0;                                                                                   \
                 } else {                                                                                               \
-                    NuFileWrite(output_file, editor_buffer_begin.void_ptr, size);                                      \
+                    NuFileWrite(output_file, buffer.void_ptr, size);                                                   \
                     NuFileClose(output_file);                                                                          \
                     scene.saved = 1;                                                                                   \
                     saved_any = 1;                                                                                     \
@@ -3306,16 +3307,20 @@ void EdClass::Serialise(EdStream &stream, i32 *class_mapping) {
 
 i32 EdClass::GetStreamClasses(EdStream &stream, i32 *classes, i32 &count, i32 capacity) {
     i32 result = 0;
-    if (count < capacity) {
-        classes[count] = theRegistry.GetClassId(this);
-        ++count;
+    i32 class_index = count;
+    if (class_index < capacity) {
+        classes[class_index] = theRegistry.GetClassId(this);
+        count = class_index + 1;
     }
     for (EdRef *member = members; member != NULL; member = member->next) {
         if (member->attributes >= 0) {
             continue;
         }
-        if ((stream.flags & 0x400000) != 0 ? (member->attributes & 0x400000) != 0
-                                           : (member->attributes & 0x10000000) != 0) {
+        if ((stream.flags & 0x400000) != 0) {
+            if ((member->attributes & 0x400000) != 0) {
+                continue;
+            }
+        } else if ((member->attributes & 0x10000000) != 0) {
             continue;
         }
         theRegistry.GetClass(member->type_id)->GetStreamClasses(stream, classes, count, capacity);

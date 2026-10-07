@@ -70,6 +70,14 @@ struct part_typedesc_s;
 union variptr_u;
 
 struct ClassObjectList;
+struct ClassObject {
+    EdClass *ed_class;
+    void *object;
+    EdRef *reference;
+
+    void GetName(char *, i32);
+    void Set(char *);
+};
 struct EdMember {
     void *object;
     EdRef *reference;
@@ -80,6 +88,10 @@ struct EdSubSystem {
     virtual void SubReset();
     virtual void SubProcess(float);
     virtual void SubRender();
+
+    // Subsystem storage is externally owned; the retail deleting destructor does not free it.
+    static void operator delete(void *) {
+    }
 
     EdSubSystem *next;
     EdSubSystem *previous;
@@ -312,6 +324,7 @@ struct EdEnumControl : EdControl {
     };
     Item *items;
 
+    static void operator delete(void *);
     void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
     char *GetEnumString(i32);
     i32 GetEnumValue(char *);
@@ -326,6 +339,7 @@ struct EdEnumControl : EdControl {
 struct EdBitControl : EdEnumControl {
     u32 bit_mask;
 
+    static void operator delete(void *);
     void AddMenuItem(eduimenu_s *, EdRef *, void *) override;
     void Refresh() override;
     static void cbButton(eduimenu_s *, eduiitem_s *, u32);
@@ -685,9 +699,7 @@ struct EdSfxNameControl : EdStringControl {
 };
 DECOMP_ASSERT(sizeof(void *) != 4 || sizeof(EdSfxNameControl) == 0x10, "EdSfxNameControl ABI");
 struct EdClassObjectNameControl : EdStringControl {
-    EdClass *selected_class;
-    void *selected_object;
-    EdRef *selected_reference;
+    ClassObject selected;
 
     EdClassObjectNameControl();
     ~EdClassObjectNameControl() override;

@@ -133,7 +133,7 @@ f32 oneAtOnce_GetHoldRange(GameObject_s *object) {
 }
 
 void oneAtOnce_MaintainArray() {
-    GameObject_s *previous_attackers[8][4] = {};
+    GameObject_s *previous_attackers[8][4];
     i32 previous_count[8] = {};
     i32 attacker_count[8] = {};
 
@@ -164,10 +164,11 @@ void oneAtOnce_MaintainArray() {
             continue;
         }
 
-        const i32 slot = attacker_count[player_index]++;
+        const i32 slot = attacker_count[player_index];
         AtOnce_attackingPlayer[player_index][slot].object = object;
         AtOnce_attackingPlayer[player_index][slot].distance =
             NuVecDistSqr(&opponent->apiobj.collision_position, &object->apiobj.collision_position, NULL);
+        ++attacker_count[player_index];
     }
 
     for (i32 player = 0; player < 8; ++player) {

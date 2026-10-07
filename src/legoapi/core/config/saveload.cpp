@@ -21,6 +21,8 @@
 
 extern i32 MenuLoadStarted;
 extern i32 memcard_slot;
+extern i32 memcard_cardchanged;
+extern i32 memcard_slotsused;
 extern i32 memcard_saveneeded;
 extern i32 memcard_savestarted;
 extern i32 memcard_savefailed;
@@ -289,8 +291,7 @@ void SerialiseVuVec(EdStream &stream, void *data, i32) {
 }
 
 void FS_MoveCursorUp(i32 steps) {
-    i32 remaining = steps;
-    while (remaining > 0) {
+    while (steps > 0) {
         i32 currentPosLength = FS_PrevNameLen(FS_CurrentPos);
         i32 cursorLength = FS_PrevNameLen(FS_CurrentCursorPos);
         char *cursor = FS_CurrentCursorPos;
@@ -305,7 +306,7 @@ void FS_MoveCursorUp(i32 steps) {
         }
 
         FS_CurrentCursorPos = cursor - cursorLength;
-        --remaining;
+        --steps;
     }
 }
 
@@ -414,8 +415,7 @@ void FS_MakeTimeString(FS_FILEENTRYHDR *entry, char *output) {
 void FS_MoveCursorDown(i32 steps) {
     char **currentPos = &FS_CurrentPos;
     char **cursorPos = &FS_CurrentCursorPos;
-    i32 remaining = steps;
-    while (remaining > 0) {
+    while (steps > 0) {
         i32 currentPosLength = NuStrLen(*currentPos);
         i32 cursorLength = NuStrLen(*cursorPos);
         char *next = *cursorPos + cursorLength + 1;
@@ -435,7 +435,7 @@ void FS_MoveCursorDown(i32 steps) {
             }
             *cursorPos = next;
         }
-        --remaining;
+        --steps;
     }
 }
 
@@ -992,7 +992,26 @@ extern "C" {
 
     void loadsaveCallEachFrame(void) {
         saveloadASCallEachFrame();
+        if (saveload_cardchanged != 0) {
+            memcard_cardchanged = 1;
+        }
         UpdateSaveSlots();
+
+        memcard_slotsused = 0;
+        if (saveload_savepresent != 0) {
+            i32 slots = SAVESLOTS;
+            const i32 slot_capacity = sizeof(saveload_slotused) / sizeof(saveload_slotused[0]);
+            if (slots > slot_capacity) {
+                slots = slot_capacity;
+            }
+            i32 used = 0;
+            for (i32 slot = 0; slot < slots; ++slot) {
+                if (saveload_slotused[slot] != 0) {
+                    ++used;
+                }
+            }
+            memcard_slotsused = used;
+        }
     }
 
     i32 TriggerAutoSave(void) {

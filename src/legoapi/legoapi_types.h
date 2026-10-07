@@ -550,8 +550,7 @@ struct AREADATA_s;
 struct AREASAVE_s {
     u8 complete;
     u8 area_complete;
-    u8 story_buildup_complete;
-    u8 freeplay_buildup_complete;
+    u8 true_hero_complete[2]; // Story and free-play completion.
     u8 minikit_complete;
     union {
         u8 field_0x5[3];
@@ -562,6 +561,9 @@ struct AREASAVE_s {
     f32 challenge_trial_time;
 };
 DECOMP_ASSERT(sizeof(AREASAVE_s) == 0xc, "AREASAVE_s size");
+DECOMP_ASSERT(offsetof(AREASAVE_s, true_hero_complete[0]) == 0x2, "AREASAVE story true hero offset");
+DECOMP_ASSERT(offsetof(AREASAVE_s, true_hero_complete[1]) == 0x3, "AREASAVE free-play true hero offset");
+DECOMP_ASSERT(sizeof(((AREASAVE_s *)0)->true_hero_complete) == 0x2, "AREASAVE true hero completion extent");
 DECOMP_ASSERT(offsetof(AREASAVE_s, area_complete) == 0x1, "AREASAVE area completion offset");
 DECOMP_ASSERT(offsetof(AREASAVE_s, challenge_trial_time) == 0x8, "AREASAVE challenge time offset");
 struct ATTRACTO_s;
@@ -1018,7 +1020,6 @@ struct CUTINFO {
         i32 music_track_handle;
     };
     f32 low_end_distance;
-    f32 field_194;
 };
 DECOMP_ASSERT(offsetof(CUTINFO, burnout_threshold) == 0x60, "CUTINFO burnout threshold offset");
 DECOMP_ASSERT(offsetof(CUTINFO, texture_animations) == 0x144, "CUTINFO texture animations offset");
@@ -1033,7 +1034,7 @@ DECOMP_ASSERT(offsetof(CUTINFO, debris_render_group) == 0xf3, "CUTINFO debris re
 DECOMP_ASSERT(offsetof(CUTINFO, next_cutscene) == 0x104, "CUTINFO chained-cutscene offset");
 DECOMP_ASSERT(offsetof(CUTINFO, end_flags) == 0x18a, "CUTINFO end-flags offset");
 DECOMP_ASSERT(offsetof(CUTINFO, music_handle) == 0x18c, "CUTINFO music-handle offset");
-DECOMP_ASSERT(sizeof(CUTINFO) == 0x198, "CUTINFO size");
+DECOMP_ASSERT(sizeof(CUTINFO) == 0x194, "CUTINFO size");
 DECOMP_ASSERT(offsetof(CUTINFO, music_track_handle) == 0x18c, "CUTINFO music offset");
 DECOMP_ASSERT(offsetof(CUTINFO, texture_animations) + offsetof(CUTSCENETEXANIM, index) == 0x148,
               "CUTINFO texture signals offset");
@@ -3863,14 +3864,6 @@ struct CantPickupBombTimerAddon : MechAddon {
 DECOMP_ASSERT(sizeof(CantPickupBombTimerAddon) == 0x1c, "CantPickupBombTimerAddon ABI");
 DECOMP_ASSERT(offsetof(CantPickupBombTimerAddon, remaining_time) == 0x18, "Bomb pickup timer offset");
 
-struct ClassObject {
-    EdClass *ed_class;
-    void *object;
-    EdRef *reference;
-
-    void GetName(char *, i32);
-    void Set(char *);
-};
 struct ClassObjectListEntry {
     ClassObjectListEntry *next;
     ClassObjectListEntry *previous;
@@ -4519,7 +4512,7 @@ struct GIZMOBLOWUP_s {
     u8 initial_state_1; // 0x119
     undefined field_0x11a[2];
     nuhspecial_s *override_special; // 0x11c, optional per-instance special
-    void *field_0x120;              // 0x120
+    NUVEC *field_0x120;             // 0x120
     u8 field_0x124;                 // 0x124
     undefined field_0x125[3];
     float field_0x128; // 0x128
@@ -4892,8 +4885,27 @@ struct GIZTURRET_s {
     i16 field_0x134;
     u8 field_0x136[2];
     i16 field_0x138;
-    u8 flags;                                   // 0x13a
-    u8 runtime_flags;                           // 0x13b
+    union {
+        u8 flags; // 0x13a
+        struct {
+            u8 : 1;
+            u8 active : 1;
+            u8 visible : 1;
+            u8 aim_locked : 1;
+            u8 aim_at_fixed_angles : 1;
+            u8 update_disabled : 1;
+            u8 rapid_fire_pending : 1;
+            u8 fired_this_frame : 1;
+        };
+    };
+    union {
+        u8 runtime_flags; // 0x13b
+        struct {
+            u8 : 3;
+            u8 rotation_sound_playing : 1;
+            u8 : 4;
+        };
+    };
     MechObjectInterface *mech_object_interface; // 0x13c
     f32 field_0x140;
     void ClearMechObjectInterface();

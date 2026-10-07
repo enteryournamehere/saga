@@ -64,6 +64,10 @@
 #include <stdio.h>
 #include <math.h>
 #include "legoapi/menus/core/text.h"
+#include "legoapi/actions/character/specialmoves.h"
+#include "legoapi/audio/audio.h"
+#include "legoapi/characters/core/customiser.h"
+#include "nu2api/numusic/numusic.h"
 #include "nu2api/numath/nutrig.h"
 
 static CHARSCENE_s *CharScene_Area;
@@ -85,6 +89,7 @@ extern "C" {
     void NuTexAnimProgSysInit(void);
     void terrainpickupinit(char *, void **);
 
+    extern f32 animduration_blendouttime;
     extern i32 Grass_Available;
     extern i32 DEBPAGE_GENERAL;
     extern i32 DEBPAGE_CHARACTER;
@@ -861,7 +866,7 @@ i32 InitCreature(GameObject_s *obj, i32 id, i32 param) {
     }
 
     obj->pad_gamepad = GamePad_Allocate();
-    obj->pad_gamepad->unknown_24 |= 0x100;
+    obj->pad_gamepad->input_mode = 1;
     obj->hitpoints = game_character_data->hitpoints;
     obj->current_hp = game_character_data->hitpoints;
     ResetPlayerPacket(reinterpret_cast<PLAYERPACKET_s *>(obj->player_packet),
@@ -892,9 +897,8 @@ i32 InitCreature(GameObject_s *obj, i32 id, i32 param) {
 
     i32 reset_animation = 1;
     if (obj->apiobj.character_model != NULL) {
-        void **animation_table = *reinterpret_cast<void ***>(reinterpret_cast<u8 *>(obj->apiobj.character_model) + 0xc);
+        void **animation_table = obj->apiobj.character_model->model_data_b;
         if (animation_table != NULL && animation_table[1] == NULL) {
-            reset_animation = 0;
             for (i32 i = 0; i < 0xe9; i++) {
                 if (animation_table[i] != NULL) {
                     obj->apiobj.anim_packet.animation_index = static_cast<u16>(i);
@@ -1185,18 +1189,19 @@ static void NewCharacterIdle(GameObject_s *object, i32 default_idle) {
     CHARACTERANIM_s *info = static_cast<CHARACTERANIM_s *>(model->model_data_a[animation]);
     i32 repetitions = static_cast<u8>(info->minimum_repetitions);
     const u8 maximum = static_cast<u8>(info->maximum_repetitions);
-    object->previous_idle_animation = static_cast<i16>(animation);
-    if (repetitions > 1 && (info->flags & 2) == 0) {
-        repetitions = 1;
-    }
     if (repetitions == 0) {
         repetitions = 1;
     } else if (maximum > repetitions) {
         repetitions = IdleRepetitionCount(static_cast<u8>(repetitions), maximum);
     }
+    object->previous_idle_animation = static_cast<i16>(animation);
+    if (repetitions > 1 && (info->flags & 2) == 0) {
+        repetitions = 1;
+    }
 
     object->idle_animation_time = 0.0f;
-    object->idle_animation_limit = AnimDuration(object->id, animation, 0.0f, 0.0f, 0) * repetitions - FRAMETIME;
+    const f32 duration = AnimDuration(object->id, animation, 0.0f, 0.0f, 0);
+    object->idle_animation_limit = duration * repetitions - animduration_blendouttime;
 }
 
 void UpdateCharacterIdle(GameObject_s *object) {
@@ -1977,6 +1982,7 @@ void LoadPerm1() {
 }
 
 void LoadPerm2() {
+    extern i16 CustomiserActionList_Game[];
     extern i16 tALL;
     extern i16 tJEDI;
     extern i16 tBLASTER;
@@ -2003,4 +2009,23 @@ void LoadPerm2() {
     Collection_CreateCustom(const_cast<char *>("BountyHunters"), &tBOUNTYHUNTERCHARACTERS, &BountyHunterCollection,
                             0x01000000, 0, 0, 0, 4, &permbuffer_ptr, &permbuffer_end, 0, COLLECTION_DEFAULTSCALE);
     Areas_ConfigureResidents(&permbuffer_ptr, &permbuffer_end);
+    CharacterCustomiser =
+        Customiser_Configure(const_cast<char *>("chars\\customiser.txt"), &permbuffer_ptr, &permbuffer_end, id_WEIRDO1,
+                             id_WEIRDO2, Customiser_PieceAvailable, Customiser_PieceConfig,
+                             LevelObject_FindIndexFromName, &Game.customizer, CustomiserActionList_Game);
+    SpecialMoves_Configure(const_cast<char *>("chars\\specialmoves.txt"), &permbuffer_ptr, &permbuffer_end);
+
+    // Every status-screen level plays the status screen music in all three track slots.
+    for (i32 i = 0; i < LEVELCOUNT; ++i) {
+        if ((LDataList[i].flags & LEVEL_STATUS) != 0) {
+            LDataList[i].music_index = GetMusicIndex(const_cast<char *>("statusscreen"), MusicInfo, -1);
+            LDataList[i].music_tracks[0][0] = LDataList[i].music_tracks[0][1] =
+                music_man.GetTrackHandle(TRACK_CLASS_QUIET, "statusscreen");
+            LDataList[i].music_tracks[1][0] = LDataList[i].music_tracks[1][1] =
+                music_man.GetTrackHandle(TRACK_CLASS_ACTION, "statusscreen");
+            LDataList[i].music_tracks[2][0] = LDataList[i].music_tracks[2][1] =
+                music_man.GetTrackHandle(TRACK_CLASS_NOMUSIC, "statusscreen");
+        }
+    }
+    Store_RestorePurchases();
 }

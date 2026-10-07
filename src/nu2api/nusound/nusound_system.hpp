@@ -453,7 +453,7 @@ class NuSoundSystem {
     NuSoundVoice *CreateVoice(NuSoundSource *source, bool loop);
     void ReleaseVoice(NuSoundVoice *voice);
     static bool SourceRequiresDecoder(NuSoundSource *source);
-    i32 GetNumAvailableOutputDevices();
+    static i32 GetNumAvailableOutputDevices();
     NuSoundRoutingTable *GetDefaultRoutingTable();
     void Update(f32 frametime);
 
@@ -623,7 +623,7 @@ class NuSoundHandle {
     NuList<NuSoundEffect *> effects;
 
   public:
-    static pthread_mutex_t sCriticalSection;
+    static NuCriticalSection sCriticalSection;
 
     NuSoundHandle();
     NuSoundHandle(NuSoundHandle &other);

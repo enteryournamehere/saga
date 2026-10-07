@@ -328,7 +328,7 @@ extern "C" i32 edbriLoadPage(char *path, void *gscn) {
         count = 64 - edbri_bridges_used;
     i32 index = 0;
     i32 i = 0;
-    while (i < count) {
+    while (count > 0 && i != count) {
         while (index < 64 && edBridges[index].connection_index != 0xff)
             ++index;
         if (index >= 64) {
@@ -402,14 +402,15 @@ void edbriDoInput(nupad_s *pad) {
         if (edbri_nearest != -1) {
             edbridge_s &bridge = edBridges[edbri_nearest];
             edcamSetPos(&bridge.position);
-            edbri_rotz = bridge.rotation_z;
-            edbri_roty = bridge.rotation_y;
-            edbri_length = bridge.length;
-            edbri_width = bridge.field_14;
-            edbri_planks = bridge.field_1d;
-            edbri_post_interval = bridge.field_1e;
-            edbri_plank_instance_type = bridge.special_20;
-            edbri_post_instance_type = bridge.special_24;
+            edbridge_s &selected_bridge = edBridges[edbri_nearest];
+            edbri_rotz = selected_bridge.rotation_z;
+            edbri_roty = selected_bridge.rotation_y;
+            edbri_length = selected_bridge.length;
+            edbri_width = selected_bridge.field_14;
+            edbri_planks = selected_bridge.field_1d;
+            edbri_post_interval = selected_bridge.field_1e;
+            edbri_plank_instance_type = selected_bridge.special_20;
+            edbri_post_instance_type = selected_bridge.special_24;
         }
     }
     edcamGetPosAng(&edbri_cam_pos, &edbri_cam_ax, &edbri_cam_ay);
@@ -461,13 +462,13 @@ void edbriDoInput(nupad_s *pad) {
         edbri_length -= pad->analog_left_pad_down / 2500.0f;
         if (edbri_length < 0.1f)
             edbri_length = 0.1f;
-        if (edbri_length > 5.0f)
-            edbri_length = 5.0f;
+        if (edbri_length > 20.0f)
+            edbri_length = 20.0f;
         edbri_width += pad->analog_left_pad_right / 5000.0f;
         edbri_width -= pad->analog_left_pad_left / 5000.0f;
         if (edbri_width < 0.1f)
             edbri_width = 0.1f;
-        if (!(edbri_width <= 5.0f))
+        if (edbri_width > 20.0f)
             edbri_width = 5.0f;
     }
 }

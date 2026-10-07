@@ -5,6 +5,8 @@
 
 #include <pthread.h>
 
+class NuCriticalSection;
+
 class NuSoundMemoryBuffer {
     friend class NuSoundMemoryManager;
 
@@ -16,7 +18,7 @@ class NuSoundMemoryBuffer {
     NuSoundMemoryBuffer *next;
 
   private:
-    static pthread_mutex_t s_cs;
+    static NuCriticalSection s_cs;
 
     static void BeginCriticalSection();
     static void EndCriticalSection();
@@ -73,7 +75,7 @@ class NuSoundMemoryManager {
 
     u32 Init(const char *name, void *memory, u32 size, u32 align, u32 param_5);
 
-    static NuSoundMemoryBuffer *PopFreeBuffer();
+    NuSoundMemoryBuffer *PopFreeBuffer();
     void PushFreeBuffer(NuSoundMemoryBuffer *buffer);
 
     void EnableDefragOnAlloc(bool value);

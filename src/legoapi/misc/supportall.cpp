@@ -446,7 +446,8 @@ apply_weights:
 }
 
 static inline void TexQuadSubmit3D(f32 x, f32 y, i32 colour, i32 u, i32 v) {
-    TexQuadVertex *vertex = static_cast<TexQuadVertex *>(g_NuPrim_StreamBufferPtr->void_ptr);
+    VARIPTR *stream = g_NuPrim_StreamBufferPtr;
+    TexQuadVertex *vertex = static_cast<TexQuadVertex *>(stream->void_ptr);
     if (g_NuPrim_NeedsOverbrightening != 0) {
         vertex->colour = colour;
     } else {
@@ -462,7 +463,7 @@ static inline void TexQuadSubmit3D(f32 x, f32 y, i32 colour, i32 u, i32 v) {
     vertex->x = x;
     vertex->y = y;
     vertex->z = 0.0f;
-    g_NuPrim_StreamBufferPtr->u8_ptr += sizeof(TexQuadVertex);
+    stream->u8_ptr += sizeof(TexQuadVertex);
     ++g_NuPrim_VertexCount;
 }
 
@@ -573,15 +574,14 @@ void CheckResetBits() {
         BonusCoinTotal = 0;
     }
 
-    const i32 progress_index = WORLD->current_level->area_level_index;
     if (WORLD->api_object_sys != NULL)
         WORLD->api_object_sys->flags_210 &= ~1;
     if ((ResetBits & RESETBIT_CLEAR_LEVEL_PROGRESS) != 0) {
-        GizmoSysClearLevelProgress(WORLD, progress_index);
+        GizmoSysClearLevelProgress(WORLD, WORLD->current_level->area_level_index);
     }
 
-    GameAnimSys_ReStoreProgress(WORLD->game_anim_sys, progress_index);
-    GizmoSysReset(WORLD->gizmo_sys, WORLD, progress_index);
+    GameAnimSys_ReStoreProgress(WORLD->game_anim_sys, WORLD->current_level->area_level_index);
+    GizmoSysReset(WORLD->gizmo_sys, WORLD, WORLD->current_level->area_level_index);
 
     if ((ResetBits & RESETBIT_REINITIALISE_LEVEL) != 0) {
         DrawBossHitPoints(NULL);
@@ -1608,54 +1608,6 @@ i32 DebrisSingleTorusCollisionCheckScaleYFlag(i32 key_index, NUVEC *position, f3
     if (horizontal_radius != vertical_radius || y_scale != 1.0f)
         dy *= combined_radius / (radius * y_scale + vertical_radius);
     return combined_radius * combined_radius > dx * dx + dy * dy + dz * dz;
-}
-
-i32 unref(unsigned char *source, unsigned char *destination) {
-    unsigned char *output_start = destination;
-    for (;;) {
-        const u32 control = *source++;
-        u32 literal_count;
-        u32 match_offset;
-        u32 match_length;
-
-        if (control < 0x80) {
-            literal_count = control & 3;
-            match_offset = ((control & 0x60) << 3) + source[0] + 1;
-            match_length = ((control & 0x1c) >> 2) + 3;
-            source += 1;
-        } else if (control < 0xc0) {
-            literal_count = source[0] >> 6;
-            match_offset = ((source[0] & 0x3f) << 8) + source[1] + 1;
-            match_length = (control & 0x3f) + 4;
-            source += 2;
-        } else if (control < 0xe0) {
-            literal_count = control & 3;
-            match_offset = ((control & 0x10) << 12) + (source[0] << 8) + source[1] + 1;
-            match_length = ((control & 0x0c) << 6) + source[2] + 5;
-            source += 3;
-        } else {
-            literal_count = ((control & 0x1f) << 2) + 4;
-            if (literal_count > 0x70) {
-                literal_count = control & 3;
-                for (u32 index = 0; index < literal_count; ++index) {
-                    *destination++ = *source++;
-                }
-                return destination - output_start;
-            }
-            for (u32 index = 0; index < literal_count; ++index) {
-                *destination++ = *source++;
-            }
-            continue;
-        }
-
-        for (u32 index = 0; index < literal_count; ++index) {
-            *destination++ = *source++;
-        }
-        unsigned char *match = destination - match_offset;
-        for (u32 index = 0; index < match_length; ++index) {
-            *destination++ = *match++;
-        }
-    }
 }
 
 void TBRESET() {

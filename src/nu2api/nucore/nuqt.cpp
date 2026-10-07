@@ -87,7 +87,7 @@ static i32 AddElementR(nuqthdr_s *header, i32 index, nuqtdim_s *bounds, nuqtdim_
             return InsertData(header, index, item);
         }
         u8 *old_item = old_data;
-        for (i32 i = 0; i < entry->count; ++i) {
+        for (i32 i = 0; i < header->entries[index].count; ++i) {
             // The original tests the incoming item's bounds when redistributing
             // existing data, and uses the saved data pointer for each recursive item.
             if (ElOverlaps(&q0, item_bounds))
@@ -100,8 +100,8 @@ static i32 AddElementR(nuqthdr_s *header, i32 index, nuqtdim_s *bounds, nuqtdim_
                 result = AddElementR(header, entry->children[3], &q3, item_bounds, old_item, depth);
             old_item += header->element_size;
         }
-        RemoveData(header, reinterpret_cast<char *>(old_data), entry->count);
-        entry->count = -1;
+        RemoveData(header, reinterpret_cast<char *>(old_data), header->entries[index].count);
+        header->entries[index].count = -1;
     }
     if (entry->count < 0) {
         if (ElOverlaps(&q0, item_bounds) && entry->children[0] != 0)
@@ -145,8 +145,8 @@ static void NuQTFixAddress(nuqthdr_s *header) {
 }
 
 extern "C" nuqthdr_s *NuQTRead(char *path, u8 **cursor, u8 **end) {
-    *cursor = reinterpret_cast<u8 *>((reinterpret_cast<usize>(*cursor) + 15) & ~usize(15));
-    nuqthdr_s *header = reinterpret_cast<nuqthdr_s *>(*cursor);
+    nuqthdr_s *header = reinterpret_cast<nuqthdr_s *>((reinterpret_cast<usize>(*cursor) + 15) & ~usize(15));
+    *cursor = reinterpret_cast<u8 *>(header);
     i32 size = NuFileLoadBuffer(path, *cursor, *end - *cursor);
     if (size != 0) {
         *cursor += size;
@@ -159,11 +159,11 @@ extern "C" nuqthdr_s *NuQTRead(char *path, u8 **cursor, u8 **end) {
 extern "C" i32 NuQTWrite(char *path, nuqthdr_s *header) {
     NUFILE file = NuFileOpen(path, NUFILE_WRITE);
     if (file != 0) {
-        i32 size = -reinterpret_cast<isize>(header);
-        size += reinterpret_cast<isize>(header->data);
+        usize size = 0 - reinterpret_cast<usize>(header);
+        size += reinterpret_cast<usize>(header->data);
         size += header->data_capacity;
         NuQTUnfixAddress(header);
-        NuFileWrite(file, header, size);
+        NuFileWrite(file, header, static_cast<i32>(size));
         NuQTFixAddress(header);
         NuFileClose(file);
         return 1;

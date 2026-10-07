@@ -9,6 +9,7 @@
 
 #include "nu2api/nu3d/android/nutex_android.h"
 
+class NuCriticalSection;
 struct nugscn_s;
 enum nutexturetype_e : i32;
 
@@ -125,9 +126,12 @@ struct __attribute__((packed)) dds_header_s {
 };
 
 #ifdef __cplusplus
+class NuCriticalSection;
 extern "C" {
 #endif
-    extern pthread_mutex_t criticalSection;
+#ifdef __cplusplus
+    extern NuCriticalSection criticalSection;
+#endif
     extern i32 max_textures;
 
     void NuTexInitEx(VARIPTR *buf, i32 max_tex_count);

@@ -249,9 +249,11 @@ struct NetMessage {
             }
         }
     }
-    NetMessage(NetMessage const &other)
-        : swap_endianness(other.swap_endianness), data(other.data), read_offset(other.read_offset),
-          write_offset(other.write_offset) {
+    NetMessage(NetMessage const &other) {
+        data = other.data;
+        read_offset = other.read_offset;
+        write_offset = other.write_offset;
+        swap_endianness = other.swap_endianness;
         if (data != NULL) {
             ++data->references;
         } else {
@@ -312,7 +314,7 @@ struct NetMessage {
     }
     void Write16(i16 value) {
         if (data != NULL) {
-            memmove(data->bytes + write_offset, &value, 2);
+            memcpy(data->bytes + write_offset, &value, 2);
             if (swap_endianness) {
                 EdFileSwapEndianess16(data->bytes + write_offset);
             }
@@ -321,7 +323,7 @@ struct NetMessage {
     }
     void Write32(i32 value) {
         if (data != NULL) {
-            memmove(data->bytes + write_offset, &value, 4);
+            memcpy(data->bytes + write_offset, &value, 4);
             if (swap_endianness) {
                 EdFileSwapEndianess32(data->bytes + write_offset);
             }

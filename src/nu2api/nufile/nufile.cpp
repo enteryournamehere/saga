@@ -2202,10 +2202,10 @@ static FILEEXTINFO *NuFileExtGetInfo(char *path, i32 path_len) {
         path_len = NuStrLen(path);
     }
 
-    char *end = path + path_len;
+    char *path_end = path + path_len;
     FILEEXTINFO *info = extensions;
     while (info->extension[0] != '\0') {
-        if (MatchExtension(info->extension, end, path_len) != 0) {
+        if (MatchExtension(info->extension, path_end, path_len) != 0) {
             return info;
         }
         ++info;
@@ -2231,52 +2231,49 @@ i32 NuFileExtRemove(char *dest, char *path) {
 }
 
 i32 NuFileExtGetExt(char *dest, i32 dest_size, NUFILETYPE type) {
-    FILEEXTINFO *info;
-    i32 i;
-    char *source;
-
-    for (info = extensions; info->extension != NULL; ++info) {
+    FILEEXTINFO *info = extensions;
+    while (info->extension[0] != '\0') {
         if (info->platform == PC_PLATFORM && info->type == type) {
             if (info->len > dest_size) {
                 return 0;
             }
 
+            i32 i;
+            const char *source;
             source = info->extension + info->len;
-            for (i = 0; i < info->len; ++i) {
+            i = 0;
+            for (; i < info->len; ++i) {
                 --source;
                 dest[i] = *source;
             }
             dest[i] = '\0';
             return 1;
         }
+        ++info;
     }
     return 0;
 }
 
 i32 NuFileExtConvert(char *dest, char *path) {
-    char *extension;
-    char *out;
-    FILEEXTINFO *target;
-    i32 path_len;
-    FILEEXTINFO *source;
-    i32 type;
-
-    path_len = NuStrCpy(dest, path);
-    source = NuFileExtGetInfo(path, path_len);
+    i32 path_len = NuStrCpy(dest, path);
+    FILEEXTINFO *source = NuFileExtGetInfo(path, path_len);
     if (source != NULL) {
-        type = source->type;
+        i32 source_type = source->type;
         if (source->platform == PC_PLATFORM) {
             return 1;
         }
 
-        for (target = extensions; target->extension != NULL; ++target) {
-            if (target->platform == PC_PLATFORM && target->type == type) {
-                out = &dest[(u32)path_len - source->len + target->len];
+        char *extension;
+        char *out;
+        FILEEXTINFO *target;
+        target = extensions;
+        for (; target->extension[0] != '\0'; ++target) {
+            if (target->platform == PC_PLATFORM && target->type == source_type) {
+                out = dest + path_len - source->len + target->len;
                 extension = target->extension;
                 *out = '\0';
-                while (*extension != '\0') {
+                for (; *extension != '\0'; ++extension) {
                     *--out = *extension;
-                    ++extension;
                 }
                 return 1;
             }
